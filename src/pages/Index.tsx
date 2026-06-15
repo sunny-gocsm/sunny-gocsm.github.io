@@ -97,7 +97,7 @@ const Index = () => {
         <div className="animate-fade-in flex items-start justify-between gap-4 flex-wrap">
           <div>
             <h1 className="text-2xl font-bold text-foreground tracking-tight">
-              Agency Health Overview
+              Agency Health
             </h1>
             <p className="text-sm text-muted-foreground mt-1">
               Monitor your portfolio health, identify risks, and act on opportunities.
