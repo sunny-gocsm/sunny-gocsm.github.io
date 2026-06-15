@@ -1,0 +1,37 @@
+/* =================================================================
+   GoCSM Design System v3 — State systems & theme layers
+   The onboarding step states (§10, product-wide) and the white-label
+   Client Surface theme (§12). These are the two sub-systems v3 formalized.
+   Hard rules: health-band colors NEVER used for step states; every state
+   pairs color + a distinct glyph (never color-alone); 'stalled' is computed,
+   operator-only, never stored, never client-visible.
+   ================================================================= */
+
+:root{
+  /* ─── Onboarding step states (§10) — semantic, shared by all surfaces ─── */
+  --onb-not-started:var(--n-5);
+  --onb-locked:var(--n-7);
+  --onb-in-progress:var(--info-7);
+  --onb-verifying:var(--info-7);          /* + live pulse while checking */
+  --onb-waiting-agency:var(--warn-7);     /* operator surfaces only */
+  --onb-needs-attention:var(--warn-7);
+  --onb-done:var(--pos-7);
+  --onb-stalled:var(--neg-7);             /* computed lens; operator surfaces only */
+}
+
+/* ─── CLIENT SURFACE THEME (§12) — white-label layer ─── */
+/* Activated by [data-surface="client"]. Contract: no GoCSM brand anywhere
+   (no stripe, navy, logo, attribution); --client-accent drives primary CTA +
+   progress fill ONLY; health-band colors never appear; AI keeps indigo. */
+[data-surface="client"]{
+  --client-accent:var(--info-7);          /* agency overrides via inline style/var */
+  --client-accent-ink:#ffffff;
+  --accent:var(--client-accent);
+  --accent-hover:var(--client-accent);
+  --text-link:var(--client-accent);
+  /* Brand suppression: components must not render brand stripe, navy
+     surfaces, GoCSM logo, or health-band colors inside this scope. */
+  --brand-stripe:none; /* @kind color */
+  /* Calm mapping: waiting_on_agency renders neutral for clients */
+  --onb-waiting-agency:var(--n-7);
+}

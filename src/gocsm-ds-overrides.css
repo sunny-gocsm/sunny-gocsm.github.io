@@ -1,0 +1,5 @@
+/* Restore 16px rem base for Tailwind/shadcn pages not yet migrated to the DS.
+   The DS stylesheet sets html font-size:14px, which rescales Tailwind's rem unit.
+   DS components are px-based, so forcing 16px here is safe for the DS and correct
+   for Tailwind. This file MUST be the last CSS imported in the app entry. */
+html { font-size: 16px; }

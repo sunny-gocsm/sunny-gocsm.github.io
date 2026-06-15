@@ -1,0 +1,70 @@
+<!-- @dsCard group="Components" viewport="700x440" name="App shell & rail" subtitle="244px sidebar, nav groups, brand stripe" -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<link rel="stylesheet" href="../../styles.css" />
+<style>
+  body { margin: 0; background: var(--bg); color: var(--text); font-family: var(--font-ui); }
+  .shell { display: flex; height: 440px; }
+  .rail { height: 100%; }
+  .main { flex: 1; display: flex; flex-direction: column; min-width: 0; }
+  .page { padding: 24px; }
+  .page-head { display: flex; align-items: center; justify-content: space-between; }
+  .rail-item span { white-space: nowrap; }
+</style>
+</head>
+<body>
+<div class="shell">
+  <nav class="rail">
+    <div style="padding:16px 14px 10px;"><img src="../../assets/logo-lockup.svg" alt="GoCSM" height="22" /></div>
+    <div class="rail-group">
+      <div class="rail-group-head"><i data-lucide="sparkles" style="width:16px;height:16px;"></i>Insights</div>
+      <div class="rail-item active"><i data-lucide="activity"></i><span>Account Health</span></div>
+      <div class="rail-item"><i data-lucide="log-in"></i><span>Login Activity</span></div>
+      <div class="rail-item"><i data-lucide="trending-up"></i><span>Product Adoption</span></div>
+      <div class="rail-item"><i data-lucide="dollar-sign"></i><span>Revenue Intelligence</span></div>
+      <div class="rail-item"><i data-lucide="rocket"></i><span>Onboarding</span></div>
+    </div>
+    <div class="rail-group">
+      <div class="rail-group-head"><i data-lucide="sliders-horizontal" style="width:16px;height:16px;"></i>Configurations</div>
+      <div class="rail-item"><i data-lucide="list-checks"></i><span>Account Tracking</span></div>
+      <div class="rail-item"><i data-lucide="gauge"></i><span>Health Config</span></div>
+    </div>
+    <div class="rail-group">
+      <div class="rail-group-head"><i data-lucide="life-buoy" style="width:16px;height:16px;"></i>Resources</div>
+      <div class="rail-item"><i data-lucide="external-link"></i><span>HighLevel CRM</span></div>
+    </div>
+  </nav>
+  <div class="main">
+    <div class="brand-stripe"></div>
+    <div class="page">
+      <div class="page-head">
+        <div>
+          <div class="t-display-lg">Account Health</div>
+          <div class="t-body-sm" style="margin-top:4px;">142 sub-accounts tracked</div>
+        </div>
+        <div style="display:flex;gap:10px;align-items:center;">
+          <span class="live-status"><span class="live-dot fresh"></span>live · checked 40s ago</span>
+          <button class="btn btn-ai btn-sm"><i data-lucide="sparkles"></i><span>Ask AI</span></button>
+        </div>
+      </div>
+      <div class="tabs" style="margin-top:18px;">
+        <span class="tab active">Overview</span>
+        <span class="tab">Sub-Accounts</span>
+        <span class="tab">Configure</span>
+      </div>
+      <div class="health-dist" style="margin-top:20px;">
+        <div class="health-tile thriving"><div class="label">Thriving</div><div class="count">48</div><div class="pct">34%</div></div>
+        <div class="health-tile healthy"><div class="label">Healthy</div><div class="count">61</div><div class="pct">43%</div></div>
+        <div class="health-tile watch"><div class="label">Watch</div><div class="count">22</div><div class="pct">15%</div></div>
+        <div class="health-tile atrisk"><div class="label">At-Risk</div><div class="count">11</div><div class="pct">8%</div></div>
+      </div>
+    </div>
+  </div>
+</div>
+<script src="https://unpkg.com/lucide@0.460.0/dist/umd/lucide.min.js"></script>
+<script>window.lucide && lucide.createIcons();</script>
+</body>
+</html>

@@ -1,0 +1,25 @@
+/* =================================================================
+   GoCSM Design System v3.0 — root stylesheet (single source consumers link)
+   This file is @import lines ONLY (no rules). Order matters: fonts →
+   tokens → components → v3 component additions.
+
+   §3 NON-REMOVABLE WIRING: the font import + token/component layers below
+   must begin the root stylesheet, in this order, above all other rules.
+   AI builders: never remove, reorder, or "optimize away" these lines.
+   ================================================================= */
+
+/* ── Webfonts (Inter + JetBrains Mono) ── */
+@import url('https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400;14..32,500;14..32,600;14..32,700&family=JetBrains+Mono:wght@400;500&display=swap');
+
+/* ── Token layer (CSS custom properties) ── */
+@import './tokens/colors.css';
+@import './tokens/typography.css';
+@import './tokens/spacing.css';
+@import './tokens/elevation.css';
+@import './tokens/motion.css';
+@import './tokens/states.css';
+
+/* ── Component layer ── */
+@import './styles/components.css';
+@import './styles/components-v3-additions.css';
+@import './styles/components-v3-action.css';
