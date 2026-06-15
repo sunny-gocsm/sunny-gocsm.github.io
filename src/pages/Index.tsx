@@ -93,50 +93,8 @@ const Index = () => {
   return (
     <div className="min-h-screen bg-background">
       <DashboardHeader activeTab="overview" />
-      <main className="max-w-[1400px] mx-auto px-6 py-8 space-y-6">
-        <div className="animate-fade-in flex items-start justify-between gap-4 flex-wrap">
-          <div>
-            <h1 className="text-2xl font-bold text-foreground tracking-tight">
-              Agency Health
-            </h1>
-            <p className="text-sm text-muted-foreground mt-1">
-              Monitor your portfolio health, identify risks, and act on opportunities.
-            </p>
-          </div>
-          <OverviewFilterPopover
-            value={filters}
-            onChange={setFilters}
-            plans={Array.from(new Set(subAccountsData.map((a) => a.plan))).sort()}
-            csms={CSM_OPTIONS}
-          />
-
-        </div>
-
-        <div className="animate-fade-in-up" style={{ animationDelay: "0.05s", animationFillMode: "both" }}>
-          <AgencyHealthHero
-            score={heroScore}
-            scoreDelta={agencyHealthData.scoreDelta}
-            scorePeriod={agencyHealthData.scorePeriod}
-            status={agencyHealthData.status}
-            healthBands={healthDistribution}
-          />
-        </div>
-
-        <div className="animate-fade-in-up" style={{ animationDelay: "0.1s", animationFillMode: "both" }}>
-          <PortfolioOverviewCards portfolio={portfolioMetrics} priority={priorityMetrics} />
-        </div>
-
-        <div className="animate-fade-in-up" style={{ animationDelay: "0.15s", animationFillMode: "both" }}>
-          <AttentionAccountsTable accounts={filteredAttention} />
-        </div>
-
-        <div className="animate-fade-in-up" style={{ animationDelay: "0.2s", animationFillMode: "both" }}>
-          <HealthTrendCard trend={healthTrend} />
-        </div>
-
-        <div className="animate-fade-in-up" style={{ animationDelay: "0.25s", animationFillMode: "both" }}>
-          <TopPerformingAccounts accounts={topPerformingAccounts} />
-        </div>
+      <main className="max-w-[1400px] mx-auto px-6 py-8">
+        <div />
       </main>
     </div>
   );
