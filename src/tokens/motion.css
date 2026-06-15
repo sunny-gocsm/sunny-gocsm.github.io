@@ -1,0 +1,22 @@
+/* =================================================================
+   GoCSM Design System v3 — Motion tokens & choreography
+   Ease-out only. Enter = fade + 4–8px translate at --d-base; exit at
+   --d-fast. NEVER tween a band or state color change — discrete events
+   snap. One celebratory moment per flow maximum. prefers-reduced-motion:
+   pulses become static dots, count-ups jump to final value.
+   ================================================================= */
+
+:root{
+  --ease:cubic-bezier(0.16,1,0.3,1);          /* @kind other */
+  --ease-out:cubic-bezier(0.22,0.61,0.36,1);  /* @kind other */
+  --d-fast:120ms;  /* @kind other */
+  --d-base:200ms;  /* @kind other */
+  --d-slow:360ms;  /* @kind other */
+}
+
+/* Liveness pulse — runs ONLY in the fresh state (no perpetual motion). */
+@keyframes live-pulse{0%,100%{opacity:1}50%{opacity:.35}}
+
+@media (prefers-reduced-motion:reduce){
+  .live-dot.fresh{animation:none!important;}
+}
