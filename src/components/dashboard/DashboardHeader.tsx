@@ -9,7 +9,7 @@ const DashboardHeader = ({ activeTab = "overview" }: DashboardHeaderProps) => {
   const navigate = useNavigate();
 
   const tabs = [
-    { value: "overview", label: "Overview", path: "/" },
+    { value: "overview", label: "Agency Health", path: "/" },
     { value: "analytics", label: "Sub-Accounts", path: "/analytics" },
     { value: "configure", label: "Configure", path: "/configure" },
   ];
