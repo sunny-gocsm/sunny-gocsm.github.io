@@ -14,7 +14,7 @@
    were proposed but never landed — see action-layer/01b-token-confirmation).
 
    Card chrome (.frame/.stripe/.pad/.sec/.kick/.foot-note) stays inline in
-   each specimen — that's specimen scaffolding, not a product component.
+   each specimen — that is specimen scaffolding, not a product component.
    ================================================================= */
 
 /* ============================================================== *
@@ -486,8 +486,8 @@
  * 14 · ICON SIZING — Lucide renders <i data-lucide> → <svg> at   *
  * 24px; size on `svg` (CSS beats the width/height attribute).    *
  * `color` already inherits (stroke="currentColor"); only width/  *
- * height + the few icons that differ from their parent's color   *
- * are set here. Keeps every shared component's glyphs on-scale.  *
+ * height + the few icons that differ from their parents color   *
+ * are set here. Keeps every shared components glyphs on-scale.  *
  * ============================================================== */
 .save-window svg,.sla-chip svg,.stage-chip svg,.exec-chip svg{width:13px;height:13px;}
 .stage-chip svg{color:var(--text-3);}
