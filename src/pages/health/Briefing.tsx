@@ -282,7 +282,7 @@ function ActionLayer({ mode }: { mode: "solo" | "team" }) {
               >
                 {isEmpty
                   ? "GoCSM handled everything overnight. Check back later, or look at the evidence below."
-                  : "GoCSM tried what it could — these need a human."}
+                  : "GoCSM handled the other 3 overnight. These need a human."}
               </p>
             </header>
             <Queue empty={isEmpty} emptyLabel={emptyLabel}>
