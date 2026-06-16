@@ -154,7 +154,40 @@ function VitalsStrip() {
   );
 }
 
-function ActionLayer() {
+function CohortLane() {
+  return (
+    <section aria-label="Act by problem" className="flex flex-col gap-3">
+      <header className="flex flex-col gap-1">
+        <h3 className="text-base" style={{ color: "var(--text)", margin: 0 }}>
+          Act by problem
+        </h3>
+        <p className="text-sm" style={{ color: "var(--text-3, var(--text))", margin: 0 }}>
+          Opinionated clusters GoCSM noticed across your book — apply one play to the whole group.
+        </p>
+      </header>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+        {cohorts.map((c) => (
+          <FixItCard
+            key={c.id}
+            icon="users"
+            tag="Cohort"
+            text={
+              <span>
+                {c.problem} · <Mono>{c.count}</Mono> accounts ·{" "}
+                <Mono>{c.mrrAtRisk}</Mono> at risk
+              </span>
+            }
+            conf={c.conf}
+            confDetail={c.confDetail}
+            action={<ActionButton>{c.actionLabel}</ActionButton>}
+          />
+        ))}
+      </div>
+    </section>
+  );
+}
+
+function ActionLayer({ mode }: { mode: "solo" | "team" }) {
   if (isNewAgency) {
     return (
       <section aria-label="Action">
@@ -168,43 +201,77 @@ function ActionLayer() {
     );
   }
 
+  const isTeam = mode === "team";
+
+  const queueCards = (
+    <>
+      {signals.map((s) => (
+        <SignalCard
+          key={s.id}
+          band={s.band}
+          account={s.account}
+          mrr={s.mrr}
+          story={s.story}
+          conf={s.conf}
+          confDetail={s.confDetail}
+          exec={
+            isTeam && s.assignee
+              ? s.assignee === "Auto"
+                ? <ExecChip auto />
+                : <ExecChip member={s.assignee} reassignable />
+              : null
+          }
+          saveWindow={s.saveWindow ? <SaveWindow>{s.saveWindow}</SaveWindow> : null}
+          provenance={<FactorPeek signal={s} />}
+          onSeePlaybook={() => {}}
+          action={<ActionButton>{s.actionLabel}</ActionButton>}
+        />
+      ))}
+    </>
+  );
+
   return (
     <section
       id="briefing-queue"
       aria-label="Action"
       className="flex flex-col gap-6"
     >
-      <div className="flex flex-col gap-3">
-        <header className="flex flex-col gap-1">
-          <h2 className="text-lg" style={{ color: "var(--text)", margin: 0 }}>
-            <Mono>{signals.length}</Mono> customers need you today.
-          </h2>
-          <p
-            className="text-sm"
-            style={{ color: "var(--text-3, var(--text))", margin: 0 }}
-          >
-            GoCSM tried what it could — these need a human.
-          </p>
-        </header>
+      {isTeam ? (
+        <TeamPulseStrip
+          title={teamPulse.title}
+          sub={teamPulse.sub}
+          load={teamPulse.load}
+          members={teamPulse.members}
+          escalations={teamPulse.escalations}
+        />
+      ) : null}
 
-        <Queue>
-          {signals.map((s) => (
-            <SignalCard
-              key={s.id}
-              band={s.band}
-              account={s.account}
-              mrr={s.mrr}
-              story={s.story}
-              conf={s.conf}
-              confDetail={s.confDetail}
-              saveWindow={s.saveWindow ? <SaveWindow>{s.saveWindow}</SaveWindow> : null}
-              provenance={<FactorPeek signal={s} />}
-              onSeePlaybook={() => {}}
-              action={<ActionButton>{s.actionLabel}</ActionButton>}
-            />
-          ))}
-        </Queue>
+      <div className="flex flex-col gap-3">
+        {isTeam ? (
+          <MyQueue
+            member={teamMember.name}
+            scope={teamMember.scope}
+            queue={<Queue>{queueCards}</Queue>}
+          />
+        ) : (
+          <>
+            <header className="flex flex-col gap-1">
+              <h2 className="text-lg" style={{ color: "var(--text)", margin: 0 }}>
+                <Mono>{signals.length}</Mono> customers need you today.
+              </h2>
+              <p
+                className="text-sm"
+                style={{ color: "var(--text-3, var(--text))", margin: 0 }}
+              >
+                GoCSM tried what it could — these need a human.
+              </p>
+            </header>
+            <Queue>{queueCards}</Queue>
+          </>
+        )}
       </div>
+
+      {isTeam ? <CohortLane /> : null}
 
       <VitalsStrip />
     </section>
