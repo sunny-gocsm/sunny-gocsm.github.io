@@ -8,9 +8,9 @@ const MODE_LABEL: Record<ActivityMode, string> = {
   manual: "Manual",
 };
 
-const MODE_TONE: Record<ActivityMode, "ai" | "ok" | "neutral"> = {
+const MODE_VARIANT: Record<ActivityMode, "ai" | "pos" | "neutral"> = {
   auto: "ai",
-  approved: "ok",
+  approved: "pos",
   manual: "neutral",
 };
 
@@ -23,7 +23,7 @@ export default function Activity() {
         <span style={{ color: "var(--text)" }}>{e.account}</span>
         <span style={{ color: "var(--text-3, var(--text))" }}>·</span>
         <span style={{ color: "var(--text-2, var(--text))" }}>{e.action}</span>
-        <Badge tone={MODE_TONE[e.mode]}>{MODE_LABEL[e.mode]}</Badge>
+        <Badge variant={MODE_VARIANT[e.mode]}>{MODE_LABEL[e.mode]}</Badge>
       </span>
     ),
     outcome: <span style={{ color: "var(--text-2, var(--text))" }}>{e.outcome}</span>,
