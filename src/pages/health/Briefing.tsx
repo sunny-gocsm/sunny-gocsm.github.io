@@ -21,6 +21,7 @@ import {
   MyQueue,
   FixItCard,
   ExecChip,
+  Tabs,
 } from "@/gocsm-ds";
 import {
   ResponsiveContainer,
@@ -129,12 +130,13 @@ function FactorPeek({ signal }: { signal: BriefingSignal }) {
 }
 
 function VitalsStrip() {
+  if (!vitals.length) return null;
   return (
     <section aria-label="Your agency this week" className="flex flex-col gap-3">
       <h3 className="text-sm" style={{ color: "var(--text-3)", margin: 0 }}>
         Your agency this week
       </h3>
-      <div className="grid grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         {vitals.map((v) => (
           <MetricCard
             key={v.label}
@@ -155,6 +157,7 @@ function VitalsStrip() {
 }
 
 function CohortLane() {
+  if (!cohorts.length) return null;
   return (
     <section aria-label="Act by problem" className="flex flex-col gap-3">
       <header className="flex flex-col gap-1">
@@ -162,7 +165,7 @@ function CohortLane() {
           Act by problem
         </h3>
         <p className="text-sm" style={{ color: "var(--text-3, var(--text))", margin: 0 }}>
-          Opinionated clusters GoCSM noticed across your book — apply one play to the whole group.
+          GoCSM grouped these accounts because they share the same problem. Fix them as one group.
         </p>
       </header>
       <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
@@ -170,7 +173,7 @@ function CohortLane() {
           <FixItCard
             key={c.id}
             icon="users"
-            tag="Cohort"
+            tag="Group"
             text={
               <span>
                 {c.problem} · <Mono>{c.count}</Mono> accounts ·{" "}
@@ -202,6 +205,8 @@ function ActionLayer({ mode }: { mode: "solo" | "team" }) {
   }
 
   const isTeam = mode === "team";
+  const isEmpty = signals.length === 0;
+  const emptyLabel = "All caught up — no one needs you right now.";
 
   const queueCards = (
     <>
@@ -251,22 +256,37 @@ function ActionLayer({ mode }: { mode: "solo" | "team" }) {
           <MyQueue
             member={teamMember.name}
             scope={teamMember.scope}
-            queue={<Queue>{queueCards}</Queue>}
+            queue={
+              <Queue empty={isEmpty} emptyLabel={emptyLabel}>
+                {queueCards}
+              </Queue>
+            }
+            empty={emptyLabel}
           />
         ) : (
           <>
             <header className="flex flex-col gap-1">
               <h2 className="text-lg" style={{ color: "var(--text)", margin: 0 }}>
-                <Mono>{signals.length}</Mono> customers need you today.
+                {isEmpty ? (
+                  "You're all caught up today."
+                ) : (
+                  <>
+                    <Mono>{signals.length}</Mono> customers need you today.
+                  </>
+                )}
               </h2>
               <p
                 className="text-sm"
                 style={{ color: "var(--text-3, var(--text))", margin: 0 }}
               >
-                GoCSM tried what it could — these need a human.
+                {isEmpty
+                  ? "GoCSM handled everything overnight. Check back later, or look at the evidence below."
+                  : "GoCSM tried what it could — these need a human."}
               </p>
             </header>
-            <Queue>{queueCards}</Queue>
+            <Queue empty={isEmpty} emptyLabel={emptyLabel}>
+              {queueCards}
+            </Queue>
           </>
         )}
       </div>
@@ -324,10 +344,10 @@ function EvidenceLayer() {
   const summary = (
     <div className="flex flex-col gap-1">
       <div className="text-sm" style={{ color: "var(--text-3, var(--text))" }}>
-        Agency-level evidence
+        What's behind today's verdict
       </div>
       <div style={{ color: "var(--text)" }}>
-        Score, distribution, trend, and methodology behind today's verdict.
+        The score, where your accounts sit, the trend over time, and how GoCSM calculates it.
       </div>
     </div>
   );
@@ -339,8 +359,8 @@ function EvidenceLayer() {
           <HealthScoreEvidence
             score={evidence.agencyScore}
             band={evidence.agencyBand}
-            tag="Agency health · triage instrument"
-            trend="-12 / 60d"
+            tag="Agency health — for context, not action"
+            trend="−12 over 60 days"
             onHowScored={() => {
               const el = document.getElementById("briefing-methodology");
               if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
@@ -349,9 +369,9 @@ function EvidenceLayer() {
 
           <div className="flex flex-col gap-2">
             <h4 className="text-sm" style={{ color: "var(--text-3)", margin: 0 }}>
-              Distribution across <Mono>2,162</Mono> sub-accounts
+              Where your <Mono>2,162</Mono> sub-accounts sit today
             </h4>
-            <div className="grid grid-cols-4 gap-3">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
               {evidence.distribution.map((d) => (
                 <HealthTile key={d.band} band={d.band} count={d.n} pct={`${d.pct}%`} />
               ))}
@@ -360,21 +380,21 @@ function EvidenceLayer() {
 
           <div className="flex flex-col gap-2">
             <h4 className="text-sm" style={{ color: "var(--text-3)", margin: 0 }}>
-              60-day agency trend
+              Your agency score over the last 60 days
             </h4>
             <AgencyTrendChart />
           </div>
 
           <div className="flex flex-col gap-2">
             <h4 className="text-sm" style={{ color: "var(--text-3)", margin: 0 }}>
-              Pillar weights
+              What goes into the score
             </h4>
             <PillarBar weights={evidence.pillarWeights} legend />
           </div>
 
           <div id="briefing-methodology" className="flex flex-col gap-2">
             <h4 className="text-sm" style={{ color: "var(--text-3)", margin: 0 }}>
-              How is health scored?
+              How GoCSM calculates this
             </h4>
             <MethodologyExplainer
               lede="Health is a weighted read across four pillars. Today's score is dragged down most by Product Adoption; Revenue is steady."
@@ -408,50 +428,22 @@ export default function Briefing() {
   const [params, setParams] = useSearchParams();
   const mode: "solo" | "team" = params.get("mode") === "team" ? "team" : "solo";
 
-  const setMode = (m: "solo" | "team") => {
-    const next = new URLSearchParams(params);
-    if (m === "team") next.set("mode", "team");
-    else next.delete("mode");
-    setParams(next, { replace: true });
-  };
-
   return (
     <div className="flex flex-col gap-8">
       <div className="flex justify-end">
-        <div
-          role="tablist"
-          aria-label="Briefing mode"
-          style={{
-            display: "inline-flex",
-            border: "1px solid var(--border)",
-            borderRadius: 8,
-            overflow: "hidden",
-            fontSize: 12,
+        <Tabs
+          tabs={[
+            { id: "solo", label: "Just me" },
+            { id: "team", label: "My team" },
+          ]}
+          active={mode}
+          onChange={(id: string) => {
+            const next = new URLSearchParams(params);
+            if (id === "team") next.set("mode", "team");
+            else next.delete("mode");
+            setParams(next, { replace: true });
           }}
-        >
-          {(["solo", "team"] as const).map((m) => {
-            const sel = mode === m;
-            return (
-              <button
-                key={m}
-                type="button"
-                role="tab"
-                aria-selected={sel}
-                onClick={() => setMode(m)}
-                style={{
-                  padding: "var(--s-1) var(--s-3)",
-                  background: sel ? "var(--surface-2, var(--surface))" : "transparent",
-                  color: sel ? "var(--text)" : "var(--text-3, var(--text))",
-                  border: "none",
-                  cursor: "pointer",
-                  textTransform: "capitalize",
-                }}
-              >
-                {m}
-              </button>
-            );
-          })}
-        </div>
+        />
       </div>
       <VerdictLayer />
       <ActionLayer mode={mode} />
