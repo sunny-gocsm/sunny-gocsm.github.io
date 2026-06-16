@@ -337,3 +337,27 @@ export const playbooks: Record<string, PlaybookPreview> = {
     ],
   },
 };
+
+// ─── Activity log (the honest record behind the digest) ───────────────────────
+export type ActivityMode = "auto" | "approved" | "manual";
+
+export interface ActivityEntry {
+  account: string;
+  action: string;
+  mode: ActivityMode;
+  time: string;
+  outcome: string;
+}
+
+export const activityLog: ActivityEntry[] = [
+  { account: "BadassLink",              action: "Dunning email",           mode: "auto",     time: "6:04am", outcome: "Opened, no reply" },
+  { account: "Organize Your Online Biz", action: "Renewal reminder",        mode: "auto",     time: "6:05am", outcome: "No reply" },
+  { account: "Modern Physio",           action: "Escalated to you",        mode: "auto",     time: "6:06am", outcome: "Awaiting your call" },
+  { account: "Lauren Fondriest",        action: "Check-in email",          mode: "auto",     time: "6:08am", outcome: "Replied" },
+  { account: "This is Wellbeing",       action: "Testimonial ask drafted", mode: "approved", time: "6:10am", outcome: "Sent" },
+  { account: "Northwind Studio",        action: "Usage nudge",             mode: "auto",     time: "6:12am", outcome: "Opened" },
+  { account: "Harborline Co.",          action: "Card-update reminder",    mode: "auto",     time: "6:14am", outcome: "Card updated" },
+  { account: "Greenfield Partners",     action: "Win-back email drafted",  mode: "approved", time: "6:18am", outcome: "Queued for your review" },
+  { account: "Brightpath Wellness",     action: "Owner call logged",       mode: "manual",   time: "7:42am", outcome: "Booked working session" },
+  { account: "Cedar & Co.",             action: "NPS follow-up",           mode: "auto",     time: "7:55am", outcome: "Replied positive" },
+];
