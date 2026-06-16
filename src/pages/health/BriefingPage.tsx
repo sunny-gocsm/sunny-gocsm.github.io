@@ -1,26 +1,41 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { briefingFixtures, type BriefingMode } from "./briefing.fixtures";
+import { BriefingHeader, DigestTristat, LiveStatus, Icon } from "@/gocsm-ds";
 
-function Layer1Verdict({ mode }: { mode: BriefingMode }) {
+function greetingFor(name: string) {
+  const h = new Date().getHours();
+  const part = h < 12 ? "Good morning" : h < 18 ? "Good afternoon" : "Good evening";
+  return `${part}, ${name}.`;
+}
+
+function Layer1Verdict({ onWaitingClick }: { mode: BriefingMode; onWaitingClick: () => void }) {
   const f = briefingFixtures;
+  const greeting = greetingFor(f.header.ownerName);
+  const promise = "Here's what GoCSM did overnight, and what needs you today.";
+
   return (
-    <section data-layer="1-verdict" className="space-y-2 border border-border rounded-md p-4">
-      <div className="text-xs uppercase tracking-wider text-muted-foreground">Layer 1 — Verdict</div>
-      <div className="text-lg font-semibold">Good morning, {f.header.ownerName}.</div>
-      <div className="text-sm text-muted-foreground">Last sync: {f.header.lastSync}</div>
-      <div className="text-sm">{f.digest.line}</div>
-      <div className="text-sm">
-        Sent {f.digest.sent} · Alerted {f.digest.alerted} · Waiting {f.digest.waiting}
+    <section data-layer="1-verdict" className="space-y-4">
+      <BriefingHeader
+        greeting={greeting}
+        promise={promise}
+        sync={<LiveStatus state="fresh" label={`Synced ${f.header.lastSync}`} />}
+      />
+      <DigestTristat
+        line={f.digest.line}
+        sent={f.digest.sent}
+        alerted={f.digest.alerted}
+        waiting={f.digest.waiting}
+        onWaiting={onWaitingClick}
+      />
+      <div>
+        <a href="/activity" className="text-xs text-muted-foreground inline-flex items-center gap-1 hover:underline">
+          See activity log <Icon name="arrow-right" />
+        </a>
       </div>
-      {f.isNewAgency && (
-        <div className="mt-2 p-2 border border-dashed border-border rounded text-sm">
-          {f.coldStart.banner} <button className="underline">{f.coldStart.cta}</button>
-        </div>
-      )}
-      <div className="text-xs text-muted-foreground">mode: {mode}</div>
     </section>
   );
 }
+
 
 function Layer2Action({ mode }: { mode: BriefingMode }) {
   const f = briefingFixtures;
