@@ -308,7 +308,136 @@ function ActionLayer({ mode }: { mode: "solo" | "team" }) {
       {isTeam ? <CohortLane /> : null}
 
       <VitalsStrip />
+
+      <PlaybookDrawer
+        signalId={openPlaybook}
+        onClose={() => setOpenPlaybook(null)}
+      />
     </section>
+  );
+}
+
+function PlaybookDrawer({
+  signalId,
+  onClose,
+}: {
+  signalId: string | null;
+  onClose: () => void;
+}) {
+  if (!signalId) return null;
+  const pb = playbooks[signalId];
+  if (!pb) return null;
+
+  return (
+    <div
+      role="dialog"
+      aria-modal="true"
+      aria-label={pb.name}
+      onClick={onClose}
+      style={{
+        position: "fixed",
+        inset: 0,
+        background: "rgba(0,0,0,0.4)",
+        zIndex: 60,
+        display: "flex",
+        justifyContent: "flex-end",
+      }}
+    >
+      <div
+        onClick={(e) => e.stopPropagation()}
+        style={{
+          width: "min(440px, 100%)",
+          height: "100%",
+          background: "var(--surface)",
+          borderLeft: "1px solid var(--border)",
+          boxShadow: "var(--sh-sheet)",
+          display: "flex",
+          flexDirection: "column",
+        }}
+      >
+        <div
+          className="flex items-start justify-between gap-3"
+          style={{
+            padding: "var(--s-5)",
+            borderBottom: "1px solid var(--border)",
+          }}
+        >
+          <div className="flex flex-col gap-1">
+            <span
+              className="text-xs uppercase"
+              style={{ color: "var(--text-3, var(--text))", letterSpacing: "0.04em" }}
+            >
+              Playbook
+            </span>
+            <h3
+              className="text-base"
+              style={{ color: "var(--text)", margin: 0 }}
+            >
+              {pb.name}
+            </h3>
+          </div>
+          <Button variant="ghost" size="sm" onClick={onClose}>
+            Close
+          </Button>
+        </div>
+
+        <div
+          style={{
+            padding: "var(--s-5)",
+            overflowY: "auto",
+            flex: 1,
+            display: "flex",
+            flexDirection: "column",
+            gap: "var(--s-5)",
+          }}
+        >
+          <p
+            className="text-sm"
+            style={{ color: "var(--text-2, var(--text))", margin: 0 }}
+          >
+            {pb.does}
+          </p>
+
+          <Card padded>
+            <div className="flex flex-col gap-3">
+              <span
+                className="text-xs uppercase"
+                style={{ color: "var(--text-3, var(--text))", letterSpacing: "0.04em" }}
+              >
+                Steps
+              </span>
+              <ol
+                className="flex flex-col gap-3"
+                style={{
+                  listStyle: "none",
+                  padding: 0,
+                  margin: 0,
+                  color: "var(--text)",
+                }}
+              >
+                {pb.steps.map((step, i) => (
+                  <li key={i} className="flex gap-3 text-sm">
+                    <Mono>{String(i + 1).padStart(2, "0")}</Mono>
+                    <span>{step}</span>
+                  </li>
+                ))}
+              </ol>
+            </div>
+          </Card>
+        </div>
+
+        <div
+          style={{
+            padding: "var(--s-4) var(--s-5)",
+            borderTop: "1px solid var(--border)",
+            color: "var(--text-3, var(--text))",
+            fontSize: 12,
+          }}
+        >
+          Full playbook library coming soon.
+        </div>
+      </div>
+    </div>
   );
 }
 
