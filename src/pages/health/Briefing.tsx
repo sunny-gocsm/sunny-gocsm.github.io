@@ -387,22 +387,23 @@ function EvidenceLayer() {
           </div>
 
           <div className="flex flex-col gap-2">
-            <h4 className="text-sm" style={{ color: "var(--text-3)", margin: 0 }}>
-              What goes into the score
-            </h4>
+            <p style={{ color: "var(--text)", margin: 0 }}>
+              Health is a weighted read across four pillars. Today it's dragged down most by Product Adoption; Revenue is steady.
+            </p>
             <PillarBar weights={evidence.pillarWeights} legend />
           </div>
 
-          <div id="briefing-methodology" className="flex flex-col gap-2">
-            <h4 className="text-sm" style={{ color: "var(--text-3)", margin: 0 }}>
-              How GoCSM calculates this
-            </h4>
-            <MethodologyExplainer
-              lede="Health is a weighted read across four pillars. Today's score is dragged down most by Product Adoption; Revenue is steady."
-              pillars={evidence.pillarWeights}
-              factors={evidence.methodologyFactors}
-            />
-          </div>
+          <WhyCard
+            title="What's dragging the score"
+            kind="risk"
+            aiTagged
+            drivers={[
+              { title: "Product Adoption is below its band (−18, the biggest drag)", desc: "Biggest negative factor today.", severity: "high" },
+              { title: "Logins down 22% over 30 days", desc: "Fewer owners and users signing in.", severity: "high" },
+              { title: "Revenue is steady", desc: "No billing issues or payment failures.", severity: "pos" },
+              { title: "Feedback is fine", desc: "NPS and support sentiment stable.", severity: "pos" },
+            ]}
+          />
 
           <div>
             <Link
