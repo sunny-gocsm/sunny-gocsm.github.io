@@ -16,7 +16,7 @@ import {
   HealthScoreEvidence,
   HealthTile,
   PillarBar,
-  MethodologyExplainer,
+  WhyCard,
   TeamPulseStrip,
   MyQueue,
   FixItCard,
