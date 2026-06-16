@@ -361,3 +361,39 @@ export const activityLog: ActivityEntry[] = [
   { account: "Brightpath Wellness",     action: "Owner call logged",       mode: "manual",   time: "7:42am", outcome: "Booked working session" },
   { account: "Cedar & Co.",             action: "NPS follow-up",           mode: "auto",     time: "7:55am", outcome: "Replied positive" },
 ];
+
+// ─── Drafts waiting on approval (opened from "Waiting on you 3") ──────────────
+export interface DraftItem {
+  account: string;
+  mrr?: number;
+  type: string;       // becomes the subject line in the sheet
+  channel?: string;
+  body: string;
+}
+
+export const drafts: DraftItem[] = [
+  {
+    account: "This is Wellbeing",
+    mrr: 1290,
+    type: "Testimonial ask",
+    channel: "Email",
+    body:
+      "Hi Sam — your team's conversations tripled last month. That's the kind of momentum other agency owners ask me about. Would you be up for a two-sentence quote, or a 10-minute recorded call? I'll draft it either way so the lift is tiny.",
+  },
+  {
+    account: "Greenfield Partners",
+    mrr: 780,
+    type: "Win-back email",
+    channel: "Email",
+    body:
+      "Hey Priya — I noticed your team hasn't been in for a few weeks. Before your renewal date, I wanted to check what's changed and whether there's a working session that would help. Happy to jump on a 15-min call this week.",
+  },
+  {
+    account: "Lauren Fondriest",
+    mrr: 540,
+    type: "Check-in note",
+    channel: "Email",
+    body:
+      "Hi Lauren — saw you logged back in this week and your score is climbing. Nice. One small next step that usually compounds from here: turning on the renewal reminder workflow. Want me to set it up?",
+  },
+];
