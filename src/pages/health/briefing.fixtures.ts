@@ -78,7 +78,6 @@ export const signals: BriefingSignal[] = [
     account: "Organize Your Online Biz",
     mrr: 1639,
     story: "Gone dark 32 days. Renewal in 14 days. GoCSM sent a reminder, no reply.",
-    conf: "fact",
     saveWindow: "Renewal in 14 days",
     actionLabel: "Call today",
     assignee: "Sinan",
