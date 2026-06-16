@@ -405,10 +405,56 @@ function EvidenceLayer() {
 }
 
 export default function Briefing() {
+  const [params, setParams] = useSearchParams();
+  const mode: "solo" | "team" = params.get("mode") === "team" ? "team" : "solo";
+
+  const setMode = (m: "solo" | "team") => {
+    const next = new URLSearchParams(params);
+    if (m === "team") next.set("mode", "team");
+    else next.delete("mode");
+    setParams(next, { replace: true });
+  };
+
   return (
     <div className="flex flex-col gap-8">
+      <div className="flex justify-end">
+        <div
+          role="tablist"
+          aria-label="Briefing mode"
+          style={{
+            display: "inline-flex",
+            border: "1px solid var(--border)",
+            borderRadius: 8,
+            overflow: "hidden",
+            fontSize: 12,
+          }}
+        >
+          {(["solo", "team"] as const).map((m) => {
+            const sel = mode === m;
+            return (
+              <button
+                key={m}
+                type="button"
+                role="tab"
+                aria-selected={sel}
+                onClick={() => setMode(m)}
+                style={{
+                  padding: "var(--s-1) var(--s-3)",
+                  background: sel ? "var(--surface-2, var(--surface))" : "transparent",
+                  color: sel ? "var(--text)" : "var(--text-3, var(--text))",
+                  border: "none",
+                  cursor: "pointer",
+                  textTransform: "capitalize",
+                }}
+              >
+                {m}
+              </button>
+            );
+          })}
+        </div>
+      </div>
       <VerdictLayer />
-      <ActionLayer />
+      <ActionLayer mode={mode} />
       <EvidenceLayer />
     </div>
   );
