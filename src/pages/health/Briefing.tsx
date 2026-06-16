@@ -60,10 +60,25 @@ function greetingFor(name: string) {
 
 // ─── Layer 1: Verdict ─────────────────────────────────────────────────────────
 function VerdictLayer() {
-  const handleWaiting = () => {
+  const navigate = useNavigate();
+  const [draftIndex, setDraftIndex] = useState<number | null>(null);
+
+  const scrollToQueue = () => {
     const el = document.getElementById("briefing-queue");
     if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
   };
+
+  const handleTristatClick: React.MouseEventHandler<HTMLDivElement> = (e) => {
+    const target = e.target as HTMLElement;
+    if (target.closest(".digest-tile.sent")) navigate("/activity");
+    else if (target.closest(".digest-tile.alerted")) scrollToQueue();
+  };
+
+  const advance = () =>
+    setDraftIndex((i) =>
+      i === null || i >= drafts.length - 1 ? null : i + 1,
+    );
+  const current = draftIndex !== null ? drafts[draftIndex] : null;
 
   return (
     <section aria-label="Verdict" className="flex flex-col gap-4">
@@ -71,13 +86,18 @@ function VerdictLayer() {
         greeting={`${greetingFor(header.ownerName)} Here's what GoCSM did overnight, and what needs you today.`}
         sync={<LiveStatus state="fresh" label={`Synced ${header.lastSync}`} />}
       />
-      <DigestTristat
-        sent={digest.sent}
-        alerted={digest.alerted}
-        waiting={digest.waiting}
-        line={digest.line}
-        onWaiting={handleWaiting}
-      />
+      <div
+        onClick={handleTristatClick}
+        style={{ cursor: "pointer" }}
+      >
+        <DigestTristat
+          sent={digest.sent}
+          alerted={digest.alerted}
+          waiting={digest.waiting}
+          line={digest.line}
+          onWaiting={() => setDraftIndex(0)}
+        />
+      </div>
       <div>
         <Link
           to="/activity"
@@ -93,6 +113,46 @@ function VerdictLayer() {
           See activity log <Icon name="arrow-right" />
         </Link>
       </div>
+
+      {current ? (
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-label={`Draft for ${current.account}`}
+          onClick={() => setDraftIndex(null)}
+          style={{
+            position: "fixed",
+            inset: 0,
+            background: "rgba(0,0,0,0.4)",
+            zIndex: 70,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            padding: "var(--s-5)",
+          }}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            style={{ width: "min(560px, 100%)" }}
+          >
+            <DraftReviewSheet
+              account={current.account}
+              mrr={current.mrr}
+              play={current.type}
+              band="watch"
+              why={`${draftIndex! + 1} of ${drafts.length} waiting on you.`}
+              voice="your"
+              channel={current.channel || "Email"}
+              subject={current.type}
+              draft={current.body}
+              onApprove={advance}
+              onEdit={() => {}}
+              onSkip={advance}
+              dimmed={false}
+            />
+          </div>
+        </div>
+      ) : null}
     </section>
   );
 }
