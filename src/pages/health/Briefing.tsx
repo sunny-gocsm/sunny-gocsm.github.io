@@ -271,9 +271,10 @@ function ActionLayer({ mode }: { mode: "solo" | "team" }) {
                   "You're all caught up today."
                 ) : (
                   <>
-                    <Mono>{signals.length}</Mono> customers need you today.
+                    <Mono>{signals.length}</Mono> of <Mono>{digest.alerted}</Mono> need you today — these need a human.
                   </>
                 )}
+
               </h2>
               <p
                 className="text-sm"
