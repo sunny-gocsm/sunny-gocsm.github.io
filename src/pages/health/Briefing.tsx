@@ -271,9 +271,10 @@ function ActionLayer({ mode }: { mode: "solo" | "team" }) {
                   "You're all caught up today."
                 ) : (
                   <>
-                    <Mono>{signals.length}</Mono> customers need you today.
+                    <Mono>{signals.length}</Mono> of <Mono>{digest.alerted}</Mono> need you today — these need a human.
                   </>
                 )}
+
               </h2>
               <p
                 className="text-sm"
@@ -281,7 +282,7 @@ function ActionLayer({ mode }: { mode: "solo" | "team" }) {
               >
                 {isEmpty
                   ? "GoCSM handled everything overnight. Check back later, or look at the evidence below."
-                  : "GoCSM tried what it could — these need a human."}
+                  : "GoCSM handled the other 3 overnight. These need a human."}
               </p>
             </header>
             <Queue empty={isEmpty} emptyLabel={emptyLabel}>
@@ -360,12 +361,12 @@ function EvidenceLayer() {
             score={evidence.agencyScore}
             band={evidence.agencyBand}
             tag="Agency health — for context, not action"
-            trend="−12 over 60 days"
             onHowScored={() => {
               const el = document.getElementById("briefing-methodology");
               if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
             }}
           />
+
 
           <div className="flex flex-col gap-2">
             <h4 className="text-sm" style={{ color: "var(--text-3)", margin: 0 }}>

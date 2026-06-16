@@ -169,9 +169,11 @@ export const vitals: BriefingVital[] = [
     label: "Agency health",
     value: "47",
     context: "60 days",
-    delta: { value: "-38%", direction: "bad-up" },
+    delta: { value: "38%", direction: "down" },
     tone: "neg",
   },
+
+
 ];
 
 // ─── Cold start (gated by isNewAgency, default false) ─────────────────────────
