@@ -137,8 +137,11 @@ function Layer3Evidence({ mode }: { mode: BriefingMode }) {
 
 export default function BriefingPage() {
   const [mode, setMode] = useState<BriefingMode>("solo");
+  const queueRef = useRef<HTMLDivElement | null>(null);
+  const scrollToQueue = () =>
+    queueRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
   return (
-    <div className="relative space-y-4">
+    <div className="relative space-y-6">
       <div className="fixed bottom-3 right-3 z-50 flex gap-1 bg-background border border-border rounded p-1 text-xs">
         <button
           onClick={() => setMode("solo")}
@@ -153,9 +156,12 @@ export default function BriefingPage() {
           team
         </button>
       </div>
-      <Layer1Verdict mode={mode} />
-      <Layer2Action mode={mode} />
+      <Layer1Verdict mode={mode} onWaitingClick={scrollToQueue} />
+      <div ref={queueRef}>
+        <Layer2Action mode={mode} />
+      </div>
       <Layer3Evidence mode={mode} />
     </div>
   );
 }
+
