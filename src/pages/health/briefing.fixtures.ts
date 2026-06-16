@@ -28,7 +28,7 @@ export interface BriefingVital {
   label: string;
   value: string;
   context?: string;
-  delta?: { value: string; direction: "good-up" | "bad-up" | "good-down" | "bad-down" };
+  delta?: { value: string; direction: "up" | "down" | "flat" | "bad-up" | "good-down" };
   tone?: "neg" | "pos" | null;
 }
 
@@ -36,7 +36,7 @@ export interface CohortCard {
   id: string;
   problem: string;
   count: number;
-  delta?: { value: string; direction: "good-up" | "bad-up" };
+  delta?: { value: string; direction: "up" | "down" | "flat" | "bad-up" | "good-down" };
   actionLabel: string;
 }
 
