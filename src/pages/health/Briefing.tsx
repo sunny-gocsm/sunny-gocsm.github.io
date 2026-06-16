@@ -205,6 +205,8 @@ function ActionLayer({ mode }: { mode: "solo" | "team" }) {
   }
 
   const isTeam = mode === "team";
+  const isEmpty = signals.length === 0;
+  const emptyLabel = "All caught up — no one needs you right now.";
 
   const queueCards = (
     <>
@@ -254,22 +256,37 @@ function ActionLayer({ mode }: { mode: "solo" | "team" }) {
           <MyQueue
             member={teamMember.name}
             scope={teamMember.scope}
-            queue={<Queue>{queueCards}</Queue>}
+            queue={
+              <Queue empty={isEmpty} emptyLabel={emptyLabel}>
+                {queueCards}
+              </Queue>
+            }
+            empty={emptyLabel}
           />
         ) : (
           <>
             <header className="flex flex-col gap-1">
               <h2 className="text-lg" style={{ color: "var(--text)", margin: 0 }}>
-                <Mono>{signals.length}</Mono> customers need you today.
+                {isEmpty ? (
+                  "You're all caught up today."
+                ) : (
+                  <>
+                    <Mono>{signals.length}</Mono> customers need you today.
+                  </>
+                )}
               </h2>
               <p
                 className="text-sm"
                 style={{ color: "var(--text-3, var(--text))", margin: 0 }}
               >
-                GoCSM tried what it could — these need a human.
+                {isEmpty
+                  ? "GoCSM handled everything overnight. Check back later, or look at the evidence below."
+                  : "GoCSM tried what it could — these need a human."}
               </p>
             </header>
-            <Queue>{queueCards}</Queue>
+            <Queue empty={isEmpty} emptyLabel={emptyLabel}>
+              {queueCards}
+            </Queue>
           </>
         )}
       </div>
