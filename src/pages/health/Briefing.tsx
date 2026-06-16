@@ -360,12 +360,12 @@ function EvidenceLayer() {
             score={evidence.agencyScore}
             band={evidence.agencyBand}
             tag="Agency health — for context, not action"
-            trend="−12 over 60 days"
             onHowScored={() => {
               const el = document.getElementById("briefing-methodology");
               if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
             }}
           />
+
 
           <div className="flex flex-col gap-2">
             <h4 className="text-sm" style={{ color: "var(--text-3)", margin: 0 }}>
