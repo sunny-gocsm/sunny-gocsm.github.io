@@ -12,8 +12,24 @@ import {
   MetricCard,
   Delta,
   QuickWinsChecklist,
+  EvidenceBoundary,
+  HealthScoreEvidence,
+  HealthTile,
+  PillarBar,
+  MethodologyExplainer,
 } from "@/gocsm-ds";
-import { header, digest, signals, type BriefingSignal, vitals, isNewAgency, coldStart } from "./briefing.fixtures";
+import {
+  ResponsiveContainer,
+  LineChart,
+  Line,
+  Area,
+  AreaChart,
+  CartesianGrid,
+  XAxis,
+  YAxis,
+  Tooltip,
+} from "recharts";
+import { header, digest, signals, type BriefingSignal, vitals, isNewAgency, coldStart, evidence } from "./briefing.fixtures";
 
 function greetingFor(name: string) {
   const h = new Date().getHours();
