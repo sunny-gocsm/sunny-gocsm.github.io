@@ -45,6 +45,7 @@ import {
   
   teamPulse,
   cohorts,
+  playbooks,
 } from "./briefing.fixtures";
 
 function greetingFor(name: string) {
