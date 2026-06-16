@@ -152,7 +152,7 @@ export const vitals: BriefingVital[] = [
   {
     label: "MRR at risk",
     value: "$58,307",
-    context: "90% of your MRR",
+    context: "across 912 accounts · 90% of MRR",
     tone: "neg",
   },
   {
@@ -168,8 +168,6 @@ export const vitals: BriefingVital[] = [
     delta: { value: "38%", direction: "down" },
     tone: "neg",
   },
-
-
 ];
 
 // ─── Cold start (gated by isNewAgency, default false) ─────────────────────────
