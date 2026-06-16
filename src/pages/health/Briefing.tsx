@@ -209,6 +209,7 @@ function ActionLayer({ mode }: { mode: "solo" | "team" }) {
   const isTeam = mode === "team";
   const isEmpty = signals.length === 0;
   const emptyLabel = "All caught up — no one needs you right now.";
+  const [openPlaybook, setOpenPlaybook] = useState<string | null>(null);
 
   const queueCards = (
     <>
@@ -230,7 +231,7 @@ function ActionLayer({ mode }: { mode: "solo" | "team" }) {
           }
           saveWindow={s.saveWindow ? <SaveWindow>{s.saveWindow}</SaveWindow> : null}
           provenance={<FactorPeek signal={s} />}
-          onSeePlaybook={() => {}}
+          onSeePlaybook={() => setOpenPlaybook(s.id)}
           action={<ActionButton>{s.actionLabel}</ActionButton>}
         />
       ))}
