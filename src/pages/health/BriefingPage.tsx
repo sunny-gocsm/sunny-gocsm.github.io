@@ -1,6 +1,18 @@
 import { useRef, useState } from "react";
 import { briefingFixtures, type BriefingMode } from "./briefing.fixtures";
-import { BriefingHeader, DigestTristat, LiveStatus, Icon } from "@/gocsm-ds";
+import {
+  BriefingHeader,
+  DigestTristat,
+  LiveStatus,
+  Icon,
+  SignalCard,
+  Queue,
+  ActionButton,
+  SaveWindow,
+  ProvenanceExpander,
+  Mono,
+} from "@/gocsm-ds";
+
 
 function greetingFor(name: string) {
   const h = new Date().getHours();
@@ -40,46 +52,71 @@ function Layer1Verdict({ onWaitingClick }: { mode: BriefingMode; onWaitingClick:
 function Layer2Action({ mode }: { mode: BriefingMode }) {
   const f = briefingFixtures;
   return (
-    <section data-layer="2-action" className="space-y-3 border border-border rounded-md p-4">
-      <div className="text-xs uppercase tracking-wider text-muted-foreground">Layer 2 — Action</div>
-      <div className="font-semibold">{f.queue.length} customers need you today</div>
-      <ol className="space-y-2">
+    <section data-layer="2-action" className="space-y-3">
+      <div>
+        <div className="text-base font-semibold">
+          <Mono>{f.queue.length}</Mono> customers need you today.
+        </div>
+        <div className="text-sm text-muted-foreground">
+          GoCSM tried what it could — these need a human.
+        </div>
+      </div>
+
+      <Queue>
         {f.queue.map((s) => (
-          <li key={s.id} className="text-sm border border-border rounded p-2">
-            <div className="flex items-center gap-2">
-              <span className="text-[10px] uppercase px-1 border rounded">{s.band}</span>
-              {mode === "team" && s.assignee && (
-                <span className="text-[10px] px-1 border rounded">{s.assignee}</span>
-              )}
-              <span className="font-medium">{s.account}</span>
-              <span className="text-muted-foreground">· ${s.mrr.toLocaleString()}</span>
-            </div>
-            <div className="mt-1">{s.story}</div>
-            <div className="mt-1 text-xs text-muted-foreground">
-              conf: {s.conf}{s.confDetail ? ` (${s.confDetail})` : ""}
-              {s.saveWindow ? ` · ${s.saveWindow}` : ""}
-            </div>
-            <div className="mt-1 flex items-center justify-between">
-              <span className="text-xs text-muted-foreground">
-                factors: {s.factors.map((x) => x.text).join(" · ")}
-              </span>
-              <button className="text-xs underline">{s.action.label}</button>
-            </div>
-          </li>
+          <SignalCard
+            key={s.id}
+            band={s.band}
+            account={s.account}
+            mrr={s.mrr}
+            story={s.story}
+            conf={s.conf}
+            confDetail={s.confDetail}
+            saveWindow={
+              s.saveWindow ? <SaveWindow>{s.saveWindow}</SaveWindow> : null
+            }
+            provenance={
+              <ProvenanceExpander
+                label="See the data behind this"
+                summary={null}
+              >
+                <ul className="text-xs space-y-1">
+                  {s.factors.map((fac, i) => (
+                    <li key={i}>
+                      <span className="text-muted-foreground">[{fac.pillar}]</span>{" "}
+                      {fac.text}
+                    </li>
+                  ))}
+                </ul>
+              </ProvenanceExpander>
+            }
+            onSeePlaybook={() => {
+              /* placeholder */
+            }}
+            action={
+              <ActionButton variant="primary" size="md">
+                {s.action.label}
+              </ActionButton>
+            }
+          />
         ))}
-      </ol>
+      </Queue>
 
       <div className="grid grid-cols-3 gap-2 mt-3">
         {f.vitals.map((v) => (
           <div key={v.label} className="border border-border rounded p-2">
             <div className="text-xs text-muted-foreground">{v.label}</div>
-            <div className="text-lg font-semibold">{v.value}</div>
+            <div className="text-lg font-semibold">
+              <Mono>{v.value}</Mono>
+            </div>
             <div className="text-xs text-muted-foreground">
-              {v.delta ? `${v.delta.value} · ` : ""}{v.context}
+              {v.delta ? `${v.delta.value} · ` : ""}
+              {v.context}
             </div>
           </div>
         ))}
       </div>
+
 
       {mode === "team" && (
         <div className="mt-3 border-t border-border pt-3">
