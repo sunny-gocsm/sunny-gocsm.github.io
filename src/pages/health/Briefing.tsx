@@ -157,6 +157,7 @@ function VitalsStrip() {
 }
 
 function CohortLane() {
+  if (!cohorts.length) return null;
   return (
     <section aria-label="Act by problem" className="flex flex-col gap-3">
       <header className="flex flex-col gap-1">
@@ -164,7 +165,7 @@ function CohortLane() {
           Act by problem
         </h3>
         <p className="text-sm" style={{ color: "var(--text-3, var(--text))", margin: 0 }}>
-          Opinionated clusters GoCSM noticed across your book — apply one play to the whole group.
+          GoCSM grouped these accounts because they share the same problem. Fix them as one group.
         </p>
       </header>
       <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
@@ -172,7 +173,7 @@ function CohortLane() {
           <FixItCard
             key={c.id}
             icon="users"
-            tag="Cohort"
+            tag="Group"
             text={
               <span>
                 {c.problem} · <Mono>{c.count}</Mono> accounts ·{" "}
