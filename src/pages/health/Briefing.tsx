@@ -1,4 +1,4 @@
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import {
   BriefingHeader,
   DigestTristat,
@@ -17,19 +17,33 @@ import {
   HealthTile,
   PillarBar,
   MethodologyExplainer,
+  TeamPulseStrip,
+  MyQueue,
+  FixItCard,
+  ExecChip,
 } from "@/gocsm-ds";
 import {
   ResponsiveContainer,
-  LineChart,
-  Line,
-  Area,
   AreaChart,
+  Area,
   CartesianGrid,
   XAxis,
   YAxis,
   Tooltip,
 } from "recharts";
-import { header, digest, signals, type BriefingSignal, vitals, isNewAgency, coldStart, evidence } from "./briefing.fixtures";
+import {
+  header,
+  digest,
+  signals,
+  type BriefingSignal,
+  vitals,
+  isNewAgency,
+  coldStart,
+  evidence,
+  teamMember,
+  teamPulse,
+  cohorts,
+} from "./briefing.fixtures";
 
 function greetingFor(name: string) {
   const h = new Date().getHours();
