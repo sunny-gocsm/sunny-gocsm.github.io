@@ -16,7 +16,7 @@ export interface BriefingSignal {
   account: string;
   mrr: number;
   story: string;
-  conf: Conf;
+  conf?: Conf;
   confDetail?: string;
   saveWindow?: string;
   actionLabel: string;
