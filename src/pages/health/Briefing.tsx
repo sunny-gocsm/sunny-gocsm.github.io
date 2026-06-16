@@ -98,42 +98,85 @@ function FactorPeek({ signal }: { signal: BriefingSignal }) {
   );
 }
 
+function VitalsStrip() {
+  return (
+    <section aria-label="Your agency this week" className="flex flex-col gap-3">
+      <h3 className="text-sm" style={{ color: "var(--text-3)", margin: 0 }}>
+        Your agency this week
+      </h3>
+      <div className="grid grid-cols-3 gap-4">
+        {vitals.map((v) => (
+          <MetricCard
+            key={v.label}
+            label={v.label}
+            value={v.value}
+            context={v.context}
+            accent={v.tone || null}
+            delta={
+              v.delta ? (
+                <Delta value={v.delta.value} direction={v.delta.direction} />
+              ) : null
+            }
+          />
+        ))}
+      </div>
+    </section>
+  );
+}
+
 function ActionLayer() {
+  if (isNewAgency) {
+    return (
+      <section aria-label="Action">
+        <QuickWinsChecklist
+          eyebrow="New agency"
+          promise={coldStart.banner}
+          plays={coldStart.plays.map((p) => ({ ...p, on: false, onToggle: () => {} }))}
+          onActivateAll={() => {}}
+        />
+      </section>
+    );
+  }
+
   return (
     <section
       id="briefing-queue"
       aria-label="Action"
-      className="flex flex-col gap-3"
+      className="flex flex-col gap-6"
     >
-      <header className="flex flex-col gap-1">
-        <h2 className="text-lg" style={{ color: "var(--text)", margin: 0 }}>
-          <Mono>{signals.length}</Mono> customers need you today.
-        </h2>
-        <p
-          className="text-sm"
-          style={{ color: "var(--text-3, var(--text))", margin: 0 }}
-        >
-          GoCSM tried what it could — these need a human.
-        </p>
-      </header>
+      <div className="flex flex-col gap-3">
+        <header className="flex flex-col gap-1">
+          <h2 className="text-lg" style={{ color: "var(--text)", margin: 0 }}>
+            <Mono>{signals.length}</Mono> customers need you today.
+          </h2>
+          <p
+            className="text-sm"
+            style={{ color: "var(--text-3, var(--text))", margin: 0 }}
+          >
+            GoCSM tried what it could — these need a human.
+          </p>
+        </header>
 
-      <Queue>
-        {signals.map((s) => (
-          <SignalCard
-            key={s.id}
-            band={s.band}
-            account={s.account}
-            mrr={s.mrr}
-            story={s.story}
-            conf={s.conf}
-            confDetail={s.confDetail}
-            saveWindow={s.saveWindow ? <SaveWindow>{s.saveWindow}</SaveWindow> : null}
-            provenance={<FactorPeek signal={s} />}
-            onSeePlaybook={() => {}}
-            action={<ActionButton>{s.actionLabel}</ActionButton>}
-          />
-        ))}
-      </Queue>
+        <Queue>
+          {signals.map((s) => (
+            <SignalCard
+              key={s.id}
+              band={s.band}
+              account={s.account}
+              mrr={s.mrr}
+              story={s.story}
+              conf={s.conf}
+              confDetail={s.confDetail}
+              saveWindow={s.saveWindow ? <SaveWindow>{s.saveWindow}</SaveWindow> : null}
+              provenance={<FactorPeek signal={s} />}
+              onSeePlaybook={() => {}}
+              action={<ActionButton>{s.actionLabel}</ActionButton>}
+            />
+          ))}
+        </Queue>
+      </div>
+
+      <VitalsStrip />
     </section>
   );
 }
