@@ -21,6 +21,7 @@ import {
   MyQueue,
   FixItCard,
   ExecChip,
+  Tabs,
 } from "@/gocsm-ds";
 import {
   ResponsiveContainer,
