@@ -18,7 +18,7 @@ import {
   PillarBar,
   WhyCard,
   TeamPulseStrip,
-  MyQueue,
+  
   FixItCard,
   ExecChip,
   Tabs,
@@ -41,7 +41,7 @@ import {
   isNewAgency,
   coldStart,
   evidence,
-  teamMember,
+  
   teamPulse,
   cohorts,
 } from "./briefing.fixtures";
@@ -242,54 +242,62 @@ function ActionLayer({ mode }: { mode: "solo" | "team" }) {
       className="flex flex-col gap-6"
     >
       {isTeam ? (
-        <TeamPulseStrip
-          title={teamPulse.title}
-          sub={teamPulse.sub}
-          load={teamPulse.load}
-          members={teamPulse.members}
-          escalations={teamPulse.escalations}
-        />
+        <div className="flex flex-col gap-2">
+          <p
+            className="text-sm"
+            style={{ color: "var(--text-3, var(--text))", margin: 0 }}
+          >
+            Team: <Mono>{teamPulse.load.open}</Mono> on track ·{" "}
+            <Mono>{teamPulse.load.due}</Mono> due ·{" "}
+            <Mono>{teamPulse.load.breach}</Mono> breaching
+          </p>
+          <details>
+            <summary
+              style={{
+                cursor: "pointer",
+                color: "var(--blue-7)",
+                fontSize: 14,
+                width: "fit-content",
+              }}
+            >
+              View team detail
+            </summary>
+            <div className="mt-3">
+              <TeamPulseStrip
+                title={teamPulse.title}
+                sub={teamPulse.sub}
+                load={teamPulse.load}
+                members={teamPulse.members}
+                escalations={teamPulse.escalations}
+              />
+            </div>
+          </details>
+        </div>
       ) : null}
 
       <div className="flex flex-col gap-3">
-        {isTeam ? (
-          <MyQueue
-            member={teamMember.name}
-            scope={teamMember.scope}
-            queue={
-              <Queue empty={isEmpty} emptyLabel={emptyLabel}>
-                {queueCards}
-              </Queue>
-            }
-            empty={emptyLabel}
-          />
-        ) : (
-          <>
-            <header className="flex flex-col gap-1">
-              <h2 className="text-lg" style={{ color: "var(--text)", margin: 0 }}>
-                {isEmpty ? (
-                  "You're all caught up today."
-                ) : (
-                  <>
-                    <Mono>{signals.length}</Mono> of <Mono>{digest.alerted}</Mono> need you today — these need a human.
-                  </>
-                )}
-
-              </h2>
-              <p
-                className="text-sm"
-                style={{ color: "var(--text-3, var(--text))", margin: 0 }}
-              >
-                {isEmpty
-                  ? "GoCSM handled everything overnight. Check back later, or look at the evidence below."
-                  : "GoCSM handled the other 3 overnight. These need a human."}
-              </p>
-            </header>
-            <Queue empty={isEmpty} emptyLabel={emptyLabel}>
-              {queueCards}
-            </Queue>
-          </>
-        )}
+        <header className="flex flex-col gap-1">
+          <h2 className="text-lg" style={{ color: "var(--text)", margin: 0 }}>
+            {isEmpty ? (
+              "You're all caught up today."
+            ) : (
+              <>
+                <Mono>{signals.length}</Mono> of <Mono>{digest.alerted}</Mono> need you today — these need a human.
+              </>
+            )}
+          </h2>
+          <p
+            className="text-sm"
+            style={{ color: "var(--text-3, var(--text))", margin: 0 }}
+          >
+            {isEmpty
+              ? "GoCSM handled everything overnight. Check back later, or look at the evidence below."
+              : "GoCSM handled the other 3 overnight. These need a human."}
+          </p>
+        </header>
+        <Queue empty={isEmpty} emptyLabel={emptyLabel}>
+          {queueCards}
+        </Queue>
       </div>
 
       {isTeam ? <CohortLane /> : null}
