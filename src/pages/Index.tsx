@@ -1,4 +1,5 @@
 import DashboardHeader from "@/components/dashboard/DashboardHeader";
+import BriefingPage from "@/pages/health/BriefingPage";
 import AgencyHealthHero from "@/components/overview/AgencyHealthHero";
 import HealthTrendCard from "@/components/overview/HealthTrendCard";
 import PortfolioOverviewCards from "@/components/overview/PortfolioOverviewCards";
@@ -94,7 +95,7 @@ const Index = () => {
     <div className="min-h-screen bg-background">
       <DashboardHeader activeTab="overview" />
       <main className="max-w-[1400px] mx-auto px-6 py-8">
-        <div />
+        <BriefingPage />
       </main>
     </div>
   );
