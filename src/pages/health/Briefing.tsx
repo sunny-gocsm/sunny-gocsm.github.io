@@ -130,12 +130,13 @@ function FactorPeek({ signal }: { signal: BriefingSignal }) {
 }
 
 function VitalsStrip() {
+  if (!vitals.length) return null;
   return (
     <section aria-label="Your agency this week" className="flex flex-col gap-3">
       <h3 className="text-sm" style={{ color: "var(--text-3)", margin: 0 }}>
         Your agency this week
       </h3>
-      <div className="grid grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         {vitals.map((v) => (
           <MetricCard
             key={v.label}
