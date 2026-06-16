@@ -180,6 +180,11 @@ export const isNewAgency = false;
 export const coldStart = {
   banner: "Most agencies see fewer cancellations within 14 days of turning on these 3 playbooks.",
   ctaLabel: "Start setup",
+  plays: [
+    { name: "Churn Risk Alerts", benefit: "Catch at-risk accounts before they cancel", icon: "bell", tone: "neg" },
+    { name: "Usage Nudges", benefit: "Re-engage customers who go quiet", icon: "mail", tone: "warn" },
+    { name: "Renewal Playbook", benefit: "Automate renewal outreach 30 days out", icon: "calendar", tone: "login" },
+  ] as const,
 };
 
 // ─── Team mode: "Act by problem" cohort cards ─────────────────────────────────
