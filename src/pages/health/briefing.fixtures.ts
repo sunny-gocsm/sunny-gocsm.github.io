@@ -93,7 +93,6 @@ export const signals: BriefingSignal[] = [
     account: "BadassLink",
     mrr: 890,
     story: "Payment failed 9 days ago. Dunning ran, still no card update.",
-    conf: "fact",
     actionLabel: "Call to fix",
     assignee: "Auto",
     factors: [
