@@ -270,3 +270,70 @@ export const evidence = {
     { text: "Feedback fine", pillar: "feedback", dir: "flat" },
   ] satisfies MethodologyFactor[],
 };
+
+// ─── Playbooks (lightweight previews shown in the See-playbook drawer) ────────
+export interface PlaybookPreview {
+  name: string;
+  does: string;
+  steps: string[];
+}
+
+export const playbooks: Record<string, PlaybookPreview> = {
+  // s1 — gone dark, renewal close: win-back / wake-up
+  s1: {
+    name: "Win back a customer who stopped logging in",
+    does: "Reach out the human way before the renewal date hits.",
+    steps: [
+      "Pull the last thing they did that worked, and lead with it.",
+      "Call the owner — voicemail script ready if they don't pick up.",
+      "Send a short follow-up email the same day, owner-to-owner tone.",
+      "If still silent in 3 days, offer a 15-min working session.",
+      "Log the outcome so the renewal team sees it.",
+    ],
+  },
+  // s2 — failed payment / dunning
+  s2: {
+    name: "Recover a failed payment without nagging",
+    does: "Get the card updated with one quiet, helpful touch.",
+    steps: [
+      "Confirm the card actually failed (not a bank hold).",
+      "Send a one-line note with a direct update-card link.",
+      "If no update in 48 hours, call and offer to take the card by phone.",
+      "Pause any churn alerts until billing is settled.",
+    ],
+  },
+  // s3 — pulling away (infra moving off)
+  s3: {
+    name: "Save a customer who's quietly pulling away",
+    does: "Surface the leaving signal early and open an honest conversation.",
+    steps: [
+      "Name what you're seeing — domain moved, workflows off — in plain words.",
+      "Ask the owner what changed; don't pitch yet.",
+      "Offer a migration-back or wind-down path, whichever fits.",
+      "Loop in the renewal owner so billing doesn't auto-charge a leaver.",
+      "Capture the reason so the next at-risk account benefits.",
+    ],
+  },
+  // s4 — recovering, check-in moment
+  s4: {
+    name: "Check in on a customer who's bouncing back",
+    does: "Reinforce momentum while they're paying attention again.",
+    steps: [
+      "Send a short, warm note acknowledging the recent activity.",
+      "Suggest one next step that builds on what they just did.",
+      "Offer a 20-min review if they want a hand.",
+      "Set a soft follow-up for 14 days out.",
+    ],
+  },
+  // s5 — thriving, testimonial ask
+  s5: {
+    name: "Ask a thriving customer for a testimonial",
+    does: "Catch them at peak love and make saying yes effortless.",
+    steps: [
+      "Lead with the specific win you've watched them have.",
+      "Ask for a 2-sentence quote, or a 10-min recorded call — their pick.",
+      "Provide a draft they can edit, so the lift is tiny.",
+      "Thank them publicly once it's live.",
+    ],
+  },
+};
