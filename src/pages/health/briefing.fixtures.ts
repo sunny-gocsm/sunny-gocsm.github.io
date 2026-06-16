@@ -123,7 +123,6 @@ export const signals: BriefingSignal[] = [
     account: "Lauren Fondriest",
     mrr: 540,
     story: "Recovering — owner logged in 2 days ago, score climbing. Now's the moment to engage.",
-    conf: "fact",
     actionLabel: "Send check-in",
     assignee: "Maya",
     factors: [
@@ -138,7 +137,6 @@ export const signals: BriefingSignal[] = [
     account: "This is Wellbeing",
     mrr: 1290,
     story: "Crushing it. Conversations 3× last month. Perfect moment for a testimonial ask.",
-    conf: "fact",
     actionLabel: "Ask testimonial",
     assignee: "Maya",
     factors: [
