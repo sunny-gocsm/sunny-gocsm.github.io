@@ -16,7 +16,7 @@ export interface BriefingSignal {
   account: string;
   mrr: number;
   story: string;
-  conf: Conf;
+  conf?: Conf;
   confDetail?: string;
   saveWindow?: string;
   actionLabel: string;
@@ -78,7 +78,6 @@ export const signals: BriefingSignal[] = [
     account: "Organize Your Online Biz",
     mrr: 1639,
     story: "Gone dark 32 days. Renewal in 14 days. GoCSM sent a reminder, no reply.",
-    conf: "fact",
     saveWindow: "Renewal in 14 days",
     actionLabel: "Call today",
     assignee: "Sinan",
@@ -94,7 +93,6 @@ export const signals: BriefingSignal[] = [
     account: "BadassLink",
     mrr: 890,
     story: "Payment failed 9 days ago. Dunning ran, still no card update.",
-    conf: "fact",
     actionLabel: "Call to fix",
     assignee: "Auto",
     factors: [
@@ -125,7 +123,6 @@ export const signals: BriefingSignal[] = [
     account: "Lauren Fondriest",
     mrr: 540,
     story: "Recovering — owner logged in 2 days ago, score climbing. Now's the moment to engage.",
-    conf: "fact",
     actionLabel: "Send check-in",
     assignee: "Maya",
     factors: [
@@ -140,7 +137,6 @@ export const signals: BriefingSignal[] = [
     account: "This is Wellbeing",
     mrr: 1290,
     story: "Crushing it. Conversations 3× last month. Perfect moment for a testimonial ask.",
-    conf: "fact",
     actionLabel: "Ask testimonial",
     assignee: "Maya",
     factors: [
