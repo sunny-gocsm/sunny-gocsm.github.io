@@ -1,4 +1,4 @@
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import {
   BriefingHeader,
   DigestTristat,
@@ -17,19 +17,33 @@ import {
   HealthTile,
   PillarBar,
   MethodologyExplainer,
+  TeamPulseStrip,
+  MyQueue,
+  FixItCard,
+  ExecChip,
 } from "@/gocsm-ds";
 import {
   ResponsiveContainer,
-  LineChart,
-  Line,
-  Area,
   AreaChart,
+  Area,
   CartesianGrid,
   XAxis,
   YAxis,
   Tooltip,
 } from "recharts";
-import { header, digest, signals, type BriefingSignal, vitals, isNewAgency, coldStart, evidence } from "./briefing.fixtures";
+import {
+  header,
+  digest,
+  signals,
+  type BriefingSignal,
+  vitals,
+  isNewAgency,
+  coldStart,
+  evidence,
+  teamMember,
+  teamPulse,
+  cohorts,
+} from "./briefing.fixtures";
 
 function greetingFor(name: string) {
   const h = new Date().getHours();
@@ -140,7 +154,40 @@ function VitalsStrip() {
   );
 }
 
-function ActionLayer() {
+function CohortLane() {
+  return (
+    <section aria-label="Act by problem" className="flex flex-col gap-3">
+      <header className="flex flex-col gap-1">
+        <h3 className="text-base" style={{ color: "var(--text)", margin: 0 }}>
+          Act by problem
+        </h3>
+        <p className="text-sm" style={{ color: "var(--text-3, var(--text))", margin: 0 }}>
+          Opinionated clusters GoCSM noticed across your book — apply one play to the whole group.
+        </p>
+      </header>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+        {cohorts.map((c) => (
+          <FixItCard
+            key={c.id}
+            icon="users"
+            tag="Cohort"
+            text={
+              <span>
+                {c.problem} · <Mono>{c.count}</Mono> accounts ·{" "}
+                <Mono>{c.mrrAtRisk}</Mono> at risk
+              </span>
+            }
+            conf={c.conf}
+            confDetail={c.confDetail}
+            action={<ActionButton>{c.actionLabel}</ActionButton>}
+          />
+        ))}
+      </div>
+    </section>
+  );
+}
+
+function ActionLayer({ mode }: { mode: "solo" | "team" }) {
   if (isNewAgency) {
     return (
       <section aria-label="Action">
@@ -154,43 +201,77 @@ function ActionLayer() {
     );
   }
 
+  const isTeam = mode === "team";
+
+  const queueCards = (
+    <>
+      {signals.map((s) => (
+        <SignalCard
+          key={s.id}
+          band={s.band}
+          account={s.account}
+          mrr={s.mrr}
+          story={s.story}
+          conf={s.conf}
+          confDetail={s.confDetail}
+          exec={
+            isTeam && s.assignee
+              ? s.assignee === "Auto"
+                ? <ExecChip auto />
+                : <ExecChip member={s.assignee} reassignable />
+              : null
+          }
+          saveWindow={s.saveWindow ? <SaveWindow>{s.saveWindow}</SaveWindow> : null}
+          provenance={<FactorPeek signal={s} />}
+          onSeePlaybook={() => {}}
+          action={<ActionButton>{s.actionLabel}</ActionButton>}
+        />
+      ))}
+    </>
+  );
+
   return (
     <section
       id="briefing-queue"
       aria-label="Action"
       className="flex flex-col gap-6"
     >
-      <div className="flex flex-col gap-3">
-        <header className="flex flex-col gap-1">
-          <h2 className="text-lg" style={{ color: "var(--text)", margin: 0 }}>
-            <Mono>{signals.length}</Mono> customers need you today.
-          </h2>
-          <p
-            className="text-sm"
-            style={{ color: "var(--text-3, var(--text))", margin: 0 }}
-          >
-            GoCSM tried what it could — these need a human.
-          </p>
-        </header>
+      {isTeam ? (
+        <TeamPulseStrip
+          title={teamPulse.title}
+          sub={teamPulse.sub}
+          load={teamPulse.load}
+          members={teamPulse.members}
+          escalations={teamPulse.escalations}
+        />
+      ) : null}
 
-        <Queue>
-          {signals.map((s) => (
-            <SignalCard
-              key={s.id}
-              band={s.band}
-              account={s.account}
-              mrr={s.mrr}
-              story={s.story}
-              conf={s.conf}
-              confDetail={s.confDetail}
-              saveWindow={s.saveWindow ? <SaveWindow>{s.saveWindow}</SaveWindow> : null}
-              provenance={<FactorPeek signal={s} />}
-              onSeePlaybook={() => {}}
-              action={<ActionButton>{s.actionLabel}</ActionButton>}
-            />
-          ))}
-        </Queue>
+      <div className="flex flex-col gap-3">
+        {isTeam ? (
+          <MyQueue
+            member={teamMember.name}
+            scope={teamMember.scope}
+            queue={<Queue>{queueCards}</Queue>}
+          />
+        ) : (
+          <>
+            <header className="flex flex-col gap-1">
+              <h2 className="text-lg" style={{ color: "var(--text)", margin: 0 }}>
+                <Mono>{signals.length}</Mono> customers need you today.
+              </h2>
+              <p
+                className="text-sm"
+                style={{ color: "var(--text-3, var(--text))", margin: 0 }}
+              >
+                GoCSM tried what it could — these need a human.
+              </p>
+            </header>
+            <Queue>{queueCards}</Queue>
+          </>
+        )}
       </div>
+
+      {isTeam ? <CohortLane /> : null}
 
       <VitalsStrip />
     </section>
@@ -324,10 +405,56 @@ function EvidenceLayer() {
 }
 
 export default function Briefing() {
+  const [params, setParams] = useSearchParams();
+  const mode: "solo" | "team" = params.get("mode") === "team" ? "team" : "solo";
+
+  const setMode = (m: "solo" | "team") => {
+    const next = new URLSearchParams(params);
+    if (m === "team") next.set("mode", "team");
+    else next.delete("mode");
+    setParams(next, { replace: true });
+  };
+
   return (
     <div className="flex flex-col gap-8">
+      <div className="flex justify-end">
+        <div
+          role="tablist"
+          aria-label="Briefing mode"
+          style={{
+            display: "inline-flex",
+            border: "1px solid var(--border)",
+            borderRadius: 8,
+            overflow: "hidden",
+            fontSize: 12,
+          }}
+        >
+          {(["solo", "team"] as const).map((m) => {
+            const sel = mode === m;
+            return (
+              <button
+                key={m}
+                type="button"
+                role="tab"
+                aria-selected={sel}
+                onClick={() => setMode(m)}
+                style={{
+                  padding: "var(--s-1) var(--s-3)",
+                  background: sel ? "var(--surface-2, var(--surface))" : "transparent",
+                  color: sel ? "var(--text)" : "var(--text-3, var(--text))",
+                  border: "none",
+                  cursor: "pointer",
+                  textTransform: "capitalize",
+                }}
+              >
+                {m}
+              </button>
+            );
+          })}
+        </div>
+      </div>
       <VerdictLayer />
-      <ActionLayer />
+      <ActionLayer mode={mode} />
       <EvidenceLayer />
     </div>
   );
