@@ -187,28 +187,56 @@ export const coldStart = {
   ] as const,
 };
 
+// ─── Team mode ────────────────────────────────────────────────────────────────
+export const teamMember = {
+  name: "Karthik",
+  scope: 47, // accounts assigned
+};
+
+export const teamPulse = {
+  title: "Team pulse",
+  sub: "Today",
+  load: { open: 38, due: 12, breach: 3 },
+  members: [
+    { name: "Sinan", stats: [{ v: 14, l: "open" }, { v: 2, l: "due", tone: "warn" }, { v: 1, l: "breach", tone: "neg" }] },
+    { name: "Maya",  stats: [{ v: 11, l: "open" }, { v: 3, l: "due", tone: "warn" }, { v: 0, l: "breach" }] },
+    { name: "Auto",  stats: [{ v: 13, l: "open" }, { v: 7, l: "due" }, { v: 2, l: "breach", tone: "neg" }] },
+  ],
+  escalations: [
+    { text: "Modern Physio breached SLA — no owner action in 48h." },
+    { text: "BadassLink dunning escalated to you by Auto." },
+  ],
+};
+
 // ─── Team mode: "Act by problem" cohort cards ─────────────────────────────────
-export const cohorts: CohortCard[] = [
+export const cohorts: (CohortCard & { mrrAtRisk: string; conf: Conf; confDetail?: string })[] = [
   {
     id: "c1",
     problem: "Payment failed, no card update",
     count: 14,
+    mrrAtRisk: "$12,480",
     delta: { value: "+3", direction: "bad-up" },
     actionLabel: "Run dunning playbook",
+    conf: "fact",
   },
   {
     id: "c2",
     problem: "Gone dark, renewal in 30 days",
     count: 9,
+    mrrAtRisk: "$8,910",
     delta: { value: "+1", direction: "bad-up" },
     actionLabel: "Send re-engagement",
+    conf: "projection",
+    confDetail: "based on login + email signals",
   },
   {
     id: "c3",
     problem: "Logins down 50%+ in 30 days",
     count: 22,
+    mrrAtRisk: "$19,640",
     delta: { value: "+5", direction: "bad-up" },
     actionLabel: "Trigger nudge sequence",
+    conf: "fact",
   },
 ];
 
