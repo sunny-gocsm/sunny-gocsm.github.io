@@ -25,6 +25,7 @@ import {
   FixItCard,
   ExecChip,
   Tabs,
+  DraftReviewSheet,
 } from "@/gocsm-ds";
 import {
   ResponsiveContainer,
@@ -48,6 +49,7 @@ import {
   teamPulse,
   cohorts,
   playbooks,
+  drafts,
 } from "./briefing.fixtures";
 
 function greetingFor(name: string) {
