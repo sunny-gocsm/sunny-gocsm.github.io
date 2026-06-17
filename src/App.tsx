@@ -16,6 +16,7 @@ import MoneyPage from "./pages/MoneyPage";
 import OnboardingPage from "./pages/OnboardingPage";
 import InsightsPage from "./pages/InsightsPage";
 import ConfigurePage from "./pages/ConfigurePage";
+import SetupPage from "./pages/SetupPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -28,6 +29,7 @@ const App = () => (
         <Sonner />
         <BrowserRouter>
           <Routes>
+            <Route path="/setup" element={<SetupPage />} />
             <Route element={<AppLayout />}>
               <Route path="/" element={<Index />} />
               <Route path="/today" element={<Index />} />
