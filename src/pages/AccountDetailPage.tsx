@@ -26,6 +26,7 @@ import { LoginTab } from "@/components/account/LoginTab";
 import { AdoptionTab } from "@/components/account/AdoptionTab";
 import { RevenueTab } from "@/components/account/RevenueTab";
 import { FeedbackTab } from "@/components/account/FeedbackTab";
+import { OnboardingTab } from "@/components/account/OnboardingTab";
 
 const TAB_IDS = [
   "health",
