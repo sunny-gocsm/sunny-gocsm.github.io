@@ -229,13 +229,13 @@ function StallDashboard({ onSendToToday }: { onSendToToday: (a: Account) => void
                 }}
               />
               <Bar dataKey="reached" radius={[6, 6, 0, 0]}>
-                {funnel.map((r, i) => (
+                {funnel.map((r) => (
                   <Cell
                     key={r.step}
                     fill={
                       bottleneck && r.step === bottleneck.step
-                        ? "var(--viz-4)"
-                        : `var(--viz-${(i % 3) + 1})`
+                        ? "var(--viz-seq-6)"
+                        : "var(--viz-seq-3)"
                     }
                   />
                 ))}
