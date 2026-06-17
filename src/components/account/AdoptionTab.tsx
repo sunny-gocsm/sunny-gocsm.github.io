@@ -251,8 +251,8 @@ export function AdoptionTab({ account }: { account: Account }) {
               },
             ]}
             empty={
-              <span style={{ color: "var(--text-3, var(--text))" }}>
-                No feature usage recorded yet.
+              <span style={{ color: "var(--text-2, var(--text))" }}>
+                No feature usage yet — once they start clicking around, you'll see it here.
               </span>
             }
           />
