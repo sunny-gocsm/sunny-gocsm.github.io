@@ -104,7 +104,14 @@ export default function PlaybooksPage() {
     [overrides],
   );
 
-  const filtered = enriched.filter((p) => filter === "all" || p.kind === filter);
+  const filtered = enriched
+    .filter((p) => filter === "all" || p.kind === filter)
+    .sort((a, b) => {
+      const am = a.count > 0 ? 0 : 1;
+      const bm = b.count > 0 ? 0 : 1;
+      if (am !== bm) return am - bm;
+      return b.count - a.count;
+    });
 
   const totalMatches = enriched.reduce((s, p) => s + p.count, 0);
   const onCount = enriched.filter((p) => p.state === "on").length;
