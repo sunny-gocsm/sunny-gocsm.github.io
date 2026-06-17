@@ -139,7 +139,6 @@ export default function AccountsPage() {
   const [trackedOnly, setTrackedOnly] = useState(false);
   const [setupLostOnly, setSetupLostOnly] = useState(false);
   const [selectedIds, setSelectedIds] = useState<(string | number)[]>([]);
-  const [selectedIds, setSelectedIds] = useState<(string | number)[]>([]);
   const [hiddenColumns, setHiddenColumns] = useState<string[]>([
     "adoption",
     "feedback",
@@ -183,9 +182,8 @@ export default function AccountsPage() {
     setter(next);
   };
 
-  const openAccount = openAccountId
-    ? accounts.find((a) => a.identity.id === openAccountId) ?? null
-    : null;
+
+
 
   // ----- Toolbar (filter chips) -------------------------------------------
 
