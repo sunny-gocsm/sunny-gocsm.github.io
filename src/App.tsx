@@ -39,7 +39,7 @@ const App = () => (
               <Route path="/money" element={<MoneyPage />} />
               <Route path="/insights" element={<InsightsPage />} />
               <Route path="/insights/:view" element={<InsightsPage />} />
-              <Route path="/configure" element={<StubPage title="Configure" />} />
+              <Route path="/configure" element={<ConfigurePage />} />
               <Route path="/activity" element={<Activity />} />
             </Route>
             <Route path="*" element={<NotFound />} />
