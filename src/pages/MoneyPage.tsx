@@ -322,8 +322,8 @@ function DailyChart() {
           <AreaChart data={data} margin={{ top: 8, right: 12, bottom: 0, left: 0 }}>
             <defs>
               <linearGradient id="mrrDay" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor="var(--viz-1)" stopOpacity={0.30} />
-                <stop offset="100%" stopColor="var(--viz-1)" stopOpacity={0} />
+                <stop offset="0%" stopColor="var(--viz-seq-5)" stopOpacity={0.32} />
+                <stop offset="100%" stopColor="var(--viz-seq-5)" stopOpacity={0} />
               </linearGradient>
             </defs>
             <CartesianGrid stroke="var(--viz-grid)" vertical={false} />
@@ -339,10 +339,10 @@ function DailyChart() {
               }}
               formatter={(v: number) => fmtMoney(v)}
             />
-            <Area dataKey="mrr" stroke="var(--viz-1)" fill="url(#mrrDay)" strokeWidth={2} />
-            <Line dataKey="cost" stroke="var(--viz-4)" strokeWidth={2} dot={false} type="monotone" />
-            <Line dataKey="margin" stroke="var(--viz-2)" strokeWidth={2} dot={false} type="monotone" />
-            <Legend wrapperStyle={{ fontSize: 12 }} />
+            <Area name="Revenue" dataKey="mrr" stroke="var(--viz-seq-5)" fill="url(#mrrDay)" strokeWidth={2} />
+            <Line name="Cost" dataKey="cost" stroke="var(--viz-seq-3)" strokeWidth={1.5} strokeDasharray="4 3" dot={false} type="monotone" />
+            <Line name="Margin" dataKey="margin" stroke="var(--viz-seq-6)" strokeWidth={2} dot={false} type="monotone" />
+            <Legend wrapperStyle={{ fontSize: 12 }} iconType="plainline" />
           </AreaChart>
         </ResponsiveContainer>
       </div>
