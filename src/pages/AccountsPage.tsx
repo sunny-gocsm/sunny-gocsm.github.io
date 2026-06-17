@@ -370,16 +370,15 @@ export default function AccountsPage() {
       key: "renewal",
       header: "Renewal",
       align: "right" as const,
-      mono: true,
       sortable: true,
       sortAccessor: (a: Account) => daysUntil(a.revenue.renewalDate),
       render: (a: Account) => {
         const d = daysUntil(a.revenue.renewalDate);
         return (
           <span style={{ display: "inline-flex", flexDirection: "column", alignItems: "flex-end", lineHeight: 1.2 }}>
-            <Mono>{fmtDate(a.revenue.renewalDate)}</Mono>
+            <span>{fmtDate(a.revenue.renewalDate)}</span>
             <span style={{ font: "var(--t-meta)", color: d >= 0 && d <= 14 ? "var(--red-7, var(--text))" : "var(--text-3, var(--text))" }}>
-              <Mono>{d >= 0 ? `${d}d` : `${d}d`}</Mono>
+              {d >= 0 ? `${d}d` : `${d}d`}
             </span>
           </span>
         );
@@ -389,7 +388,6 @@ export default function AccountsPage() {
       key: "lastLogin",
       header: "Last login",
       align: "right" as const,
-      mono: true,
       sortable: true,
       sortAccessor: (a: Account) => a.login.lastLoginDaysAgo,
       render: (a: Account) => a.login.lastLoginDaysAgo + "d ago",
