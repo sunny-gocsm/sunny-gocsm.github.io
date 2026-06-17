@@ -11,6 +11,7 @@ import StubPage from "./pages/stubs/StubPage";
 import AccountsPage from "./pages/AccountsPage";
 import AccountDetailPage from "./pages/AccountDetailPage";
 import PlaybooksPage from "./pages/PlaybooksPage";
+import PlaybookDetailPage from "./pages/PlaybookDetailPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
