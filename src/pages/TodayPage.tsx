@@ -234,13 +234,23 @@ export default function TodayPage() {
             sla={days >= 0 ? `${days}d to renewal` : `${Math.abs(days)}d overdue`}
             slaBreach={breach}
             action={
-              <Button
-                size="sm"
-                variant="secondary"
-                onClick={() => navigate(`/accounts/${a.identity.id}`)}
-              >
-                Open
-              </Button>
+              <span style={{ display: "inline-flex", gap: "var(--s-1)" }}>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  icon={<Icon name="book-open" />}
+                  onClick={() => openApply([a])}
+                >
+                  Apply
+                </Button>
+                <Button
+                  size="sm"
+                  variant="secondary"
+                  onClick={() => navigate(`/accounts/${a.identity.id}`)}
+                >
+                  Open
+                </Button>
+              </span>
             }
           />
         );
