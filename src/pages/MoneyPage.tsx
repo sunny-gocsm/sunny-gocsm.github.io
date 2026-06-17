@@ -410,11 +410,12 @@ function ProductChart() {
               }}
               formatter={(v: number) => fmtMoney(v)}
             />
-            <Bar dataKey="mrr" radius={[0, 6, 6, 0]}>
-              {data.map((_, i) => (
-                <Cell key={i} fill={`var(--viz-${(i % 5) + 1})`} />
+            <Bar dataKey="mrr" name="MRR" radius={[0, 6, 6, 0]}>
+              {data.map((d, i) => (
+                <Cell key={i} fill={`var(--viz-${(i % 5) + 1})`} name={d.product} />
               ))}
             </Bar>
+            <Legend wrapperStyle={{ fontSize: 12 }} payload={data.map((d, i) => ({ value: d.product, type: "square" as const, color: `var(--viz-${(i % 5) + 1})`, id: d.product }))} />
           </BarChart>
         </ResponsiveContainer>
       </div>
