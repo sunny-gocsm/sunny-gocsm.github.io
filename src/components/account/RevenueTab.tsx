@@ -114,6 +114,7 @@ export function RevenueTab({ account }: { account: Account }) {
           value={<Mono>{fmtPct(revenue.spendTrend)}</Mono>}
           icon={<Icon name="trending-up" />}
           iconTone={revenue.spendTrend >= 0 ? "pos" : "warn"}
+          accent={worst === "spendTrend" ? "neg" : null}
           delta={
             <Delta
               value={fmtPct(revenue.spendTrend)}
@@ -130,6 +131,7 @@ export function RevenueTab({ account }: { account: Account }) {
           }
           icon={<Icon name="activity" />}
           iconTone={revenue.revenueHealth === "healthy" ? "pos" : revenue.revenueHealth === "watch" ? "warn" : "neg"}
+          accent={worst === "revenueHealth" ? "neg" : null}
         />
         <MetricCard
           label="Renewal"
@@ -140,12 +142,14 @@ export function RevenueTab({ account }: { account: Account }) {
           }
           icon={<Icon name="calendar" />}
           iconTone={renewalDays <= 30 ? "warn" : "info"}
+          accent={worst === "renewal" ? "neg" : null}
         />
         <MetricCard
           label="Wallet balance"
           value={<Mono>{fmtMoney(revenue.walletBalance)}</Mono>}
           icon={<Icon name="wallet" />}
           iconTone={revenue.walletBalance < revenue.walletSpend30d * 0.25 ? "warn" : "info"}
+          accent={worst === "wallet" ? "neg" : null}
         />
         <MetricCard
           label="Wallet spend · 30d"
@@ -164,7 +168,6 @@ export function RevenueTab({ account }: { account: Account }) {
           value={<Mono>{fmtMoney(revenue.totalCost)}</Mono>}
           icon={<Icon name="receipt" />}
           iconTone={lowMargin ? "warn" : "info"}
-          accent={lowMargin ? "neg" : null}
           delta={
             <Delta
               value={fmtPct(-Math.round(revenue.spendTrend / 2))}
@@ -178,7 +181,7 @@ export function RevenueTab({ account }: { account: Account }) {
           value={<Mono>{fmtPct(revenue.margin)}</Mono>}
           icon={<Icon name="percent" />}
           iconTone={revenue.margin >= 40 ? "pos" : revenue.margin >= 20 ? "warn" : "neg"}
-          accent={revenue.margin >= 40 ? "pos" : revenue.margin < 20 ? "neg" : null}
+          accent={worst === "margin" ? "neg" : null}
         />
       </div>
 
