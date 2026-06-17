@@ -27,21 +27,18 @@ import {
   ConfTag,
   DataTable,
   Delta,
-  HealthTile,
   Icon,
   MetricCard,
   Mono,
   Tabs,
 } from "@/gocsm-ds";
 import {
-  TODAY,
   allAccounts,
   daysSince,
   dormantGrowth,
   lostStickySetups,
   signals,
   type Account,
-  type Signal,
 } from "@/fixtures";
 
 type View = "login" | "adoption" | "feedback" | "signals";
