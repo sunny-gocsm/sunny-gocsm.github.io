@@ -265,23 +265,8 @@ export default function TodayPage() {
   const renderQueueRow = (a: Account) => {
     const days = daysUntil(a.revenue.renewalDate);
     const breach = days >= 0 && days <= 7;
-    const isHandled = handled.has(a.identity.id);
     return (
-      <div
-        key={a.identity.id}
-        className={`queue-row${isHandled ? " celebrate" : ""}`}
-        style={{
-          opacity: isHandled ? 0.55 : 1,
-          textDecoration: isHandled ? "line-through" : "none",
-        }}
-      >
-        <input
-          type="checkbox"
-          aria-label={`Mark ${a.identity.name} handled`}
-          checked={isHandled}
-          onChange={() => toggleHandled(a.identity.id)}
-          style={{ flexShrink: 0, width: 16, height: 16, cursor: "pointer" }}
-        />
+      <div key={a.identity.id} className="queue-row">
         <span
           aria-hidden
           style={{
@@ -336,7 +321,7 @@ export default function TodayPage() {
             size="sm"
             variant="primary"
             icon={<Icon name="book-open" />}
-            onClick={() => openApply([a])}
+            onClick={() => applyToOne(a)}
           >
             Apply play
           </Button>
@@ -346,6 +331,15 @@ export default function TodayPage() {
             onClick={() => navigate(`/accounts/${a.identity.id}`)}
           >
             Open
+          </Button>
+          <Button
+            size="sm"
+            variant="ghost"
+            title="Clear this row from today"
+            icon={<Icon name="check" />}
+            onClick={() => markHandled(a.identity.id, "dismissed")}
+          >
+            Mark done
           </Button>
         </span>
       </div>
