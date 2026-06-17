@@ -213,49 +213,131 @@ export default function TodayPage() {
   const topReason = queue[0]
     ? reasonFor(queue[0])
     : "All clear — nothing urgent on the board.";
+  const topTone: "pos" | "watch" | "risk" =
+    queue[0]?.health.band === "atrisk"
+      ? "risk"
+      : queue[0]
+      ? "watch"
+      : "pos";
 
-  const queueNode = (
-    <div style={{ display: "flex", flexDirection: "column", gap: "var(--s-2)" }}>
-      {queue.map((a) => {
-        const days = daysUntil(a.revenue.renewalDate);
-        const breach = days >= 0 && days <= 7;
-        return (
-          <QueueRow
-            key={a.identity.id}
-            subject={
-              <span>
-                <strong style={{ color: "var(--text)" }}>{a.identity.name}</strong>{" "}
-                <span style={{ color: "var(--text-3, var(--text))" }}>· {reasonFor(a)}</span>
-              </span>
-            }
-            impact={<Mono>{fmtMoney(a.revenue.mrr)}</Mono>}
-            blockedBy={a.onboarding.blocked_by ?? undefined}
-            sla={days >= 0 ? `${days}d to renewal` : `${Math.abs(days)}d overdue`}
-            slaBreach={breach}
-            action={
-              <span style={{ display: "inline-flex", gap: "var(--s-1)" }}>
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  icon={<Icon name="book-open" />}
-                  onClick={() => openApply([a])}
-                >
-                  Apply
-                </Button>
-                <Button
-                  size="sm"
-                  variant="secondary"
-                  onClick={() => navigate(`/accounts/${a.identity.id}`)}
-                >
-                  Open
-                </Button>
-              </span>
-            }
-          />
-        );
-      })}
-    </div>
-  );
+  const [handled, setHandled] = useState<Set<string>>(new Set());
+  const toggleHandled = (id: string) =>
+    setHandled((prev) => {
+      const next = new Set(prev);
+      next.has(id) ? next.delete(id) : next.add(id);
+      return next;
+    });
+  const activeQueue = queue.filter((a) => !handled.has(a.identity.id));
+  const handledCount = queue.filter((a) => handled.has(a.identity.id)).length;
+
+  const initials = (name: string) =>
+    name
+      .split(/\s+/)
+      .map((w) => w[0])
+      .filter(Boolean)
+      .slice(0, 2)
+      .join("")
+      .toUpperCase();
+
+  const bandColor = (band: Account["health"]["band"]) =>
+    band === "thriving"
+      ? "var(--health-thriving-strong)"
+      : band === "healthy"
+      ? "var(--health-healthy-strong)"
+      : band === "watch"
+      ? "var(--health-watch-strong)"
+      : "var(--health-atrisk-strong)";
+
+  const renderQueueRow = (a: Account) => {
+    const days = daysUntil(a.revenue.renewalDate);
+    const breach = days >= 0 && days <= 7;
+    const isHandled = handled.has(a.identity.id);
+    return (
+      <div
+        key={a.identity.id}
+        className="queue-row"
+        style={{
+          opacity: isHandled ? 0.5 : 1,
+          textDecoration: isHandled ? "line-through" : "none",
+        }}
+      >
+        <input
+          type="checkbox"
+          aria-label={`Mark ${a.identity.name} handled`}
+          checked={isHandled}
+          onChange={() => toggleHandled(a.identity.id)}
+          style={{ flexShrink: 0, width: 16, height: 16, cursor: "pointer" }}
+        />
+        <span
+          aria-hidden
+          style={{
+            display: "inline-flex",
+            alignItems: "center",
+            justifyContent: "center",
+            width: 28,
+            height: 28,
+            borderRadius: 999,
+            background: "var(--surface-2)",
+            color: "var(--text-2, var(--text))",
+            fontSize: 11,
+            fontWeight: 600,
+            flexShrink: 0,
+          }}
+        >
+          {initials(a.identity.name)}
+        </span>
+        <span
+          aria-hidden
+          title={bandLabel(a.health.band)}
+          style={{
+            width: 8,
+            height: 8,
+            borderRadius: 999,
+            background: bandColor(a.health.band),
+            flexShrink: 0,
+          }}
+        />
+        <div style={{ flex: 1, minWidth: 0, fontSize: 14 }}>
+          <strong style={{ color: "var(--text)", fontWeight: 600 }}>{a.identity.name}</strong>{" "}
+          <span style={{ color: "var(--text-2, var(--text))" }}>· {reasonFor(a)}</span>
+        </div>
+        <span className="queue-impact">{fmtMoney(a.revenue.mrr)}</span>
+        <span
+          style={{
+            fontFamily: "var(--font-mono)",
+            fontVariantNumeric: "tabular-nums",
+            fontSize: 11,
+            fontWeight: 600,
+            padding: "3px 8px",
+            borderRadius: 999,
+            background: breach ? "var(--health-atrisk-soft)" : "var(--surface-2)",
+            color: breach ? "var(--health-atrisk-strong)" : "var(--text-2, var(--text))",
+            flexShrink: 0,
+          }}
+        >
+          {days >= 0 ? `${days}d to renewal` : `${Math.abs(days)}d overdue`}
+        </span>
+        <span style={{ display: "inline-flex", gap: "var(--s-1)", flexShrink: 0 }}>
+          <Button
+            size="sm"
+            variant="primary"
+            icon={<Icon name="book-open" />}
+            onClick={() => openApply([a])}
+          >
+            Apply play
+          </Button>
+          <Button
+            size="sm"
+            variant="ghost"
+            onClick={() => navigate(`/accounts/${a.identity.id}`)}
+          >
+            Open
+          </Button>
+        </span>
+      </div>
+    );
+  };
+
 
   const teamMembers = [
     {
