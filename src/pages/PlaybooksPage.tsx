@@ -328,7 +328,22 @@ function OutcomesTab() {
 
       {/* The story feed */}
       <section style={{ display: "flex", flexDirection: "column", gap: "var(--s-3)" }}>
-        <h3 style={{ font: "var(--t-h3)", margin: 0 }}>Verified wins</h3>
+        <div style={{ display: "flex", alignItems: "center", gap: "var(--s-2)" }}>
+          <span
+            aria-hidden
+            style={{
+              width: 30, height: 30, borderRadius: 9,
+              display: "grid", placeItems: "center",
+              background: "var(--info-soft)", color: "var(--info-7)",
+            }}
+          >
+            <Icon name="check-circle" />
+          </span>
+          <h3 style={{ font: "var(--t-h2)", margin: 0 }}>Verified wins</h3>
+          <span style={{ font: "var(--t-meta)", color: "var(--text-3, var(--text))", marginLeft: "auto" }}>
+            <Mono>{sorted.length}</Mono> this week
+          </span>
+        </div>
         <div style={{ display: "flex", flexDirection: "column", gap: "var(--s-3)" }}>
           {sorted.map((o) => {
             const pb = outcomePlaybook(o);
