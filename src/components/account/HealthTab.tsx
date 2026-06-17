@@ -6,9 +6,7 @@ import {
   Mono,
   ScoreRing,
   Delta,
-  HealthTile,
   PillarBar,
-  Verdict,
   WhyCard,
   ConfTag,
   HealthScoreEvidence,
@@ -31,6 +29,9 @@ const PILLAR_META: Record<
 
 const scoreBand = (n: number): HealthBand =>
   n >= 80 ? "thriving" : n >= 60 ? "healthy" : n >= 40 ? "watch" : "atrisk";
+
+const bandSeverity = (b: HealthBand): number =>
+  b === "atrisk" ? 3 : b === "watch" ? 2 : b === "healthy" ? 1 : 0;
 
 const pillarLine = (key: PillarKey, score: number): string => {
   const b = scoreBand(score);
@@ -118,7 +119,7 @@ interface Props {
 }
 
 export function HealthTab({ account, onNavigateTab }: Props) {
-  const { health, identity } = account;
+  const { health, identity, onboarding, lifecycle } = account;
   const [methodOpen, setMethodOpen] = useState(false);
 
   const pillars: PillarKey[] = ["productAdoption", "revenue", "login", "sentiment"];
@@ -163,9 +164,28 @@ export function HealthTab({ account, onNavigateTab }: Props) {
     ),
   }));
 
+  // Determine the single worst pillar: lowest score, ties broken by band severity.
+  const worstPillar = useMemo(() => {
+    const scored = pillars.map((k) => ({
+      key: k,
+      score: health.pillarScores[k],
+      band: scoreBand(health.pillarScores[k]),
+    }));
+    scored.sort((a, b) => {
+      if (a.score !== b.score) return a.score - b.score;
+      return bandSeverity(b.band) - bandSeverity(a.band);
+    });
+    return scored[0]?.key ?? null;
+  }, [health.pillarScores]);
+
+  // Health slip: onboarding 100% but lifecycle regressed.
+  const showHealthSlip =
+    onboarding.pct_complete === 100 &&
+    (lifecycle.stage === "lapsing" || lifecycle.stage === "dormant" || lifecycle.stage === "churned");
+
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "var(--s-5)" }}>
-      {/* Top: ring + trend + delta + verdict */}
+      {/* Top: ring + trend + delta */}
       <Card padded>
         <div style={{ display: "flex", flexWrap: "wrap", gap: "var(--s-6)", alignItems: "center" }}>
           <ScoreRing score={health.score} band={health.band} size={144} />
@@ -182,21 +202,13 @@ export function HealthTab({ account, onNavigateTab }: Props) {
               />
             </div>
           </div>
-          <div style={{ flex: 1, minWidth: 280 }}>
-            <Verdict
-              tone={health.band === "atrisk" ? "risk" : health.band === "watch" ? "watch" : "pos"}
-              band={health.band}
-              score={<Mono>{health.score}</Mono>}
-            >
-              {health.band === "atrisk"
-                ? `${identity.name} is at risk — score ${health.score}, trending ${health.delta < 0 ? "down" : "flat"}.`
-                : health.band === "watch"
-                ? `${identity.name} needs a check-in — score ${health.score}.`
-                : health.band === "thriving"
-                ? `${identity.name} is thriving — score ${health.score}, advocacy-ready.`
-                : `${identity.name} is healthy — score ${health.score}, steady.`}
-            </Verdict>
-          </div>
+          {showHealthSlip ? (
+            <div style={{ flex: 1, minWidth: 280 }}>
+              <p style={{ font: "var(--t-body)", color: "var(--text-2)", margin: 0 }}>
+                Setup&apos;s done — this is a health slip, not a setup problem.
+              </p>
+            </div>
+          ) : null}
         </div>
       </Card>
 
@@ -204,7 +216,7 @@ export function HealthTab({ account, onNavigateTab }: Props) {
       <section style={{ display: "flex", flexDirection: "column", gap: "var(--s-3)" }}>
         <header style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: "var(--s-3)" }}>
           <div>
-            <h3 style={{ font: "var(--t-h3)", margin: 0 }}>What's impacting health</h3>
+            <h3 style={{ font: "var(--t-h3)", margin: 0 }}>What&apos;s impacting health</h3>
             <p style={{ font: "var(--t-body)", color: "var(--text-3, var(--text))", margin: "var(--s-1) 0 0" }}>
               Four pillars roll up to one score. Click a pillar to see the detail.
             </p>
@@ -225,28 +237,29 @@ export function HealthTab({ account, onNavigateTab }: Props) {
             const score = health.pillarScores[key];
             const band = scoreBand(score);
             const meta = PILLAR_META[key];
+            const isWorst = worstPillar === key;
+            const cls = `pillar-card ${band}${isWorst ? " worst" : ""}`;
             return (
               <button
                 key={key}
                 type="button"
                 onClick={() => onNavigateTab(meta.tab)}
-                style={{
-                  textAlign: "left",
-                  padding: 0,
-                  border: 0,
-                  background: "transparent",
-                  cursor: "pointer",
-                }}
+                className={cls}
+                style={{ textAlign: "left", padding: 0, border: 0, background: "transparent", cursor: "pointer" }}
               >
-                <div style={{ display: "flex", flexDirection: "column", gap: "var(--s-2)" }}>
-                  <HealthTile band={band} count={<Mono>{score}</Mono>} pct={`${meta.weight}%`} label={meta.label} />
-                  <div style={{ display: "flex", alignItems: "flex-start", gap: "var(--s-2)", paddingInline: "var(--s-2)" }}>
-                    <span style={{ font: "var(--t-meta)", color: "var(--text-3, var(--text))", flex: 1 }}>
-                      {pillarLine(key, score)}
-                    </span>
-                    {lowDataPillar(key) ? <ConfTag basis="projection" detail="low data" /> : null}
-                  </div>
-                </div>
+                <span className="p-label">{meta.label}</span>
+                <span className="p-score">{score}</span>
+                <span className="p-bar">
+                  <i style={{ width: `${score}%` }} />
+                </span>
+                <span style={{ font: "var(--t-meta)", color: "var(--text-3, var(--text))", marginTop: 2 }}>
+                  {pillarLine(key, score)}
+                </span>
+                {lowDataPillar(key) ? (
+                  <span style={{ marginTop: 2 }}>
+                    <ConfTag basis="projection" detail="low data" />
+                  </span>
+                ) : null}
               </button>
             );
           })}
@@ -302,3 +315,4 @@ export function HealthTab({ account, onNavigateTab }: Props) {
     </div>
   );
 }
+
