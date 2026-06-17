@@ -511,7 +511,7 @@ export default function TodayPage() {
             {
               icon: "alert-triangle",
               title: "Setup lost — may be leaving",
-              blurb: "A sticky setup (domain, A2P, funnel) just went backwards. Heaviest regression signal.",
+              blurb: "A sticky setup (domain, A2P, funnel) just went backwards — the biggest backwards move on the board.",
               accounts: lostSticky,
               accent: "atrisk" as const,
               emptyLine: "All setups holding steady — nothing sliding backward.",
