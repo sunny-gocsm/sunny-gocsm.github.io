@@ -275,11 +275,12 @@ export default function AccountsPage() {
         variant="primary"
         size="sm"
         icon={<Icon name="book-open" />}
-        onClick={() => {
-          // Stub — PlaybookActivation drawer lands in P14.
-          // eslint-disable-next-line no-console
-          console.log("Apply a Playbook to", selectedIds);
-        }}
+        onClick={() =>
+          setDrawerScope({
+            kind: "accounts",
+            accountIds: selectedIds.map(String),
+          })
+        }
       >
         Apply a Playbook
       </Button>
