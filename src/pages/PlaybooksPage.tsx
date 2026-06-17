@@ -58,16 +58,25 @@ const FILTERS: { id: Filter; label: string }[] = [
 
 const STATE_LABEL: Record<PlaybookState, string> = {
   off: "Off",
-  ranonce: "Ran once",
-  on: "On · autopilot",
+  ranonce: "✓ Ran once",
+  on: "● On · autopilot",
   paused: "Paused",
 };
 
 const STATE_VARIANT: Record<PlaybookState, "neutral" | "warn" | "pos" | "blue"> = {
   off: "neutral",
-  ranonce: "warn",
+  ranonce: "blue",
   on: "pos",
-  paused: "blue",
+  paused: "warn",
+};
+
+const ZERO_LINE: Record<Playbook["kind"], string> = {
+  billing: "Nothing to do — payments are clean. Armed and watching.",
+  retention: "All renewals look calm. Armed and watching.",
+  save: "No one needs saving right now. Armed and watching.",
+  adoption: "Adoption is steady. Armed and watching.",
+  onboarding: "Setups are on track. Armed and watching.",
+  expansion: "No expansion signals today. Armed and watching.",
 };
 
 function activateLabel(state: PlaybookState): string {
@@ -95,7 +104,14 @@ export default function PlaybooksPage() {
     [overrides],
   );
 
-  const filtered = enriched.filter((p) => filter === "all" || p.kind === filter);
+  const filtered = enriched
+    .filter((p) => filter === "all" || p.kind === filter)
+    .sort((a, b) => {
+      const am = a.count > 0 ? 0 : 1;
+      const bm = b.count > 0 ? 0 : 1;
+      if (am !== bm) return am - bm;
+      return b.count - a.count;
+    });
 
   const totalMatches = enriched.reduce((s, p) => s + p.count, 0);
   const onCount = enriched.filter((p) => p.state === "on").length;
@@ -185,6 +201,7 @@ export default function PlaybooksPage() {
                   outcome={p.outcome}
                   activateLabel={activateLabel(p.state)}
                   onActivate={() => advance(p)}
+                  data-kind={p.kind}
                 />
                 <div
                   style={{
@@ -195,12 +212,40 @@ export default function PlaybooksPage() {
                     paddingInline: "var(--s-2)",
                   }}
                 >
-                  <Badge variant={STATE_VARIANT[p.state]} dot>
+                  <Badge variant={STATE_VARIANT[p.state]} dot={p.state === "off"}>
                     {STATE_LABEL[p.state]}
                   </Badge>
-                  <span style={{ font: "var(--t-meta)", color: "var(--text-3, var(--text))" }}>
-                    <Mono>{p.count}</Mono> account{p.count === 1 ? "" : "s"} match today
-                  </span>
+                  {p.count > 0 ? (
+                    <span style={{ font: "var(--t-meta)", color: "var(--text-3, var(--text))" }}>
+                      <Mono
+                        style={{
+                          color:
+                            p.kind === "billing" || p.kind === "save"
+                              ? "var(--health-atrisk-strong)"
+                              : p.kind === "expansion"
+                              ? "var(--pos-7)"
+                              : "var(--warn-7)",
+                          fontWeight: 700,
+                          fontSize: 14,
+                        }}
+                      >
+                        {p.count}
+                      </Mono>{" "}
+                      account{p.count === 1 ? "" : "s"} match today
+                    </span>
+                  ) : (
+                    <span
+                      style={{
+                        font: "var(--t-meta)",
+                        color: "var(--pos-7)",
+                        display: "inline-flex",
+                        alignItems: "center",
+                        gap: 4,
+                      }}
+                    >
+                      <Icon name="shield-check" /> {ZERO_LINE[p.kind]}
+                    </span>
+                  )}
                 </div>
               </div>
             ))}
@@ -232,12 +277,35 @@ function OutcomesTab() {
   const sorted = [...outcomes].sort((a, b) => a.daysAgo - b.daysAgo);
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: "var(--s-5)" }}>
-      {/* Weekly digest — the same brief as a message */}
-      <section style={{ display: "flex", flexDirection: "column", gap: "var(--s-2)" }}>
-        <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between" }}>
-          <h3 style={{ font: "var(--t-h3)", margin: 0 }}>This week, in plain words</h3>
-          <ConfTag basis="fact" detail="verified via signal change after a play ran" />
+    <div style={{ display: "flex", flexDirection: "column", gap: "var(--s-6)" }}>
+      {/* Win-loop hero band */}
+      <section
+        style={{
+          borderRadius: "var(--r-lg, 14px)",
+          padding: "var(--s-5) var(--s-5)",
+          background:
+            "linear-gradient(135deg, var(--pos-soft) 0%, var(--blue-2) 60%, var(--surface) 100%)",
+          border: "1px solid var(--border)",
+          display: "flex",
+          flexDirection: "column",
+          gap: "var(--s-3)",
+        }}
+      >
+        <div style={{ display: "flex", alignItems: "center", gap: "var(--s-2)" }}>
+          <span
+            aria-hidden
+            style={{
+              width: 36, height: 36, borderRadius: 11,
+              display: "grid", placeItems: "center",
+              background: "var(--pos-soft)", color: "var(--pos-7)",
+            }}
+          >
+            <Icon name="trophy" />
+          </span>
+          <h2 style={{ font: "var(--t-h2)", margin: 0 }}>This week, in plain words</h2>
+          <span style={{ marginLeft: "auto" }}>
+            <ConfTag basis="fact" detail="verified via signal change after a play ran" />
+          </span>
         </div>
         <Card padded>
           <WeeklyDigest
@@ -260,7 +328,22 @@ function OutcomesTab() {
 
       {/* The story feed */}
       <section style={{ display: "flex", flexDirection: "column", gap: "var(--s-3)" }}>
-        <h3 style={{ font: "var(--t-h3)", margin: 0 }}>Verified wins</h3>
+        <div style={{ display: "flex", alignItems: "center", gap: "var(--s-2)" }}>
+          <span
+            aria-hidden
+            style={{
+              width: 30, height: 30, borderRadius: 9,
+              display: "grid", placeItems: "center",
+              background: "var(--info-soft)", color: "var(--info-7)",
+            }}
+          >
+            <Icon name="check-circle" />
+          </span>
+          <h3 style={{ font: "var(--t-h2)", margin: 0 }}>Verified wins</h3>
+          <span style={{ font: "var(--t-meta)", color: "var(--text-3, var(--text))", marginLeft: "auto" }}>
+            <Mono>{sorted.length}</Mono> this week
+          </span>
+        </div>
         <div style={{ display: "flex", flexDirection: "column", gap: "var(--s-3)" }}>
           {sorted.map((o) => {
             const pb = outcomePlaybook(o);
