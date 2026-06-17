@@ -245,7 +245,7 @@ export function HealthTab({ account, onNavigateTab }: Props) {
                 type="button"
                 onClick={() => onNavigateTab(meta.tab)}
                 className={cls}
-                style={{ textAlign: "left", padding: 0, border: 0, background: "transparent", cursor: "pointer" }}
+                style={{ textAlign: "left", border: 0, cursor: "pointer" }}
               >
                 <span className="p-label">{meta.label}</span>
                 <span className="p-score">{score}</span>
