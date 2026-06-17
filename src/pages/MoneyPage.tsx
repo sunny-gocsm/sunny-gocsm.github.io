@@ -34,6 +34,7 @@ import {
   Mono,
   Tabs,
 } from "@/gocsm-ds";
+import { PageRibbon } from "@/components/PageRibbon";
 import {
   agencyRollup,
   allAccounts,
@@ -684,29 +685,16 @@ export default function MoneyPage() {
         gap: "var(--s-5)",
       }}
     >
-      <header style={{ display: "flex", flexDirection: "column", gap: "var(--s-2)" }}>
-        <h1 style={{ font: "var(--t-h2)", margin: 0 }}>Money</h1>
-        <p style={{ font: "var(--t-body)", color: "var(--text-3, var(--text))", margin: 0 }}>
-          The portfolio's revenue story — every cohort can be sent to Today as a problem cohort.
-        </p>
-        <div
-          style={{
-            display: "flex",
-            flexWrap: "wrap",
-            gap: "var(--s-3)",
-            font: "var(--t-meta)",
-            color: "var(--text-3, var(--text))",
-          }}
-        >
-          <span>Total MRR <Mono>{fmtMoney(rollup.mrr)}</Mono></span>
-          <span>·</span>
-          <span>MRR at risk <Mono>{fmtMoney(rollup.mrrAtRisk)}</Mono></span>
-          <span>·</span>
-          <span>Total cost <Mono>{fmtMoney(totalCost)}</Mono></span>
-          <span>·</span>
-          <span>Live accounts <Mono>{rollup.liveAccounts}</Mono></span>
-        </div>
-      </header>
+      <PageRibbon
+        title="Money"
+        description="The portfolio's revenue story — every cohort can be sent to Today as a problem cohort."
+        kpis={[
+          { label: "Total MRR", value: <Mono>{fmtMoney(rollup.mrr)}</Mono> },
+          { label: "MRR at risk", value: <Mono>{fmtMoney(rollup.mrrAtRisk)}</Mono> },
+          { label: "Total cost", value: <Mono>{fmtMoney(totalCost)}</Mono> },
+          { label: "Live accounts", value: <Mono>{rollup.liveAccounts}</Mono> },
+        ]}
+      />
 
       <Tabs tabs={TABS} active={tab} onChange={(id) => setTab(id as typeof tab)} />
 
