@@ -5,9 +5,6 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { ThemeProvider } from "next-themes";
 import Index from "./pages/Index";
-import Analytics from "./pages/Analytics";
-import SubAccountHealth from "./pages/SubAccountHealth";
-import Configure from "./pages/Configure";
 import Activity from "./pages/health/Activity";
 import NotFound from "./pages/NotFound";
 
@@ -22,9 +19,6 @@ const App = () => (
         <BrowserRouter>
           <Routes>
             <Route path="/" element={<Index />} />
-            <Route path="/analytics" element={<Analytics />} />
-            <Route path="/sub-accounts/:id/health-overview" element={<SubAccountHealth />} />
-            <Route path="/configure" element={<Configure />} />
             <Route path="/activity" element={<Activity />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
