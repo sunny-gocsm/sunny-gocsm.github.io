@@ -22,6 +22,8 @@ import {
   type Signal,
 } from "@/fixtures";
 import { HealthTab } from "@/components/account/HealthTab";
+import { LoginTab } from "@/components/account/LoginTab";
+import { AdoptionTab } from "@/components/account/AdoptionTab";
 
 const TAB_IDS = [
   "health",
@@ -274,6 +276,10 @@ export default function AccountDetailPage() {
         <div style={{ marginTop: "var(--s-4)" }}>
           {tab === "health" ? (
             <HealthTab account={account} onNavigateTab={(t) => setTab(t)} />
+          ) : tab === "login" ? (
+            <LoginTab account={account} />
+          ) : tab === "adoption" ? (
+            <AdoptionTab account={account} />
           ) : (
             <Card padded>
               <div style={{ display: "flex", flexDirection: "column", gap: "var(--s-2)" }}>
