@@ -12,6 +12,7 @@ import AccountsPage from "./pages/AccountsPage";
 import AccountDetailPage from "./pages/AccountDetailPage";
 import PlaybooksPage from "./pages/PlaybooksPage";
 import PlaybookDetailPage from "./pages/PlaybookDetailPage";
+import MoneyPage from "./pages/MoneyPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -32,7 +33,7 @@ const App = () => (
               <Route path="/playbooks" element={<PlaybooksPage />} />
               <Route path="/playbooks/:id" element={<PlaybookDetailPage />} />
               <Route path="/onboarding" element={<StubPage title="Onboarding" />} />
-              <Route path="/money" element={<StubPage title="Money" />} />
+              <Route path="/money" element={<MoneyPage />} />
               <Route path="/configure" element={<StubPage title="Configure" />} />
               <Route path="/activity" element={<Activity />} />
             </Route>
