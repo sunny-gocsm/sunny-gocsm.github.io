@@ -171,8 +171,8 @@ export function AdoptionTab({ account }: { account: Account }) {
                     ))}
                   </div>
                 ) : (
-                  <span style={{ font: "var(--t-body)", color: "var(--text-3, var(--text))" }}>
-                    No standout features yet.
+                  <span style={{ font: "var(--t-body)", color: "var(--text-2, var(--text))" }}>
+                    No standouts yet — usage is still finding its shape.
                   </span>
                 )}
               </div>
