@@ -352,7 +352,7 @@ export function RevenueTab({ account }: { account: Account }) {
               ),
             },
           ]}
-          empty={<span style={{ color: "var(--text-3, var(--text))" }}>No plan changes recorded.</span>}
+          empty={<span style={{ color: "var(--text-2, var(--text))" }}>Plan's been steady — no upgrades or downgrades on file.</span>}
         />
       </section>
 
