@@ -229,13 +229,13 @@ function StallDashboard({ onSendToToday }: { onSendToToday: (a: Account) => void
                 }}
               />
               <Bar dataKey="reached" radius={[6, 6, 0, 0]}>
-                {funnel.map((r, i) => (
+                {funnel.map((r) => (
                   <Cell
                     key={r.step}
                     fill={
                       bottleneck && r.step === bottleneck.step
-                        ? "var(--viz-4)"
-                        : `var(--viz-${(i % 3) + 1})`
+                        ? "var(--viz-seq-6)"
+                        : "var(--viz-seq-3)"
                     }
                   />
                 ))}
@@ -381,44 +381,101 @@ function JourneyList({
   onSelect: (j: Journey) => void;
 }) {
   return (
-    <div
-      style={{
-        display: "grid",
-        gridTemplateColumns: "repeat(auto-fill, minmax(300px, 1fr))",
-        gap: "var(--s-3)",
-      }}
-    >
-      {journeyFixtures.map((j) => (
-        <Card key={j.id} padded>
+    <div style={{ display: "flex", flexDirection: "column", gap: "var(--s-4)" }}>
+      <Card
+        padded
+        style={{
+          background:
+            "linear-gradient(135deg, var(--blue-2) 0%, var(--pos-soft) 100%)",
+          border: "1px solid var(--border)",
+        }}
+      >
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: "var(--s-3)",
+            flexWrap: "wrap",
+          }}
+        >
           <div
-            onClick={() => onSelect(j)}
-            style={{ display: "flex", flexDirection: "column", gap: "var(--s-2)", cursor: "pointer" }}
+            className="icon-chip"
+            style={{
+              background: "var(--surface)",
+              color: "var(--info-7)",
+              width: 40,
+              height: 40,
+              borderRadius: 10,
+              display: "inline-flex",
+              alignItems: "center",
+              justifyContent: "center",
+            }}
           >
-            <div style={{ display: "flex", alignItems: "center", gap: "var(--s-2)" }}>
-              <span style={{ font: "var(--t-h3)" }}>{j.name}</span>
-              <Badge variant="neutral" dot={false}>{j.version}</Badge>
-              <span style={{ marginLeft: "auto" }}>
-                <Badge variant={STATUS_VARIANT[j.status]} dot>{j.status}</Badge>
-              </span>
-            </div>
-            <p style={{ font: "var(--t-meta)", color: "var(--text-3, var(--text))", margin: 0 }}>
-              {j.description}
-            </p>
-            <div
-              style={{
-                display: "flex",
-                gap: "var(--s-3)",
-                font: "var(--t-meta)",
-                color: "var(--text-3, var(--text))",
-              }}
-            >
-              <span><Mono>{j.steps.length}</Mono> steps</span>
-              <span>{j.targetDays}d target</span>
-              <span><Mono>{j.clientCount}</Mono> clients</span>
-            </div>
+            <Icon name="route" />
           </div>
-        </Card>
-      ))}
+          <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
+            <span style={{ font: "var(--t-h3)" }}>Build a new client journey</span>
+            <span style={{ font: "var(--t-meta)", color: "var(--text-3, var(--text))" }}>
+              Pick steps from the catalog, choose guided or tracking-only, and publish.
+            </span>
+          </div>
+          <span style={{ marginLeft: "auto" }}>
+            <Button
+              variant="primary"
+              size="md"
+              icon={<Icon name="plus" />}
+              onClick={() => onSelect(journeyFixtures[0])}
+            >
+              New journey
+            </Button>
+          </span>
+        </div>
+      </Card>
+
+      <div
+        style={{
+          display: "grid",
+          gridTemplateColumns: "repeat(auto-fill, minmax(300px, 1fr))",
+          gap: "var(--s-3)",
+        }}
+      >
+        {journeyFixtures.map((j) => (
+          <Card key={j.id} padded>
+            <div
+              onClick={() => onSelect(j)}
+              style={{ display: "flex", flexDirection: "column", gap: "var(--s-2)", cursor: "pointer" }}
+            >
+              <div style={{ display: "flex", alignItems: "center", gap: "var(--s-2)" }}>
+                <span style={{ font: "var(--t-h3)" }}>{j.name}</span>
+                <Badge variant="neutral" dot={false}>{j.version}</Badge>
+                <span style={{ marginLeft: "auto" }}>
+                  <Badge variant={STATUS_VARIANT[j.status]} dot>{j.status}</Badge>
+                </span>
+              </div>
+              <p style={{ font: "var(--t-meta)", color: "var(--text-3, var(--text))", margin: 0 }}>
+                {j.description}
+              </p>
+              <div
+                style={{
+                  display: "flex",
+                  gap: "var(--s-3)",
+                  font: "var(--t-meta)",
+                  color: "var(--text-3, var(--text))",
+                }}
+              >
+                <span><Mono>{j.steps.length}</Mono> steps</span>
+                <span>{j.targetDays}d target</span>
+                <span><Mono>{j.clientCount}</Mono> clients</span>
+              </div>
+              <div style={{ marginTop: "var(--s-2)" }}>
+                <Button variant="ghost" size="sm" icon={<Icon name="sliders-horizontal" />}>
+                  Open & edit
+                </Button>
+              </div>
+            </div>
+          </Card>
+        ))}
+      </div>
     </div>
   );
 }
@@ -450,7 +507,7 @@ function JourneyDetail({
         <Badge variant="neutral" dot={false}>{journey.version}</Badge>
         <Badge variant={STATUS_VARIANT[journey.status]} dot>{journey.status}</Badge>
         <span style={{ marginLeft: "auto", display: "inline-flex", gap: "var(--s-2)" }}>
-          <Button variant="secondary" size="sm" icon={<Icon name="sliders-horizontal" />} onClick={onEdit}>
+          <Button variant="primary" size="sm" icon={<Icon name="sliders-horizontal" />} onClick={onEdit}>
             Edit in builder
           </Button>
         </span>
