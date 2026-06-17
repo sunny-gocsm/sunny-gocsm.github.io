@@ -513,16 +513,13 @@ export default function AccountsPage() {
         onSelectionChange={setSelectedIds}
         toolbar={toolbar}
         selectionActions={selectionActions}
-        onRowClick={(a) => setOpenAccountId(a.identity.id)}
+        onRowClick={(a) => navigate(`/accounts/${a.identity.id}`)}
         stickyHeader
         showColumnChooser
         hiddenColumns={hiddenColumns}
         onHiddenColumnsChange={setHiddenColumns}
       />
 
-      {openAccount && (
-        <AccountDrawer account={openAccount} onClose={() => setOpenAccountId(null)} />
-      )}
     </main>
   );
 }
