@@ -315,15 +315,15 @@ function DailyChart() {
     <Card padded>
       <header style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", marginBottom: "var(--s-2)" }}>
         <h3 style={{ font: "var(--t-h3)", margin: 0 }}>Daily revenue, cost, and margin</h3>
-        <ConfTag basis="projection" detail="synthetic 30-day shape" />
+        <ConfTag basis="projection" detail="Estimate — limited data" />
       </header>
       <div style={{ width: "100%", height: 240 }}>
         <ResponsiveContainer>
           <AreaChart data={data} margin={{ top: 8, right: 12, bottom: 0, left: 0 }}>
             <defs>
               <linearGradient id="mrrDay" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor="var(--viz-1)" stopOpacity={0.30} />
-                <stop offset="100%" stopColor="var(--viz-1)" stopOpacity={0} />
+                <stop offset="0%" stopColor="var(--viz-seq-5)" stopOpacity={0.32} />
+                <stop offset="100%" stopColor="var(--viz-seq-5)" stopOpacity={0} />
               </linearGradient>
             </defs>
             <CartesianGrid stroke="var(--viz-grid)" vertical={false} />
@@ -339,10 +339,10 @@ function DailyChart() {
               }}
               formatter={(v: number) => fmtMoney(v)}
             />
-            <Area dataKey="mrr" stroke="var(--viz-1)" fill="url(#mrrDay)" strokeWidth={2} />
-            <Line dataKey="cost" stroke="var(--viz-4)" strokeWidth={2} dot={false} type="monotone" />
-            <Line dataKey="margin" stroke="var(--viz-2)" strokeWidth={2} dot={false} type="monotone" />
-            <Legend wrapperStyle={{ fontSize: 12 }} />
+            <Area name="Revenue" dataKey="mrr" stroke="var(--viz-seq-5)" fill="url(#mrrDay)" strokeWidth={2} />
+            <Line name="Cost" dataKey="cost" stroke="var(--viz-seq-3)" strokeWidth={1.5} strokeDasharray="4 3" dot={false} type="monotone" />
+            <Line name="Margin" dataKey="margin" stroke="var(--viz-seq-6)" strokeWidth={2} dot={false} type="monotone" />
+            <Legend wrapperStyle={{ fontSize: 12 }} iconType="plainline" />
           </AreaChart>
         </ResponsiveContainer>
       </div>
@@ -373,11 +373,12 @@ function PlanChart() {
               }}
               formatter={(v: number) => fmtMoney(v)}
             />
-            <Bar dataKey="mrr" radius={[6, 6, 0, 0]}>
-              {data.map((_, i) => (
-                <Cell key={i} fill={`var(--viz-${(i % 5) + 1})`} />
+            <Bar dataKey="mrr" name="MRR" radius={[6, 6, 0, 0]}>
+              {data.map((d, i) => (
+                <Cell key={i} fill={`var(--viz-${(i % 5) + 1})`} name={d.plan} />
               ))}
             </Bar>
+            <Legend wrapperStyle={{ fontSize: 12 }} payload={data.map((d, i) => ({ value: d.plan, type: "square" as const, color: `var(--viz-${(i % 5) + 1})`, id: d.plan }))} />
           </BarChart>
         </ResponsiveContainer>
       </div>
@@ -391,7 +392,7 @@ function ProductChart() {
     <Card padded>
       <header style={{ marginBottom: "var(--s-2)", display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
         <h3 style={{ font: "var(--t-h3)", margin: 0 }}>Revenue by product</h3>
-        <ConfTag basis="projection" detail="wallet split is editorial" />
+        <ConfTag basis="projection" detail="Estimate — limited data" />
       </header>
       <div style={{ width: "100%", height: 220 }}>
         <ResponsiveContainer>
@@ -409,11 +410,12 @@ function ProductChart() {
               }}
               formatter={(v: number) => fmtMoney(v)}
             />
-            <Bar dataKey="mrr" radius={[0, 6, 6, 0]}>
-              {data.map((_, i) => (
-                <Cell key={i} fill={`var(--viz-${(i % 5) + 1})`} />
+            <Bar dataKey="mrr" name="MRR" radius={[0, 6, 6, 0]}>
+              {data.map((d, i) => (
+                <Cell key={i} fill={`var(--viz-${(i % 5) + 1})`} name={d.product} />
               ))}
             </Bar>
+            <Legend wrapperStyle={{ fontSize: 12 }} payload={data.map((d, i) => ({ value: d.product, type: "square" as const, color: `var(--viz-${(i % 5) + 1})`, id: d.product }))} />
           </BarChart>
         </ResponsiveContainer>
       </div>
@@ -700,27 +702,45 @@ export default function MoneyPage() {
 
       {tab === "overview" ? (
         <>
-          <section
-            style={{
-              display: "grid",
-              gap: "var(--s-3)",
-              gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
-            }}
-          >
-            {kpis.map((k) => (
-              <div key={k.key} onClick={() => onKpi(k.key)} style={{ cursor: "pointer" }}>
-                <MetricCard
-                  label={k.label}
-                  value={k.format ? k.format(k.rows) : <Mono>{k.rows.length}</Mono>}
-                  icon={<Icon name={k.icon} />}
-                  iconTone={k.accent === "neg" ? "neg" : k.accent === "pos" ? "pos" : "info"}
-                  accent={k.accent === "neg" ? "neg" : k.accent === "pos" ? "pos" : null}
-                  delta={k.deltaValue ? <Delta value={k.deltaValue} direction={k.deltaDir ?? "flat"} /> : undefined}
-                  context={k.context}
-                />
-              </div>
-            ))}
-          </section>
+          {(() => {
+            const groups: { id: string; title: string; keys: FilterKey[] }[] = [
+              { id: "risk", title: "Money at risk", keys: ["failed", "renew030", "renew3160", "downgrades", "churned"] },
+              { id: "in", title: "Money in", keys: ["top", "least", "upgrades"] },
+              { id: "change", title: "What's changing", keys: ["nonsaas"] },
+            ];
+            return groups.map((g) => {
+              const items = g.keys
+                .map((k) => kpis.find((x) => x.key === k))
+                .filter((x): x is Kpi => !!x);
+              if (!items.length) return null;
+              return (
+                <section key={g.id} style={{ display: "flex", flexDirection: "column", gap: "var(--s-3)" }}>
+                  <h3 style={{ font: "var(--t-h3)", margin: 0 }}>{g.title}</h3>
+                  <div
+                    style={{
+                      display: "grid",
+                      gap: "var(--s-3)",
+                      gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
+                    }}
+                  >
+                    {items.map((k) => (
+                      <div key={k.key} onClick={() => onKpi(k.key)} style={{ cursor: "pointer" }}>
+                        <MetricCard
+                          label={k.label}
+                          value={k.format ? k.format(k.rows) : <Mono>{k.rows.length}</Mono>}
+                          icon={<Icon name={k.icon} />}
+                          iconTone={k.accent === "neg" ? "neg" : k.accent === "pos" ? "pos" : "info"}
+                          accent={k.accent === "neg" ? "neg" : k.accent === "pos" ? "pos" : null}
+                          delta={k.deltaValue ? <Delta value={k.deltaValue} direction={k.deltaDir ?? "flat"} /> : undefined}
+                          context={k.context}
+                        />
+                      </div>
+                    ))}
+                  </div>
+                </section>
+              );
+            });
+          })()}
 
           <section
             style={{
@@ -741,25 +761,71 @@ export default function MoneyPage() {
         <>
           <div style={{ display: "flex", flexWrap: "wrap", gap: "var(--s-2)", alignItems: "center" }}>
             <span style={{ font: "var(--t-meta)", color: "var(--text-3, var(--text))" }}>Cohort</span>
-            <Badge
-              variant={filter === "all" ? "blue" : "neutral"}
-              dot={false}
-              onClick={() => setFilter("all")}
-              style={{ cursor: "pointer" }}
+            <span
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                gap: 4,
+                padding: "4px 6px 4px 10px",
+                borderRadius: 999,
+                border: `1px solid ${filter === "all" ? "var(--blue-7)" : "var(--border)"}`,
+                background: filter === "all" ? "var(--blue-2)" : "var(--surface)",
+              }}
             >
-              All live ({live.length})
-            </Badge>
-            {kpis.map((k) => (
-              <Badge
-                key={k.key}
-                variant={filter === k.key ? (k.accent === "neg" ? "danger" : "blue") : "neutral"}
-                dot={false}
-                onClick={() => setFilter(k.key)}
-                style={{ cursor: "pointer" }}
+              <button
+                type="button"
+                onClick={() => setFilter("all")}
+                style={{ background: "transparent", border: 0, padding: 0, cursor: "pointer", color: "inherit", font: "var(--t-meta)", fontWeight: 600 }}
               >
-                {k.label} ({k.rows.length})
-              </Badge>
-            ))}
+                All live ({live.length})
+              </button>
+            </span>
+            {kpis.map((k) => {
+              const active = filter === k.key;
+              return (
+                <span
+                  key={k.key}
+                  style={{
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: 4,
+                    padding: "4px 6px 4px 10px",
+                    borderRadius: 999,
+                    border: `1px solid ${active ? (k.accent === "neg" ? "var(--health-atrisk-strong)" : "var(--blue-7)") : "var(--border)"}`,
+                    background: active ? (k.accent === "neg" ? "var(--health-atrisk-soft)" : "var(--blue-2)") : "var(--surface)",
+                  }}
+                >
+                  <button
+                    type="button"
+                    onClick={() => setFilter(k.key)}
+                    style={{ background: "transparent", border: 0, padding: 0, cursor: "pointer", color: "inherit", font: "var(--t-meta)", fontWeight: 600 }}
+                  >
+                    {k.label} ({k.rows.length})
+                  </button>
+                  <button
+                    type="button"
+                    onClick={(e) => { e.stopPropagation(); navigate("/today"); }}
+                    disabled={k.rows.length === 0}
+                    title="Send this cohort to Today"
+                    aria-label={`Send ${k.label} to Today`}
+                    style={{
+                      display: "inline-flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      width: 22, height: 22, borderRadius: 999,
+                      background: "var(--surface)",
+                      border: "1px solid var(--border)",
+                      color: "var(--text-2, var(--text))",
+                      cursor: k.rows.length === 0 ? "not-allowed" : "pointer",
+                      opacity: k.rows.length === 0 ? 0.4 : 1,
+                      padding: 0,
+                    }}
+                  >
+                    <Icon name="send" />
+                  </button>
+                </span>
+              );
+            })}
             <span style={{ marginLeft: "auto", display: "inline-flex", gap: "var(--s-2)" }}>
               {activeKpi ? (
                 <Button
