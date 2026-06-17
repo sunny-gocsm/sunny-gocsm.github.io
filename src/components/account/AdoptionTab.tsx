@@ -309,8 +309,8 @@ export function AdoptionTab({ account }: { account: Account }) {
             },
           ]}
           empty={
-            <span style={{ color: "var(--text-3, var(--text))" }}>
-              No assets recorded yet.
+            <span style={{ color: "var(--text-2, var(--text))" }}>
+              No assets built yet — funnels, sites, and workflows will appear here as they're added.
             </span>
           }
         />
