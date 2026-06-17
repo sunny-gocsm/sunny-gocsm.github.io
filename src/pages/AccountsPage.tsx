@@ -481,6 +481,12 @@ export default function AccountsPage() {
         onHiddenColumnsChange={setHiddenColumns}
       />
 
+      <PlaybookActivationDrawer
+        open={!!drawerScope}
+        scope={drawerScope}
+        accounts={accounts}
+        onClose={() => setDrawerScope(null)}
+      />
     </main>
   );
 }
