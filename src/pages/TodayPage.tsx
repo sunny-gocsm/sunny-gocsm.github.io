@@ -448,6 +448,8 @@ export default function TodayPage() {
             title="Setup lost — may be leaving"
             blurb="A sticky setup (domain, A2P, funnel) just went backwards. Heaviest regression signal."
             accounts={lostSticky}
+            accent="atrisk"
+            emptyLine="All setups holding steady — nothing sliding backward."
             renderLine={(a) => {
               const sig = signalsForAccount(a.identity.id).find(
                 (s) => s.sticky && s.direction === "reverse",
@@ -458,13 +460,14 @@ export default function TodayPage() {
             }}
             onView={() => navigate("/accounts")}
             onApply={() => openApply(lostSticky, "pb-save-domain")}
-            heavy
           />
           <CohortCard
             icon="calendar-clock"
             title="Renewing soon & at risk"
             blurb="At-risk or watch accounts with a renewal in the next 30 days."
             accounts={renewingAtRisk}
+            accent="healthy"
+            emptyLine="No renewals in danger — the pipeline looks calm."
             renderLine={(a) => `renews in ${daysUntil(a.revenue.renewalDate)}d · ${bandLabel(a.health.band)}`}
             onView={() => navigate("/accounts?renewing=30")}
             onApply={() => openApply(renewingAtRisk, "pb-no-login")}
@@ -474,6 +477,8 @@ export default function TodayPage() {
             title="Payment failed"
             blurb="Cards declined or invoices unpaid in the last cycle."
             accounts={failed}
+            accent="atrisk"
+            emptyLine="Payments are flowing — no cards need attention."
             renderLine={(a) => `${a.revenue.paymentAttempts.filter(p => p.status === "failed").length || 1} failed attempt(s)`}
             onView={() => navigate("/accounts")}
             onApply={() => openApply(failed, "pb-payment-failed")}
@@ -483,6 +488,8 @@ export default function TodayPage() {
             title="Gone quiet"
             blurb="No meaningful logins for 3+ weeks."
             accounts={goneQuiet}
+            accent="slate"
+            emptyLine="Everyone’s still showing up — no one’s gone dark."
             renderLine={(a) => `last login ${a.login.lastLoginDaysAgo}d ago`}
             onView={() => navigate("/accounts")}
             onApply={() => openApply(goneQuiet, "pb-no-login")}
@@ -492,6 +499,8 @@ export default function TodayPage() {
             title="Onboarding stalled"
             blurb="New accounts stuck on a setup step past SLA."
             accounts={stalled}
+            accent="warn"
+            emptyLine="New accounts are moving — no one stuck at the gate."
             renderLine={(a) =>
               `stuck on "${a.onboarding.current_step}" for ${a.onboarding.days_on_current_step}d`
             }
@@ -503,6 +512,8 @@ export default function TodayPage() {
             title="Coming back to life"
             blurb="Dormant accounts trending up — worth a warm nudge."
             accounts={dormantUp}
+            accent="pos"
+            emptyLine="No comebacks yet — your saves are holding."
             renderLine={(a) => `health +${a.health.delta} this week`}
             onView={() => navigate("/accounts")}
             onApply={() => openApply(dormantUp, "pb-expansion-ready")}
