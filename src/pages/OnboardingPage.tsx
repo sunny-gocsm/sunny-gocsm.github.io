@@ -507,7 +507,7 @@ function JourneyDetail({
         <Badge variant="neutral" dot={false}>{journey.version}</Badge>
         <Badge variant={STATUS_VARIANT[journey.status]} dot>{journey.status}</Badge>
         <span style={{ marginLeft: "auto", display: "inline-flex", gap: "var(--s-2)" }}>
-          <Button variant="secondary" size="sm" icon={<Icon name="sliders-horizontal" />} onClick={onEdit}>
+          <Button variant="primary" size="sm" icon={<Icon name="sliders-horizontal" />} onClick={onEdit}>
             Edit in builder
           </Button>
         </span>
