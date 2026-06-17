@@ -9,7 +9,7 @@
    .metric-card, .delta, .toggle/.input/.select, .pillar-*.
 
    TOKENS ONLY — no raw hex, on-scale spacing/radii/shadows. Where a needed
-   semantic token is missing it is flagged /* TOKEN-GAP: … */ against the
+   semantic token is missing it is flagged (TOKEN-GAP: …) against the
    closest existing scale (the human resolves it in the token layer; these
    were proposed but never landed — see action-layer/01b-token-confirmation).
 
