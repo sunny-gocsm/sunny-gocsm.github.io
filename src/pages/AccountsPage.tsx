@@ -21,6 +21,7 @@ import {
   type LifecycleStage,
   type ActivityStatus,
 } from "@/fixtures";
+import { PlaybookActivationDrawer, type DrawerScope } from "@/components/playbooks/PlaybookActivationDrawer";
 
 const accounts = allAccounts();
 
