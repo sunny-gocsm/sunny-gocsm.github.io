@@ -211,7 +211,7 @@ function SinceLastReview({
         id: o.id,
         accountId: acc?.identity.id ?? "",
         accountName: acc?.identity.name ?? "Account",
-        did: outcomePlaybook(o)?.name ?? "Playbook ran",
+        did: outcomePlaybook(o)?.title ?? "Playbook ran",
         outcome:
           o.amount != null
             ? `recovered ${fmtMoneySmall(o.amount)} — no touch needed`
@@ -226,7 +226,7 @@ function SinceLastReview({
         id: o.id,
         accountId: acc?.identity.id ?? "",
         accountName: acc?.identity.name ?? "Account",
-        did: outcomePlaybook(o)?.name ?? "Playbook ran",
+        did: outcomePlaybook(o)?.title ?? "Playbook ran",
         outcome:
           o.amount != null
             ? `saved ${fmtMoneySmall(o.amount)} — you approved the note`
