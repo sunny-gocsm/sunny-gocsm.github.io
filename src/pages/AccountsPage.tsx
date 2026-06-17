@@ -8,13 +8,16 @@ import {
   Icon,
 } from "@/gocsm-ds";
 import {
-  accounts,
+  allAccounts,
   byUrgency,
   bandLabel,
+  daysUntil,
   type Account,
   type HealthBand,
   type LifecycleStage,
 } from "@/fixtures";
+
+const accounts = allAccounts();
 
 const BANDS: HealthBand[] = ["thriving", "healthy", "watch", "atrisk"];
 const STAGES: LifecycleStage[] = [
@@ -100,7 +103,7 @@ function AccountDrawer({ account, onClose }: AccountDrawerProps) {
             gap: "var(--s-3)",
           }}
         >
-          <h2 style={{ font: "var(--t-h3)", margin: 0 }}>{account.name}</h2>
+          <h2 style={{ font: "var(--t-h3)", margin: 0 }}>{account.identity.name}</h2>
           <Button variant="ghost" size="sm" onClick={onClose} icon={<Icon name="x" />}>
             Close
           </Button>
@@ -129,9 +132,12 @@ export default function AccountsPage() {
   const baseRows = useMemo(() => byUrgency(accounts), []);
   const rows = useMemo(() => {
     return baseRows.filter((a) => {
-      if (bandFilter.size > 0 && !bandFilter.has(a.healthBand)) return false;
-      if (stageFilter.size > 0 && !stageFilter.has(a.lifecycleStage)) return false;
-      if (renewingSoon && !(a.renewalInDays > 0 && a.renewalInDays <= 30)) return false;
+      if (bandFilter.size > 0 && !bandFilter.has(a.health.band)) return false;
+      if (stageFilter.size > 0 && !stageFilter.has(a.lifecycle.stage)) return false;
+      if (renewingSoon) {
+        const d = daysUntil(a.revenue.renewalDate);
+        if (!(d > 0 && d <= 30)) return false;
+      }
       return true;
     });
   }, [baseRows, bandFilter, stageFilter, renewingSoon]);
@@ -145,7 +151,7 @@ export default function AccountsPage() {
 
   const total = baseRows.length;
   const openAccount = openAccountId
-    ? accounts.find((a) => a.id === openAccountId) ?? null
+    ? accounts.find((a) => a.identity.id === openAccountId) ?? null
     : null;
 
   const toolbar = (
@@ -226,27 +232,33 @@ export default function AccountsPage() {
   );
 
   const columns = [
-    { key: "name", header: "Account", field: "name", sortable: true },
+    {
+      key: "name",
+      header: "Account",
+      sortable: true,
+      sortAccessor: (a: Account) => a.identity.name,
+      render: (a: Account) => a.identity.name,
+    },
     {
       key: "health",
       header: "Health",
       sortable: true,
-      sortAccessor: (a: Account) => a.healthScore,
+      sortAccessor: (a: Account) => a.health.score,
       render: (a: Account) => (
-        <HealthBadge band={a.healthBand} label={bandLabel(a.healthBand)} />
+        <HealthBadge band={a.health.band} label={bandLabel(a.health.band)} />
       ),
     },
     {
       key: "stage",
       header: "Lifecycle",
       render: (a: Account) => (
-        <StageBadge stage={a.lifecycleStage} reactivated={a.reactivated} />
+        <StageBadge stage={a.lifecycle.stage} reactivated={a.lifecycle.reactivated} />
       ),
     },
     {
       key: "pipeline",
       header: "Pipeline",
-      render: (a: Account) => a.pipelineStage || "—",
+      render: (a: Account) => a.pipeline.stage || "—",
     },
     {
       key: "mrr",
@@ -254,8 +266,8 @@ export default function AccountsPage() {
       align: "right" as const,
       mono: true,
       sortable: true,
-      sortAccessor: (a: Account) => a.mrr,
-      render: (a: Account) => "$" + a.mrr.toLocaleString(),
+      sortAccessor: (a: Account) => a.revenue.mrr,
+      render: (a: Account) => "$" + a.revenue.mrr.toLocaleString(),
     },
     {
       key: "renewal",
@@ -263,8 +275,11 @@ export default function AccountsPage() {
       align: "right" as const,
       mono: true,
       sortable: true,
-      sortAccessor: (a: Account) => a.renewalInDays,
-      render: (a: Account) => "in " + a.renewalInDays + "d",
+      sortAccessor: (a: Account) => daysUntil(a.revenue.renewalDate),
+      render: (a: Account) => {
+        const d = daysUntil(a.revenue.renewalDate);
+        return d >= 0 ? "in " + d + "d" : d + "d";
+      },
     },
     {
       key: "lastLogin",
@@ -272,13 +287,14 @@ export default function AccountsPage() {
       align: "right" as const,
       mono: true,
       sortable: true,
-      sortAccessor: (a: Account) => a.lastLoginDays,
-      render: (a: Account) => a.lastLoginDays + "d ago",
+      sortAccessor: (a: Account) => a.login.lastLoginDaysAgo,
+      render: (a: Account) => a.login.lastLoginDaysAgo + "d ago",
     },
     {
       key: "owner",
       header: "Owner",
-      field: "owner",
+      sortAccessor: (a: Account) => a.ownership.owner,
+      render: (a: Account) => a.ownership.owner,
       hideable: true,
       defaultHidden: true,
     },

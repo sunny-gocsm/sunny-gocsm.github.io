@@ -1,6 +1,8 @@
-// Shared mock-data layer. Every surface reads from here so numbers stay
-// consistent across screens. No backend, no API — plain typed exports +
-// pure selector helpers.
+// Fixtures v2 — unified, Signal-based Account model.
+// Pure TS, no UI, no backend. Mock data only.
+// Anchored to a fixed "today" so derived days are deterministic.
+
+export const TODAY = new Date("2026-06-17T00:00:00Z");
 
 // ============================================================
 // TYPES
@@ -16,770 +18,890 @@ export type LifecycleStage =
   | "dormant"
   | "churned";
 
-export interface TimelineEvent {
-  daysAgo: number;
+export type ActivityStatus = "highly" | "moderately" | "low" | "ghosting";
+
+export type AssetType =
+  | "Workflow"
+  | "Calendar"
+  | "Opportunity"
+  | "BusinessProfile"
+  | "Phone"
+  | "Email"
+  | "WebsiteFunnel"
+  | "Dashboard"
+  | "Course"
+  | "Community"
+  | "Facebook"
+  | "Reputation"
+  | "Payment"
+  | "CustomMenuLink";
+
+export type OnboardingStepState =
+  | "in_progress"
+  | "verifying"
+  | "needs_attention"
+  | "waiting_on_agency"
+  | "done";
+
+export type CompletionSource = "auto" | "manual" | "agency_verified";
+
+// ---------- Signal backbone ----------
+export type SignalSubject =
+  | "Domain"
+  | "Phone"
+  | "A2P"
+  | "Funnel"
+  | "Workflow"
+  | "Login"
+  | "Payment"
+  | "NPS";
+
+export interface Signal {
+  id: string;
+  accountId: string;
+  subject: SignalSubject;
+  type: "setup" | "usage";
+  direction: "forward" | "reverse";
+  sticky: boolean;
+  weight: number;
   label: string;
+  detectedAt: string; // ISO
+  source: string;
+}
+
+// ---------- Account sub-objects ----------
+export interface AccountIdentity {
+  id: string;
+  name: string;
+  avatar: string;
+  industry: string;
+  plan: string;
+  isNonSaaS: boolean;
+  clientSince: string; // ISO date
+  activeDays: number;
+}
+
+export interface AccountOwnership {
+  owner: string;
+  ownerStatus: "active" | "inactive" | "transferring";
+  assignedCSM: string;
+  teamSize: number;
+}
+
+export interface AccountStatus {
+  enabled: "Enabled" | "Disabled";
+  tracked: boolean;
+  previouslyTracked: boolean;
+  pendingStop: boolean;
+  isPriority: boolean;
+}
+
+export interface AccountLifecycle {
+  stage: LifecycleStage;
+  reactivated: boolean;
+}
+
+export interface AccountPipeline {
+  stage: string; // free string mirroring native HL
+}
+
+export interface PillarScores {
+  productAdoption: number;
+  revenue: number;
+  login: number;
+  sentiment: number;
+}
+
+export interface AccountHealth {
+  score: number; // 0-100
+  delta: number;
+  band: HealthBand;
+  trend90d: number[];
+  pillarScores: PillarScores;
+  riskSignals: string[];
+  opportunities: string[];
+}
+
+export interface LoginUser {
+  name: string;
+  role: "owner" | "admin" | "user";
+  keyUser: boolean;
+  lastLogin: string; // ISO
+  timeSpent: number; // minutes / 30d
+  status: "active" | "inactive";
+  history: { date: string; minutes: number }[];
+}
+
+export interface AccountLogin {
+  activeUsers: number;
+  totalLoggedInTime: number; // minutes / 30d
+  lastLoginDaysAgo: number;
+  activityStatus: ActivityStatus;
+  users: LoginUser[];
+}
+
+export interface AdoptionFeature {
+  name: string;
+  assetCount: number;
+  activeAssetCount: number;
+  engagement: number; // 0-100
+  timeSpent: number;
+}
+
+export interface AdoptionAsset {
+  type: AssetType;
+  id: string;
+  name: string;
+  accounts: string[];
+  users: string[];
 }
 
 export interface AccountAdoption {
-  workflowRuns: number;
-  contactGrowthPct: number;
-  featuresUsed: number;
+  features: AdoptionFeature[];
+  assets: AdoptionAsset[];
+  topFeatures: string[];
+  underutilizedFeatures: string[];
+}
+
+export interface PaymentAttempt {
+  date: string;
+  amount: number;
+  status: "succeeded" | "failed" | "pending";
+  failureReason?: string;
+}
+
+export interface PlanChange {
+  date: string;
+  from: string;
+  to: string;
+  type: "upgrade" | "downgrade" | "reactivation" | "churn";
+  mrrImpact: number;
+}
+
+export interface AccountRevenue {
+  mrr: number;
+  spendTrend: number; // signed %
+  revenueHealth: "healthy" | "watch" | "atrisk";
+  renewalDate: string; // ISO
+  lastPaymentStatus: "succeeded" | "failed" | "pending";
+  walletBalance: number;
+  walletSpend30d: number;
+  walletSpend90d: number;
+  totalCost: number;
+  margin: number; // signed
+  paymentAttempts: PaymentAttempt[];
+  planChanges: PlanChange[];
+  riskTags: string[];
+  arpa: number;
+}
+
+export interface FeedbackResponse {
+  date: string;
+  score: number;
+  comment?: string;
+}
+
+export interface AccountFeedback {
+  npsScore: number;
+  sentiment: "positive" | "neutral" | "negative";
+  promoters: number;
+  passives: number;
+  detractors: number;
+  responses: FeedbackResponse[];
+  lastFeedbackDate: string | null;
+  widgetEnabled: boolean;
+}
+
+export interface OnboardingIntervention {
+  type: string;
+  days_ago: number;
+  outcome: string;
+}
+
+export interface AccountOnboarding {
+  journeyName: string;
+  journeyVersion: string;
+  steps_total: number;
+  steps_done: number;
+  pct_complete: number;
+  current_step: string;
+  current_step_state: OnboardingStepState;
+  days_on_current_step: number;
+  sla_days: number;
+  stalled: boolean;
+  blocked_by: "client" | "agency" | null;
+  journey_started_days_ago: number;
+  last_intervention: OnboardingIntervention | null;
+  completionSource: CompletionSource;
 }
 
 export interface Account {
+  identity: AccountIdentity;
+  ownership: AccountOwnership;
+  status: AccountStatus;
+  lifecycle: AccountLifecycle;
+  pipeline: AccountPipeline;
+  health: AccountHealth;
+  login: AccountLogin;
+  adoption: AccountAdoption;
+  revenue: AccountRevenue;
+  feedback: AccountFeedback;
+  onboarding: AccountOnboarding;
+}
+
+// ============================================================
+// HELPERS
+// ============================================================
+
+const dayMs = 86_400_000;
+const iso = (daysFromToday: number): string =>
+  new Date(TODAY.getTime() + daysFromToday * dayMs).toISOString();
+
+export function daysUntil(isoDate: string): number {
+  return Math.round((Date.parse(isoDate) - TODAY.getTime()) / dayMs);
+}
+
+export function daysSince(isoDate: string): number {
+  return Math.round((TODAY.getTime() - Date.parse(isoDate)) / dayMs);
+}
+
+export const bandLabel = (b: HealthBand): string =>
+  b === "atrisk" ? "At risk" : b[0].toUpperCase() + b.slice(1);
+
+// Reusable mini-factories to keep account literals readable.
+const baseLogin = (
+  active: number,
+  lastDays: number,
+  status: ActivityStatus,
+  total = active * 120,
+): AccountLogin => ({
+  activeUsers: active,
+  totalLoggedInTime: total,
+  lastLoginDaysAgo: lastDays,
+  activityStatus: status,
+  users: Array.from({ length: Math.max(1, active) }, (_, i) => ({
+    name: i === 0 ? "Owner" : `User ${i + 1}`,
+    role: i === 0 ? "owner" : i === 1 ? "admin" : "user",
+    keyUser: i === 0,
+    lastLogin: iso(-lastDays - i),
+    timeSpent: Math.max(5, Math.round(total / Math.max(1, active)) - i * 10),
+    status: lastDays < 30 ? "active" : "inactive",
+    history: [],
+  })),
+});
+
+const baseAdoption = (
+  features: { name: string; engagement: number }[],
+  top: string[] = [],
+  under: string[] = [],
+): AccountAdoption => ({
+  features: features.map((f) => ({
+    name: f.name,
+    assetCount: 3 + Math.round(f.engagement / 20),
+    activeAssetCount: Math.round((3 + f.engagement / 20) * (f.engagement / 100)),
+    engagement: f.engagement,
+    timeSpent: f.engagement * 2,
+  })),
+  assets: [],
+  topFeatures: top,
+  underutilizedFeatures: under,
+});
+
+const emptyFeedback = (): AccountFeedback => ({
+  npsScore: 0,
+  sentiment: "neutral",
+  promoters: 0,
+  passives: 0,
+  detractors: 0,
+  responses: [],
+  lastFeedbackDate: null,
+  widgetEnabled: false,
+});
+
+const noOnboarding = (): AccountOnboarding => ({
+  journeyName: "Standard",
+  journeyVersion: "v1",
+  steps_total: 8,
+  steps_done: 8,
+  pct_complete: 100,
+  current_step: "Done",
+  current_step_state: "done",
+  days_on_current_step: 0,
+  sla_days: 14,
+  stalled: false,
+  blocked_by: null,
+  journey_started_days_ago: 120,
+  last_intervention: null,
+  completionSource: "auto",
+});
+
+const stalledOnb = (
+  step: string,
+  days: number,
+  blocked: "client" | "agency",
+  done = 4,
+): AccountOnboarding => ({
+  journeyName: "Standard",
+  journeyVersion: "v1",
+  steps_total: 8,
+  steps_done: done,
+  pct_complete: Math.round((done / 8) * 100),
+  current_step: step,
+  current_step_state: "needs_attention",
+  days_on_current_step: days,
+  sla_days: 5,
+  stalled: true,
+  blocked_by: blocked,
+  journey_started_days_ago: days + done * 3,
+  last_intervention: { type: "email", days_ago: Math.max(1, days - 2), outcome: "no reply" },
+  completionSource: "manual",
+});
+
+// ============================================================
+// ACCOUNTS — ~20 spanning every stage / band / renewal window
+// ============================================================
+
+interface Seed {
   id: string;
   name: string;
-  healthBand: HealthBand;
-  healthScore: number; // 0-100
-  lifecycleStage: LifecycleStage;
-  reactivated?: boolean;
-  /** Native-HL CS pipeline stage name, only present on some accounts. */
-  pipelineStage?: string;
-  mrr: number;
-  renewalInDays: number;
-  lastLoginDays: number;
-  adoption: AccountAdoption;
-  owner: string;
-  segments: string[];
-  /** Risk-narrative timeline, newest last. */
-  timeline: TimelineEvent[];
-}
-
-export type PlaybookState = "off" | "ranonce" | "on";
-
-export interface PlaybookAction {
-  icon: string;
-  title: string;
-  desc: string;
-  on: boolean;
-  supervised: boolean;
-}
-
-export interface PlaybookDraft {
-  channel: string;
-  icon: string;
-  preview: string;
-}
-
-export interface PlaybookWatch {
-  summary: string;
-  cadence: string;
-  via: "Runs as a HighLevel automation" | "Runs as an AI watch";
-}
-
-export interface Playbook {
-  id: string;
-  icon: string;
-  title: string;
-  problem: string;
-  does: string;
-  outcome: string;
-  watch: PlaybookWatch;
-  actions: PlaybookAction[];
-  proof: { drafts: PlaybookDraft[] };
-  state: PlaybookState;
-  videoLabel: string;
-  /** Rule that decides which accounts the playbook applies to. */
-  match: (account: Account) => boolean;
-}
-
-export interface Outcome {
-  id: string;
-  accountName: string;
-  action: string;
-  result: string;
-  savedMrr?: number;
-  daysAgo: number;
-}
-
-export interface OnboardingStep {
-  label: string;
-  done: boolean;
-}
-
-export interface OnboardingProgress {
-  accountId: string;
-  accountName: string;
-  startedDaysAgo: number;
-  steps: OnboardingStep[];
-  /** Index into steps[] of the step the account is stuck on, if any. */
-  stalledStepIndex?: number;
-}
-
-export interface PlanMixEntry {
+  industry: string;
   plan: string;
-  accounts: number;
+  isNonSaaS?: boolean;
+  clientSinceDays: number;
+  owner: string;
+  csm: string;
+  enabled?: "Enabled" | "Disabled";
+  tracked?: boolean;
+  pendingStop?: boolean;
+  priority?: boolean;
+  stage: LifecycleStage;
+  reactivated?: boolean;
+  pipeline: string;
+  score: number;
+  band: HealthBand;
+  delta: number;
+  pillars: PillarScores;
+  riskSignals?: string[];
+  opportunities?: string[];
+  loginDays: number;
+  activeUsers: number;
+  activity: ActivityStatus;
+  features: { name: string; engagement: number }[];
+  top?: string[];
+  under?: string[];
   mrr: number;
+  spendTrend: number;
+  renewalInDays: number;
+  lastPayment?: "succeeded" | "failed" | "pending";
+  margin: number;
+  paymentAttempts?: PaymentAttempt[];
+  planChanges?: PlanChange[];
+  riskTags?: string[];
+  nps?: number;
+  sentiment?: "positive" | "neutral" | "negative";
+  onb?: AccountOnboarding;
 }
 
-export interface MoneySnapshot {
-  mrr: number;
-  nrrPct: number;
-  grossMarginPct: number;
-  planMix: PlanMixEntry[];
-}
-
-// ============================================================
-// ACCOUNTS — ~16 with a realistic spread
-// ============================================================
-
-export const accounts: Account[] = [
-  // --- Urgent: at-risk / dormant with high MRR near renewal ---
+const seeds: Seed[] = [
+  // ----- AT-RISK / urgent renewals -----
   {
-    id: "a-modern-physio",
-    name: "Modern Physio",
-    healthBand: "atrisk",
-    healthScore: 28,
-    lifecycleStage: "lapsing",
-    pipelineStage: "Retention review",
-    mrr: 2400,
-    renewalInDays: 6,
-    lastLoginDays: 21,
-    adoption: { workflowRuns: 4, contactGrowthPct: -3, featuresUsed: 2 },
-    owner: "Sinan",
-    segments: ["healthcare", "high-mrr"],
-    timeline: [
-      { daysAgo: 60, label: "Logins dropped from daily to weekly" },
-      { daysAgo: 28, label: "Cancelled SMS add-on" },
-      { daysAgo: 21, label: "Last login" },
-      { daysAgo: 3, label: "Renewal in 6 days — owner not yet contacted" },
-    ],
+    id: "a-modern-physio", name: "Modern Physio", industry: "Healthcare", plan: "Pro",
+    clientSinceDays: 540, owner: "Sinan", csm: "Sinan", priority: true,
+    stage: "lapsing", pipeline: "Retention review",
+    score: 28, band: "atrisk", delta: -12,
+    pillars: { productAdoption: 30, revenue: 40, login: 15, sentiment: 25 },
+    riskSignals: ["Logins collapsed", "Cancelled SMS add-on"],
+    loginDays: 21, activeUsers: 2, activity: "low",
+    features: [{ name: "Workflow", engagement: 22 }, { name: "Calendar", engagement: 35 }],
+    mrr: 2400, spendTrend: -18, renewalInDays: 6, margin: 38,
+    riskTags: ["renewal-urgent"],
   },
   {
-    id: "a-badasslink",
-    name: "BadassLink",
-    healthBand: "atrisk",
-    healthScore: 22,
-    lifecycleStage: "lapsing",
-    mrr: 1850,
-    renewalInDays: 11,
-    lastLoginDays: 14,
-    adoption: { workflowRuns: 2, contactGrowthPct: -8, featuresUsed: 3 },
-    owner: "Maya",
-    segments: ["agency", "high-mrr"],
-    timeline: [
-      { daysAgo: 45, label: "Card declined on monthly invoice" },
-      { daysAgo: 30, label: "Failed-payment dunning sent (no reply)" },
-      { daysAgo: 14, label: "Last login" },
+    id: "a-badasslink", name: "BadassLink", industry: "Agency", plan: "Pro",
+    clientSinceDays: 380, owner: "Maya", csm: "Maya",
+    stage: "lapsing", pipeline: "Save",
+    score: 22, band: "atrisk", delta: -9,
+    pillars: { productAdoption: 25, revenue: 18, login: 35, sentiment: 20 },
+    riskSignals: ["Card declined", "Dunning ignored"],
+    loginDays: 14, activeUsers: 1, activity: "low",
+    features: [{ name: "Email", engagement: 30 }, { name: "Workflow", engagement: 18 }],
+    mrr: 1850, spendTrend: -10, renewalInDays: 11, lastPayment: "failed", margin: 22,
+    paymentAttempts: [
+      { date: iso(-45), amount: 1850, status: "failed", failureReason: "card_declined" },
+      { date: iso(-30), amount: 1850, status: "failed", failureReason: "card_declined" },
     ],
+    riskTags: ["failed-payment"],
   },
   {
-    id: "a-organize-online-biz",
-    name: "Organize Your Online Biz",
-    healthBand: "atrisk",
-    healthScore: 31,
-    lifecycleStage: "dormant",
-    mrr: 1200,
-    renewalInDays: 9,
-    lastLoginDays: 34,
-    adoption: { workflowRuns: 1, contactGrowthPct: -12, featuresUsed: 2 },
-    owner: "Auto",
-    segments: ["coaching"],
-    timeline: [
-      { daysAgo: 50, label: "Stopped sending campaigns" },
-      { daysAgo: 34, label: "Last login" },
-      { daysAgo: 1, label: "Renewal reminder sent (auto)" },
-    ],
+    id: "a-organize-online-biz", name: "Organize Your Online Biz", industry: "Coaching", plan: "Starter",
+    clientSinceDays: 290, owner: "Auto", csm: "Maya",
+    stage: "dormant", pipeline: "At risk",
+    score: 31, band: "atrisk", delta: -6,
+    pillars: { productAdoption: 20, revenue: 45, login: 10, sentiment: 50 },
+    riskSignals: ["No campaigns in 50 days"],
+    loginDays: 34, activeUsers: 1, activity: "ghosting",
+    features: [{ name: "Email", engagement: 12 }],
+    mrr: 1200, spendTrend: -22, renewalInDays: 9, margin: 30,
   },
   {
-    id: "a-greenfield-partners",
-    name: "Greenfield Partners",
-    healthBand: "watch",
-    healthScore: 48,
-    lifecycleStage: "lapsing",
-    pipelineStage: "Check-in",
-    mrr: 3100,
-    renewalInDays: 22,
-    lastLoginDays: 9,
-    adoption: { workflowRuns: 8, contactGrowthPct: -2, featuresUsed: 4 },
-    owner: "Sinan",
-    segments: ["real-estate", "high-mrr"],
-    timeline: [
-      { daysAgo: 40, label: "Pipeline imports paused" },
-      { daysAgo: 9, label: "Last login (down from daily)" },
-    ],
-  },
-  {
-    id: "a-lauren-fondriest",
-    name: "Lauren Fondriest",
-    healthBand: "watch",
-    healthScore: 54,
-    lifecycleStage: "activated",
-    mrr: 780,
-    renewalInDays: 41,
-    lastLoginDays: 7,
-    adoption: { workflowRuns: 12, contactGrowthPct: 4, featuresUsed: 5 },
-    owner: "Maya",
-    segments: ["coaching"],
-    timeline: [
-      { daysAgo: 20, label: "Workflow runs dropped 30%" },
-      { daysAgo: 7, label: "Last login" },
-    ],
-  },
-  {
-    id: "a-northside-dental",
-    name: "Northside Dental",
-    healthBand: "watch",
-    healthScore: 51,
-    lifecycleStage: "established",
-    pipelineStage: "Quarterly review",
-    mrr: 1450,
-    renewalInDays: 60,
-    lastLoginDays: 11,
-    adoption: { workflowRuns: 14, contactGrowthPct: 1, featuresUsed: 5 },
-    owner: "Sinan",
-    segments: ["healthcare"],
-    timeline: [
-      { daysAgo: 30, label: "Owner changed" },
-      { daysAgo: 11, label: "Last login" },
-    ],
+    id: "a-cedar-clinic", name: "Cedar Clinic", industry: "Healthcare", plan: "Pro",
+    clientSinceDays: 410, owner: "Sinan", csm: "Sinan",
+    stage: "lapsing", pipeline: "Save",
+    score: 35, band: "atrisk", delta: -4,
+    pillars: { productAdoption: 35, revenue: 50, login: 25, sentiment: 30 },
+    riskSignals: ["A2P registration lapsed"],
+    loginDays: 18, activeUsers: 2, activity: "low",
+    features: [{ name: "Phone", engagement: 20 }, { name: "Calendar", engagement: 40 }],
+    mrr: 1600, spendTrend: -8, renewalInDays: 27, margin: 28,
   },
 
-  // --- Healthy / steady middle ---
+  // ----- WATCH -----
   {
-    id: "a-this-is-wellbeing",
-    name: "This is Wellbeing",
-    healthBand: "healthy",
-    healthScore: 72,
-    lifecycleStage: "established",
-    pipelineStage: "Advocate",
-    mrr: 1650,
-    renewalInDays: 95,
-    lastLoginDays: 1,
-    adoption: { workflowRuns: 41, contactGrowthPct: 9, featuresUsed: 7 },
-    owner: "Maya",
-    segments: ["coaching", "advocate"],
-    timeline: [
-      { daysAgo: 90, label: "NPS 9 submitted" },
-      { daysAgo: 7, label: "Hit 100 active contacts milestone" },
-    ],
+    id: "a-greenfield-partners", name: "Greenfield Partners", industry: "Real estate", plan: "Pro",
+    clientSinceDays: 720, owner: "Sinan", csm: "Sinan",
+    stage: "lapsing", pipeline: "Check-in",
+    score: 48, band: "watch", delta: -3,
+    pillars: { productAdoption: 50, revenue: 60, login: 45, sentiment: 40 },
+    loginDays: 9, activeUsers: 3, activity: "moderately",
+    features: [{ name: "Opportunity", engagement: 55 }, { name: "Workflow", engagement: 40 }],
+    mrr: 3100, spendTrend: -4, renewalInDays: 22, margin: 41,
   },
   {
-    id: "a-coastline-realty",
-    name: "Coastline Realty",
-    healthBand: "healthy",
-    healthScore: 68,
-    lifecycleStage: "established",
-    mrr: 2100,
-    renewalInDays: 73,
-    lastLoginDays: 2,
-    adoption: { workflowRuns: 32, contactGrowthPct: 6, featuresUsed: 6 },
-    owner: "Sinan",
-    segments: ["real-estate"],
-    timeline: [
-      { daysAgo: 14, label: "Added 2nd user seat" },
-    ],
+    id: "a-lauren-fondriest", name: "Lauren Fondriest", industry: "Coaching", plan: "Starter",
+    clientSinceDays: 220, owner: "Maya", csm: "Maya",
+    stage: "activated", pipeline: "Adopt",
+    score: 54, band: "watch", delta: 1,
+    pillars: { productAdoption: 55, revenue: 60, login: 50, sentiment: 55 },
+    loginDays: 7, activeUsers: 2, activity: "moderately",
+    features: [{ name: "Workflow", engagement: 50 }, { name: "Email", engagement: 45 }],
+    mrr: 780, spendTrend: 2, renewalInDays: 41, margin: 36,
   },
   {
-    id: "a-mile-high-fitness",
-    name: "Mile High Fitness",
-    healthBand: "healthy",
-    healthScore: 66,
-    lifecycleStage: "activated",
-    mrr: 690,
-    renewalInDays: 51,
-    lastLoginDays: 3,
-    adoption: { workflowRuns: 22, contactGrowthPct: 11, featuresUsed: 5 },
-    owner: "Maya",
-    segments: ["fitness"],
-    timeline: [
-      { daysAgo: 30, label: "Activated first automation" },
-    ],
-  },
-  {
-    id: "a-paws-and-claws",
-    name: "Paws & Claws Vet",
-    healthBand: "healthy",
-    healthScore: 64,
-    lifecycleStage: "established",
-    pipelineStage: "Advocate",
-    mrr: 980,
-    renewalInDays: 110,
-    lastLoginDays: 4,
-    adoption: { workflowRuns: 27, contactGrowthPct: 5, featuresUsed: 6 },
-    owner: "Sinan",
-    segments: ["healthcare"],
-    timeline: [{ daysAgo: 60, label: "Renewed annually" }],
+    id: "a-northside-dental", name: "Northside Dental", industry: "Healthcare", plan: "Pro",
+    clientSinceDays: 900, owner: "Sinan", csm: "Sinan",
+    stage: "established", pipeline: "Quarterly review",
+    score: 51, band: "watch", delta: -1,
+    pillars: { productAdoption: 55, revenue: 65, login: 45, sentiment: 50 },
+    loginDays: 11, activeUsers: 4, activity: "moderately",
+    features: [{ name: "Calendar", engagement: 65 }, { name: "Reputation", engagement: 40 }],
+    mrr: 1450, spendTrend: 1, renewalInDays: 60, margin: 44,
   },
 
-  // --- Thriving / advocates ---
+  // ----- HEALTHY -----
   {
-    id: "a-summit-marketing",
-    name: "Summit Marketing",
-    healthBand: "thriving",
-    healthScore: 88,
-    lifecycleStage: "established",
-    pipelineStage: "Expansion candidate",
-    mrr: 3400,
-    renewalInDays: 140,
-    lastLoginDays: 1,
-    adoption: { workflowRuns: 58, contactGrowthPct: 18, featuresUsed: 9 },
-    owner: "Sinan",
-    segments: ["agency", "high-mrr", "advocate"],
-    timeline: [
-      { daysAgo: 21, label: "Hit plan contact limit (warm upsell)" },
-      { daysAgo: 4, label: "Referred a friend" },
-    ],
+    id: "a-this-is-wellbeing", name: "This is Wellbeing", industry: "Coaching", plan: "Pro",
+    clientSinceDays: 640, owner: "Maya", csm: "Maya",
+    stage: "established", pipeline: "Advocate",
+    score: 72, band: "healthy", delta: 4,
+    pillars: { productAdoption: 75, revenue: 70, login: 78, sentiment: 80 },
+    opportunities: ["Testimonial-ready"],
+    loginDays: 1, activeUsers: 4, activity: "highly",
+    features: [{ name: "Workflow", engagement: 78 }, { name: "Email", engagement: 70 }],
+    top: ["Workflow", "Email"],
+    mrr: 1650, spendTrend: 6, renewalInDays: 95, margin: 52,
+    nps: 9, sentiment: "positive",
   },
   {
-    id: "a-evergreen-studio",
-    name: "Evergreen Studio",
-    healthBand: "thriving",
-    healthScore: 84,
-    lifecycleStage: "established",
-    mrr: 1750,
-    renewalInDays: 120,
-    lastLoginDays: 1,
-    adoption: { workflowRuns: 49, contactGrowthPct: 14, featuresUsed: 8 },
-    owner: "Maya",
-    segments: ["agency", "advocate"],
-    timeline: [{ daysAgo: 30, label: "NPS 10 submitted" }],
+    id: "a-coastline-realty", name: "Coastline Realty", industry: "Real estate", plan: "Pro",
+    clientSinceDays: 510, owner: "Sinan", csm: "Sinan",
+    stage: "established", pipeline: "Renew",
+    score: 68, band: "healthy", delta: 2,
+    pillars: { productAdoption: 70, revenue: 72, login: 68, sentiment: 65 },
+    loginDays: 2, activeUsers: 5, activity: "highly",
+    features: [{ name: "Opportunity", engagement: 72 }, { name: "WebsiteFunnel", engagement: 60 }],
+    mrr: 2100, spendTrend: 5, renewalInDays: 73, margin: 48,
+  },
+  {
+    id: "a-mile-high-fitness", name: "Mile High Fitness", industry: "Fitness", plan: "Starter",
+    clientSinceDays: 180, owner: "Maya", csm: "Maya",
+    stage: "activated", pipeline: "Adopt",
+    score: 66, band: "healthy", delta: 3,
+    pillars: { productAdoption: 65, revenue: 60, login: 70, sentiment: 70 },
+    loginDays: 3, activeUsers: 2, activity: "highly",
+    features: [{ name: "Workflow", engagement: 62 }, { name: "Calendar", engagement: 70 }],
+    mrr: 690, spendTrend: 8, renewalInDays: 51, margin: 40,
+  },
+  {
+    id: "a-paws-and-claws", name: "Paws & Claws Vet", industry: "Healthcare", plan: "Starter",
+    clientSinceDays: 480, owner: "Sinan", csm: "Sinan",
+    stage: "established", pipeline: "Renew",
+    score: 64, band: "healthy", delta: 0,
+    pillars: { productAdoption: 60, revenue: 65, login: 70, sentiment: 62 },
+    loginDays: 4, activeUsers: 3, activity: "moderately",
+    features: [{ name: "Calendar", engagement: 70 }, { name: "Reputation", engagement: 55 }],
+    mrr: 980, spendTrend: 3, renewalInDays: 110, margin: 45,
+  },
+  {
+    id: "a-harborline-legal", name: "Harborline Legal", industry: "Legal", plan: "Pro",
+    clientSinceDays: 95, owner: "Sinan", csm: "Sinan",
+    stage: "onboarding", pipeline: "Onboarding",
+    score: 62, band: "healthy", delta: 5,
+    pillars: { productAdoption: 55, revenue: 60, login: 70, sentiment: 65 },
+    loginDays: 2, activeUsers: 2, activity: "moderately",
+    features: [{ name: "Workflow", engagement: 55 }, { name: "Email", engagement: 60 }],
+    mrr: 920, spendTrend: 0, renewalInDays: 92, margin: 38,
+    onb: {
+      journeyName: "Standard", journeyVersion: "v1",
+      steps_total: 8, steps_done: 6, pct_complete: 75,
+      current_step: "First workflow live", current_step_state: "verifying",
+      days_on_current_step: 2, sla_days: 5, stalled: false, blocked_by: null,
+      journey_started_days_ago: 12, last_intervention: null, completionSource: "agency_verified",
+    },
   },
 
-  // --- Onboarding ---
+  // ----- THRIVING / advocates -----
   {
-    id: "a-bright-orbit",
-    name: "Bright Orbit",
-    healthBand: "watch",
-    healthScore: 55,
-    lifecycleStage: "onboarding",
-    pipelineStage: "Onboarding",
-    mrr: 540,
-    renewalInDays: 88,
-    lastLoginDays: 6,
-    adoption: { workflowRuns: 3, contactGrowthPct: 0, featuresUsed: 2 },
-    owner: "Auto",
-    segments: ["agency"],
-    timeline: [
-      { daysAgo: 18, label: "Signed up" },
-      { daysAgo: 14, label: "Imported contacts" },
-      { daysAgo: 6, label: "Stalled on connecting domain" },
-    ],
+    id: "a-summit-marketing", name: "Summit Marketing", industry: "Agency", plan: "Pro+",
+    clientSinceDays: 820, owner: "Sinan", csm: "Sinan",
+    stage: "established", pipeline: "Expansion",
+    score: 88, band: "thriving", delta: 6,
+    pillars: { productAdoption: 90, revenue: 85, login: 92, sentiment: 88 },
+    opportunities: ["Plan cap hit — upsell"],
+    loginDays: 1, activeUsers: 8, activity: "highly",
+    features: [{ name: "Workflow", engagement: 92 }, { name: "Opportunity", engagement: 88 }],
+    top: ["Workflow", "Opportunity", "WebsiteFunnel"],
+    mrr: 3400, spendTrend: 14, renewalInDays: 140, margin: 58,
+    nps: 10, sentiment: "positive",
   },
   {
-    id: "a-harborline-legal",
-    name: "Harborline Legal",
-    healthBand: "healthy",
-    healthScore: 62,
-    lifecycleStage: "onboarding",
-    pipelineStage: "Onboarding",
-    mrr: 920,
-    renewalInDays: 92,
-    lastLoginDays: 2,
-    adoption: { workflowRuns: 7, contactGrowthPct: 0, featuresUsed: 4 },
-    owner: "Sinan",
-    segments: ["legal"],
-    timeline: [
-      { daysAgo: 12, label: "Signed up" },
-      { daysAgo: 2, label: "First workflow live" },
+    id: "a-evergreen-studio", name: "Evergreen Studio", industry: "Agency", plan: "Pro",
+    clientSinceDays: 700, owner: "Maya", csm: "Maya",
+    stage: "established", pipeline: "Advocate",
+    score: 84, band: "thriving", delta: 3,
+    pillars: { productAdoption: 85, revenue: 80, login: 88, sentiment: 85 },
+    loginDays: 1, activeUsers: 6, activity: "highly",
+    features: [{ name: "WebsiteFunnel", engagement: 86 }, { name: "Workflow", engagement: 82 }],
+    mrr: 1750, spendTrend: 9, renewalInDays: 120, margin: 55,
+    nps: 10, sentiment: "positive",
+  },
+
+  // ----- ONBOARDING (one stalled, one healthy, one waiting on agency) -----
+  {
+    id: "a-bright-orbit", name: "Bright Orbit", industry: "Agency", plan: "Starter",
+    clientSinceDays: 18, owner: "Auto", csm: "Maya",
+    stage: "onboarding", pipeline: "Onboarding",
+    score: 45, band: "watch", delta: -2,
+    pillars: { productAdoption: 30, revenue: 60, login: 50, sentiment: 40 },
+    riskSignals: ["Stalled on domain"],
+    loginDays: 6, activeUsers: 1, activity: "low",
+    features: [{ name: "Email", engagement: 25 }],
+    mrr: 540, spendTrend: 0, renewalInDays: 88, margin: 28,
+    onb: stalledOnb("Connect domain", 7, "client", 3),
+  },
+  {
+    id: "a-northpoint-creative", name: "Northpoint Creative", industry: "Agency", plan: "Pro",
+    clientSinceDays: 22, owner: "Sinan", csm: "Sinan",
+    stage: "onboarding", pipeline: "Onboarding",
+    score: 50, band: "watch", delta: 0,
+    pillars: { productAdoption: 40, revenue: 65, login: 55, sentiment: 50 },
+    riskSignals: ["A2P waiting on agency"],
+    loginDays: 5, activeUsers: 2, activity: "moderately",
+    features: [{ name: "Phone", engagement: 30 }],
+    mrr: 1100, spendTrend: 0, renewalInDays: 88, margin: 32,
+    onb: stalledOnb("A2P registration", 9, "agency", 4),
+  },
+
+  // ----- REACTIVATED -----
+  {
+    id: "a-westmount-tutoring", name: "Westmount Tutoring", industry: "Education", plan: "Starter",
+    clientSinceDays: 360, owner: "Maya", csm: "Maya", reactivated: true,
+    stage: "activated", pipeline: "Adopt",
+    score: 60, band: "healthy", delta: 8,
+    pillars: { productAdoption: 55, revenue: 60, login: 70, sentiment: 60 },
+    loginDays: 2, activeUsers: 2, activity: "moderately",
+    features: [{ name: "Calendar", engagement: 55 }, { name: "Email", engagement: 50 }],
+    mrr: 460, spendTrend: 12, renewalInDays: 80, margin: 35,
+    planChanges: [
+      { date: iso(-120), from: "Starter", to: "—", type: "churn", mrrImpact: -460 },
+      { date: iso(-14), from: "—", to: "Starter", type: "reactivation", mrrImpact: 460 },
     ],
   },
 
-  // --- Reactivated ---
+  // ----- DORMANT / non-SaaS / disabled / churned -----
   {
-    id: "a-westmount-tutoring",
-    name: "Westmount Tutoring",
-    healthBand: "healthy",
-    healthScore: 60,
-    lifecycleStage: "activated",
-    reactivated: true,
-    mrr: 460,
-    renewalInDays: 80,
-    lastLoginDays: 2,
-    adoption: { workflowRuns: 9, contactGrowthPct: 3, featuresUsed: 4 },
-    owner: "Maya",
-    segments: ["education"],
-    timeline: [
-      { daysAgo: 120, label: "Churned" },
-      { daysAgo: 14, label: "Reactivated on Starter" },
-      { daysAgo: 2, label: "Last login" },
-    ],
+    id: "a-quiet-lane-studio", name: "Quiet Lane Studio", industry: "Creative", plan: "Starter",
+    isNonSaaS: true,
+    clientSinceDays: 540, owner: "Maya", csm: "Maya",
+    stage: "dormant", pipeline: "Dormant",
+    score: 38, band: "atrisk", delta: -5,
+    pillars: { productAdoption: 20, revenue: 35, login: 15, sentiment: 60 },
+    loginDays: 52, activeUsers: 1, activity: "ghosting",
+    features: [{ name: "WebsiteFunnel", engagement: 18 }],
+    mrr: 0, spendTrend: -30, renewalInDays: 180, margin: -5,
+    riskTags: ["non-saas-dormant"],
   },
-
-  // --- Churned (excluded from most metrics; kept for completeness) ---
   {
-    id: "a-old-river-collective",
-    name: "Old River Collective",
-    healthBand: "atrisk",
-    healthScore: 0,
-    lifecycleStage: "churned",
-    mrr: 0,
-    renewalInDays: -30,
-    lastLoginDays: 75,
-    adoption: { workflowRuns: 0, contactGrowthPct: 0, featuresUsed: 0 },
-    owner: "Auto",
-    segments: ["coaching"],
-    timeline: [
-      { daysAgo: 90, label: "Asked to pause" },
-      { daysAgo: 30, label: "Cancelled" },
-    ],
+    id: "a-old-river-collective", name: "Old River Collective", industry: "Coaching", plan: "Starter",
+    clientSinceDays: 420, owner: "Auto", csm: "Maya",
+    enabled: "Disabled", tracked: false,
+    stage: "churned", pipeline: "Churned",
+    score: 0, band: "atrisk", delta: 0,
+    pillars: { productAdoption: 0, revenue: 0, login: 0, sentiment: 0 },
+    loginDays: 75, activeUsers: 0, activity: "ghosting",
+    features: [],
+    mrr: 0, spendTrend: 0, renewalInDays: -30, margin: 0,
+  },
+  {
+    id: "a-tidewater-spa", name: "Tidewater Spa", industry: "Wellness", plan: "Pro",
+    clientSinceDays: 300, owner: "Sinan", csm: "Sinan",
+    pendingStop: true,
+    stage: "lapsing", pipeline: "Save",
+    score: 33, band: "atrisk", delta: -7,
+    pillars: { productAdoption: 30, revenue: 45, login: 25, sentiment: 30 },
+    riskSignals: ["Funnel disconnected"],
+    loginDays: 19, activeUsers: 1, activity: "low",
+    features: [{ name: "WebsiteFunnel", engagement: 20 }, { name: "Calendar", engagement: 35 }],
+    mrr: 1350, spendTrend: -15, renewalInDays: 16, margin: 25,
   },
 ];
 
-// ============================================================
-// PLAYBOOKS
-// ============================================================
-
-export const playbooks: Playbook[] = [
-  {
-    id: "pb-winback",
-    icon: "user-minus",
-    title: "Win back a customer who stopped logging in",
-    problem: "An account has gone quiet — no logins in weeks.",
-    does: "Reaches out with a personal nudge from the owner and offers a 15-minute reset call.",
-    outcome: "Customer logs in again or tells us why they stopped.",
-    watch: {
-      summary: "Watches for accounts with no login in 14+ days",
-      cadence: "Checks every morning",
-      via: "Runs as an AI watch",
-    },
-    actions: [
-      { icon: "mail", title: "Send a personal nudge", desc: "From the account owner, plain text.", on: true, supervised: true },
-      { icon: "calendar", title: "Offer a 15-minute reset call", desc: "Booking link in the nudge.", on: true, supervised: false },
-      { icon: "bell", title: "Alert the team if no reply in 3 days", desc: "Escalates to the owner.", on: true, supervised: false },
-    ],
-    proof: {
-      drafts: [
-        { channel: "Email", icon: "mail", preview: "Hey — noticed you haven't been in for a couple of weeks. Anything we can help unstick?" },
-      ],
-    },
-    state: "on",
-    videoLabel: "90-second explainer",
-    match: (a) => a.lifecycleStage !== "churned" && a.lastLoginDays >= 14,
-  },
-  {
-    id: "pb-failed-payment",
-    icon: "credit-card",
-    title: "Fix a failed payment before it churns",
-    problem: "A card declined and the invoice is unpaid.",
-    does: "Sends a polite reminder, retries the card, and pings the owner if it keeps failing.",
-    outcome: "Payment recovers without the customer noticing.",
-    watch: {
-      summary: "Watches for invoices that failed in the last 7 days",
-      cadence: "Checks hourly",
-      via: "Runs as a HighLevel automation",
-    },
-    actions: [
-      { icon: "mail", title: "Send dunning email", desc: "Branded, friendly tone.", on: true, supervised: false },
-      { icon: "refresh-cw", title: "Retry the card after 48 hours", desc: "One retry, then escalate.", on: true, supervised: false },
-      { icon: "bell", title: "Alert the team after 2 failures", desc: "Hands off to a human.", on: true, supervised: false },
-    ],
-    proof: {
-      drafts: [
-        { channel: "Email", icon: "mail", preview: "Quick heads-up — your last payment didn't go through. Mind updating your card here?" },
-      ],
-    },
-    state: "on",
-    videoLabel: "60-second explainer",
-    // Proxy: at-risk accounts with very recent timeline events that mention payment.
-    match: (a) =>
-      a.lifecycleStage !== "churned" &&
-      a.timeline.some((t) => /payment|card|invoice|dunning/i.test(t.label)),
-  },
-  {
-    id: "pb-rescue-onboarding",
-    icon: "rocket",
-    title: "Rescue a stalled onboarding",
-    problem: "A new account got stuck mid-setup.",
-    does: "Offers a 1:1 setup session and walks them past the step they're stuck on.",
-    outcome: "Account finishes setup and sends their first campaign.",
-    watch: {
-      summary: "Watches onboarding accounts that haven't moved a step in 5+ days",
-      cadence: "Checks daily",
-      via: "Runs as an AI watch",
-    },
-    actions: [
-      { icon: "mail", title: "Send a 'need a hand?' email", desc: "Names the exact step they're stuck on.", on: true, supervised: true },
-      { icon: "calendar", title: "Offer a 1:1 setup session", desc: "30-minute slot, owner-hosted.", on: true, supervised: false },
-      { icon: "bell", title: "Alert owner after 2 days of silence", desc: "Owner takes it from here.", on: false, supervised: false },
-    ],
-    proof: {
-      drafts: [
-        { channel: "Email", icon: "mail", preview: "Looks like you got stuck on connecting your domain — want me to walk you through it tomorrow?" },
-      ],
-    },
-    state: "ranonce",
-    videoLabel: "90-second explainer",
-    match: (a) => a.lifecycleStage === "onboarding" && a.lastLoginDays >= 5,
-  },
-  {
-    id: "pb-renewal-save",
-    icon: "calendar-check",
-    title: "Save an upcoming renewal",
-    problem: "A paying account is renewing soon and the signals look shaky.",
-    does: "Surfaces it to the owner with a one-page brief and queues a check-in.",
-    outcome: "Owner runs the save before the renewal date.",
-    watch: {
-      summary: "Watches accounts renewing in the next 30 days with health below 60",
-      cadence: "Checks daily",
-      via: "Runs as an AI watch",
-    },
-    actions: [
-      { icon: "file-text", title: "Draft a renewal brief", desc: "What changed, what to say.", on: true, supervised: true },
-      { icon: "phone", title: "Queue a check-in call", desc: "Owner-led, 15 minutes.", on: true, supervised: false },
-      { icon: "tag", title: "Offer a 1-month extension if needed", desc: "Only if you approve.", on: false, supervised: true },
-    ],
-    proof: {
-      drafts: [
-        { channel: "Internal", icon: "file-text", preview: "Renewal brief: 3 reasons engagement dropped + the ask for the call." },
-      ],
-    },
-    state: "on",
-    videoLabel: "2-minute explainer",
-    match: (a) =>
-      a.lifecycleStage !== "churned" &&
-      a.renewalInDays > 0 &&
-      a.renewalInDays <= 30 &&
-      a.healthScore < 60,
-  },
-  {
-    id: "pb-expansion",
-    icon: "trending-up",
-    title: "Spot a customer ready to expand",
-    problem: "A thriving account is hitting limits and could upgrade.",
-    does: "Sends a soft upsell prompt and asks the owner to follow up.",
-    outcome: "An expansion conversation gets booked.",
-    watch: {
-      summary: "Watches thriving accounts with high adoption and growing contacts",
-      cadence: "Checks weekly",
-      via: "Runs as an AI watch",
-    },
-    actions: [
-      { icon: "mail", title: "Send a soft upsell prompt", desc: "References what they're already doing well.", on: true, supervised: true },
-      { icon: "user-plus", title: "Ask the owner to follow up", desc: "Adds it to the owner's queue.", on: true, supervised: false },
-      { icon: "gift", title: "Offer a 14-day Pro trial", desc: "Only if you approve.", on: false, supervised: true },
-    ],
-    proof: {
-      drafts: [
-        { channel: "Email", icon: "mail", preview: "You're getting a lot out of automations — want a quick look at what Pro unlocks?" },
-      ],
-    },
-    state: "off",
-    videoLabel: "90-second explainer",
-    match: (a) =>
-      a.healthBand === "thriving" &&
-      a.adoption.contactGrowthPct >= 10 &&
-      a.adoption.featuresUsed >= 7,
-  },
-];
-
-// ============================================================
-// OUTCOMES — verified wins
-// ============================================================
-
-export const outcomes: Outcome[] = [
-  { id: "o-1", accountName: "Paws & Claws Vet", action: "Failed-payment recovery", result: "Card updated, invoice paid", savedMrr: 980, daysAgo: 2 },
-  { id: "o-2", accountName: "Coastline Realty", action: "Win-back nudge", result: "Owner logged back in and booked a call", savedMrr: 2100, daysAgo: 4 },
-  { id: "o-3", accountName: "Mile High Fitness", action: "Onboarding rescue", result: "First automation activated", daysAgo: 6 },
-  { id: "o-4", accountName: "This is Wellbeing", action: "Testimonial ask", result: "Customer submitted NPS 9 + quote", daysAgo: 9 },
-  { id: "o-5", accountName: "Evergreen Studio", action: "Renewal save", result: "Renewed annually + added seat", savedMrr: 1750, daysAgo: 14 },
-  { id: "o-6", accountName: "Westmount Tutoring", action: "Reactivation offer", result: "Reactivated on Starter plan", savedMrr: 460, daysAgo: 17 },
-];
-
-// ============================================================
-// ONBOARDING PROGRESS
-// ============================================================
-
-const onboardingTemplate = [
-  "Connect domain",
-  "Import contacts",
-  "Send first campaign",
-  "Invite teammate",
-  "Activate first automation",
-];
-
-export const onboardingProgress: OnboardingProgress[] = [
-  {
-    accountId: "a-bright-orbit",
-    accountName: "Bright Orbit",
-    startedDaysAgo: 18,
-    steps: [
-      { label: onboardingTemplate[0], done: false },
-      { label: onboardingTemplate[1], done: true },
-      { label: onboardingTemplate[2], done: false },
-      { label: onboardingTemplate[3], done: false },
-      { label: onboardingTemplate[4], done: false },
-    ],
-    stalledStepIndex: 0,
-  },
-  {
-    accountId: "a-harborline-legal",
-    accountName: "Harborline Legal",
-    startedDaysAgo: 12,
-    steps: [
-      { label: onboardingTemplate[0], done: true },
-      { label: onboardingTemplate[1], done: true },
-      { label: onboardingTemplate[2], done: true },
-      { label: onboardingTemplate[3], done: false },
-      { label: onboardingTemplate[4], done: true },
-    ],
-  },
-];
-
-// ============================================================
-// MONEY
-// ============================================================
-
-function deriveMoney(): MoneySnapshot {
-  const live = accounts.filter((a) => a.lifecycleStage !== "churned");
-  const mrr = live.reduce((sum, a) => sum + a.mrr, 0);
-
-  const planBuckets: Record<string, { accounts: number; mrr: number }> = {
-    Starter: { accounts: 0, mrr: 0 },
-    Growth: { accounts: 0, mrr: 0 },
-    Pro: { accounts: 0, mrr: 0 },
-  };
-  for (const a of live) {
-    const plan = a.mrr >= 2000 ? "Pro" : a.mrr >= 900 ? "Growth" : "Starter";
-    planBuckets[plan].accounts += 1;
-    planBuckets[plan].mrr += a.mrr;
-  }
-
+function buildAccount(s: Seed): Account {
   return {
-    mrr,
-    nrrPct: 108,
-    grossMarginPct: 74,
-    planMix: Object.entries(planBuckets).map(([plan, v]) => ({
-      plan,
-      accounts: v.accounts,
-      mrr: v.mrr,
-    })),
+    identity: {
+      id: s.id, name: s.name, avatar: s.name.slice(0, 2).toUpperCase(),
+      industry: s.industry, plan: s.plan, isNonSaaS: !!s.isNonSaaS,
+      clientSince: iso(-s.clientSinceDays), activeDays: Math.max(0, s.clientSinceDays - 7),
+    },
+    ownership: {
+      owner: s.owner, ownerStatus: "active", assignedCSM: s.csm, teamSize: Math.max(1, s.activeUsers),
+    },
+    status: {
+      enabled: s.enabled ?? "Enabled",
+      tracked: s.tracked ?? (s.enabled !== "Disabled"),
+      previouslyTracked: true,
+      pendingStop: !!s.pendingStop,
+      isPriority: !!s.priority,
+    },
+    lifecycle: { stage: s.stage, reactivated: !!s.reactivated },
+    pipeline: { stage: s.pipeline },
+    health: {
+      score: s.score, delta: s.delta, band: s.band,
+      trend90d: Array.from({ length: 12 }, (_, i) =>
+        Math.max(0, Math.min(100, s.score - s.delta + Math.round((s.delta * i) / 11))),
+      ),
+      pillarScores: s.pillars,
+      riskSignals: s.riskSignals ?? [],
+      opportunities: s.opportunities ?? [],
+    },
+    login: baseLogin(s.activeUsers, s.loginDays, s.activity),
+    adoption: baseAdoption(s.features, s.top, s.under),
+    revenue: {
+      mrr: s.mrr,
+      spendTrend: s.spendTrend,
+      revenueHealth: s.mrr === 0 ? "atrisk" : s.band === "atrisk" ? "atrisk" : s.band === "watch" ? "watch" : "healthy",
+      renewalDate: iso(s.renewalInDays),
+      lastPaymentStatus: s.lastPayment ?? "succeeded",
+      walletBalance: Math.round(s.mrr * 0.4),
+      walletSpend30d: Math.round(s.mrr * 0.6),
+      walletSpend90d: Math.round(s.mrr * 1.7),
+      totalCost: Math.round(s.mrr * (1 - s.margin / 100)),
+      margin: s.margin,
+      paymentAttempts: s.paymentAttempts ?? [],
+      planChanges: s.planChanges ?? [],
+      riskTags: s.riskTags ?? [],
+      arpa: s.mrr,
+    },
+    feedback: s.nps != null
+      ? {
+          npsScore: s.nps, sentiment: s.sentiment ?? "neutral",
+          promoters: s.nps >= 9 ? 1 : 0, passives: s.nps >= 7 && s.nps <= 8 ? 1 : 0,
+          detractors: s.nps <= 6 ? 1 : 0,
+          responses: [{ date: iso(-30), score: s.nps }],
+          lastFeedbackDate: iso(-30), widgetEnabled: true,
+        }
+      : emptyFeedback(),
+    onboarding: s.onb ?? (s.stage === "onboarding"
+      ? { ...noOnboarding(), steps_done: 5, pct_complete: 62, current_step: "Imports", current_step_state: "in_progress", stalled: false, journey_started_days_ago: 14 }
+      : noOnboarding()),
   };
 }
 
-export const money: MoneySnapshot = deriveMoney();
+export const accounts: Account[] = seeds.map(buildAccount);
 
 // ============================================================
-// SELECTORS — derive counts; never hardcode
+// SIGNALS — seed history with reverse-on-sticky-setup cases
 // ============================================================
 
-const BAND_LABEL: Record<HealthBand, string> = {
-  thriving: "Thriving",
-  healthy: "Healthy",
-  watch: "Watch",
-  atrisk: "At risk",
+interface SeedSignal {
+  accountId: string;
+  subject: SignalSubject;
+  type: "setup" | "usage";
+  direction: "forward" | "reverse";
+  sticky: boolean;
+  weight: number;
+  label: string;
+  daysAgo: number;
+  source?: string;
+}
+
+const seedSignals: SeedSignal[] = [
+  // Sticky setups gained (forward) then lost (reverse) — the "lost sticky setup" cohort
+  { accountId: "a-cedar-clinic", subject: "A2P", type: "setup", direction: "forward", sticky: true, weight: 8, label: "A2P registration approved", daysAgo: 200 },
+  { accountId: "a-cedar-clinic", subject: "A2P", type: "setup", direction: "reverse", sticky: true, weight: 9, label: "A2P registration lapsed", daysAgo: 9 },
+
+  { accountId: "a-tidewater-spa", subject: "Funnel", type: "setup", direction: "forward", sticky: true, weight: 7, label: "Funnel connected", daysAgo: 180 },
+  { accountId: "a-tidewater-spa", subject: "Funnel", type: "setup", direction: "reverse", sticky: true, weight: 8, label: "Funnel disconnected", daysAgo: 5 },
+
+  { accountId: "a-bright-orbit", subject: "Domain", type: "setup", direction: "forward", sticky: true, weight: 6, label: "Domain verification started", daysAgo: 14 },
+  { accountId: "a-bright-orbit", subject: "Domain", type: "setup", direction: "reverse", sticky: true, weight: 7, label: "Domain verification failed", daysAgo: 6 },
+
+  // Forward setups (healthy accounts)
+  { accountId: "a-summit-marketing", subject: "Domain", type: "setup", direction: "forward", sticky: true, weight: 5, label: "Domain connected", daysAgo: 800 },
+  { accountId: "a-summit-marketing", subject: "A2P", type: "setup", direction: "forward", sticky: true, weight: 8, label: "A2P approved", daysAgo: 700 },
+  { accountId: "a-this-is-wellbeing", subject: "Workflow", type: "setup", direction: "forward", sticky: false, weight: 4, label: "First workflow live", daysAgo: 500 },
+  { accountId: "a-evergreen-studio", subject: "Funnel", type: "setup", direction: "forward", sticky: true, weight: 5, label: "Funnel connected", daysAgo: 600 },
+  { accountId: "a-harborline-legal", subject: "Workflow", type: "setup", direction: "forward", sticky: false, weight: 3, label: "First workflow live", daysAgo: 2 },
+
+  // Payment signals
+  { accountId: "a-badasslink", subject: "Payment", type: "usage", direction: "reverse", sticky: false, weight: 9, label: "Card declined", daysAgo: 45 },
+  { accountId: "a-badasslink", subject: "Payment", type: "usage", direction: "reverse", sticky: false, weight: 9, label: "Second payment failure", daysAgo: 30 },
+  { accountId: "a-modern-physio", subject: "Payment", type: "usage", direction: "reverse", sticky: false, weight: 4, label: "Cancelled SMS add-on", daysAgo: 28 },
+
+  // Login signals
+  { accountId: "a-modern-physio", subject: "Login", type: "usage", direction: "reverse", sticky: false, weight: 5, label: "Login frequency dropped", daysAgo: 60 },
+  { accountId: "a-organize-online-biz", subject: "Login", type: "usage", direction: "reverse", sticky: false, weight: 6, label: "No login in 30+ days", daysAgo: 34 },
+  { accountId: "a-quiet-lane-studio", subject: "Login", type: "usage", direction: "reverse", sticky: false, weight: 6, label: "No login in 50+ days", daysAgo: 52 },
+
+  // NPS
+  { accountId: "a-this-is-wellbeing", subject: "NPS", type: "usage", direction: "forward", sticky: false, weight: 4, label: "NPS 9 submitted", daysAgo: 30 },
+  { accountId: "a-summit-marketing", subject: "NPS", type: "usage", direction: "forward", sticky: false, weight: 5, label: "NPS 10 submitted", daysAgo: 21 },
+  { accountId: "a-evergreen-studio", subject: "NPS", type: "usage", direction: "forward", sticky: false, weight: 5, label: "NPS 10 submitted", daysAgo: 40 },
+
+  // Workflow usage
+  { accountId: "a-greenfield-partners", subject: "Workflow", type: "usage", direction: "reverse", sticky: false, weight: 3, label: "Workflow runs −40%", daysAgo: 25 },
+  { accountId: "a-lauren-fondriest", subject: "Workflow", type: "usage", direction: "reverse", sticky: false, weight: 2, label: "Workflow runs −30%", daysAgo: 20 },
+];
+
+export const signals: Signal[] = seedSignals.map((s, i) => ({
+  id: `sig-${i + 1}`,
+  accountId: s.accountId,
+  subject: s.subject,
+  type: s.type,
+  direction: s.direction,
+  sticky: s.sticky,
+  weight: s.weight,
+  label: s.label,
+  detectedAt: iso(-s.daysAgo),
+  source: s.source ?? (s.subject === "Payment" ? "billing" : s.subject === "Login" ? "auth" : s.subject === "NPS" ? "survey" : "ghl"),
+}));
+
+// ============================================================
+// SELECTORS — pure, derived. No hardcoded counts.
+// ============================================================
+
+const liveOnly = (a: Account) =>
+  a.status.enabled === "Enabled" && a.lifecycle.stage !== "churned";
+
+export const allAccounts = (): Account[] => accounts;
+
+export const accountById = (id: string): Account | undefined =>
+  accounts.find((a) => a.identity.id === id);
+
+export const byBand = (band: HealthBand): Account[] =>
+  accounts.filter((a) => liveOnly(a) && a.health.band === band);
+
+export const byLifecycle = (stage: LifecycleStage): Account[] =>
+  accounts.filter((a) => a.lifecycle.stage === stage);
+
+export const healthDistribution = (): Record<HealthBand, number> => {
+  const out: Record<HealthBand, number> = { thriving: 0, healthy: 0, watch: 0, atrisk: 0 };
+  for (const a of accounts) if (liveOnly(a)) out[a.health.band]++;
+  return out;
 };
 
-export function bandLabel(band: HealthBand): string {
-  return BAND_LABEL[band];
-}
-
-const BAND_RANK: Record<HealthBand, number> = {
-  atrisk: 0,
-  watch: 1,
-  healthy: 2,
-  thriving: 3,
-};
-
-/** Accounts excluding churned (most rollups should use this). */
-export function liveAccounts(source: Account[] = accounts): Account[] {
-  return source.filter((a) => a.lifecycleStage !== "churned");
-}
-
-export function matchingAccounts(playbook: Playbook, source: Account[] = accounts): Account[] {
-  return liveAccounts(source).filter(playbook.match);
-}
-
-export function playbookMatchCount(playbook: Playbook, source: Account[] = accounts): number {
-  return matchingAccounts(playbook, source).length;
-}
-
-/**
- * Sort accounts most-urgent-first: at-risk/watch first, then by soonest
- * upcoming renewal, then by lowest health score.
- */
-export function byUrgency(source: Account[] = accounts): Account[] {
-  const renewalKey = (a: Account) =>
-    a.renewalInDays >= 0 ? a.renewalInDays : Number.POSITIVE_INFINITY;
-  return [...liveAccounts(source)].sort((a, b) => {
-    const band = BAND_RANK[a.healthBand] - BAND_RANK[b.healthBand];
-    if (band !== 0) return band;
-    const ren = renewalKey(a) - renewalKey(b);
-    if (ren !== 0) return ren;
-    return a.healthScore - b.healthScore;
+export const renewalsWindow = (minDays: number, maxDays: number): Account[] =>
+  accounts.filter((a) => {
+    if (!liveOnly(a)) return false;
+    const d = daysUntil(a.revenue.renewalDate);
+    return d >= minDays && d <= maxDays;
   });
-}
 
-export function accountsByBand(band: HealthBand, source: Account[] = accounts): Account[] {
-  return liveAccounts(source).filter((a) => a.healthBand === band);
-}
+const urgencyScore = (a: Account): number => {
+  const riskWeight = (100 - a.health.score) / 100; // 0..1
+  const days = Math.max(0, daysUntil(a.revenue.renewalDate));
+  const renewalProximity = Math.max(0, 1 - days / 90); // 0..1
+  // Bands at-risk / watch get a floor of urgency from band alone
+  const bandFloor = a.health.band === "atrisk" ? 0.4 : a.health.band === "watch" ? 0.2 : 0;
+  return Math.max(riskWeight * renewalProximity, bandFloor * renewalProximity || bandFloor);
+};
 
-export function accountsByStage(stage: LifecycleStage, source: Account[] = accounts): Account[] {
-  return source.filter((a) => a.lifecycleStage === stage);
-}
+export const atRiskByUrgency = (): Account[] =>
+  accounts
+    .filter((a) => liveOnly(a) && (a.health.band === "atrisk" || a.health.band === "watch"))
+    .slice()
+    .sort((a, b) => urgencyScore(b) - urgencyScore(a));
 
-export function findAccount(id: string): Account | undefined {
-  return accounts.find((a) => a.id === id);
-}
+/** Generic urgency sort across all live accounts (used by Accounts table). */
+export const byUrgency = (input: Account[] = accounts): Account[] =>
+  input
+    .slice()
+    .sort((a, b) => {
+      const liveA = liveOnly(a) ? 0 : 1;
+      const liveB = liveOnly(b) ? 0 : 1;
+      if (liveA !== liveB) return liveA - liveB;
+      return urgencyScore(b) - urgencyScore(a);
+    });
 
-export function findPlaybook(id: string): Playbook | undefined {
-  return playbooks.find((p) => p.id === id);
-}
-
-// --- Derived cohort sizes (used by Money + Today) ---
-
-/** Accounts whose timeline mentions a recent failed payment / declined card. */
-export function failedPaymentAccounts(source: Account[] = accounts): Account[] {
-  return liveAccounts(source).filter((a) =>
-    a.timeline.some((t) => /failed|declined|dunning|card/i.test(t.label)),
-  );
-}
-
-/** Accounts trending down: watch/at-risk with negative adoption growth. */
-export function decliningAccounts(source: Account[] = accounts): Account[] {
-  return liveAccounts(source).filter(
+export const failedPayments = (): Account[] =>
+  accounts.filter(
     (a) =>
-      (a.healthBand === "watch" || a.healthBand === "atrisk") &&
-      a.adoption.contactGrowthPct < 0,
+      liveOnly(a) &&
+      (a.revenue.lastPaymentStatus === "failed" ||
+        a.revenue.paymentAttempts.some((p) => p.status === "failed")),
   );
-}
 
-/** Thriving accounts that match the expansion playbook. */
-export function upsellReadyAccounts(source: Account[] = accounts): Account[] {
-  const expansion = findPlaybook("pb-expansion");
-  return expansion ? matchingAccounts(expansion, source) : [];
-}
+export const stalledOnboarding = (): Account[] =>
+  accounts.filter((a) => liveOnly(a) && a.onboarding.stalled);
 
-/** Renewing in <=30 days AND below healthy. */
-export function churnRiskAccounts(source: Account[] = accounts): Account[] {
-  return liveAccounts(source).filter(
-    (a) => a.renewalInDays > 0 && a.renewalInDays <= 30 && a.healthScore < 60,
+export const stalledByImpact = (): Account[] =>
+  stalledOnboarding()
+    .slice()
+    .sort((a, b) => b.revenue.mrr - a.revenue.mrr);
+
+const STICKY_REVERSE_WINDOW_DAYS = 30;
+
+export const lostStickySetups = (): Account[] => {
+  const recent = signals.filter(
+    (s) =>
+      s.sticky &&
+      s.direction === "reverse" &&
+      s.type === "setup" &&
+      daysSince(s.detectedAt) <= STICKY_REVERSE_WINDOW_DAYS,
   );
+  const ids = new Set(recent.map((s) => s.accountId));
+  return accounts.filter((a) => ids.has(a.identity.id) && liveOnly(a));
+};
+
+export const dormantGrowth = (): Account[] =>
+  accounts.filter(
+    (a) =>
+      liveOnly(a) &&
+      a.lifecycle.stage === "dormant" &&
+      a.health.delta > 0 &&
+      a.login.lastLoginDaysAgo <= 14,
+  );
+
+export interface AgencyRollup {
+  totalAccounts: number;
+  liveAccounts: number;
+  mrr: number;
+  mrrAtRisk: number;
 }
 
-export interface MoneyCohorts {
-  failedPayments: number;
-  declining: number;
-  upsellReady: number;
-  churnRisk: number;
-}
-
-export function moneyCohorts(source: Account[] = accounts): MoneyCohorts {
+export const agencyRollup = (): AgencyRollup => {
+  const live = accounts.filter(liveOnly);
   return {
-    failedPayments: failedPaymentAccounts(source).length,
-    declining: decliningAccounts(source).length,
-    upsellReady: upsellReadyAccounts(source).length,
-    churnRisk: churnRiskAccounts(source).length,
+    totalAccounts: accounts.length,
+    liveAccounts: live.length,
+    mrr: live.reduce((sum, a) => sum + a.revenue.mrr, 0),
+    mrrAtRisk: live
+      .filter((a) => a.health.band === "atrisk")
+      .reduce((sum, a) => sum + a.revenue.mrr, 0),
   };
-}
+};
 
-/** Sum of MRR at risk = MRR of accounts renewing soon with weak health. */
-export function mrrAtRisk(source: Account[] = accounts): number {
-  return churnRiskAccounts(source).reduce((sum, a) => sum + a.mrr, 0);
-}
-
-/** Total live MRR across the book. */
-export function totalMrr(source: Account[] = accounts): number {
-  return liveAccounts(source).reduce((sum, a) => sum + a.mrr, 0);
-}
-
-export function totalAccounts(source: Account[] = accounts): number {
-  return liveAccounts(source).length;
-}
-
-// --- Onboarding selectors ---
-
-export function stalledOnboardings(): OnboardingProgress[] {
-  return onboardingProgress.filter((o) => o.stalledStepIndex !== undefined);
-}
+export const signalsForAccount = (accountId: string): Signal[] =>
+  signals
+    .filter((s) => s.accountId === accountId)
+    .slice()
+    .sort((a, b) => Date.parse(b.detectedAt) - Date.parse(a.detectedAt));
