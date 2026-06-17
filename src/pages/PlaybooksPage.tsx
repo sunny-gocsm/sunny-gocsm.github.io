@@ -277,12 +277,35 @@ function OutcomesTab() {
   const sorted = [...outcomes].sort((a, b) => a.daysAgo - b.daysAgo);
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: "var(--s-5)" }}>
-      {/* Weekly digest — the same brief as a message */}
-      <section style={{ display: "flex", flexDirection: "column", gap: "var(--s-2)" }}>
-        <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between" }}>
-          <h3 style={{ font: "var(--t-h3)", margin: 0 }}>This week, in plain words</h3>
-          <ConfTag basis="fact" detail="verified via signal change after a play ran" />
+    <div style={{ display: "flex", flexDirection: "column", gap: "var(--s-6)" }}>
+      {/* Win-loop hero band */}
+      <section
+        style={{
+          borderRadius: "var(--r-lg, 14px)",
+          padding: "var(--s-5) var(--s-5)",
+          background:
+            "linear-gradient(135deg, var(--pos-soft) 0%, var(--blue-2) 60%, var(--surface) 100%)",
+          border: "1px solid var(--border)",
+          display: "flex",
+          flexDirection: "column",
+          gap: "var(--s-3)",
+        }}
+      >
+        <div style={{ display: "flex", alignItems: "center", gap: "var(--s-2)" }}>
+          <span
+            aria-hidden
+            style={{
+              width: 36, height: 36, borderRadius: 11,
+              display: "grid", placeItems: "center",
+              background: "var(--pos-soft)", color: "var(--pos-7)",
+            }}
+          >
+            <Icon name="trophy" />
+          </span>
+          <h2 style={{ font: "var(--t-h2)", margin: 0 }}>This week, in plain words</h2>
+          <span style={{ marginLeft: "auto" }}>
+            <ConfTag basis="fact" detail="verified via signal change after a play ran" />
+          </span>
         </div>
         <Card padded>
           <WeeklyDigest
