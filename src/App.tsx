@@ -4,8 +4,10 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { ThemeProvider } from "next-themes";
+import AppLayout from "./components/AppLayout";
 import Index from "./pages/Index";
 import Activity from "./pages/health/Activity";
+import StubPage from "./pages/stubs/StubPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -18,8 +20,16 @@ const App = () => (
         <Sonner />
         <BrowserRouter>
           <Routes>
-            <Route path="/" element={<Index />} />
-            <Route path="/activity" element={<Activity />} />
+            <Route element={<AppLayout />}>
+              <Route path="/" element={<Index />} />
+              <Route path="/today" element={<Index />} />
+              <Route path="/accounts" element={<StubPage title="Accounts" />} />
+              <Route path="/playbooks" element={<StubPage title="Playbooks" />} />
+              <Route path="/onboarding" element={<StubPage title="Onboarding" />} />
+              <Route path="/money" element={<StubPage title="Money" />} />
+              <Route path="/configure" element={<StubPage title="Configure" />} />
+              <Route path="/activity" element={<Activity />} />
+            </Route>
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>
