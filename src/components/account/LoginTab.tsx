@@ -102,6 +102,17 @@ export function LoginTab({ account }: { account: Account }) {
   const overallVariant: "pos" | "blue" | "warn" | "danger" = ACTIVITY_VARIANT[login.activityStatus];
   const lowData = login.users.length <= 1;
 
+  // Single worst metric per tab (R8).
+  type WorstKey = "lastLogin" | "active" | "time" | null;
+  const worst: WorstKey =
+    login.lastLoginDaysAgo > 30
+      ? "lastLogin"
+      : login.activeUsers <= 1
+      ? "active"
+      : login.totalLoggedInTime < 60
+      ? "time"
+      : null;
+
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "var(--s-5)" }}>
       {/* Summary metrics */}
@@ -116,19 +127,22 @@ export function LoginTab({ account }: { account: Account }) {
           label="Active users"
           value={<Mono>{login.activeUsers}</Mono>}
           icon={<Icon name="users" />}
-          iconTone="info"
+          iconTone={login.activeUsers <= 1 ? "warn" : "info"}
+          accent={worst === "active" ? "neg" : null}
         />
         <MetricCard
           label="Total logged-in time · 30d"
           value={<Mono>{fmtMins(login.totalLoggedInTime)}</Mono>}
           icon={<Icon name="clock" />}
-          iconTone="info"
+          iconTone={login.totalLoggedInTime < 60 ? "warn" : "info"}
+          accent={worst === "time" ? "neg" : null}
         />
         <MetricCard
           label="Last login"
           value={<span>{fmtDays(login.lastLoginDaysAgo)}</span>}
           icon={<Icon name="log-in" />}
-          iconTone={login.lastLoginDaysAgo > 30 ? "warn" : "info"}
+          iconTone={login.lastLoginDaysAgo > 30 ? "neg" : login.lastLoginDaysAgo > 10 ? "warn" : "info"}
+          accent={worst === "lastLogin" ? "neg" : null}
         />
       </div>
 
