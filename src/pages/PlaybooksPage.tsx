@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { Badge, Card, PlaybookCard, Tabs, ConfTag, Icon, Mono } from "@/gocsm-ds";
 import {
   playbooks,
@@ -52,6 +53,7 @@ function activateLabel(state: PlaybookState): string {
 export default function PlaybooksPage() {
   const [tab, setTab] = useState<TabId>("library");
   const [filter, setFilter] = useState<Filter>("all");
+  const navigate = useNavigate();
   const [overrides, setOverrides] = useState<Record<string, PlaybookState>>({});
 
   const enriched = useMemo(
