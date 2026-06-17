@@ -48,6 +48,7 @@ import {
   type Placement,
   type StepCatalogItem,
 } from "@/fixtures/journeys";
+import { PageRibbon } from "@/components/PageRibbon";
 
 const fmtMoney = (n: number) => "$" + Math.round(n).toLocaleString();
 
@@ -154,7 +155,7 @@ function StallDashboard({ onSendToToday }: { onSendToToday: (a: Account) => void
           label="Median time to activate"
           value={
             <span>
-              <Mono>{median}</Mono>
+              {median}
               <span style={{ font: "var(--t-meta)", color: "var(--text-3, var(--text))" }}> days</span>
             </span>
           }
@@ -412,7 +413,7 @@ function JourneyList({
               }}
             >
               <span><Mono>{j.steps.length}</Mono> steps</span>
-              <span><Mono>{j.targetDays}</Mono>d target</span>
+              <span>{j.targetDays}d target</span>
               <span><Mono>{j.clientCount}</Mono> clients</span>
             </div>
           </div>
@@ -463,7 +464,7 @@ function JourneyDetail({
         }}
       >
         <MetricCard label="Steps" value={<Mono>{journey.steps.length}</Mono>} icon={<Icon name="list" />} />
-        <MetricCard label="Target days" value={<Mono>{journey.targetDays}</Mono>} icon={<Icon name="calendar-clock" />} />
+        <MetricCard label="Target days" value={<span>{journey.targetDays}</span>} icon={<Icon name="calendar-clock" />} />
         <MetricCard label="Clients on this journey" value={<Mono>{journey.clientCount}</Mono>} icon={<Icon name="users" />} />
         <MetricCard
           label="Experience"
@@ -487,7 +488,7 @@ function JourneyDetail({
                     {step.owner === "agency" ? "agency owns" : "client owns"}
                   </Badge>
                   <span style={{ font: "var(--t-meta)", color: "var(--text-3, var(--text))" }}>
-                    SLA <Mono>{step.slaDays}d</Mono>
+                    SLA {step.slaDays}d
                   </span>
                   {!audit.ok ? (
                     <Badge variant="warn" dot={false} title="Plain-language audit flagged this title">
@@ -764,12 +765,14 @@ export default function OnboardingPage() {
         gap: "var(--s-5)",
       }}
     >
-      <header style={{ display: "flex", flexDirection: "column", gap: "var(--s-2)" }}>
-        <h1 style={{ font: "var(--t-h2)", margin: 0 }}>Onboarding</h1>
-        <p style={{ font: "var(--t-body)", color: "var(--text-3, var(--text))", margin: 0 }}>
-          Operator surface for stalls and journeys. Stalls send to Today as Playbooks; the client view stays plain.
-        </p>
-      </header>
+      <PageRibbon
+        title="Onboarding"
+        description="Operator view of stalled accounts and the journeys they're moving through. Stalls send to Today; the client view stays plain."
+        kpis={[
+          { label: "Stalled", value: <Mono>{stalledOnboarding().length}</Mono> },
+          { label: "Journeys", value: <Mono>{journeyFixtures.length}</Mono> },
+        ]}
+      />
 
       <Tabs
         tabs={TABS}

@@ -94,7 +94,7 @@ export function FeedbackTab({ account }: { account: Account }) {
           label="Last feedback"
           value={
             feedback.lastFeedbackDate ? (
-              <Mono>{fmtDate(feedback.lastFeedbackDate)}</Mono>
+              <span>{fmtDate(feedback.lastFeedbackDate)}</span>
             ) : (
               <span style={{ color: "var(--text-3, var(--text))" }}>—</span>
             )
@@ -211,7 +211,7 @@ export function FeedbackTab({ account }: { account: Account }) {
                       </div>
                       <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: "var(--s-1)" }}>
                         <span style={{ font: "var(--t-meta)", color: "var(--text-3, var(--text))" }}>
-                          <Mono>{fmtDate(r.date)}</Mono>
+                          {fmtDate(r.date)}
                         </span>
                         <p style={{ font: "var(--t-body)", margin: 0 }}>
                           {r.comment ?? <span style={{ color: "var(--text-3, var(--text))" }}>No comment.</span>}

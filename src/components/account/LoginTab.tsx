@@ -126,7 +126,7 @@ export function LoginTab({ account }: { account: Account }) {
         />
         <MetricCard
           label="Last login"
-          value={<Mono>{fmtDays(login.lastLoginDaysAgo)}</Mono>}
+          value={<span>{fmtDays(login.lastLoginDaysAgo)}</span>}
           icon={<Icon name="log-in" />}
           iconTone={login.lastLoginDaysAgo > 30 ? "warn" : "info"}
         />
@@ -215,9 +215,8 @@ export function LoginTab({ account }: { account: Account }) {
             key: "lastLoginDays",
             header: "Last login",
             sortable: true,
-            mono: true,
             align: "right",
-            render: (r) => <Mono>{fmtDays(r.lastLoginDays)}</Mono>,
+            render: (r) => <span>{fmtDays(r.lastLoginDays)}</span>,
           },
           {
             key: "timeSpent",

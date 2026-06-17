@@ -3,3 +3,18 @@
    DS components are px-based, so forcing 16px here is safe for the DS and correct
    for Tailwind. This file MUST be the last CSS imported in the app entry. */
 html { font-size: 16px; }
+
+/* Canvas: the outermost background is the DS canvas token (--bg) so that
+   neutral cards (var(--surface)) visibly lift off the page. We don't restyle
+   DS components — we only set the canvas color on the shell containers. */
+html,
+body {
+  background: var(--bg);
+}
+body {
+  background-color: var(--bg) !important;
+}
+.app-shell,
+.app-shell > .main {
+  background: var(--bg);
+}

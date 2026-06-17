@@ -15,6 +15,7 @@ import {
   AssignmentRuleEditor,
   SkillScheduleCard,
 } from "@/gocsm-ds";
+import { PageRibbon } from "@/components/PageRibbon";
 import {
   playbooks,
   matchCount,
@@ -120,21 +121,16 @@ export default function PlaybooksPage() {
         gap: "var(--s-5)",
       }}
     >
-      <header style={{ display: "flex", flexDirection: "column", gap: "var(--s-2)" }}>
-        <h1 style={{ font: "var(--t-h2)", margin: 0 }}>Playbooks</h1>
-        <p style={{ font: "var(--t-body)", color: "var(--text-3, var(--text))", margin: 0 }}>
-          One situation, one playbook. Every play is grounded in a Signal — counts are live.
-        </p>
-        <div style={{ display: "flex", flexWrap: "wrap", gap: "var(--s-3)", font: "var(--t-meta)", color: "var(--text-3, var(--text))" }}>
-          <span><Mono>{enriched.length}</Mono> plays</span>
-          <span>·</span>
-          <span><Mono>{onCount}</Mono> on autopilot</span>
-          <span>·</span>
-          <span><Mono>{saveCount}</Mono> Save plays</span>
-          <span>·</span>
-          <span><Mono>{totalMatches}</Mono> total matches today</span>
-        </div>
-      </header>
+      <PageRibbon
+        title="Playbooks"
+        description="One situation, one playbook. Every play is grounded in a live signal."
+        kpis={[
+          { label: "Plays", value: <Mono>{enriched.length}</Mono> },
+          { label: "On autopilot", value: <Mono>{onCount}</Mono> },
+          { label: "Save plays", value: <Mono>{saveCount}</Mono> },
+          { label: "Matches today", value: <Mono>{totalMatches}</Mono> },
+        ]}
+      />
 
       <Tabs tabs={TABS} active={tab} onChange={(id) => setTab(id as TabId)} />
 
@@ -315,7 +311,7 @@ function OutcomesTab() {
                       {o.attribution === "playbook-solo" ? "Solo (autopilot)" : "Assist (you approved)"}
                     </span>
                     <span style={{ marginLeft: "auto" }}>
-                      verified <Mono>{o.daysAgo}d</Mono> ago
+                      verified {o.daysAgo}d ago
                     </span>
                   </div>
                 </div>

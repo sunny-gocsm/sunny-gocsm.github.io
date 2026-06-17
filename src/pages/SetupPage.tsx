@@ -361,7 +361,7 @@ function HeroStep({ hero, onTake }: { hero: ReturnType<typeof allAccounts>[numbe
           <h2 style={{ font: "var(--t-h2)", margin: "var(--s-1) 0" }}>{hero.identity.name}</h2>
           <p style={{ font: "var(--t-body)", color: "var(--text-muted)", margin: 0 }}>
             {bandLabel(hero.health.band)} — {hero.identity.plan} · <Mono>${Math.round(hero.revenue.mrr).toLocaleString()}</Mono>/mo.
-            {days > 0 ? <> Renews in <Mono>{days}d</Mono>.</> : <> Renewal overdue.</>}
+            {days > 0 ? <> Renews in {days}d.</> : <> Renewal overdue.</>}
           </p>
         </div>
       </div>

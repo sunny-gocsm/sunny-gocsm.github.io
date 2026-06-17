@@ -134,7 +134,7 @@ function LoginView() {
         <MetricCard label="Active users" icon={<Icon name="users" />} value={<Mono>{fmtNum(totalUsers)}</Mono>} delta={<Delta value="+4%" direction="up" />} context="across live accounts" />
         <MetricCard label="Time spent · 30d" icon={<Icon name="clock" />} value={<Mono>{fmtNum(totalMin / 60)}h</Mono>} delta={<Delta value="+2%" direction="up" />} context="logged-in minutes" />
         <MetricCard label="Ghosting accounts" icon={<Icon name="moon" />} iconTone="neg" accent="neg" value={<Mono>{fmtNum(ghosting)}</Mono>} delta={<Delta value={`${noLogin30} no login 30d+`} direction="bad-up" />} context="needs nudge" />
-        <MetricCard label="Median days since login" icon={<Icon name="calendar" />} value={<Mono>{fmtNum(medianDaysSince)}d</Mono>} delta={<Delta value="flat" direction="flat" />} context="portfolio median" />
+        <MetricCard label="Median days since login" icon={<Icon name="calendar" />} value={<span>{fmtNum(medianDaysSince)} days</span>} delta={<Delta value="flat" direction="flat" />} context="portfolio median" />
       </div>
 
       <Card padded>
@@ -165,7 +165,7 @@ function LoginView() {
           { key: "name", header: "Account", sortable: true },
           { key: "users", header: "Active users", mono: true, align: "right", sortable: true },
           { key: "minutes", header: "Minutes 30d", mono: true, align: "right", sortable: true, render: (r) => <Mono>{fmtNum(r.minutes)}</Mono> },
-          { key: "days", header: "Last login", mono: true, align: "right", sortable: true, render: (r) => <Mono>{r.days}d ago</Mono> },
+          { key: "days", header: "Last login", align: "right", sortable: true, render: (r) => <span>{r.days}d ago</span> },
           { key: "status", header: "Status", render: (r) => <Badge variant={r.status === "ghosting" ? "danger" : r.status === "low" ? "warn" : "pos"}>{r.status}</Badge> },
           { key: "mrr", header: "MRR", mono: true, align: "right", sortable: true, render: (r) => <Mono>${fmtNum(r.mrr)}</Mono> },
         ]}
@@ -418,7 +418,7 @@ function SignalsView() {
         <MetricCard label="Sticky setups lost · 30d" icon={<Icon name="unplug" />} iconTone="neg" accent="neg" value={<Mono>{lost.length}</Mono>} delta={<Delta value={`${revSticky.length} all-time`} direction="bad-up" />} context="alarm" />
         <MetricCard label="Decay rate" icon={<Icon name="trending-down" />} accent="neg" value={<Mono>{decayRate}%</Mono>} delta={<Delta value="reversal share" direction="bad-up" />} context="of forward sticky setups" />
         <MetricCard label="Dormant — growing" icon={<Icon name="bell" />} iconTone="warn" value={<Mono>{dormantGrew.length}</Mono>} delta={<Delta value="resurrection signal" direction="up" />} context="dormant accts with rising health" />
-        <MetricCard label="Median time-to-activate" icon={<Icon name="rocket" />} value={<Mono>{fmtNum(ttv)}d</Mono>} delta={<Delta value={`p90 ${fmtNum(ttvP90)}d`} direction="flat" />} context="activated cohort" />
+        <MetricCard label="Median time-to-activate" icon={<Icon name="rocket" />} value={<span>{fmtNum(ttv)} days</span>} delta={<Delta value={`p90 ${fmtNum(ttvP90)}d`} direction="flat" />} context="activated cohort" />
       </div>
 
       {/* Activation funnel */}
