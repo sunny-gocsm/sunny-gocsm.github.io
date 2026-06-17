@@ -9,9 +9,10 @@ import {
   Delta,
   HealthTile,
   TeamPulseStrip,
-  Verdict,
   LiveStatus,
 } from "@/gocsm-ds";
+import { useToast } from "@/hooks/use-toast";
+import { ToastAction } from "@/components/ui/toast";
 import { PageRibbon } from "@/components/PageRibbon";
 import {
   atRiskByUrgency,
@@ -97,10 +98,10 @@ function CohortCard({
           <span className={`icon-chip ${accent}`} aria-hidden>
             <Icon name={icon} />
           </span>
-          <span style={{ font: "var(--t-meta)", color: "var(--text-3, var(--text))", textTransform: "uppercase", letterSpacing: "0.04em" }}>
+          <span style={{ font: "var(--t-h5, var(--t-body))", color: "var(--text)", fontWeight: 600 }}>
             {title}
           </span>
-          <span style={{ marginLeft: "auto", font: "var(--t-meta)", color: "var(--text-3, var(--text))" }}>
+          <span style={{ marginLeft: "auto", font: "var(--t-meta)", color: "var(--text-2, var(--text))" }}>
             <Mono>{accounts.length}</Mono>
             {mrr > 0 ? <> · <Mono>{fmtMoney(mrr)}</Mono></> : null}
           </span>
@@ -124,7 +125,7 @@ function CohortCard({
                 }}
               >
                 <span style={{ fontWeight: 500 }}>{a.identity.name}</span>
-                <span style={{ color: "var(--text-3, var(--text))", fontSize: 13, flex: 1, minWidth: 0 }}>
+                <span style={{ color: "var(--text-2, var(--text))", fontSize: 13, flex: 1, minWidth: 0 }}>
                   {renderLine ? renderLine(a) : reasonFor(a)}
                 </span>
               </li>
@@ -137,14 +138,14 @@ function CohortCard({
         )}
 
         <div style={{ marginTop: "var(--s-1)", display: "flex", gap: "var(--s-2)" }}>
-          <Button variant="ghost" size="sm" onClick={onView} icon={<Icon name="arrow-right" />}>
-            View all
-          </Button>
           {onApply && accounts.length > 0 ? (
-            <Button variant="secondary" size="sm" onClick={onApply} icon={<Icon name="book-open" />}>
+            <Button variant="primary" size="sm" onClick={onApply} icon={<Icon name="book-open" />}>
               Apply a Playbook
             </Button>
           ) : null}
+          <Button variant="ghost" size="sm" onClick={onView} icon={<Icon name="arrow-right" />}>
+            View all
+          </Button>
         </div>
       </div>
     </Card>
@@ -157,6 +158,7 @@ function CohortCard({
 
 export default function TodayPage() {
   const navigate = useNavigate();
+  const { toast } = useToast();
   const [drawerScope, setDrawerScope] = useState<DrawerScope | null>(null);
   const openApply = (accs: Account[], suggested?: string) =>
     setDrawerScope({
@@ -213,12 +215,32 @@ export default function TodayPage() {
       : "pos";
 
   const [handled, setHandled] = useState<Set<string>>(new Set());
-  const toggleHandled = (id: string) =>
-    setHandled((prev) => {
-      const next = new Set(prev);
-      next.has(id) ? next.delete(id) : next.add(id);
-      return next;
+  const markHandled = (id: string, reason: "applied" | "dismissed") => {
+    setHandled((prev) => new Set(prev).add(id));
+    const acc = queue.find((a) => a.identity.id === id);
+    toast({
+      title: reason === "applied" ? "Play queued for this account" : "Marked done",
+      description: acc ? `${acc.identity.name} cleared from today.` : undefined,
+      action: (
+        <ToastAction
+          altText="Undo"
+          onClick={() =>
+            setHandled((prev) => {
+              const next = new Set(prev);
+              next.delete(id);
+              return next;
+            })
+          }
+        >
+          Undo
+        </ToastAction>
+      ),
     });
+  };
+  const applyToOne = (a: Account) => {
+    openApply([a]);
+    markHandled(a.identity.id, "applied");
+  };
   const activeQueue = queue.filter((a) => !handled.has(a.identity.id));
   const handledCount = queue.filter((a) => handled.has(a.identity.id)).length;
 
@@ -243,23 +265,8 @@ export default function TodayPage() {
   const renderQueueRow = (a: Account) => {
     const days = daysUntil(a.revenue.renewalDate);
     const breach = days >= 0 && days <= 7;
-    const isHandled = handled.has(a.identity.id);
     return (
-      <div
-        key={a.identity.id}
-        className={`queue-row${isHandled ? " celebrate" : ""}`}
-        style={{
-          opacity: isHandled ? 0.55 : 1,
-          textDecoration: isHandled ? "line-through" : "none",
-        }}
-      >
-        <input
-          type="checkbox"
-          aria-label={`Mark ${a.identity.name} handled`}
-          checked={isHandled}
-          onChange={() => toggleHandled(a.identity.id)}
-          style={{ flexShrink: 0, width: 16, height: 16, cursor: "pointer" }}
-        />
+      <div key={a.identity.id} className="queue-row">
         <span
           aria-hidden
           style={{
@@ -314,7 +321,7 @@ export default function TodayPage() {
             size="sm"
             variant="primary"
             icon={<Icon name="book-open" />}
-            onClick={() => openApply([a])}
+            onClick={() => applyToOne(a)}
           >
             Apply play
           </Button>
@@ -324,6 +331,15 @@ export default function TodayPage() {
             onClick={() => navigate(`/accounts/${a.identity.id}`)}
           >
             Open
+          </Button>
+          <Button
+            size="sm"
+            variant="ghost"
+            title="Clear this row from today"
+            icon={<Icon name="check" />}
+            onClick={() => markHandled(a.identity.id, "dismissed")}
+          >
+            Mark done
           </Button>
         </span>
       </div>
@@ -352,6 +368,27 @@ export default function TodayPage() {
     },
   ];
 
+  const AiAttribution = (
+    <span
+      style={{
+        display: "inline-flex",
+        alignItems: "center",
+        gap: 4,
+        padding: "1px 6px",
+        borderRadius: 999,
+        background: "var(--ai-soft, var(--surface-2))",
+        color: "var(--ai-strong, var(--text-2, var(--text)))",
+        font: "var(--t-meta)",
+        fontWeight: 600,
+        marginRight: 6,
+        verticalAlign: "baseline",
+      }}
+    >
+      <Icon name="sparkles" />
+      GoCSM AI
+    </span>
+  );
+
   return (
     <main
       style={{
@@ -361,7 +398,7 @@ export default function TodayPage() {
         color: "var(--text)",
         display: "flex",
         flexDirection: "column",
-        gap: "var(--s-7)",
+        gap: "var(--s-9, var(--s-8))",
       }}
     >
       {/* 1 — Briefing ribbon (tinted band) */}
@@ -379,7 +416,12 @@ export default function TodayPage() {
       >
         <PageRibbon
           title={greetingFor("there")}
-          description={briefingLine}
+          description={
+            <span style={{ color: "var(--text-2, var(--text))" }}>
+              {AiAttribution}
+              {briefingLine}
+            </span>
+          }
           trailing={<LiveStatus state="fresh" label="Synced moments ago" />}
           kpis={[
             { label: "On the board", value: <Mono>{activeQueue.length}</Mono> },
@@ -387,12 +429,53 @@ export default function TodayPage() {
             { label: "Renewals · 30d", value: <Mono>{renewalsWindow(0, 30).length}</Mono> },
           ]}
         />
-        <Verdict tone={topTone}>{topReason}</Verdict>
+        {queue[0] ? (
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: "var(--s-3)",
+              padding: "var(--s-2) var(--s-3)",
+              borderRadius: "var(--r-md)",
+              background: "var(--surface)",
+              border: "1px solid var(--border)",
+              font: "var(--t-body-sm)",
+              color: "var(--text)",
+            }}
+          >
+            <span
+              aria-hidden
+              style={{
+                width: 8,
+                height: 8,
+                borderRadius: 999,
+                background:
+                  topTone === "risk"
+                    ? "var(--health-atrisk-strong)"
+                    : topTone === "watch"
+                    ? "var(--health-watch-strong)"
+                    : "var(--pos-7)",
+                flexShrink: 0,
+              }}
+            />
+            <span style={{ flex: 1, minWidth: 0 }}>
+              Highest priority right now: <strong style={{ fontWeight: 600 }}>{queue[0].identity.name}</strong> — {reasonFor(queue[0])}
+            </span>
+            <Button
+              size="sm"
+              variant="primary"
+              icon={<Icon name="arrow-right" />}
+              onClick={() => applyToOne(queue[0])}
+            >
+              Start here
+            </Button>
+          </div>
+        ) : null}
       </section>
 
-      {/* 2 — Urgency queue (the visual focus) */}
+      {/* 2 — Act by customer */}
       <section
-        aria-label="Today's queue"
+        aria-label="Act by customer"
         id="urgency-queue"
         style={{ display: "flex", flexDirection: "column", gap: "var(--s-3)" }}
       >
@@ -411,7 +494,14 @@ export default function TodayPage() {
               gap: "var(--s-3)",
             }}
           >
-            <h2 style={{ font: "var(--t-h3)", margin: 0 }}>Today's queue</h2>
+            <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
+              <h2 style={{ font: "var(--t-h3)", margin: 0, color: "var(--text)", fontWeight: 600 }}>
+                Act by customer
+              </h2>
+              <p style={{ font: "var(--t-body-sm)", color: "var(--text-2, var(--text))", margin: 0 }}>
+                Account by account, most urgent first.
+              </p>
+            </div>
             <span
               style={{
                 font: "var(--t-meta)",
@@ -494,10 +584,12 @@ export default function TodayPage() {
 
       {/* 3 — Problem cohorts */}
       <section aria-label="Act by problem" style={{ display: "flex", flexDirection: "column", gap: "var(--s-3)" }}>
-        <header style={{ display: "flex", flexDirection: "column", gap: "var(--s-1)" }}>
-          <h2 style={{ font: "var(--t-h3)", margin: 0 }}>Act by problem</h2>
-          <p style={{ font: "var(--t-body)", color: "var(--text-3, var(--text))", margin: 0 }}>
-            GoCSM grouped these accounts because they share the same problem.
+        <header style={{ display: "flex", flexDirection: "column", gap: 2 }}>
+          <h2 style={{ font: "var(--t-h3)", margin: 0, color: "var(--text)", fontWeight: 600 }}>
+            Act by problem
+          </h2>
+          <p style={{ font: "var(--t-body-sm)", color: "var(--text-2, var(--text))", margin: 0 }}>
+            Grouped by the problem they share.
           </p>
         </header>
         <div
@@ -602,7 +694,7 @@ export default function TodayPage() {
 
       {/* 4 — Money / counts strip */}
       <section aria-label="Agency rollup" style={{ display: "flex", flexDirection: "column", gap: "var(--s-3)" }}>
-        <h2 style={{ font: "var(--t-h3)", margin: 0 }}>The book, in numbers</h2>
+        <h2 style={{ font: "var(--t-h3)", margin: 0, color: "var(--text)", fontWeight: 600 }}>The book, in numbers</h2>
         <div
           style={{
             display: "grid",
