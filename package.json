@@ -1,6 +1,6 @@
 {
   "name": "@gocsm/design-system",
-  "version": "1.1.2",
+  "version": "1.2.0",
   "description": "GoCSM Design System v3 — React component library, tokens, and adherence lint.",
   "type": "module",
   "main": "./dist/index.cjs",

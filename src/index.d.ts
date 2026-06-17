@@ -8,6 +8,7 @@ export * from "./components/core/Badge";
 export * from "./components/core/Button";
 export * from "./components/core/Card";
 export * from "./components/core/Checkbox";
+export * from "./components/core/DataTable";
 export * from "./components/core/Input";
 export * from "./components/core/MetricCard";
 export * from "./components/core/Tabs";

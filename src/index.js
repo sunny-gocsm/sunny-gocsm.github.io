@@ -8,6 +8,7 @@ export * from "./components/core/Badge.jsx";
 export * from "./components/core/Button.jsx";
 export * from "./components/core/Card.jsx";
 export * from "./components/core/Checkbox.jsx";
+export * from "./components/core/DataTable.jsx";
 export * from "./components/core/Input.jsx";
 export * from "./components/core/MetricCard.jsx";
 export * from "./components/core/Tabs.jsx";

@@ -26,7 +26,7 @@ export function PlaybookDetail({
 }) {
   const s = STATE[state] || STATE.off;
   return (
-    <div className="panel pd-playbook" {...rest}>
+    <div className="panel" {...rest}>
       <div className="pd-head">
         <div className="pd-toprow">
           <span className="pd-ico"><Icon name={icon} /></span>
@@ -40,7 +40,7 @@ export function PlaybookDetail({
       </div>
 
       {watch ? (
-        <div className="panel-section pd-sec">
+        <div className="panel-section">
           <div className="ps-h"><span className="lbl"><Icon name="radar" />What it watches for</span></div>
           <div className="pd-watch">{watch.summary}</div>
           <div className="pd-watch-meta">
@@ -51,7 +51,7 @@ export function PlaybookDetail({
       ) : null}
 
       {actions.length ? (
-        <div className="panel-section pd-sec">
+        <div className="panel-section">
           <div className="ps-h"><span className="lbl"><Icon name="list-checks" />What it does</span></div>
           <div className="pd-actions">
             {actions.map((a, i) => (
@@ -75,7 +75,7 @@ export function PlaybookDetail({
       ) : null}
 
       {proof ? (
-        <div className="panel-section pd-sec">
+        <div className="panel-section">
           <div className="ps-h"><span className="lbl"><Icon name="users" />Who it affects</span></div>
           <div className="pd-proof">
             {proof.matchCount != null ? <div className="pd-match"><span className="n">{proof.matchCount}</span> accounts match today</div> : null}
@@ -95,7 +95,7 @@ export function PlaybookDetail({
       ) : null}
 
       {video || videoLabel ? (
-        <div className="panel-section pd-sec">
+        <div className="panel-section">
           <div className="ps-h"><span className="lbl"><Icon name="circle-play" />How it works</span></div>
           <div className="pd-video">{video || <div className="pd-video-ph"><span className="pv-play"><Icon name="play" /></span><span>{videoLabel || "Watch a 2-min walkthrough"}</span></div>}</div>
         </div>
