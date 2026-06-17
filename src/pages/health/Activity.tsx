@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { ActivityLog, Mono, Badge } from "@/gocsm-ds";
+import { ActivityLog, Badge } from "@/gocsm-ds";
 import { activityLog, type ActivityMode } from "./briefing.fixtures";
 
 const MODE_LABEL: Record<ActivityMode, string> = {
@@ -16,7 +16,7 @@ const MODE_VARIANT: Record<ActivityMode, "ai" | "pos" | "neutral"> = {
 
 export default function Activity() {
   const rows = activityLog.map((e) => ({
-    time: <Mono>{e.time}</Mono>,
+    time: e.time,
     actor: e.mode === "manual" ? "You" : "GoCSM",
     line: (
       <span className="flex flex-wrap items-center gap-2">
