@@ -36,6 +36,8 @@ const App = () => (
               <Route path="/playbooks/:id" element={<PlaybookDetailPage />} />
               <Route path="/onboarding" element={<OnboardingPage />} />
               <Route path="/money" element={<MoneyPage />} />
+              <Route path="/insights" element={<InsightsPage />} />
+              <Route path="/insights/:view" element={<InsightsPage />} />
               <Route path="/configure" element={<StubPage title="Configure" />} />
               <Route path="/activity" element={<Activity />} />
             </Route>
