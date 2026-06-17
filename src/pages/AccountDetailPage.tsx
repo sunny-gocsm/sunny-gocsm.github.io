@@ -287,6 +287,8 @@ export default function AccountDetailPage() {
             <RevenueTab account={account} />
           ) : tab === "feedback" ? (
             <FeedbackTab account={account} />
+          ) : tab === "onboarding" ? (
+            <OnboardingTab account={account} />
           ) : (
             <Card padded>
               <div style={{ display: "flex", flexDirection: "column", gap: "var(--s-2)" }}>
