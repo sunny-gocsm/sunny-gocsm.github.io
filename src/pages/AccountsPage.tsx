@@ -109,48 +109,8 @@ function Avatar({ name, initials }: { name: string; initials: string }) {
   );
 }
 
-// ----- Account drawer (Account 360 stub) -----------------------------------
+// (Account 360 lives at /accounts/:id — row click navigates there.)
 
-function AccountDrawer({ account, onClose }: { account: Account; onClose: () => void }) {
-  return (
-    <div
-      onClick={onClose}
-      style={{
-        position: "fixed",
-        inset: 0,
-        background: "rgba(0,0,0,0.4)",
-        zIndex: 50,
-        display: "flex",
-        justifyContent: "flex-end",
-      }}
-    >
-      <aside
-        onClick={(e) => e.stopPropagation()}
-        style={{
-          width: "min(440px, 100%)",
-          background: "var(--surface)",
-          borderLeft: "1px solid var(--border)",
-          padding: "var(--s-6)",
-          display: "flex",
-          flexDirection: "column",
-          gap: "var(--s-4)",
-          color: "var(--text)",
-          overflowY: "auto",
-        }}
-      >
-        <header style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "var(--s-3)" }}>
-          <h2 style={{ font: "var(--t-h3)", margin: 0 }}>{account.identity.name}</h2>
-          <Button variant="ghost" size="sm" onClick={onClose} icon={<Icon name="x" />}>
-            Close
-          </Button>
-        </header>
-        <p style={{ font: "var(--t-body)", color: "var(--text-3, var(--text-2, var(--text)))", margin: 0 }}>
-          Account 360 — coming next.
-        </p>
-      </aside>
-    </div>
-  );
-}
 
 // ----- Helpers --------------------------------------------------------------
 
@@ -179,7 +139,7 @@ export default function AccountsPage() {
   const [trackedOnly, setTrackedOnly] = useState(false);
   const [setupLostOnly, setSetupLostOnly] = useState(false);
   const [selectedIds, setSelectedIds] = useState<(string | number)[]>([]);
-  const [openAccountId, setOpenAccountId] = useState<string | null>(null);
+  const [selectedIds, setSelectedIds] = useState<(string | number)[]>([]);
   const [hiddenColumns, setHiddenColumns] = useState<string[]>([
     "adoption",
     "feedback",
