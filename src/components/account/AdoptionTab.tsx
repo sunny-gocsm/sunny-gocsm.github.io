@@ -134,7 +134,7 @@ export function AdoptionTab({ account }: { account: Account }) {
           value={<Mono>{adoptionPct}%</Mono>}
           icon={<Icon name="bar-chart-2" />}
           iconTone={adoptionPct >= 50 ? "pos" : adoptionPct >= 25 ? "warn" : "neg"}
-          accent={adoptionPct >= 50 ? "pos" : adoptionPct < 25 ? "neg" : null}
+          accent={adoptionPct < 25 ? "neg" : null}
         />
       </div>
 

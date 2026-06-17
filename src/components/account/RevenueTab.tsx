@@ -82,6 +82,17 @@ export function RevenueTab({ account }: { account: Account }) {
   const lowMargin = revenue.margin < 20;
   const lowData = paymentRows.length === 0 && planRows.length === 0;
 
+  // Single worst metric per tab (R8): pick the most critical card; only that one gets an accent.
+  type WorstKey = "margin" | "renewal" | "wallet" | "revenueHealth" | "spendTrend" | null;
+  const worst: WorstKey = (() => {
+    if (revenue.revenueHealth === "atrisk") return "revenueHealth";
+    if (lowMargin) return "margin";
+    if (renewalDays <= 14) return "renewal";
+    if (revenue.walletBalance < revenue.walletSpend30d * 0.25) return "wallet";
+    if (revenue.spendTrend < -10) return "spendTrend";
+    return null;
+  })();
+
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "var(--s-5)" }}>
       {/* Summary metrics */}
@@ -103,6 +114,7 @@ export function RevenueTab({ account }: { account: Account }) {
           value={<Mono>{fmtPct(revenue.spendTrend)}</Mono>}
           icon={<Icon name="trending-up" />}
           iconTone={revenue.spendTrend >= 0 ? "pos" : "warn"}
+          accent={worst === "spendTrend" ? "neg" : null}
           delta={
             <Delta
               value={fmtPct(revenue.spendTrend)}
@@ -119,6 +131,7 @@ export function RevenueTab({ account }: { account: Account }) {
           }
           icon={<Icon name="activity" />}
           iconTone={revenue.revenueHealth === "healthy" ? "pos" : revenue.revenueHealth === "watch" ? "warn" : "neg"}
+          accent={worst === "revenueHealth" ? "neg" : null}
         />
         <MetricCard
           label="Renewal"
@@ -129,12 +142,14 @@ export function RevenueTab({ account }: { account: Account }) {
           }
           icon={<Icon name="calendar" />}
           iconTone={renewalDays <= 30 ? "warn" : "info"}
+          accent={worst === "renewal" ? "neg" : null}
         />
         <MetricCard
           label="Wallet balance"
           value={<Mono>{fmtMoney(revenue.walletBalance)}</Mono>}
           icon={<Icon name="wallet" />}
           iconTone={revenue.walletBalance < revenue.walletSpend30d * 0.25 ? "warn" : "info"}
+          accent={worst === "wallet" ? "neg" : null}
         />
         <MetricCard
           label="Wallet spend · 30d"
@@ -153,7 +168,6 @@ export function RevenueTab({ account }: { account: Account }) {
           value={<Mono>{fmtMoney(revenue.totalCost)}</Mono>}
           icon={<Icon name="receipt" />}
           iconTone={lowMargin ? "warn" : "info"}
-          accent={lowMargin ? "neg" : null}
           delta={
             <Delta
               value={fmtPct(-Math.round(revenue.spendTrend / 2))}
@@ -167,7 +181,7 @@ export function RevenueTab({ account }: { account: Account }) {
           value={<Mono>{fmtPct(revenue.margin)}</Mono>}
           icon={<Icon name="percent" />}
           iconTone={revenue.margin >= 40 ? "pos" : revenue.margin >= 20 ? "warn" : "neg"}
-          accent={revenue.margin >= 40 ? "pos" : revenue.margin < 20 ? "neg" : null}
+          accent={worst === "margin" ? "neg" : null}
         />
       </div>
 
@@ -199,8 +213,8 @@ export function RevenueTab({ account }: { account: Account }) {
               <AreaChart data={series} margin={{ top: 8, right: 12, left: 0, bottom: 0 }}>
                 <defs>
                   <linearGradient id="mrrFill" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="var(--viz-1)" stopOpacity={0.35} />
-                    <stop offset="100%" stopColor="var(--viz-1)" stopOpacity={0} />
+                    <stop offset="0%" stopColor="var(--viz-seq-5)" stopOpacity={0.32} />
+                    <stop offset="100%" stopColor="var(--viz-seq-5)" stopOpacity={0} />
                   </linearGradient>
                 </defs>
                 <CartesianGrid stroke="var(--viz-grid)" vertical={false} />
@@ -215,21 +229,21 @@ export function RevenueTab({ account }: { account: Account }) {
                   }}
                   formatter={(v: number) => fmtMoney(v)}
                 />
-                <Area type="monotone" dataKey="mrr" stroke="var(--viz-1)" fill="url(#mrrFill)" strokeWidth={2} />
-                <Line type="monotone" dataKey="cost" stroke="var(--viz-4)" strokeWidth={2} dot={false} />
-                <Line type="monotone" dataKey="margin" stroke="var(--viz-2)" strokeWidth={2} dot={false} />
+                <Area type="monotone" dataKey="mrr" stroke="var(--viz-seq-5)" fill="url(#mrrFill)" strokeWidth={2} />
+                <Line type="monotone" dataKey="cost" stroke="var(--viz-seq-3)" strokeWidth={1.5} strokeDasharray="4 3" dot={false} />
+                <Line type="monotone" dataKey="margin" stroke="var(--viz-seq-6)" strokeWidth={2} dot={false} />
               </AreaChart>
             </ResponsiveContainer>
           </div>
           <div style={{ display: "flex", gap: "var(--s-3)", font: "var(--t-meta)", color: "var(--text-3, var(--text))" }}>
             <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
-              <span style={{ width: 10, height: 10, borderRadius: 2, background: "var(--viz-1)" }} /> MRR
+              <span style={{ width: 10, height: 10, borderRadius: 2, background: "var(--viz-seq-5)" }} /> MRR
             </span>
             <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
-              <span style={{ width: 10, height: 10, borderRadius: 2, background: "var(--viz-4)" }} /> Cost
+              <span style={{ width: 10, height: 10, borderRadius: 2, background: "var(--viz-seq-3)" }} /> Cost
             </span>
             <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
-              <span style={{ width: 10, height: 10, borderRadius: 2, background: "var(--viz-2)" }} /> Margin
+              <span style={{ width: 10, height: 10, borderRadius: 2, background: "var(--viz-seq-6)" }} /> Margin
             </span>
           </div>
         </div>
