@@ -26,3 +26,24 @@ body {
   border-radius: 11px;
 }
 .metric-card .icon svg { width: 19px; height: 19px; }
+
+/* PlaybookCard: color the icon chip by category (R9). */
+.playbook-card[data-kind] .pb-ico { border-radius: 11px; }
+.playbook-card[data-kind="billing"] .pb-ico { background: var(--health-atrisk-soft); color: var(--health-atrisk-strong); }
+.playbook-card[data-kind="adoption"] .pb-ico { background: var(--warn-soft); color: var(--warn-7); }
+.playbook-card[data-kind="retention"] .pb-ico { background: var(--info-soft); color: var(--info-7); }
+.playbook-card[data-kind="save"] .pb-ico { background: var(--info-soft); color: var(--info-7); }
+.playbook-card[data-kind="expansion"] .pb-ico { background: var(--pos-soft); color: var(--pos-7); }
+.playbook-card[data-kind="onboarding"] .pb-ico { background: var(--warn-soft); color: var(--warn-7); }
+
+/* Celebratory "On · autopilot" state chip. */
+.playbook-card .playbook-state.on {
+  background: var(--pos-soft);
+  color: var(--pos-7);
+  font-weight: 600;
+}
+.playbook-card .playbook-state.ranonce {
+  background: var(--info-soft);
+  color: var(--info-7);
+  font-weight: 600;
+}
