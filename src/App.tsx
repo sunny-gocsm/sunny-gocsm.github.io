@@ -15,6 +15,7 @@ import PlaybookDetailPage from "./pages/PlaybookDetailPage";
 import MoneyPage from "./pages/MoneyPage";
 import OnboardingPage from "./pages/OnboardingPage";
 import InsightsPage from "./pages/InsightsPage";
+import ConfigurePage from "./pages/ConfigurePage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
