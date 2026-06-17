@@ -13,6 +13,7 @@ import {
   Verdict,
   ActivityLog,
 } from "@/gocsm-ds";
+import { PageRibbon } from "@/components/PageRibbon";
 import {
   accountById,
   signalsForAccount,
@@ -169,16 +170,26 @@ export default function AccountDetailPage() {
         gap: "var(--s-6)",
       }}
     >
-      {/* Breadcrumb */}
-      <div style={{ display: "flex", alignItems: "center", gap: "var(--s-1)", font: "var(--t-meta)", color: "var(--text-3, var(--text))" }}>
-        <Link to="/accounts" style={{ color: "inherit", textDecoration: "none", display: "inline-flex", alignItems: "center", gap: 4 }}>
-          <Icon name="arrow-left" /> Accounts
-        </Link>
-        <span>·</span>
-        <span>{identity.name}</span>
-      </div>
+      {/* Page ribbon — consistent shape across the app */}
+      <PageRibbon
+        title={identity.name}
+        description={`${identity.industry} · ${identity.plan}${identity.isNonSaaS ? " · non-SaaS" : ""} — owned by ${ownership.owner}, CSM ${ownership.assignedCSM}.`}
+        size="md"
+        kicker={
+          <Link to="/accounts" style={{ color: "inherit", textDecoration: "none", display: "inline-flex", alignItems: "center", gap: 4 }}>
+            <Icon name="arrow-left" /> Accounts
+          </Link>
+        }
+        trailing={<LiveStatus state="fresh" label="Synced 3m ago" watchingCount={1} />}
+        kpis={[
+          { label: "Health", value: <Mono>{health.score}</Mono> },
+          { label: "MRR", value: <Mono>${Math.round(identity.id ? 0 : 0)}</Mono> },
+          { label: "Client for", value: `${Math.round(daysSince(identity.clientSince) / 30)} months` },
+          { label: "Active", value: `${identity.activeDays} days` },
+        ]}
+      />
 
-      {/* Header */}
+      {/* Identity / status / verdict block */}
       <header
         style={{
           display: "flex",
@@ -208,7 +219,6 @@ export default function AccountDetailPage() {
           </span>
           <div style={{ display: "flex", flexDirection: "column", gap: "var(--s-2)", flex: 1, minWidth: 240 }}>
             <div style={{ display: "flex", alignItems: "center", gap: "var(--s-3)", flexWrap: "wrap" }}>
-              <h1 style={{ font: "var(--t-h2)", margin: 0 }}>{identity.name}</h1>
               {status.enabled === "Disabled" ? (
                 <Badge variant="neutral" dot={false}>Disabled</Badge>
               ) : status.tracked ? (
@@ -217,14 +227,6 @@ export default function AccountDetailPage() {
                 <Badge variant="warn" dot>Untracked</Badge>
               )}
               {status.isPriority ? <Badge variant="warn" dot={false}>★ Priority</Badge> : null}
-            </div>
-            <div style={{ display: "flex", flexWrap: "wrap", gap: "var(--s-3)", font: "var(--t-meta)", color: "var(--text-3, var(--text))" }}>
-              <span>{identity.industry}</span>
-              <span>· {identity.plan}{identity.isNonSaaS ? " · non-SaaS" : ""}</span>
-              <span>· Client for <Mono>{Math.round(daysSince(identity.clientSince) / 30)}mo</Mono></span>
-              <span>· <Mono>{identity.activeDays}d</Mono> active</span>
-              <span>· Owner <strong style={{ color: "var(--text-2, var(--text))" }}>{ownership.owner}</strong></span>
-              <span>· CSM <strong style={{ color: "var(--text-2, var(--text))" }}>{ownership.assignedCSM}</strong></span>
             </div>
             <div style={{ display: "flex", alignItems: "center", gap: "var(--s-2)", flexWrap: "wrap" }}>
               <StageBadge stage={lifecycle.stage} reactivated={lifecycle.reactivated} />
