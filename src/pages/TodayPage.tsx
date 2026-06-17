@@ -125,7 +125,7 @@ function CohortCard({
                 }}
               >
                 <span style={{ fontWeight: 500 }}>{a.identity.name}</span>
-                <span style={{ color: "var(--text-3, var(--text))", fontSize: 13, flex: 1, minWidth: 0 }}>
+                <span style={{ color: "var(--text-2, var(--text))", fontSize: 13, flex: 1, minWidth: 0 }}>
                   {renderLine ? renderLine(a) : reasonFor(a)}
                 </span>
               </li>
@@ -138,14 +138,14 @@ function CohortCard({
         )}
 
         <div style={{ marginTop: "var(--s-1)", display: "flex", gap: "var(--s-2)" }}>
-          <Button variant="ghost" size="sm" onClick={onView} icon={<Icon name="arrow-right" />}>
-            View all
-          </Button>
           {onApply && accounts.length > 0 ? (
-            <Button variant="secondary" size="sm" onClick={onApply} icon={<Icon name="book-open" />}>
+            <Button variant="primary" size="sm" onClick={onApply} icon={<Icon name="book-open" />}>
               Apply a Playbook
             </Button>
           ) : null}
+          <Button variant="ghost" size="sm" onClick={onView} icon={<Icon name="arrow-right" />}>
+            View all
+          </Button>
         </div>
       </div>
     </Card>
