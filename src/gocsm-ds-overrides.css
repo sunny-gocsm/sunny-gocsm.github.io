@@ -3,6 +3,3 @@
    DS components are px-based, so forcing 16px here is safe for the DS and correct
    for Tailwind. This file MUST be the last CSS imported in the app entry. */
 html { font-size: 16px; }
-
-/* Hide hardcoded internal note inside HealthScoreEvidence ("Evidence only — never above the fold."). */
-.not-hero { display: none; }
