@@ -239,7 +239,11 @@ function SyncStep({ onDone, count }: { onDone: () => void; count: number }) {
     <Card padded>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "var(--s-3)" }}>
         <div style={{ font: "var(--t-h3)" }}>{phase}…</div>
-        <LiveStatus state="fresh" watchingCount={count} />
+        {count === 1 ? (
+          <LiveStatus state="fresh" label="watching 1 account" />
+        ) : (
+          <LiveStatus state="fresh" watchingCount={count} />
+        )}
       </div>
       <div style={{ height: 8, background: "var(--surface-2)", borderRadius: 999, overflow: "hidden", marginBottom: "var(--s-3)" }}>
         <div style={{ height: "100%", width: `${pct}%`, background: "var(--brand)", transition: "width 200ms ease" }} />
