@@ -155,7 +155,7 @@ function StallDashboard({ onSendToToday }: { onSendToToday: (a: Account) => void
           label="Median time to activate"
           value={
             <span>
-              <Mono>{median}</Mono>
+              {median}
               <span style={{ font: "var(--t-meta)", color: "var(--text-3, var(--text))" }}> days</span>
             </span>
           }
@@ -413,7 +413,7 @@ function JourneyList({
               }}
             >
               <span><Mono>{j.steps.length}</Mono> steps</span>
-              <span><Mono>{j.targetDays}</Mono>d target</span>
+              <span>{j.targetDays}d target</span>
               <span><Mono>{j.clientCount}</Mono> clients</span>
             </div>
           </div>
@@ -464,7 +464,7 @@ function JourneyDetail({
         }}
       >
         <MetricCard label="Steps" value={<Mono>{journey.steps.length}</Mono>} icon={<Icon name="list" />} />
-        <MetricCard label="Target days" value={<Mono>{journey.targetDays}</Mono>} icon={<Icon name="calendar-clock" />} />
+        <MetricCard label="Target days" value={<span>{journey.targetDays}</span>} icon={<Icon name="calendar-clock" />} />
         <MetricCard label="Clients on this journey" value={<Mono>{journey.clientCount}</Mono>} icon={<Icon name="users" />} />
         <MetricCard
           label="Experience"
@@ -488,7 +488,7 @@ function JourneyDetail({
                     {step.owner === "agency" ? "agency owns" : "client owns"}
                   </Badge>
                   <span style={{ font: "var(--t-meta)", color: "var(--text-3, var(--text))" }}>
-                    SLA <Mono>{step.slaDays}d</Mono>
+                    SLA {step.slaDays}d
                   </span>
                   {!audit.ok ? (
                     <Badge variant="warn" dot={false} title="Plain-language audit flagged this title">
