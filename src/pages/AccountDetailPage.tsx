@@ -347,7 +347,19 @@ export default function AccountDetailPage() {
       >
         <Card padded>
           <div style={{ display: "flex", flexDirection: "column", gap: "var(--s-4)" }}>
-            <h2 style={{ font: "var(--t-h3)", margin: 0 }}>Key facts</h2>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "var(--s-2)" }}>
+              <h2 style={{ font: "var(--t-h3)", margin: 0 }}>Key facts</h2>
+              <Button
+                variant="ghost"
+                size="sm"
+                icon={<Icon name={pinned ? "pin-off" : "pin"} />}
+                onClick={togglePin}
+                aria-pressed={pinned}
+                title={pinned ? "Unpin from top of Accounts" : "Pin this account to the top of Accounts"}
+              >
+                {pinned ? "Pinned" : "Pin to top"}
+              </Button>
+            </div>
 
             <FactRow label="Health">
               <HealthBadge band={health.band} label={`${bandLabel(health.band)} · ${health.score}`} />
