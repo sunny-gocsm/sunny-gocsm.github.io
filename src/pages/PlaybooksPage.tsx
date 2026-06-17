@@ -58,16 +58,25 @@ const FILTERS: { id: Filter; label: string }[] = [
 
 const STATE_LABEL: Record<PlaybookState, string> = {
   off: "Off",
-  ranonce: "Ran once",
-  on: "On · autopilot",
+  ranonce: "✓ Ran once",
+  on: "● On · autopilot",
   paused: "Paused",
 };
 
 const STATE_VARIANT: Record<PlaybookState, "neutral" | "warn" | "pos" | "blue"> = {
   off: "neutral",
-  ranonce: "warn",
+  ranonce: "blue",
   on: "pos",
-  paused: "blue",
+  paused: "warn",
+};
+
+const ZERO_LINE: Record<Playbook["kind"], string> = {
+  billing: "Nothing to do — payments are clean. Armed and watching.",
+  retention: "All renewals look calm. Armed and watching.",
+  save: "No one needs saving right now. Armed and watching.",
+  adoption: "Adoption is steady. Armed and watching.",
+  onboarding: "Setups are on track. Armed and watching.",
+  expansion: "No expansion signals today. Armed and watching.",
 };
 
 function activateLabel(state: PlaybookState): string {
