@@ -21,6 +21,7 @@ import {
   bandLabel,
   type Signal,
 } from "@/fixtures";
+import { HealthTab } from "@/components/account/HealthTab";
 
 const TAB_IDS = [
   "health",
@@ -271,18 +272,22 @@ export default function AccountDetailPage() {
       <section aria-label="Detail">
         <Tabs tabs={TABS} active={tab} onChange={(id) => setTab(id as TabId)} />
         <div style={{ marginTop: "var(--s-4)" }}>
-          <Card padded>
-            <div style={{ display: "flex", flexDirection: "column", gap: "var(--s-2)" }}>
-              <span style={{ font: "var(--t-meta)", textTransform: "uppercase", letterSpacing: "0.04em", color: "var(--text-3, var(--text))" }}>
-                {TABS.find((t) => t.id === tab)?.label}
-              </span>
-              <p style={{ font: "var(--t-body)", color: "var(--text-2, var(--text))", margin: 0 }}>
-                {tab === "revenue"
-                  ? `MRR ${fmtMoney(revenue.mrr)} · renews in ${renewalDays}d. Detail panel ships next.`
-                  : "Detail panel ships next."}
-              </p>
-            </div>
-          </Card>
+          {tab === "health" ? (
+            <HealthTab account={account} onNavigateTab={(t) => setTab(t)} />
+          ) : (
+            <Card padded>
+              <div style={{ display: "flex", flexDirection: "column", gap: "var(--s-2)" }}>
+                <span style={{ font: "var(--t-meta)", textTransform: "uppercase", letterSpacing: "0.04em", color: "var(--text-3, var(--text))" }}>
+                  {TABS.find((t) => t.id === tab)?.label}
+                </span>
+                <p style={{ font: "var(--t-body)", color: "var(--text-2, var(--text))", margin: 0 }}>
+                  {tab === "revenue"
+                    ? `MRR ${fmtMoney(revenue.mrr)} · renews in ${renewalDays}d. Detail panel ships next.`
+                    : "Detail panel ships next."}
+                </p>
+              </div>
+            </Card>
+          )}
         </div>
       </section>
     </main>
