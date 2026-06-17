@@ -178,6 +178,20 @@ export default function AccountDetailPage() {
   })();
 
   const [timelineOpen, setTimelineOpen] = useState(false);
+  const PIN_KEY = `gocsm.pinned.${identity.id}`;
+  const [pinned, setPinned] = useState<boolean>(() => {
+    try { return !!localStorage.getItem(PIN_KEY); } catch { return false; }
+  });
+  const togglePin = () => {
+    setPinned((p) => {
+      const next = !p;
+      try {
+        if (next) localStorage.setItem(PIN_KEY, "1");
+        else localStorage.removeItem(PIN_KEY);
+      } catch { /* noop */ }
+      return next;
+    });
+  };
 
   return (
     <main
