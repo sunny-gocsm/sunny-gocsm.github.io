@@ -247,9 +247,9 @@ export default function TodayPage() {
     return (
       <div
         key={a.identity.id}
-        className="queue-row"
+        className={`queue-row${isHandled ? " celebrate" : ""}`}
         style={{
-          opacity: isHandled ? 0.5 : 1,
+          opacity: isHandled ? 0.55 : 1,
           textDecoration: isHandled ? "line-through" : "none",
         }}
       >
