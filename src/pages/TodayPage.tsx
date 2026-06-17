@@ -71,7 +71,8 @@ interface CohortCardProps {
   renderLine?: (a: Account) => React.ReactNode;
   onView: () => void;
   onApply?: () => void;
-  heavy?: boolean;
+  accent: "atrisk" | "healthy" | "warn" | "pos" | "slate" | "info" | "neg" | "watch" | "thriving";
+  emptyLine: string;
 }
 
 function CohortCard({
@@ -82,27 +83,18 @@ function CohortCard({
   renderLine,
   onView,
   onApply,
-  heavy,
+  accent,
+  emptyLine,
 }: CohortCardProps) {
   const top = accounts.slice(0, 3);
   const mrr = accounts.reduce((sum, a) => sum + a.revenue.mrr, 0);
+  const accentClasses = `accent-t ${accent}`;
+  const extraStyle = accent === "slate" ? { borderTopColor: "var(--n-7)" } : undefined;
   return (
-    <Card padded>
+    <Card padded className={accentClasses} style={extraStyle}>
       <div style={{ display: "flex", flexDirection: "column", gap: "var(--s-3)" }}>
         <header style={{ display: "flex", alignItems: "center", gap: "var(--s-2)" }}>
-          <span
-            aria-hidden
-            style={{
-              display: "inline-flex",
-              alignItems: "center",
-              justifyContent: "center",
-              width: 28,
-              height: 28,
-              borderRadius: 8,
-              background: heavy ? "var(--red-1, var(--surface-2))" : "var(--surface-2)",
-              color: heavy ? "var(--red-7, var(--text))" : "var(--text-2, var(--text))",
-            }}
-          >
+          <span className={`icon-chip ${accent}`} aria-hidden>
             <Icon name={icon} />
           </span>
           <span style={{ font: "var(--t-meta)", color: "var(--text-3, var(--text))", textTransform: "uppercase", letterSpacing: "0.04em" }}>
@@ -139,8 +131,8 @@ function CohortCard({
             ))}
           </ul>
         ) : (
-          <p style={{ font: "var(--t-meta)", color: "var(--text-3, var(--text))", margin: 0 }}>
-            Nothing in this group right now.
+          <p style={{ font: "var(--t-body-sm)", color: "var(--text-2, var(--text))", margin: 0 }}>
+            {emptyLine}
           </p>
         )}
 
@@ -451,70 +443,96 @@ export default function TodayPage() {
             gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))",
           }}
         >
-          <CohortCard
-            icon="alert-triangle"
-            title="Setup lost — may be leaving"
-            blurb="A sticky setup (domain, A2P, funnel) just went backwards. Heaviest regression signal."
-            accounts={lostSticky}
-            renderLine={(a) => {
-              const sig = signalsForAccount(a.identity.id).find(
-                (s) => s.sticky && s.direction === "reverse",
-              );
-              return sig
-                ? `${sig.label.toLowerCase()} — may be moving to another platform`
-                : "lost a sticky setup";
-            }}
-            onView={() => navigate("/accounts")}
-            onApply={() => openApply(lostSticky, "pb-save-domain")}
-            heavy
-          />
-          <CohortCard
-            icon="calendar-clock"
-            title="Renewing soon & at risk"
-            blurb="At-risk or watch accounts with a renewal in the next 30 days."
-            accounts={renewingAtRisk}
-            renderLine={(a) => `renews in ${daysUntil(a.revenue.renewalDate)}d · ${bandLabel(a.health.band)}`}
-            onView={() => navigate("/accounts?renewing=30")}
-            onApply={() => openApply(renewingAtRisk, "pb-no-login")}
-          />
-          <CohortCard
-            icon="credit-card"
-            title="Payment failed"
-            blurb="Cards declined or invoices unpaid in the last cycle."
-            accounts={failed}
-            renderLine={(a) => `${a.revenue.paymentAttempts.filter(p => p.status === "failed").length || 1} failed attempt(s)`}
-            onView={() => navigate("/accounts")}
-            onApply={() => openApply(failed, "pb-payment-failed")}
-          />
-          <CohortCard
-            icon="moon"
-            title="Gone quiet"
-            blurb="No meaningful logins for 3+ weeks."
-            accounts={goneQuiet}
-            renderLine={(a) => `last login ${a.login.lastLoginDaysAgo}d ago`}
-            onView={() => navigate("/accounts")}
-            onApply={() => openApply(goneQuiet, "pb-no-login")}
-          />
-          <CohortCard
-            icon="rocket"
-            title="Onboarding stalled"
-            blurb="New accounts stuck on a setup step past SLA."
-            accounts={stalled}
-            renderLine={(a) =>
-              `stuck on "${a.onboarding.current_step}" for ${a.onboarding.days_on_current_step}d`
-            }
-            onView={() => navigate("/onboarding")}
-            onApply={() => openApply(stalled, "pb-onboarding-stalled")}
-          />
-          <CohortCard
-            icon="sparkles"
-            title="Coming back to life"
-            blurb="Dormant accounts trending up — worth a warm nudge."
-            accounts={dormantUp}
-            renderLine={(a) => `health +${a.health.delta} this week`}
-            onView={() => navigate("/accounts")}
-            onApply={() => openApply(dormantUp, "pb-expansion-ready")}
-          />
+          {[
+            {
+              icon: "alert-triangle",
+              title: "Setup lost — may be leaving",
+              blurb: "A sticky setup (domain, A2P, funnel) just went backwards. Heaviest regression signal.",
+              accounts: lostSticky,
+              accent: "atrisk" as const,
+              emptyLine: "All setups holding steady — nothing sliding backward.",
+              renderLine: (a: Account) => {
+                const sig = signalsForAccount(a.identity.id).find(
+                  (s) => s.sticky && s.direction === "reverse",
+                );
+                return sig
+                  ? `${sig.label.toLowerCase()} — may be moving to another platform`
+                  : "lost a sticky setup";
+              },
+              onView: () => navigate("/accounts"),
+              onApply: () => openApply(lostSticky, "pb-save-domain"),
+            },
+            {
+              icon: "calendar-clock",
+              title: "Renewing soon & at risk",
+              blurb: "At-risk or watch accounts with a renewal in the next 30 days.",
+              accounts: renewingAtRisk,
+              accent: "healthy" as const,
+              emptyLine: "No renewals in danger — the pipeline looks calm.",
+              renderLine: (a: Account) => `renews in ${daysUntil(a.revenue.renewalDate)}d · ${bandLabel(a.health.band)}`,
+              onView: () => navigate("/accounts?renewing=30"),
+              onApply: () => openApply(renewingAtRisk, "pb-no-login"),
+            },
+            {
+              icon: "credit-card",
+              title: "Payment failed",
+              blurb: "Cards declined or invoices unpaid in the last cycle.",
+              accounts: failed,
+              accent: "atrisk" as const,
+              emptyLine: "Payments are flowing — no cards need attention.",
+              renderLine: (a: Account) => `${a.revenue.paymentAttempts.filter((p: { status: string }) => p.status === "failed").length || 1} failed attempt(s)`,
+              onView: () => navigate("/accounts"),
+              onApply: () => openApply(failed, "pb-payment-failed"),
+            },
+            {
+              icon: "moon",
+              title: "Gone quiet",
+              blurb: "No meaningful logins for 3+ weeks.",
+              accounts: goneQuiet,
+              accent: "slate" as const,
+              emptyLine: "Everyone’s still showing up — no one’s gone dark.",
+              renderLine: (a: Account) => `last login ${a.login.lastLoginDaysAgo}d ago`,
+              onView: () => navigate("/accounts"),
+              onApply: () => openApply(goneQuiet, "pb-no-login"),
+            },
+            {
+              icon: "rocket",
+              title: "Onboarding stalled",
+              blurb: "New accounts stuck on a setup step past SLA.",
+              accounts: stalled,
+              accent: "warn" as const,
+              emptyLine: "New accounts are moving — no one stuck at the gate.",
+              renderLine: (a: Account) => `stuck on "${a.onboarding.current_step}" for ${a.onboarding.days_on_current_step}d`,
+              onView: () => navigate("/onboarding"),
+              onApply: () => openApply(stalled, "pb-onboarding-stalled"),
+            },
+            {
+              icon: "sparkles",
+              title: "Coming back to life",
+              blurb: "Dormant accounts trending up — worth a warm nudge.",
+              accounts: dormantUp,
+              accent: "pos" as const,
+              emptyLine: "No comebacks yet — your saves are holding.",
+              renderLine: (a: Account) => `health +${a.health.delta} this week`,
+              onView: () => navigate("/accounts"),
+              onApply: () => openApply(dormantUp, "pb-expansion-ready"),
+            },
+          ]
+            .sort((a, b) => b.accounts.length - a.accounts.length)
+            .map((c) => (
+              <CohortCard
+                key={c.title}
+                icon={c.icon}
+                title={c.title}
+                blurb={c.blurb}
+                accounts={c.accounts}
+                accent={c.accent}
+                emptyLine={c.emptyLine}
+                renderLine={c.renderLine}
+                onView={c.onView}
+                onApply={c.onApply}
+              />
+            ))}
         </div>
       </section>
 
