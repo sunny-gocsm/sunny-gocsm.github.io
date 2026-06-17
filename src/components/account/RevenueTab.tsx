@@ -213,8 +213,8 @@ export function RevenueTab({ account }: { account: Account }) {
               <AreaChart data={series} margin={{ top: 8, right: 12, left: 0, bottom: 0 }}>
                 <defs>
                   <linearGradient id="mrrFill" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="var(--viz-1)" stopOpacity={0.35} />
-                    <stop offset="100%" stopColor="var(--viz-1)" stopOpacity={0} />
+                    <stop offset="0%" stopColor="var(--viz-seq-5)" stopOpacity={0.32} />
+                    <stop offset="100%" stopColor="var(--viz-seq-5)" stopOpacity={0} />
                   </linearGradient>
                 </defs>
                 <CartesianGrid stroke="var(--viz-grid)" vertical={false} />
@@ -229,21 +229,21 @@ export function RevenueTab({ account }: { account: Account }) {
                   }}
                   formatter={(v: number) => fmtMoney(v)}
                 />
-                <Area type="monotone" dataKey="mrr" stroke="var(--viz-1)" fill="url(#mrrFill)" strokeWidth={2} />
-                <Line type="monotone" dataKey="cost" stroke="var(--viz-4)" strokeWidth={2} dot={false} />
-                <Line type="monotone" dataKey="margin" stroke="var(--viz-2)" strokeWidth={2} dot={false} />
+                <Area type="monotone" dataKey="mrr" stroke="var(--viz-seq-5)" fill="url(#mrrFill)" strokeWidth={2} />
+                <Line type="monotone" dataKey="cost" stroke="var(--viz-seq-3)" strokeWidth={1.5} strokeDasharray="4 3" dot={false} />
+                <Line type="monotone" dataKey="margin" stroke="var(--viz-seq-6)" strokeWidth={2} dot={false} />
               </AreaChart>
             </ResponsiveContainer>
           </div>
           <div style={{ display: "flex", gap: "var(--s-3)", font: "var(--t-meta)", color: "var(--text-3, var(--text))" }}>
             <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
-              <span style={{ width: 10, height: 10, borderRadius: 2, background: "var(--viz-1)" }} /> MRR
+              <span style={{ width: 10, height: 10, borderRadius: 2, background: "var(--viz-seq-5)" }} /> MRR
             </span>
             <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
-              <span style={{ width: 10, height: 10, borderRadius: 2, background: "var(--viz-4)" }} /> Cost
+              <span style={{ width: 10, height: 10, borderRadius: 2, background: "var(--viz-seq-3)" }} /> Cost
             </span>
             <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
-              <span style={{ width: 10, height: 10, borderRadius: 2, background: "var(--viz-2)" }} /> Margin
+              <span style={{ width: 10, height: 10, borderRadius: 2, background: "var(--viz-seq-6)" }} /> Margin
             </span>
           </div>
         </div>
