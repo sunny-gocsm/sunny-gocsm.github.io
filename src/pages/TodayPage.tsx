@@ -220,7 +220,7 @@ export default function TodayPage() {
               <Button
                 size="sm"
                 variant="secondary"
-                onClick={() => navigate(`/accounts?id=${a.identity.id}`)}
+                onClick={() => navigate(`/accounts/${a.identity.id}`)}
               >
                 Open
               </Button>

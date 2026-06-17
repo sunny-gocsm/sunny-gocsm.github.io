@@ -9,6 +9,7 @@ import Index from "./pages/Index";
 import Activity from "./pages/health/Activity";
 import StubPage from "./pages/stubs/StubPage";
 import AccountsPage from "./pages/AccountsPage";
+import AccountDetailPage from "./pages/AccountDetailPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -25,6 +26,7 @@ const App = () => (
               <Route path="/" element={<Index />} />
               <Route path="/today" element={<Index />} />
               <Route path="/accounts" element={<AccountsPage />} />
+              <Route path="/accounts/:id" element={<AccountDetailPage />} />
               <Route path="/playbooks" element={<StubPage title="Playbooks" />} />
               <Route path="/onboarding" element={<StubPage title="Onboarding" />} />
               <Route path="/money" element={<StubPage title="Money" />} />
