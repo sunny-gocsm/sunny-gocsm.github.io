@@ -13,7 +13,7 @@ import {
   Verdict,
   ActivityLog,
 } from "@/gocsm-ds";
-import { PageRibbon } from "@/components/PageRibbon";
+
 import {
   accountById,
   signalsForAccount,
@@ -158,153 +158,220 @@ export default function AccountDetailPage() {
     return `${identity.name} is healthy — health ${health.score}, steady.`;
   })();
 
+  const verdictTone: "risk" | "watch" | "pos" =
+    health.band === "atrisk" ? "risk" : health.band === "watch" ? "watch" : "pos";
+
+  // Next action — derive from verdict context
+  const nextAction = (() => {
+    if (revenue.lastPaymentStatus === "failed") return "Run Save play — unpaid invoice";
+    if (health.band === "atrisk") return "Apply Win-back playbook";
+    if (health.band === "watch") return "Schedule check-in call";
+    if (health.band === "thriving") return "Invite to advocacy program";
+    return "Keep watching — no action needed";
+  })();
+
+  const [timelineOpen, setTimelineOpen] = useState(false);
+
   return (
     <main
       style={{
         padding: "var(--s-7) var(--s-6)",
-        maxWidth: 1180,
+        maxWidth: 1280,
         margin: "0 auto",
         color: "var(--text)",
-        display: "flex",
-        flexDirection: "column",
+        display: "grid",
+        gridTemplateColumns: "minmax(0, 1fr) 280px",
         gap: "var(--s-6)",
+        alignItems: "start",
       }}
     >
-      {/* Page ribbon — consistent shape across the app */}
-      <PageRibbon
-        title={identity.name}
-        description={`${identity.industry} · ${identity.plan}${identity.isNonSaaS ? " · non-SaaS" : ""} — owned by ${ownership.owner}, CSM ${ownership.assignedCSM}.`}
-        size="md"
-        kicker={
-          <Link to="/accounts" style={{ color: "inherit", textDecoration: "none", display: "inline-flex", alignItems: "center", gap: 4 }}>
-            <Icon name="arrow-left" /> Accounts
-          </Link>
-        }
-        trailing={<LiveStatus state="fresh" label="Synced 3m ago" watchingCount={1} />}
-        kpis={[
-          { label: "Health", value: <Mono>{health.score}</Mono> },
-          { label: "MRR", value: <Mono>${Math.round(revenue.mrr).toLocaleString()}</Mono> },
-          { label: "Client for", value: `${Math.round(daysSince(identity.clientSince) / 30)} months` },
-          { label: "Active", value: `${identity.activeDays} days` },
-        ]}
-      />
-
-      {/* Identity / status / verdict block */}
-      <header
-        style={{
-          display: "flex",
-          flexDirection: "column",
-          gap: "var(--s-4)",
-          paddingBottom: "var(--s-5)",
-          borderBottom: "1px solid var(--border)",
-        }}
-      >
-        <div style={{ display: "flex", alignItems: "flex-start", gap: "var(--s-4)", flexWrap: "wrap" }}>
-          <span
-            aria-hidden
-            style={{
-              display: "inline-flex",
-              alignItems: "center",
-              justifyContent: "center",
-              width: 56,
-              height: 56,
-              borderRadius: 12,
-              background: "var(--surface-2)",
-              color: "var(--text-2, var(--text))",
-              font: "var(--t-h3)",
-              fontWeight: 600,
-            }}
-          >
-            {identity.avatar}
-          </span>
-          <div style={{ display: "flex", flexDirection: "column", gap: "var(--s-2)", flex: 1, minWidth: 240 }}>
-            <div style={{ display: "flex", alignItems: "center", gap: "var(--s-3)", flexWrap: "wrap" }}>
-              {status.enabled === "Disabled" ? (
-                <Badge variant="neutral" dot={false}>Disabled</Badge>
-              ) : status.tracked ? (
-                <Badge variant="pos" dot>Tracked</Badge>
-              ) : (
-                <Badge variant="warn" dot>Untracked</Badge>
-              )}
-              {status.isPriority ? <Badge variant="warn" dot={false}>★ Priority</Badge> : null}
+      <div style={{ display: "flex", flexDirection: "column", gap: "var(--s-5)", minWidth: 0 }}>
+        {/* Summary ribbon */}
+        <Card padded>
+          <div style={{ display: "flex", flexDirection: "column", gap: "var(--s-3)" }}>
+            <Link to="/accounts" style={{ color: "var(--text-3, var(--text))", textDecoration: "none", font: "var(--t-meta)", display: "inline-flex", alignItems: "center", gap: 4 }}>
+              <Icon name="arrow-left" /> Accounts
+            </Link>
+            <div style={{ display: "flex", alignItems: "center", gap: "var(--s-4)", flexWrap: "wrap" }}>
+              <span
+                aria-hidden
+                style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  width: 48,
+                  height: 48,
+                  borderRadius: 12,
+                  background: "var(--surface-2)",
+                  font: "var(--t-h3)",
+                  fontWeight: 600,
+                }}
+              >
+                {identity.avatar}
+              </span>
+              <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
+                <h1 style={{ font: "var(--t-h2)", margin: 0 }}>{identity.name}</h1>
+                <span style={{ font: "var(--t-meta)", color: "var(--text-3, var(--text))" }}>
+                  {identity.industry} · {identity.plan}
+                </span>
+              </div>
+              <div style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: "var(--s-2)" }}>
+                {status.enabled === "Disabled" ? (
+                  <Badge variant="neutral" dot={false}>Disabled</Badge>
+                ) : status.tracked ? (
+                  <Badge variant="pos" dot>Tracked</Badge>
+                ) : (
+                  <Badge variant="warn" dot>Untracked</Badge>
+                )}
+                {status.isPriority ? <Badge variant="warn" dot={false}>★ Priority</Badge> : null}
+              </div>
             </div>
-            <div style={{ display: "flex", alignItems: "center", gap: "var(--s-2)", flexWrap: "wrap" }}>
-              <StageBadge stage={lifecycle.stage} reactivated={lifecycle.reactivated} />
-              {pipeline.stage ? (
-                <Badge variant="neutral" dot={false} title="Native HighLevel pipeline">
-                  HL · {pipeline.stage}
-                </Badge>
-              ) : null}
+
+            {/* Compact facts band */}
+            <div style={{ display: "flex", alignItems: "center", gap: "var(--s-4)", flexWrap: "wrap", padding: "var(--s-3) 0", borderTop: "1px solid var(--border)", borderBottom: "1px solid var(--border)" }}>
               {status.enabled !== "Disabled" ? (
                 <HealthBadge band={health.band} label={`${bandLabel(health.band)} · ${health.score}`} />
               ) : null}
+              <StageBadge stage={lifecycle.stage} reactivated={lifecycle.reactivated} />
+              <span style={{ font: "var(--t-meta)", color: "var(--text-3, var(--text))" }}>
+                Renews {new Date(revenue.renewalDate).toLocaleDateString([], { month: "short", day: "numeric" })}
+              </span>
+              <span style={{ font: "var(--t-meta)", color: "var(--text-3, var(--text))" }}>
+                MRR <Mono>${Math.round(revenue.mrr).toLocaleString()}</Mono>
+              </span>
+              <span style={{ font: "var(--t-meta)", color: "var(--text-3, var(--text))" }}>
+                Owner {ownership.owner}
+              </span>
               <span style={{ marginLeft: "auto" }}>
                 <LiveStatus state="fresh" label="Synced 3m ago" watchingCount={1} />
               </span>
             </div>
+
+            {/* One-line verdict */}
+            <Verdict tone={verdictTone} band={health.band} score={<Mono>{health.score}</Mono>}>
+              {verdictLine}
+            </Verdict>
           </div>
-        </div>
+        </Card>
 
-        {/* Verdict */}
-        <Verdict tone={health.band === "atrisk" ? "risk" : health.band === "watch" ? "watch" : "pos"} band={health.band} score={<Mono>{health.score}</Mono>}>
-          {verdictLine}
-        </Verdict>
-      </header>
+        {/* Tabs directly under ribbon */}
+        <section aria-label="Detail">
+          <Tabs tabs={TABS} active={tab} onChange={(id) => setTab(id as TabId)} />
+          <div style={{ marginTop: "var(--s-4)", display: "flex", flexDirection: "column", gap: "var(--s-4)" }}>
+            {tab === "health" ? (
+              <HealthTab account={account} onNavigateTab={(t) => setTab(t)} />
+            ) : tab === "login" ? (
+              <LoginTab account={account} />
+            ) : tab === "adoption" ? (
+              <AdoptionTab account={account} />
+            ) : tab === "revenue" ? (
+              <RevenueTab account={account} />
+            ) : tab === "feedback" ? (
+              <FeedbackTab account={account} />
+            ) : tab === "onboarding" ? (
+              <OnboardingTab account={account} />
+            ) : null}
 
-      {/* Timeline — primary, above tabs */}
-      <section aria-label="Timeline" style={{ display: "flex", flexDirection: "column", gap: "var(--s-3)" }}>
-        <header style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: "var(--s-3)" }}>
-          <div>
-            <h2 style={{ font: "var(--t-h3)", margin: 0 }}>Timeline</h2>
-            <p style={{ font: "var(--t-body)", color: "var(--text-3, var(--text))", margin: "var(--s-1) 0 0" }}>
-              The story of what changed, in order. Setup, adoption, lifecycle, and outcomes meet here.
-            </p>
-          </div>
-          <span style={{ font: "var(--t-meta)", color: "var(--text-3, var(--text))" }}>
-            <Mono>{signals.length}</Mono> signals
-          </span>
-        </header>
-        {days.length ? (
-          <ActivityLog days={days} live />
-        ) : (
-          <Card padded>
-            <p style={{ font: "var(--t-body)", color: "var(--text-3, var(--text))", margin: 0 }}>
-              No signals recorded for this account yet — GoCSM is watching.
-            </p>
-          </Card>
-        )}
-      </section>
-
-      {/* Tabs scaffold */}
-      <section aria-label="Detail">
-        <Tabs tabs={TABS} active={tab} onChange={(id) => setTab(id as TabId)} />
-        <div style={{ marginTop: "var(--s-4)" }}>
-          {tab === "health" ? (
-            <HealthTab account={account} onNavigateTab={(t) => setTab(t)} />
-          ) : tab === "login" ? (
-            <LoginTab account={account} />
-          ) : tab === "adoption" ? (
-            <AdoptionTab account={account} />
-          ) : tab === "revenue" ? (
-            <RevenueTab account={account} />
-          ) : tab === "feedback" ? (
-            <FeedbackTab account={account} />
-          ) : tab === "onboarding" ? (
-            <OnboardingTab account={account} />
-          ) : (
+            {/* Collapsible Timeline — reference, not gateway */}
             <Card padded>
-              <div style={{ display: "flex", flexDirection: "column", gap: "var(--s-2)" }}>
-                <span style={{ font: "var(--t-meta)", textTransform: "uppercase", letterSpacing: "0.04em", color: "var(--text-3, var(--text))" }}>
-                  {TABS.find((t) => t.id === tab)?.label}
+              <button
+                type="button"
+                onClick={() => setTimelineOpen((v) => !v)}
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                  width: "100%",
+                  background: "transparent",
+                  border: 0,
+                  padding: 0,
+                  cursor: "pointer",
+                  color: "inherit",
+                }}
+                aria-expanded={timelineOpen}
+              >
+                <span style={{ display: "flex", flexDirection: "column", alignItems: "flex-start", gap: 2 }}>
+                  <span style={{ font: "var(--t-h3)" }}>What changed recently</span>
+                  <span style={{ font: "var(--t-meta)", color: "var(--text-3, var(--text))" }}>
+                    {signals.length} updates · reference only
+                  </span>
                 </span>
-                <p style={{ font: "var(--t-body)", color: "var(--text-2, var(--text))", margin: 0 }}>
-                  Detail panel ships next.
-                </p>
-              </div>
+                <Icon name={timelineOpen ? "chevron-up" : "chevron-down"} />
+              </button>
+              {timelineOpen ? (
+                <div style={{ marginTop: "var(--s-4)" }}>
+                  {days.length ? (
+                    <ActivityLog days={days} live />
+                  ) : (
+                    <p style={{ font: "var(--t-body)", color: "var(--text-3, var(--text))", margin: 0 }}>
+                      No signals recorded yet — GoCSM is watching.
+                    </p>
+                  )}
+                </div>
+              ) : null}
             </Card>
-          )}
-        </div>
-      </section>
+          </div>
+        </section>
+      </div>
+
+      {/* Persistent right sidebar — key facts */}
+      <aside
+        style={{
+          position: "sticky",
+          top: "var(--s-6)",
+          display: "flex",
+          flexDirection: "column",
+          gap: "var(--s-3)",
+        }}
+      >
+        <Card padded>
+          <div style={{ display: "flex", flexDirection: "column", gap: "var(--s-4)" }}>
+            <h2 style={{ font: "var(--t-h3)", margin: 0 }}>Key facts</h2>
+
+            <FactRow label="Health">
+              <HealthBadge band={health.band} label={`${bandLabel(health.band)} · ${health.score}`} />
+            </FactRow>
+
+            <FactRow label="Renewal">
+              <span style={{ font: "var(--t-body)" }}>
+                {new Date(revenue.renewalDate).toLocaleDateString([], { month: "short", day: "numeric", year: "numeric" })}
+              </span>
+              <span style={{ font: "var(--t-meta)", color: "var(--text-3, var(--text))" }}>
+                in <Mono>{renewalDays}</Mono> days
+              </span>
+            </FactRow>
+
+            <FactRow label="MRR">
+              <Mono style={{ font: "var(--t-h3)" }}>${Math.round(revenue.mrr).toLocaleString()}</Mono>
+            </FactRow>
+
+            <FactRow label="Owner / CSM">
+              <span style={{ font: "var(--t-body)" }}>{ownership.owner}</span>
+              <span style={{ font: "var(--t-meta)", color: "var(--text-3, var(--text))" }}>
+                CSM {ownership.assignedCSM}
+              </span>
+            </FactRow>
+
+            <FactRow label="Next action">
+              <span style={{ font: "var(--t-body)", color: "var(--text)" }}>{nextAction}</span>
+              <Button size="sm" variant="secondary">Open playbook</Button>
+            </FactRow>
+          </div>
+        </Card>
+      </aside>
     </main>
+  );
+}
+
+function FactRow({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: "var(--s-1)", paddingBottom: "var(--s-3)", borderBottom: "1px solid var(--border)" }}>
+      <span style={{ font: "var(--t-meta)", textTransform: "uppercase", letterSpacing: "0.04em", color: "var(--text-3, var(--text))" }}>
+        {label}
+      </span>
+      <div style={{ display: "flex", flexDirection: "column", gap: "var(--s-1)", alignItems: "flex-start" }}>
+        {children}
+      </div>
+    </div>
   );
 }
