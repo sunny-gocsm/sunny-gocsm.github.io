@@ -13,7 +13,7 @@ import {
   Verdict,
   ActivityLog,
 } from "@/gocsm-ds";
-import { PageRibbon } from "@/components/PageRibbon";
+
 import {
   accountById,
   signalsForAccount,
