@@ -584,10 +584,12 @@ export default function TodayPage() {
 
       {/* 3 — Problem cohorts */}
       <section aria-label="Act by problem" style={{ display: "flex", flexDirection: "column", gap: "var(--s-3)" }}>
-        <header style={{ display: "flex", flexDirection: "column", gap: "var(--s-1)" }}>
-          <h2 style={{ font: "var(--t-h3)", margin: 0 }}>Act by problem</h2>
-          <p style={{ font: "var(--t-body)", color: "var(--text-3, var(--text))", margin: 0 }}>
-            GoCSM grouped these accounts because they share the same problem.
+        <header style={{ display: "flex", flexDirection: "column", gap: 2 }}>
+          <h2 style={{ font: "var(--t-h3)", margin: 0, color: "var(--text)", fontWeight: 600 }}>
+            Act by problem
+          </h2>
+          <p style={{ font: "var(--t-body-sm)", color: "var(--text-2, var(--text))", margin: 0 }}>
+            Grouped by the problem they share.
           </p>
         </header>
         <div
