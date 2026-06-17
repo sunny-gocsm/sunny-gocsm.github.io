@@ -183,7 +183,7 @@ export default function AccountDetailPage() {
         trailing={<LiveStatus state="fresh" label="Synced 3m ago" watchingCount={1} />}
         kpis={[
           { label: "Health", value: <Mono>{health.score}</Mono> },
-          { label: "MRR", value: <Mono>${Math.round(identity.id ? 0 : 0)}</Mono> },
+          { label: "MRR", value: <Mono>${Math.round(revenue.mrr).toLocaleString()}</Mono> },
           { label: "Client for", value: `${Math.round(daysSince(identity.clientSince) / 30)} months` },
           { label: "Active", value: `${identity.activeDays} days` },
         ]}
