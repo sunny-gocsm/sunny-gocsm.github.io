@@ -12,7 +12,8 @@ import {
 } from "recharts";
 import { Badge, Card, DataTable, Delta, MetricCard, Mono, ConfTag, Icon } from "@/gocsm-ds";
 import type { Account, PaymentAttempt, PlanChange } from "@/fixtures";
-import { daysUntil, fmtDate } from "@/fixtures";
+import { daysUntil } from "@/fixtures";
+const fmtDate = (iso: string) => new Date(iso).toLocaleDateString(undefined,{month:"short",day:"numeric"});
 
 const fmtMoney = (n: number) => "$" + Math.round(n).toLocaleString();
 const fmtPct = (n: number) => `${n > 0 ? "+" : ""}${Math.round(n)}%`;

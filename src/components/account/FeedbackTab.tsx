@@ -10,7 +10,7 @@ import {
 } from "recharts";
 import { Badge, Card, MetricCard, Mono, ConfTag, Icon } from "@/gocsm-ds";
 import type { Account, FeedbackResponse } from "@/fixtures";
-import { fmtDate } from "@/fixtures";
+const fmtDate = (iso: string) => new Date(iso).toLocaleDateString(undefined,{month:"short",day:"numeric"});
 
 const SENTIMENT_VARIANT: Record<"positive" | "neutral" | "negative", "pos" | "blue" | "danger"> = {
   positive: "pos",
