@@ -726,7 +726,7 @@ export default function MoneyPage() {
                   value={k.format ? k.format(k.rows) : <Mono>{k.rows.length}</Mono>}
                   icon={<Icon name={k.icon} />}
                   iconTone={k.accent === "neg" ? "neg" : k.accent === "pos" ? "pos" : "info"}
-                  accent={k.accent}
+                  accent={k.accent === "neg" ? "neg" : k.accent === "pos" ? "pos" : null}
                   delta={k.deltaValue ? <Delta value={k.deltaValue} direction={k.deltaDir ?? "flat"} /> : undefined}
                   context={k.context}
                 />
