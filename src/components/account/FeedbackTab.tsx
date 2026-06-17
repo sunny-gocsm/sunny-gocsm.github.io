@@ -58,6 +58,17 @@ export function FeedbackTab({ account }: { account: Account }) {
     );
   }
 
+  // Single worst metric per tab (R8).
+  type WorstKey = "nps" | "sentiment" | "responses" | "last" | null;
+  const worst: WorstKey =
+    feedback.sentiment === "negative"
+      ? "sentiment"
+      : feedback.npsScore < 7
+      ? "nps"
+      : total === 0
+      ? "responses"
+      : null;
+
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "var(--s-5)" }}>
       {/* Summary */}
@@ -72,7 +83,8 @@ export function FeedbackTab({ account }: { account: Account }) {
           label="NPS score"
           value={<Mono>{feedback.npsScore}</Mono>}
           icon={<Icon name="smile" />}
-          iconTone={feedback.npsScore >= 9 ? "pos" : feedback.npsScore >= 7 ? "info" : "warn"}
+          iconTone={feedback.npsScore >= 9 ? "pos" : feedback.npsScore >= 7 ? "info" : "neg"}
+          accent={worst === "nps" ? "neg" : null}
         />
         <MetricCard
           label="Sentiment"
@@ -83,12 +95,14 @@ export function FeedbackTab({ account }: { account: Account }) {
           }
           icon={<Icon name="message-circle" />}
           iconTone={feedback.sentiment === "positive" ? "pos" : feedback.sentiment === "neutral" ? "info" : "neg"}
+          accent={worst === "sentiment" ? "neg" : null}
         />
         <MetricCard
           label="Responses"
           value={<Mono>{total}</Mono>}
           icon={<Icon name="inbox" />}
-          iconTone="info"
+          iconTone={total === 0 ? "warn" : "info"}
+          accent={worst === "responses" ? "neg" : null}
         />
         <MetricCard
           label="Last feedback"
