@@ -74,8 +74,8 @@ function lineForSignal(s: Signal): string {
 }
 
 function outcomeForSignal(s: Signal): { label: string; state: "ok" | "pending" | "muted" } {
-  if (s.direction === "reverse" && s.sticky) return { label: "regression · sticky", state: "pending" };
-  if (s.direction === "reverse") return { label: "regression", state: "pending" };
+  if (s.direction === "reverse" && s.sticky) return { label: "↓ went backwards · sticky", state: "pending" };
+  if (s.direction === "reverse") return { label: "↓ went backwards", state: "pending" };
   if (s.subject === "NPS") return { label: "promoter", state: "ok" };
   if (s.type === "setup") return { label: "completed", state: "ok" };
   return { label: "noted", state: "muted" };
@@ -85,10 +85,17 @@ function dayLabel(iso: string): string {
   const d = daysSince(iso);
   if (d <= 0) return "Today";
   if (d === 1) return "Yesterday";
-  if (d <= 7) return `${d} days ago`;
-  if (d <= 30) return `${Math.round(d / 7)} weeks ago`;
-  if (d <= 365) return `${Math.round(d / 30)} months ago`;
-  return `${Math.round(d / 365)} years ago`;
+  if (d <= 7) return `${d} day${d === 1 ? "" : "s"} ago`;
+  if (d <= 30) {
+    const w = Math.round(d / 7);
+    return `${w} week${w === 1 ? "" : "s"} ago`;
+  }
+  if (d <= 365) {
+    const m = Math.round(d / 30);
+    return `${m} month${m === 1 ? "" : "s"} ago`;
+  }
+  const y = Math.round(d / 365);
+  return `${y} year${y === 1 ? "" : "s"} ago`;
 }
 
 function groupSignalsByDay(signals: Signal[]) {
@@ -171,6 +178,20 @@ export default function AccountDetailPage() {
   })();
 
   const [timelineOpen, setTimelineOpen] = useState(false);
+  const PIN_KEY = `gocsm.pinned.${identity.id}`;
+  const [pinned, setPinned] = useState<boolean>(() => {
+    try { return !!localStorage.getItem(PIN_KEY); } catch { return false; }
+  });
+  const togglePin = () => {
+    setPinned((p) => {
+      const next = !p;
+      try {
+        if (next) localStorage.setItem(PIN_KEY, "1");
+        else localStorage.removeItem(PIN_KEY);
+      } catch { /* noop */ }
+      return next;
+    });
+  };
 
   return (
     <main
@@ -242,8 +263,11 @@ export default function AccountDetailPage() {
               <span style={{ font: "var(--t-meta)", color: "var(--text-3, var(--text))" }}>
                 Owner {ownership.owner}
               </span>
-              <span style={{ marginLeft: "auto" }}>
-                <LiveStatus state="fresh" label="Synced 3m ago" watchingCount={1} />
+              <span style={{ marginLeft: "auto", display: "inline-flex", alignItems: "center", gap: "var(--s-2)" }}>
+                <LiveStatus state="fresh" label="Synced 3m ago" />
+                <span style={{ font: "var(--t-meta)", color: "var(--text-3, var(--text))" }}>
+                  · watching this account
+                </span>
               </span>
             </div>
 
@@ -326,7 +350,19 @@ export default function AccountDetailPage() {
       >
         <Card padded>
           <div style={{ display: "flex", flexDirection: "column", gap: "var(--s-4)" }}>
-            <h2 style={{ font: "var(--t-h3)", margin: 0 }}>Key facts</h2>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "var(--s-2)" }}>
+              <h2 style={{ font: "var(--t-h3)", margin: 0 }}>Key facts</h2>
+              <Button
+                variant="ghost"
+                size="sm"
+                icon={<Icon name={pinned ? "pin-off" : "pin"} />}
+                onClick={togglePin}
+                aria-pressed={pinned}
+                title={pinned ? "Unpin from top of Accounts" : "Pin this account to the top of Accounts"}
+              >
+                {pinned ? "Pinned" : "Pin to top"}
+              </Button>
+            </div>
 
             <FactRow label="Health">
               <HealthBadge band={health.band} label={`${bandLabel(health.band)} · ${health.score}`} />

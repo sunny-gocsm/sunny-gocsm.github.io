@@ -205,7 +205,7 @@ export function RevenueTab({ account }: { account: Account }) {
           <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: "var(--s-2)" }}>
             <h4 style={{ font: "var(--t-h4)", margin: 0 }}>Revenue, cost, margin · 6mo</h4>
             <span style={{ font: "var(--t-meta)", color: "var(--text-3, var(--text))" }}>
-              Synthetic from current MRR + spend trend
+              Estimate — limited data
             </span>
           </div>
           <div style={{ width: "100%", height: 200 }}>

@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import {
   Card,
   Button,
@@ -121,6 +122,7 @@ interface Props {
 export function HealthTab({ account, onNavigateTab }: Props) {
   const { health, identity, onboarding, lifecycle } = account;
   const [methodOpen, setMethodOpen] = useState(false);
+  const navigate = useNavigate();
 
   const pillars: PillarKey[] = ["productAdoption", "revenue", "login", "sentiment"];
   const weights = {
@@ -266,12 +268,32 @@ export function HealthTab({ account, onNavigateTab }: Props) {
         </div>
 
         <Card padded>
-          <div style={{ display: "flex", flexDirection: "column", gap: "var(--s-2)" }}>
-            <span style={{ font: "var(--t-meta)", textTransform: "uppercase", letterSpacing: "0.04em", color: "var(--text-3, var(--text))" }}>
-              Agency weights
+          <button
+            type="button"
+            onClick={() => navigate("/configure?section=health-weights")}
+            style={{
+              all: "unset",
+              cursor: "pointer",
+              display: "flex",
+              flexDirection: "column",
+              gap: "var(--s-2)",
+            }}
+            aria-label="Adjust agency health weights"
+          >
+            <span
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: "var(--s-2)",
+                font: "var(--t-meta)",
+                color: "var(--text-2, var(--text))",
+              }}
+            >
+              <span>These weights are yours — adjust</span>
+              <Icon name="arrow-right" />
             </span>
             <PillarBar weights={weights} />
-          </div>
+          </button>
         </Card>
 
         {methodOpen ? (
