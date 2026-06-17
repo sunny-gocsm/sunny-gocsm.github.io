@@ -201,6 +201,7 @@ export default function PlaybooksPage() {
                   outcome={p.outcome}
                   activateLabel={activateLabel(p.state)}
                   onActivate={() => advance(p)}
+                  data-kind={p.kind}
                 />
                 <div
                   style={{
@@ -211,12 +212,40 @@ export default function PlaybooksPage() {
                     paddingInline: "var(--s-2)",
                   }}
                 >
-                  <Badge variant={STATE_VARIANT[p.state]} dot>
+                  <Badge variant={STATE_VARIANT[p.state]} dot={p.state === "off"}>
                     {STATE_LABEL[p.state]}
                   </Badge>
-                  <span style={{ font: "var(--t-meta)", color: "var(--text-3, var(--text))" }}>
-                    <Mono>{p.count}</Mono> account{p.count === 1 ? "" : "s"} match today
-                  </span>
+                  {p.count > 0 ? (
+                    <span style={{ font: "var(--t-meta)", color: "var(--text-3, var(--text))" }}>
+                      <Mono
+                        style={{
+                          color:
+                            p.kind === "billing" || p.kind === "save"
+                              ? "var(--health-atrisk-strong)"
+                              : p.kind === "expansion"
+                              ? "var(--pos-7)"
+                              : "var(--warn-7)",
+                          fontWeight: 700,
+                          fontSize: 14,
+                        }}
+                      >
+                        {p.count}
+                      </Mono>{" "}
+                      account{p.count === 1 ? "" : "s"} match today
+                    </span>
+                  ) : (
+                    <span
+                      style={{
+                        font: "var(--t-meta)",
+                        color: "var(--pos-7)",
+                        display: "inline-flex",
+                        alignItems: "center",
+                        gap: 4,
+                      }}
+                    >
+                      <Icon name="shield-check" /> {ZERO_LINE[p.kind]}
+                    </span>
+                  )}
                 </div>
               </div>
             ))}
