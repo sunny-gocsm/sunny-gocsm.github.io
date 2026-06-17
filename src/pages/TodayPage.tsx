@@ -8,8 +8,6 @@ import {
   MetricCard,
   Delta,
   HealthTile,
-  MyQueue,
-  QueueRow,
   TeamPulseStrip,
   Verdict,
   LiveStatus,
@@ -31,6 +29,7 @@ import {
   type Account,
 } from "@/fixtures";
 import { PlaybookActivationDrawer, type DrawerScope } from "@/components/playbooks/PlaybookActivationDrawer";
+
 
 // ----------------------------------------------------------------------------
 // helpers
@@ -214,49 +213,131 @@ export default function TodayPage() {
   const topReason = queue[0]
     ? reasonFor(queue[0])
     : "All clear — nothing urgent on the board.";
+  const topTone: "pos" | "watch" | "risk" =
+    queue[0]?.health.band === "atrisk"
+      ? "risk"
+      : queue[0]
+      ? "watch"
+      : "pos";
 
-  const queueNode = (
-    <div style={{ display: "flex", flexDirection: "column", gap: "var(--s-2)" }}>
-      {queue.map((a) => {
-        const days = daysUntil(a.revenue.renewalDate);
-        const breach = days >= 0 && days <= 7;
-        return (
-          <QueueRow
-            key={a.identity.id}
-            subject={
-              <span>
-                <strong style={{ color: "var(--text)" }}>{a.identity.name}</strong>{" "}
-                <span style={{ color: "var(--text-3, var(--text))" }}>· {reasonFor(a)}</span>
-              </span>
-            }
-            impact={<Mono>{fmtMoney(a.revenue.mrr)}</Mono>}
-            blockedBy={a.onboarding.blocked_by ?? undefined}
-            sla={days >= 0 ? `${days}d to renewal` : `${Math.abs(days)}d overdue`}
-            slaBreach={breach}
-            action={
-              <span style={{ display: "inline-flex", gap: "var(--s-1)" }}>
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  icon={<Icon name="book-open" />}
-                  onClick={() => openApply([a])}
-                >
-                  Apply
-                </Button>
-                <Button
-                  size="sm"
-                  variant="secondary"
-                  onClick={() => navigate(`/accounts/${a.identity.id}`)}
-                >
-                  Open
-                </Button>
-              </span>
-            }
-          />
-        );
-      })}
-    </div>
-  );
+  const [handled, setHandled] = useState<Set<string>>(new Set());
+  const toggleHandled = (id: string) =>
+    setHandled((prev) => {
+      const next = new Set(prev);
+      next.has(id) ? next.delete(id) : next.add(id);
+      return next;
+    });
+  const activeQueue = queue.filter((a) => !handled.has(a.identity.id));
+  const handledCount = queue.filter((a) => handled.has(a.identity.id)).length;
+
+  const initials = (name: string) =>
+    name
+      .split(/\s+/)
+      .map((w) => w[0])
+      .filter(Boolean)
+      .slice(0, 2)
+      .join("")
+      .toUpperCase();
+
+  const bandColor = (band: Account["health"]["band"]) =>
+    band === "thriving"
+      ? "var(--health-thriving-strong)"
+      : band === "healthy"
+      ? "var(--health-healthy-strong)"
+      : band === "watch"
+      ? "var(--health-watch-strong)"
+      : "var(--health-atrisk-strong)";
+
+  const renderQueueRow = (a: Account) => {
+    const days = daysUntil(a.revenue.renewalDate);
+    const breach = days >= 0 && days <= 7;
+    const isHandled = handled.has(a.identity.id);
+    return (
+      <div
+        key={a.identity.id}
+        className="queue-row"
+        style={{
+          opacity: isHandled ? 0.5 : 1,
+          textDecoration: isHandled ? "line-through" : "none",
+        }}
+      >
+        <input
+          type="checkbox"
+          aria-label={`Mark ${a.identity.name} handled`}
+          checked={isHandled}
+          onChange={() => toggleHandled(a.identity.id)}
+          style={{ flexShrink: 0, width: 16, height: 16, cursor: "pointer" }}
+        />
+        <span
+          aria-hidden
+          style={{
+            display: "inline-flex",
+            alignItems: "center",
+            justifyContent: "center",
+            width: 28,
+            height: 28,
+            borderRadius: 999,
+            background: "var(--surface-2)",
+            color: "var(--text-2, var(--text))",
+            fontSize: 11,
+            fontWeight: 600,
+            flexShrink: 0,
+          }}
+        >
+          {initials(a.identity.name)}
+        </span>
+        <span
+          aria-hidden
+          title={bandLabel(a.health.band)}
+          style={{
+            width: 8,
+            height: 8,
+            borderRadius: 999,
+            background: bandColor(a.health.band),
+            flexShrink: 0,
+          }}
+        />
+        <div style={{ flex: 1, minWidth: 0, fontSize: 14 }}>
+          <strong style={{ color: "var(--text)", fontWeight: 600 }}>{a.identity.name}</strong>{" "}
+          <span style={{ color: "var(--text-2, var(--text))" }}>· {reasonFor(a)}</span>
+        </div>
+        <span className="queue-impact">{fmtMoney(a.revenue.mrr)}</span>
+        <span
+          style={{
+            fontFamily: "var(--font-mono)",
+            fontVariantNumeric: "tabular-nums",
+            fontSize: 11,
+            fontWeight: 600,
+            padding: "3px 8px",
+            borderRadius: 999,
+            background: breach ? "var(--health-atrisk-soft)" : "var(--surface-2)",
+            color: breach ? "var(--health-atrisk-strong)" : "var(--text-2, var(--text))",
+            flexShrink: 0,
+          }}
+        >
+          {days >= 0 ? `${days}d to renewal` : `${Math.abs(days)}d overdue`}
+        </span>
+        <span style={{ display: "inline-flex", gap: "var(--s-1)", flexShrink: 0 }}>
+          <Button
+            size="sm"
+            variant="primary"
+            icon={<Icon name="book-open" />}
+            onClick={() => openApply([a])}
+          >
+            Apply play
+          </Button>
+          <Button
+            size="sm"
+            variant="ghost"
+            onClick={() => navigate(`/accounts/${a.identity.id}`)}
+          >
+            Open
+          </Button>
+        </span>
+      </div>
+    );
+  };
+
 
   const teamMembers = [
     {
@@ -291,36 +372,69 @@ export default function TodayPage() {
         gap: "var(--s-7)",
       }}
     >
-      {/* 1 — Briefing */}
-      <section aria-label="Briefing" style={{ display: "flex", flexDirection: "column", gap: "var(--s-4)" }}>
+      {/* 1 — Briefing ribbon (tinted band) */}
+      <section
+        aria-label="Briefing"
+        style={{
+          background:
+            "linear-gradient(180deg, var(--blue-2, var(--surface-2)) 0%, var(--surface) 100%)",
+          borderRadius: "var(--r-lg)",
+          padding: "var(--s-5) var(--s-5) var(--s-4)",
+          display: "flex",
+          flexDirection: "column",
+          gap: "var(--s-3)",
+        }}
+      >
         <PageRibbon
-          title="Today"
-          description={`${greetingFor("there")} Here's what GoCSM did overnight, and what needs you today.`}
+          title={greetingFor("there")}
+          description={briefingLine}
           trailing={<LiveStatus state="fresh" label="Synced moments ago" />}
           kpis={[
-            { label: "On the board", value: <Mono>{queue.length}</Mono> },
+            { label: "On the board", value: <Mono>{activeQueue.length}</Mono> },
             { label: "MRR at risk", value: <Mono>{fmtMoney(rollup.mrrAtRisk)}</Mono> },
             { label: "Renewals · 30d", value: <Mono>{renewalsWindow(0, 30).length}</Mono> },
           ]}
         />
-        <p style={{ font: "var(--t-body)", color: "var(--text-2, var(--text))", margin: 0 }}>
-          {briefingLine}
-        </p>
-        <Verdict tone={queue[0]?.health.band === "atrisk" ? "risk" : "watch"}>
-          {topReason}
-        </Verdict>
+        <Verdict tone={topTone}>{topReason}</Verdict>
       </section>
 
-
-      {/* 2 — Urgency queue */}
-      <section aria-label="Urgency queue" id="urgency-queue">
-        <MyQueue
-          member="Today"
-          scope={queue.length}
-          queue={queueNode}
-          empty="All caught up — no one needs you right now."
-        />
+      {/* 2 — Urgency queue (the visual focus) */}
+      <section
+        aria-label="Today's queue"
+        id="urgency-queue"
+        style={{ display: "flex", flexDirection: "column", gap: "var(--s-3)" }}
+      >
+        <header
+          style={{
+            display: "flex",
+            alignItems: "baseline",
+            justifyContent: "space-between",
+            gap: "var(--s-3)",
+          }}
+        >
+          <h2 style={{ font: "var(--t-h3)", margin: 0 }}>Today's queue</h2>
+          <span style={{ font: "var(--t-meta)", color: "var(--text-2, var(--text))" }}>
+            <Mono>{handledCount}</Mono> of <Mono>{queue.length}</Mono> handled today
+          </span>
+        </header>
+        <Card padded={false}>
+          {activeQueue.length ? (
+            <div>{activeQueue.map(renderQueueRow)}</div>
+          ) : (
+            <div
+              style={{
+                padding: "var(--s-6)",
+                textAlign: "center",
+                color: "var(--text-2, var(--text))",
+                font: "var(--t-body)",
+              }}
+            >
+              All caught up — no one needs you right now.
+            </div>
+          )}
+        </Card>
       </section>
+
 
       {/* 3 — Problem cohorts */}
       <section aria-label="Act by problem" style={{ display: "flex", flexDirection: "column", gap: "var(--s-3)" }}>
