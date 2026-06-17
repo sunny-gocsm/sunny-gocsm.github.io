@@ -74,8 +74,8 @@ function lineForSignal(s: Signal): string {
 }
 
 function outcomeForSignal(s: Signal): { label: string; state: "ok" | "pending" | "muted" } {
-  if (s.direction === "reverse" && s.sticky) return { label: "regression · sticky", state: "pending" };
-  if (s.direction === "reverse") return { label: "regression", state: "pending" };
+  if (s.direction === "reverse" && s.sticky) return { label: "↓ went backwards · sticky", state: "pending" };
+  if (s.direction === "reverse") return { label: "↓ went backwards", state: "pending" };
   if (s.subject === "NPS") return { label: "promoter", state: "ok" };
   if (s.type === "setup") return { label: "completed", state: "ok" };
   return { label: "noted", state: "muted" };
@@ -85,10 +85,17 @@ function dayLabel(iso: string): string {
   const d = daysSince(iso);
   if (d <= 0) return "Today";
   if (d === 1) return "Yesterday";
-  if (d <= 7) return `${d} days ago`;
-  if (d <= 30) return `${Math.round(d / 7)} weeks ago`;
-  if (d <= 365) return `${Math.round(d / 30)} months ago`;
-  return `${Math.round(d / 365)} years ago`;
+  if (d <= 7) return `${d} day${d === 1 ? "" : "s"} ago`;
+  if (d <= 30) {
+    const w = Math.round(d / 7);
+    return `${w} week${w === 1 ? "" : "s"} ago`;
+  }
+  if (d <= 365) {
+    const m = Math.round(d / 30);
+    return `${m} month${m === 1 ? "" : "s"} ago`;
+  }
+  const y = Math.round(d / 365);
+  return `${y} year${y === 1 ? "" : "s"} ago`;
 }
 
 function groupSignalsByDay(signals: Signal[]) {
