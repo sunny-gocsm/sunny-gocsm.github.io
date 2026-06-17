@@ -33,7 +33,7 @@ const App = () => (
               <Route path="/accounts/:id" element={<AccountDetailPage />} />
               <Route path="/playbooks" element={<PlaybooksPage />} />
               <Route path="/playbooks/:id" element={<PlaybookDetailPage />} />
-              <Route path="/onboarding" element={<StubPage title="Onboarding" />} />
+              <Route path="/onboarding" element={<OnboardingPage />} />
               <Route path="/money" element={<MoneyPage />} />
               <Route path="/configure" element={<StubPage title="Configure" />} />
               <Route path="/activity" element={<Activity />} />
