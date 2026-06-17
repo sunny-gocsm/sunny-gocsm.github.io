@@ -48,6 +48,7 @@ import {
   type Placement,
   type StepCatalogItem,
 } from "@/fixtures/journeys";
+import { PageRibbon } from "@/components/PageRibbon";
 
 const fmtMoney = (n: number) => "$" + Math.round(n).toLocaleString();
 
@@ -769,7 +770,7 @@ export default function OnboardingPage() {
         description="Operator view of stalled accounts and the journeys they're moving through. Stalls send to Today; the client view stays plain."
         kpis={[
           { label: "Stalled", value: <Mono>{stalledOnboarding().length}</Mono> },
-          { label: "Journeys", value: <Mono>{journeys.length}</Mono> },
+          { label: "Journeys", value: <Mono>{journeyFixtures.length}</Mono> },
         ]}
       />
 
