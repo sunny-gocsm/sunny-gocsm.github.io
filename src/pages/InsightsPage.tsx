@@ -502,7 +502,7 @@ function SignalsView() {
           <Button variant="ghost" onClick={() => navigate("/today")}>Send to Today →</Button>
         </header>
         {lost.length === 0 ? (
-          <p style={{ color: "var(--text-muted)", margin: 0 }}>No reversals in window.</p>
+          <p style={{ color: "var(--pos-7)", margin: 0, font: "var(--t-body)" }}>✓ No reversals in this window — every sticky setup is holding.</p>
         ) : (
           <ul style={{ listStyle: "none", padding: 0, margin: 0, display: "flex", flexDirection: "column", gap: "var(--s-2)" }}>
             {lost.map((a) => {
