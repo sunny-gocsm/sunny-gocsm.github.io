@@ -216,7 +216,7 @@ html,body{font-family:var(--font-ui);font-size:14px;line-height:1.5;color:var(--
 .role-pill{font-size:10px;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;color:var(--warn-7);background:var(--warn-soft);padding:2px 7px;border-radius:var(--r-pill);}
 
 /* =================================================================
-   INSIGHT HIERARCHY — GoCSM's signature pattern (v2.1)
+   INSIGHT HIERARCHY — GoCSMs signature pattern (v2.1)
    The answer to "AI leads, numbers back it up, user stops at any depth."
    Four reading tiers: Verdict → Why → Evidence → Detail.
    Confidence comes from HIERARCHY and DECLARATIVE COPY, not loud color.
@@ -272,7 +272,7 @@ html,body{font-family:var(--font-ui);font-size:14px;line-height:1.5;color:var(--
 .driver-action::after{content:"→";transition:transform var(--d-fast);}
 .driver-action:hover::after{transform:translateX(3px);}
 
-/* ─── TIER 2/3 · LAYERED DRILL-DOWN — "What's impacting X?" accordion ─── */
+/* ─── TIER 2/3 · LAYERED DRILL-DOWN — "Whats impacting X?" accordion ─── */
 /* Each pillar row: status icon + name + one-line takeaway (Tier 2 visible),
    expand for the full evidence paragraph + metrics (Tier 3). Max ONE nested
    level — research: >2 layers of disclosure causes navigation confusion. */
@@ -354,6 +354,6 @@ html,body{font-family:var(--font-ui);font-size:14px;line-height:1.5;color:var(--
 .ring .score{font-family:var(--font-mono);font-size:30px;font-weight:600;color:var(--text);line-height:1;}
 .ring .band{font-size:10.5px;font-weight:600;letter-spacing:0.05em;text-transform:uppercase;margin-top:3px;}
 /* Iconography law: outline icons (Lucide/Tabler), 16px default, 1.75 stroke,
-   currentColor. Matches the live product + the logo's line geometry. No emoji,
+   currentColor. Matches the live product + the logos line geometry. No emoji,
    no filled icons, no mixed stroke weights. */
 .icon-16{width:16px;height:16px;stroke-width:1.75;}
