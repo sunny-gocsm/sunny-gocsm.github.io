@@ -471,6 +471,13 @@ export default function TodayPage() {
           ]}
         />
       </section>
+
+      <PlaybookActivationDrawer
+        open={!!drawerScope}
+        scope={drawerScope}
+        accounts={allAccounts()}
+        onClose={() => setDrawerScope(null)}
+      />
     </main>
   );
 }
