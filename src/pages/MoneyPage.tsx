@@ -761,25 +761,71 @@ export default function MoneyPage() {
         <>
           <div style={{ display: "flex", flexWrap: "wrap", gap: "var(--s-2)", alignItems: "center" }}>
             <span style={{ font: "var(--t-meta)", color: "var(--text-3, var(--text))" }}>Cohort</span>
-            <Badge
-              variant={filter === "all" ? "blue" : "neutral"}
-              dot={false}
-              onClick={() => setFilter("all")}
-              style={{ cursor: "pointer" }}
+            <span
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                gap: 4,
+                padding: "4px 6px 4px 10px",
+                borderRadius: 999,
+                border: `1px solid ${filter === "all" ? "var(--blue-7)" : "var(--border)"}`,
+                background: filter === "all" ? "var(--blue-2)" : "var(--surface)",
+              }}
             >
-              All live ({live.length})
-            </Badge>
-            {kpis.map((k) => (
-              <Badge
-                key={k.key}
-                variant={filter === k.key ? (k.accent === "neg" ? "danger" : "blue") : "neutral"}
-                dot={false}
-                onClick={() => setFilter(k.key)}
-                style={{ cursor: "pointer" }}
+              <button
+                type="button"
+                onClick={() => setFilter("all")}
+                style={{ background: "transparent", border: 0, padding: 0, cursor: "pointer", color: "inherit", font: "var(--t-meta)", fontWeight: 600 }}
               >
-                {k.label} ({k.rows.length})
-              </Badge>
-            ))}
+                All live ({live.length})
+              </button>
+            </span>
+            {kpis.map((k) => {
+              const active = filter === k.key;
+              return (
+                <span
+                  key={k.key}
+                  style={{
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: 4,
+                    padding: "4px 6px 4px 10px",
+                    borderRadius: 999,
+                    border: `1px solid ${active ? (k.accent === "neg" ? "var(--health-atrisk-strong)" : "var(--blue-7)") : "var(--border)"}`,
+                    background: active ? (k.accent === "neg" ? "var(--health-atrisk-soft)" : "var(--blue-2)") : "var(--surface)",
+                  }}
+                >
+                  <button
+                    type="button"
+                    onClick={() => setFilter(k.key)}
+                    style={{ background: "transparent", border: 0, padding: 0, cursor: "pointer", color: "inherit", font: "var(--t-meta)", fontWeight: 600 }}
+                  >
+                    {k.label} ({k.rows.length})
+                  </button>
+                  <button
+                    type="button"
+                    onClick={(e) => { e.stopPropagation(); navigate("/today"); }}
+                    disabled={k.rows.length === 0}
+                    title="Send this cohort to Today"
+                    aria-label={`Send ${k.label} to Today`}
+                    style={{
+                      display: "inline-flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      width: 22, height: 22, borderRadius: 999,
+                      background: "var(--surface)",
+                      border: "1px solid var(--border)",
+                      color: "var(--text-2, var(--text))",
+                      cursor: k.rows.length === 0 ? "not-allowed" : "pointer",
+                      opacity: k.rows.length === 0 ? 0.4 : 1,
+                      padding: 0,
+                    }}
+                  >
+                    <Icon name="send" />
+                  </button>
+                </span>
+              );
+            })}
             <span style={{ marginLeft: "auto", display: "inline-flex", gap: "var(--s-2)" }}>
               {activeKpi ? (
                 <Button
