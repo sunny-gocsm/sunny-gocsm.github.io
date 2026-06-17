@@ -82,6 +82,17 @@ export function RevenueTab({ account }: { account: Account }) {
   const lowMargin = revenue.margin < 20;
   const lowData = paymentRows.length === 0 && planRows.length === 0;
 
+  // Single worst metric per tab (R8): pick the most critical card; only that one gets an accent.
+  type WorstKey = "margin" | "renewal" | "wallet" | "revenueHealth" | "spendTrend" | null;
+  const worst: WorstKey = (() => {
+    if (revenue.revenueHealth === "atrisk") return "revenueHealth";
+    if (lowMargin) return "margin";
+    if (renewalDays <= 14) return "renewal";
+    if (revenue.walletBalance < revenue.walletSpend30d * 0.25) return "wallet";
+    if (revenue.spendTrend < -10) return "spendTrend";
+    return null;
+  })();
+
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "var(--s-5)" }}>
       {/* Summary metrics */}
