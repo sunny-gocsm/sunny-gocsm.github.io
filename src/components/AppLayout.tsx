@@ -12,6 +12,15 @@ const GROUPS = [
     ],
   },
   {
+    label: "Insights",
+    items: [
+      { id: "insights-login", label: "Login", icon: "log-in" },
+      { id: "insights-adoption", label: "Adoption", icon: "activity" },
+      { id: "insights-feedback", label: "Feedback", icon: "message-circle" },
+      { id: "insights-signals", label: "Signals", icon: "radio" },
+    ],
+  },
+  {
     label: "Setup",
     items: [{ id: "configure", label: "Configure", icon: "settings" }],
   },
@@ -24,6 +33,10 @@ const PATH_FOR: Record<string, string> = {
   onboarding: "/onboarding",
   money: "/money",
   configure: "/configure",
+  "insights-login": "/insights/login",
+  "insights-adoption": "/insights/adoption",
+  "insights-feedback": "/insights/feedback",
+  "insights-signals": "/insights/signals",
 };
 
 function activeId(pathname: string): string {
@@ -32,6 +45,10 @@ function activeId(pathname: string): string {
   if (pathname.startsWith("/playbooks")) return "playbooks";
   if (pathname.startsWith("/onboarding")) return "onboarding";
   if (pathname.startsWith("/money")) return "money";
+  if (pathname.startsWith("/insights/adoption")) return "insights-adoption";
+  if (pathname.startsWith("/insights/feedback")) return "insights-feedback";
+  if (pathname.startsWith("/insights/signals")) return "insights-signals";
+  if (pathname.startsWith("/insights")) return "insights-login";
   if (pathname.startsWith("/configure")) return "configure";
   return "today";
 }
