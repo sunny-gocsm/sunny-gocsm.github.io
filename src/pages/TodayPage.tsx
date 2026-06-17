@@ -166,6 +166,14 @@ function CohortCard({
 
 export default function TodayPage() {
   const navigate = useNavigate();
+  const [drawerScope, setDrawerScope] = useState<DrawerScope | null>(null);
+  const openApply = (accs: Account[], suggested?: string) =>
+    setDrawerScope({
+      kind: "accounts",
+      accountIds: accs.map((a) => a.identity.id),
+      suggested,
+    });
+
 
   const queue = useMemo(() => atRiskByUrgency().slice(0, 8), []);
   const renewingAtRisk = useMemo(
