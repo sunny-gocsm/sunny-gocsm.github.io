@@ -215,12 +215,32 @@ export default function TodayPage() {
       : "pos";
 
   const [handled, setHandled] = useState<Set<string>>(new Set());
-  const toggleHandled = (id: string) =>
-    setHandled((prev) => {
-      const next = new Set(prev);
-      next.has(id) ? next.delete(id) : next.add(id);
-      return next;
+  const markHandled = (id: string, reason: "applied" | "dismissed") => {
+    setHandled((prev) => new Set(prev).add(id));
+    const acc = queue.find((a) => a.identity.id === id);
+    toast({
+      title: reason === "applied" ? "Play queued for this account" : "Marked done",
+      description: acc ? `${acc.identity.name} cleared from today.` : undefined,
+      action: (
+        <ToastAction
+          altText="Undo"
+          onClick={() =>
+            setHandled((prev) => {
+              const next = new Set(prev);
+              next.delete(id);
+              return next;
+            })
+          }
+        >
+          Undo
+        </ToastAction>
+      ),
     });
+  };
+  const applyToOne = (a: Account) => {
+    openApply([a]);
+    markHandled(a.identity.id, "applied");
+  };
   const activeQueue = queue.filter((a) => !handled.has(a.identity.id));
   const handledCount = queue.filter((a) => handled.has(a.identity.id)).length;
 
