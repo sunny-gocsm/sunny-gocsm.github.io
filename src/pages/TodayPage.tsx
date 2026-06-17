@@ -1,7 +1,6 @@
 import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
-  BriefingHeader,
   Card,
   Button,
   Icon,
@@ -15,6 +14,7 @@ import {
   Verdict,
   LiveStatus,
 } from "@/gocsm-ds";
+import { PageRibbon } from "@/components/PageRibbon";
 import {
   atRiskByUrgency,
   renewalsWindow,
@@ -293,15 +293,24 @@ export default function TodayPage() {
     >
       {/* 1 — Briefing */}
       <section aria-label="Briefing" style={{ display: "flex", flexDirection: "column", gap: "var(--s-4)" }}>
-        <BriefingHeader
-          greeting={`${greetingFor("there")} Here's what GoCSM did overnight, and what needs you today.`}
-          promise={briefingLine}
-          sync={<LiveStatus state="fresh" label="Synced moments ago" />}
+        <PageRibbon
+          title="Today"
+          description={`${greetingFor("there")} Here's what GoCSM did overnight, and what needs you today.`}
+          trailing={<LiveStatus state="fresh" label="Synced moments ago" />}
+          kpis={[
+            { label: "On the board", value: <Mono>{queue.length}</Mono> },
+            { label: "MRR at risk", value: <Mono>{fmtMoney(rollup.mrrAtRisk)}</Mono> },
+            { label: "Renewals · 30d", value: <Mono>{renewalsWindow(0, 30).length}</Mono> },
+          ]}
         />
+        <p style={{ font: "var(--t-body)", color: "var(--text-2, var(--text))", margin: 0 }}>
+          {briefingLine}
+        </p>
         <Verdict tone={queue[0]?.health.band === "atrisk" ? "risk" : "watch"}>
           {topReason}
         </Verdict>
       </section>
+
 
       {/* 2 — Urgency queue */}
       <section aria-label="Urgency queue" id="urgency-queue">
