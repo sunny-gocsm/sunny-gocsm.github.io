@@ -169,7 +169,7 @@ function LoginView() {
           { key: "users", header: "Active users", mono: true, align: "right", sortable: true },
           { key: "minutes", header: "Minutes 30d", mono: true, align: "right", sortable: true, render: (r) => <Mono>{fmtNum(r.minutes)}</Mono> },
           { key: "days", header: "Last login", mono: true, align: "right", sortable: true, render: (r) => <Mono>{r.days}d ago</Mono> },
-          { key: "status", header: "Status", render: (r) => <Badge tone={r.status === "ghosting" ? "neg" : r.status === "low" ? "warn" : "pos"}>{r.status}</Badge> },
+          { key: "status", header: "Status", render: (r) => <Badge variant={r.status === "ghosting" ? "danger" : r.status === "low" ? "warn" : "pos"}>{r.status}</Badge> },
           { key: "mrr", header: "MRR", mono: true, align: "right", sortable: true, render: (r) => <Mono>${fmtNum(r.mrr)}</Mono> },
         ]}
       />
