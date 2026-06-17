@@ -694,7 +694,7 @@ export default function TodayPage() {
 
       {/* 4 — Money / counts strip */}
       <section aria-label="Agency rollup" style={{ display: "flex", flexDirection: "column", gap: "var(--s-3)" }}>
-        <h2 style={{ font: "var(--t-h3)", margin: 0 }}>The book, in numbers</h2>
+        <h2 style={{ font: "var(--t-h3)", margin: 0, color: "var(--text)", fontWeight: 600 }}>The book, in numbers</h2>
         <div
           style={{
             display: "grid",
