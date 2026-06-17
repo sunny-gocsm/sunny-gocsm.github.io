@@ -76,7 +76,7 @@ export default function InsightsPage() {
       <header style={{ display: "flex", flexDirection: "column", gap: "var(--s-1)" }}>
         <div style={{ display: "flex", alignItems: "center", gap: "var(--s-2)" }}>
           <span className="t-label" style={{ color: "var(--text-muted)" }}>Insights</span>
-          <Badge tone="neutral">Secondary</Badge>
+          <Badge variant="neutral">Secondary</Badge>
         </div>
         <h1 style={{ font: "var(--t-h1)", margin: 0 }}>{VIEW_LABEL[active]} analytics</h1>
         <p style={{ font: "var(--t-body)", color: "var(--text-muted)", margin: 0 }}>
@@ -226,7 +226,7 @@ function AdoptionView() {
       <Card padded>
         <header style={{ marginBottom: "var(--s-2)", display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
           <h3 style={{ font: "var(--t-h3)", margin: 0 }}>Feature engagement — portfolio</h3>
-          <ConfTag basis="evidence" detail="adoption fixtures" />
+          <ConfTag basis="fact" detail="adoption fixtures" />
         </header>
         <div style={{ width: "100%", height: 280 }}>
           <ResponsiveContainer>
@@ -428,7 +428,7 @@ function SignalsView() {
       <Card padded>
         <header style={{ marginBottom: "var(--s-2)", display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
           <h3 style={{ font: "var(--t-h3)", margin: 0 }}>Activation funnel — % of clients with each sticky setup live</h3>
-          <ConfTag basis="evidence" detail="from signals fixture" />
+          <ConfTag basis="fact" detail="from signals fixture" />
         </header>
         <div style={{ width: "100%", height: 260 }}>
           <ResponsiveContainer>
@@ -481,7 +481,7 @@ function SignalsView() {
       <Card padded>
         <header style={{ marginBottom: "var(--s-2)", display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
           <h3 style={{ font: "var(--t-h3)", margin: 0 }}>Lifecycle / growth flow</h3>
-          <ConfTag basis="evidence" detail="new · resurrected · dormant" />
+          <ConfTag basis="fact" detail="new · resurrected · dormant" />
         </header>
         <div style={{ width: "100%", height: 240 }}>
           <ResponsiveContainer>
@@ -520,7 +520,7 @@ function SignalsView() {
                       {sig?.label ?? "sticky setup lost"} · <Mono>${fmtNum(a.revenue.mrr)}</Mono>/mo
                     </div>
                   </div>
-                  <Badge tone="neg">{sig ? `${daysSince(sig.detectedAt)}d ago` : "recent"}</Badge>
+                  <Badge variant="danger">{sig ? `${daysSince(sig.detectedAt)}d ago` : "recent"}</Badge>
                 </li>
               );
             })}
