@@ -368,6 +368,27 @@ export default function TodayPage() {
     },
   ];
 
+  const AiAttribution = (
+    <span
+      style={{
+        display: "inline-flex",
+        alignItems: "center",
+        gap: 4,
+        padding: "1px 6px",
+        borderRadius: 999,
+        background: "var(--ai-soft, var(--surface-2))",
+        color: "var(--ai-strong, var(--text-2, var(--text)))",
+        font: "var(--t-meta)",
+        fontWeight: 600,
+        marginRight: 6,
+        verticalAlign: "baseline",
+      }}
+    >
+      <Icon name="sparkles" />
+      GoCSM AI
+    </span>
+  );
+
   return (
     <main
       style={{
@@ -377,7 +398,7 @@ export default function TodayPage() {
         color: "var(--text)",
         display: "flex",
         flexDirection: "column",
-        gap: "var(--s-7)",
+        gap: "var(--s-9, var(--s-8))",
       }}
     >
       {/* 1 — Briefing ribbon (tinted band) */}
@@ -395,7 +416,12 @@ export default function TodayPage() {
       >
         <PageRibbon
           title={greetingFor("there")}
-          description={briefingLine}
+          description={
+            <span style={{ color: "var(--text-2, var(--text))" }}>
+              {AiAttribution}
+              {briefingLine}
+            </span>
+          }
           trailing={<LiveStatus state="fresh" label="Synced moments ago" />}
           kpis={[
             { label: "On the board", value: <Mono>{activeQueue.length}</Mono> },
@@ -403,12 +429,53 @@ export default function TodayPage() {
             { label: "Renewals · 30d", value: <Mono>{renewalsWindow(0, 30).length}</Mono> },
           ]}
         />
-        <Verdict tone={topTone}>{topReason}</Verdict>
+        {queue[0] ? (
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: "var(--s-3)",
+              padding: "var(--s-2) var(--s-3)",
+              borderRadius: "var(--r-md)",
+              background: "var(--surface)",
+              border: "1px solid var(--border)",
+              font: "var(--t-body-sm)",
+              color: "var(--text)",
+            }}
+          >
+            <span
+              aria-hidden
+              style={{
+                width: 8,
+                height: 8,
+                borderRadius: 999,
+                background:
+                  topTone === "risk"
+                    ? "var(--health-atrisk-strong)"
+                    : topTone === "watch"
+                    ? "var(--health-watch-strong)"
+                    : "var(--pos-7)",
+                flexShrink: 0,
+              }}
+            />
+            <span style={{ flex: 1, minWidth: 0 }}>
+              Highest priority right now: <strong style={{ fontWeight: 600 }}>{queue[0].identity.name}</strong> — {reasonFor(queue[0])}
+            </span>
+            <Button
+              size="sm"
+              variant="primary"
+              icon={<Icon name="arrow-right" />}
+              onClick={() => applyToOne(queue[0])}
+            >
+              Start here
+            </Button>
+          </div>
+        ) : null}
       </section>
 
-      {/* 2 — Urgency queue (the visual focus) */}
+      {/* 2 — Act by customer */}
       <section
-        aria-label="Today's queue"
+        aria-label="Act by customer"
         id="urgency-queue"
         style={{ display: "flex", flexDirection: "column", gap: "var(--s-3)" }}
       >
@@ -427,7 +494,14 @@ export default function TodayPage() {
               gap: "var(--s-3)",
             }}
           >
-            <h2 style={{ font: "var(--t-h3)", margin: 0 }}>Today's queue</h2>
+            <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
+              <h2 style={{ font: "var(--t-h3)", margin: 0, color: "var(--text)", fontWeight: 600 }}>
+                Act by customer
+              </h2>
+              <p style={{ font: "var(--t-body-sm)", color: "var(--text-2, var(--text))", margin: 0 }}>
+                Account by account, most urgent first.
+              </p>
+            </div>
             <span
               style={{
                 font: "var(--t-meta)",
