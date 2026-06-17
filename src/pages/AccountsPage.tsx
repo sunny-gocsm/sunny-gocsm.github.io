@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import {
   DataTable,
   HealthBadge,
@@ -169,6 +170,7 @@ function adoptionPct(a: Account): number {
 // ----- Page ----------------------------------------------------------------
 
 export default function AccountsPage() {
+  const navigate = useNavigate();
   const [bandFilter, setBandFilter] = useState<Set<HealthBand>>(new Set());
   const [stageFilter, setStageFilter] = useState<Set<LifecycleStage>>(new Set());
   const [activityFilter, setActivityFilter] = useState<Set<ActivityStatus>>(new Set());
