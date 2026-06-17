@@ -194,8 +194,8 @@ export function AdoptionTab({ account }: { account: Account }) {
                     ))}
                   </div>
                 ) : (
-                  <span style={{ font: "var(--t-body)", color: "var(--text-3, var(--text))" }}>
-                    Nothing underutilized — adoption is even.
+                  <span style={{ font: "var(--t-body)", color: "var(--pos-7)" }}>
+                    ✓ Nothing underutilized — adoption is even.
                   </span>
                 )}
                 <span style={{ font: "var(--t-meta)", color: "var(--text-3, var(--text))" }}>
