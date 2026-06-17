@@ -282,6 +282,10 @@ export default function AccountDetailPage() {
             <LoginTab account={account} />
           ) : tab === "adoption" ? (
             <AdoptionTab account={account} />
+          ) : tab === "revenue" ? (
+            <RevenueTab account={account} />
+          ) : tab === "feedback" ? (
+            <FeedbackTab account={account} />
           ) : (
             <Card padded>
               <div style={{ display: "flex", flexDirection: "column", gap: "var(--s-2)" }}>
@@ -289,9 +293,7 @@ export default function AccountDetailPage() {
                   {TABS.find((t) => t.id === tab)?.label}
                 </span>
                 <p style={{ font: "var(--t-body)", color: "var(--text-2, var(--text))", margin: 0 }}>
-                  {tab === "revenue"
-                    ? `MRR ${fmtMoney(revenue.mrr)} · renews in ${renewalDays}d. Detail panel ships next.`
-                    : "Detail panel ships next."}
+                  Detail panel ships next.
                 </p>
               </div>
             </Card>
