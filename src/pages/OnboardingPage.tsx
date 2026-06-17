@@ -245,7 +245,7 @@ function StallDashboard({ onSendToToday }: { onSendToToday: (a: Account) => void
         </div>
         <p style={{ font: "var(--t-meta)", color: "var(--text-3, var(--text))", margin: "var(--s-2) 0 0" }}>
           {bottleneck
-            ? `Biggest drop at "${bottleneck.step}" — ${bottleneck.drop} accounts didn't reach the next step.`
+            ? `Biggest drop at "${bottleneck.step}" — ${bottleneck.drop} ${bottleneck.drop === 1 ? "account" : "accounts"} didn't reach the next step.`
             : "No clear bottleneck in this cohort."}
         </p>
       </Card>
