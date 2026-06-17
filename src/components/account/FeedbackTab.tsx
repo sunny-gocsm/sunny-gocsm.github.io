@@ -169,8 +169,8 @@ export function FeedbackTab({ account }: { account: Account }) {
               </div>
             </>
           ) : (
-            <span style={{ font: "var(--t-body)", color: "var(--text-3, var(--text))" }}>
-              No responses yet.
+            <span style={{ font: "var(--t-body)", color: "var(--text-2, var(--text))" }}>
+              No responses yet — the widget is live and listening.
             </span>
           )}
         </div>
@@ -238,8 +238,8 @@ export function FeedbackTab({ account }: { account: Account }) {
           </div>
         ) : (
           <Card padded>
-            <span style={{ font: "var(--t-body)", color: "var(--text-3, var(--text))" }}>
-              No responses captured yet.
+            <span style={{ font: "var(--t-body)", color: "var(--text-2, var(--text))" }}>
+              Quiet inbox — the moment a response lands, it'll show here.
             </span>
           </Card>
         )}

@@ -399,15 +399,54 @@ export default function TodayPage() {
         <header
           style={{
             display: "flex",
-            alignItems: "baseline",
-            justifyContent: "space-between",
-            gap: "var(--s-3)",
+            flexDirection: "column",
+            gap: "var(--s-2)",
           }}
         >
-          <h2 style={{ font: "var(--t-h3)", margin: 0 }}>Today's queue</h2>
-          <span style={{ font: "var(--t-meta)", color: "var(--text-2, var(--text))" }}>
-            <Mono>{handledCount}</Mono> of <Mono>{queue.length}</Mono> handled today
-          </span>
+          <div
+            style={{
+              display: "flex",
+              alignItems: "baseline",
+              justifyContent: "space-between",
+              gap: "var(--s-3)",
+            }}
+          >
+            <h2 style={{ font: "var(--t-h3)", margin: 0 }}>Today's queue</h2>
+            <span
+              style={{
+                font: "var(--t-meta)",
+                color: handledCount > 0 ? "var(--pos-7)" : "var(--text-2, var(--text))",
+                fontWeight: handledCount > 0 ? 600 : 400,
+              }}
+            >
+              {handledCount === queue.length && queue.length > 0 ? "🎉 " : ""}
+              <Mono>{handledCount}</Mono> of <Mono>{queue.length}</Mono> handled today
+            </span>
+          </div>
+          {queue.length > 0 && (
+            <div
+              role="progressbar"
+              aria-valuemin={0}
+              aria-valuemax={queue.length}
+              aria-valuenow={handledCount}
+              style={{
+                height: 6,
+                borderRadius: 999,
+                background: "var(--surface-2)",
+                overflow: "hidden",
+              }}
+            >
+              <div
+                style={{
+                  height: "100%",
+                  width: `${(handledCount / queue.length) * 100}%`,
+                  background:
+                    "linear-gradient(90deg, var(--pos-soft) 0%, var(--pos-7) 100%)",
+                  transition: "width 360ms ease",
+                }}
+              />
+            </div>
+          )}
         </header>
         <Card padded={false}>
           {activeQueue.length ? (
@@ -417,15 +456,40 @@ export default function TodayPage() {
               style={{
                 padding: "var(--s-6)",
                 textAlign: "center",
-                color: "var(--text-2, var(--text))",
-                font: "var(--t-body)",
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+                gap: "var(--s-2)",
+                background:
+                  "linear-gradient(135deg, var(--pos-soft) 0%, var(--blue-2) 100%)",
+                borderRadius: 12,
               }}
             >
-              All caught up — no one needs you right now.
+              <div
+                style={{
+                  width: 44,
+                  height: 44,
+                  borderRadius: 999,
+                  background: "var(--surface)",
+                  color: "var(--pos-7)",
+                  display: "inline-flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                }}
+              >
+                <Icon name="check-circle" />
+              </div>
+              <strong style={{ font: "var(--t-h4)" }}>
+                {handledCount > 0 ? "Inbox zero — nice work." : "All caught up."}
+              </strong>
+              <span style={{ font: "var(--t-meta)", color: "var(--text-2, var(--text))" }}>
+                GoCSM is watching the board. We'll surface the next thing the moment it matters.
+              </span>
             </div>
           )}
         </Card>
       </section>
+
 
 
       {/* 3 — Problem cohorts */}

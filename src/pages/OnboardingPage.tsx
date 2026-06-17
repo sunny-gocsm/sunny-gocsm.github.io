@@ -268,8 +268,8 @@ function StallDashboard({ onSendToToday }: { onSendToToday: (a: Account) => void
         </header>
         {ranked.length === 0 ? (
           <Card padded>
-            <span style={{ font: "var(--t-body)", color: "var(--text-3, var(--text))" }}>
-              No onboardings are stalled right now.
+            <span style={{ font: "var(--t-body)", color: "var(--pos-7)" }}>
+              ✓ Every onboarding is moving — no one's stuck.
             </span>
           </Card>
         ) : (

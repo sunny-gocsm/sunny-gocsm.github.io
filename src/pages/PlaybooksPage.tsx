@@ -251,8 +251,8 @@ export default function PlaybooksPage() {
             ))}
             {filtered.length === 0 ? (
               <Card padded>
-                <span style={{ font: "var(--t-body)", color: "var(--text-3, var(--text))" }}>
-                  No plays in this filter.
+                <span style={{ font: "var(--t-body)", color: "var(--text-2, var(--text))" }}>
+                  Nothing in this filter — try a different category, or clear filters to see your full library.
                 </span>
               </Card>
             ) : null}

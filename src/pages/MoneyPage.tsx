@@ -605,8 +605,8 @@ function ChurnPanel({ onOpen, onSendToToday }: { onOpen: (a: Account) => void; o
           </Button>
         </header>
         {byPlan.length === 0 ? (
-          <span style={{ font: "var(--t-body)", color: "var(--text-3, var(--text))" }}>
-            No churn in the current window.
+          <span style={{ font: "var(--t-body)", color: "var(--pos-7)" }}>
+            ✓ No churn in the current window — revenue is holding.
           </span>
         ) : (
           <ul style={{ listStyle: "none", padding: 0, margin: 0 }}>

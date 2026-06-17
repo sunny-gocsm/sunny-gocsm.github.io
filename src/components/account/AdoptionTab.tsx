@@ -171,8 +171,8 @@ export function AdoptionTab({ account }: { account: Account }) {
                     ))}
                   </div>
                 ) : (
-                  <span style={{ font: "var(--t-body)", color: "var(--text-3, var(--text))" }}>
-                    No standout features yet.
+                  <span style={{ font: "var(--t-body)", color: "var(--text-2, var(--text))" }}>
+                    No standouts yet — usage is still finding its shape.
                   </span>
                 )}
               </div>
@@ -194,8 +194,8 @@ export function AdoptionTab({ account }: { account: Account }) {
                     ))}
                   </div>
                 ) : (
-                  <span style={{ font: "var(--t-body)", color: "var(--text-3, var(--text))" }}>
-                    Nothing underutilized — adoption is even.
+                  <span style={{ font: "var(--t-body)", color: "var(--pos-7)" }}>
+                    ✓ Nothing underutilized — adoption is even.
                   </span>
                 )}
                 <span style={{ font: "var(--t-meta)", color: "var(--text-3, var(--text))" }}>
@@ -251,8 +251,8 @@ export function AdoptionTab({ account }: { account: Account }) {
               },
             ]}
             empty={
-              <span style={{ color: "var(--text-3, var(--text))" }}>
-                No feature usage recorded yet.
+              <span style={{ color: "var(--text-2, var(--text))" }}>
+                No feature usage yet — once they start clicking around, you'll see it here.
               </span>
             }
           />
@@ -309,8 +309,8 @@ export function AdoptionTab({ account }: { account: Account }) {
             },
           ]}
           empty={
-            <span style={{ color: "var(--text-3, var(--text))" }}>
-              No assets recorded yet.
+            <span style={{ color: "var(--text-2, var(--text))" }}>
+              No assets built yet — funnels, sites, and workflows will appear here as they're added.
             </span>
           }
         />

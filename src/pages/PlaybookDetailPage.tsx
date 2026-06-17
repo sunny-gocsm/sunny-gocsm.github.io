@@ -311,8 +311,8 @@ export default function PlaybookDetailPage() {
         </div>
         <Card padded>
           {matches.length === 0 ? (
-            <span style={{ font: "var(--t-body)", color: "var(--text-3, var(--text))" }}>
-              No accounts match this trigger right now.
+            <span style={{ font: "var(--t-body)", color: "var(--pos-7)" }}>
+              ✓ Nothing matches today — this play is armed and watching.
             </span>
           ) : (
             <ul style={{ listStyle: "none", padding: 0, margin: 0, display: "flex", flexDirection: "column" }}>
