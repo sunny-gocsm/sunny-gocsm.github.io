@@ -764,12 +764,14 @@ export default function OnboardingPage() {
         gap: "var(--s-5)",
       }}
     >
-      <header style={{ display: "flex", flexDirection: "column", gap: "var(--s-2)" }}>
-        <h1 style={{ font: "var(--t-h2)", margin: 0 }}>Onboarding</h1>
-        <p style={{ font: "var(--t-body)", color: "var(--text-3, var(--text))", margin: 0 }}>
-          Operator surface for stalls and journeys. Stalls send to Today as Playbooks; the client view stays plain.
-        </p>
-      </header>
+      <PageRibbon
+        title="Onboarding"
+        description="Operator view of stalled accounts and the journeys they're moving through. Stalls send to Today; the client view stays plain."
+        kpis={[
+          { label: "Stalled", value: <Mono>{stalledOnboarding().length}</Mono> },
+          { label: "Journeys", value: <Mono>{journeys.length}</Mono> },
+        ]}
+      />
 
       <Tabs
         tabs={TABS}
