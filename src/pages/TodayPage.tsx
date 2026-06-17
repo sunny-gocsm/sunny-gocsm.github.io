@@ -155,6 +155,278 @@ function CohortCard({
 }
 
 // ----------------------------------------------------------------------------
+// Since your last review (recap)
+// ----------------------------------------------------------------------------
+
+type RecapTag = "Autopilot" | "You approved" | "Needs you";
+
+interface RecapItem {
+  id: string;
+  accountId: string;
+  accountName: string;
+  did: string;
+  outcome: string;
+  tag: RecapTag;
+  amount?: number;
+}
+
+function fmtMoneySmall(n: number) {
+  return "$" + Math.round(n).toLocaleString();
+}
+
+function SinceLastReview({
+  onOpenAccount,
+  failedAccounts,
+}: {
+  onOpenAccount: (id: string) => void;
+  failedAccounts: Account[];
+}) {
+  const [open, setOpen] = useState(true);
+
+  const recent = allOutcomes.filter((o) => o.daysAgo <= 7);
+
+  const autopilot = recent.filter((o) => o.attribution === "playbook-solo");
+  const approved = recent.filter((o) => o.attribution === "playbook-assist");
+
+  const autopilotAmount = autopilot.reduce((s, o) => s + (o.amount ?? 0), 0);
+  const approvedAmount = approved.reduce((s, o) => s + (o.amount ?? 0), 0);
+
+  // "Needs you anyway" — plays that ran but the situation is still open.
+  // Use existing failed-payment accounts as the source of truth.
+  const needsYou: RecapItem[] = failedAccounts.slice(0, 2).map((a) => ({
+    id: `need-${a.identity.id}`,
+    accountId: a.identity.id,
+    accountName: a.identity.name,
+    did: "Dunning ran (retry sequence sent)",
+    outcome: "payment still failed — needs your call",
+    tag: "Needs you",
+    amount: a.revenue.mrr,
+  }));
+  const needsYouAmount = needsYou.reduce((s, i) => s + (i.amount ?? 0), 0);
+
+  const recapItems: RecapItem[] = [
+    ...autopilot.slice(0, 2).map<RecapItem>((o) => {
+      const acc = outcomeAccount(o);
+      return {
+        id: o.id,
+        accountId: acc?.identity.id ?? "",
+        accountName: acc?.identity.name ?? "Account",
+        did: outcomePlaybook(o)?.name ?? "Playbook ran",
+        outcome:
+          o.amount != null
+            ? `recovered ${fmtMoneySmall(o.amount)} — no touch needed`
+            : `${o.lead.toLowerCase().replace(/\.$/, "")} — no touch needed`,
+        tag: "Autopilot",
+        amount: o.amount,
+      };
+    }),
+    ...approved.slice(0, 2).map<RecapItem>((o) => {
+      const acc = outcomeAccount(o);
+      return {
+        id: o.id,
+        accountId: acc?.identity.id ?? "",
+        accountName: acc?.identity.name ?? "Account",
+        did: outcomePlaybook(o)?.name ?? "Playbook ran",
+        outcome:
+          o.amount != null
+            ? `saved ${fmtMoneySmall(o.amount)} — you approved the note`
+            : `${o.lead.toLowerCase().replace(/\.$/, "")} — you approved the note`,
+        tag: "You approved",
+        amount: o.amount,
+      };
+    }),
+    ...needsYou,
+  ].slice(0, 5);
+
+  const tiles = [
+    {
+      key: "auto",
+      icon: "zap",
+      tone: "pos" as const,
+      label: "Handled on autopilot",
+      count: autopilot.length,
+      sub:
+        autopilotAmount > 0
+          ? `${fmtMoneySmall(autopilotAmount)} recovered, no human touch`
+          : "Resolved without a human touch",
+    },
+    {
+      key: "approved",
+      icon: "check-circle",
+      tone: "info" as const,
+      label: "You approved",
+      count: approved.length,
+      sub:
+        approvedAmount > 0
+          ? `${fmtMoneySmall(approvedAmount)} saved with your OK`
+          : "Drafts sent after your OK",
+    },
+    {
+      key: "needs",
+      icon: "alert-triangle",
+      tone: "warn" as const,
+      label: "Needed you anyway",
+      count: needsYou.length,
+      sub:
+        needsYouAmount > 0
+          ? `${fmtMoneySmall(needsYouAmount)} of MRR still open`
+          : "Still open — your call",
+    },
+  ];
+
+  const tagStyle = (tag: RecapTag): React.CSSProperties => {
+    const map: Record<RecapTag, { bg: string; fg: string }> = {
+      Autopilot: { bg: "var(--pos-soft)", fg: "var(--pos-7)" },
+      "You approved": { bg: "var(--info-soft, var(--blue-2))", fg: "var(--info-7, var(--text))" },
+      "Needs you": { bg: "var(--warn-soft, var(--health-watch-soft))", fg: "var(--warn-7, var(--health-watch-strong))" },
+    };
+    const c = map[tag];
+    return {
+      font: "var(--t-meta)",
+      fontWeight: 600,
+      padding: "2px 8px",
+      borderRadius: 999,
+      background: c.bg,
+      color: c.fg,
+      whiteSpace: "nowrap",
+    };
+  };
+
+  return (
+    <section
+      aria-label="Since your last review"
+      style={{ display: "flex", flexDirection: "column", gap: "var(--s-3)" }}
+    >
+      <header
+        style={{
+          display: "flex",
+          alignItems: "baseline",
+          justifyContent: "space-between",
+          gap: "var(--s-3)",
+        }}
+      >
+        <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
+          <h2 style={{ font: "var(--t-h3)", margin: 0, color: "var(--text)", fontWeight: 600 }}>
+            Since your last review
+          </h2>
+          <p style={{ font: "var(--t-body-sm)", color: "var(--text-2, var(--text))", margin: 0 }}>
+            What GoCSM delivered in the last 7 days — and where you were still needed.
+          </p>
+        </div>
+        <Button
+          variant="ghost"
+          size="sm"
+          icon={<Icon name={open ? "chevron-up" : "chevron-down"} />}
+          onClick={() => setOpen((o) => !o)}
+        >
+          {open ? "Collapse" : "Expand"}
+        </Button>
+      </header>
+
+      <Card padded>
+        <div
+          style={{
+            display: "grid",
+            gap: "var(--s-3)",
+            gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
+          }}
+        >
+          {tiles.map((t) => (
+            <div
+              key={t.key}
+              style={{
+                display: "flex",
+                gap: "var(--s-3)",
+                alignItems: "flex-start",
+                padding: "var(--s-3)",
+                borderRadius: "var(--r-md)",
+                background: "var(--surface-2)",
+              }}
+            >
+              <span className={`icon-chip ${t.tone}`} aria-hidden>
+                <Icon name={t.icon} />
+              </span>
+              <div style={{ display: "flex", flexDirection: "column", gap: 2, minWidth: 0 }}>
+                <span style={{ font: "var(--t-meta)", color: "var(--text-2, var(--text))", textTransform: "uppercase", letterSpacing: "0.04em" }}>
+                  {t.label}
+                </span>
+                <span style={{ font: "var(--t-h3)", color: "var(--text)", fontWeight: 600, lineHeight: 1.1 }}>
+                  <Mono>{t.count}</Mono>
+                </span>
+                <span style={{ font: "var(--t-body-sm)", color: "var(--text-2, var(--text))" }}>
+                  {t.sub}
+                </span>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {open ? (
+          <div style={{ marginTop: "var(--s-4)", display: "flex", flexDirection: "column", gap: "var(--s-2)" }}>
+            {recapItems.length === 0 ? (
+              <p style={{ font: "var(--t-body)", color: "var(--text-2, var(--text))", margin: 0 }}>
+                Quiet week — nothing verified yet. We'll log wins here as downstream signals confirm them.
+              </p>
+            ) : (
+              recapItems.map((item) => {
+                const isNeedsYou = item.tag === "Needs you";
+                return (
+                  <div
+                    key={item.id}
+                    style={{
+                      display: "flex",
+                      gap: "var(--s-3)",
+                      alignItems: "flex-start",
+                      padding: "var(--s-3)",
+                      borderRadius: "var(--r-md)",
+                      background: isNeedsYou ? "var(--warn-soft, var(--health-watch-soft))" : "var(--surface)",
+                      borderLeft: isNeedsYou
+                        ? "3px solid var(--warn-7, var(--health-watch-strong))"
+                        : item.tag === "Autopilot"
+                        ? "3px solid var(--pos-7)"
+                        : "3px solid var(--info-7, var(--blue-7, var(--text-2)))",
+                    }}
+                  >
+                    <div style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", gap: 2 }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: "var(--s-2)", flexWrap: "wrap" }}>
+                        <strong style={{ color: "var(--text)", fontWeight: 600 }}>{item.accountName}</strong>
+                        <span style={tagStyle(item.tag)}>{item.tag}</span>
+                      </div>
+                      <span style={{ font: "var(--t-body-sm)", color: "var(--text-2, var(--text))" }}>
+                        GoCSM: {item.did} — <span style={{ color: "var(--text)" }}>{item.outcome}</span>
+                      </span>
+                    </div>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      icon={<Icon name="arrow-right" />}
+                      onClick={() => onOpenAccount(item.accountId)}
+                    >
+                      See log
+                    </Button>
+                  </div>
+                );
+              })
+            )}
+
+            <p
+              style={{
+                margin: "var(--s-2) 0 0",
+                font: "var(--t-meta)",
+                color: "var(--text-2, var(--text))",
+                fontStyle: "italic",
+              }}
+            >
+              Wins are only counted when a downstream signal confirmed the change.
+            </p>
+          </div>
+        ) : null}
+      </Card>
+    </section>
+  );
+}
+
+// ----------------------------------------------------------------------------
 // Page
 // ----------------------------------------------------------------------------
 
