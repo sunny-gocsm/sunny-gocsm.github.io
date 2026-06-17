@@ -138,7 +138,16 @@ export default function PlaybooksPage() {
             }}
           >
             {filtered.map((p) => (
-              <div key={p.id} style={{ display: "flex", flexDirection: "column", gap: "var(--s-2)" }}>
+              <div
+                key={p.id}
+                style={{ display: "flex", flexDirection: "column", gap: "var(--s-2)", cursor: "pointer" }}
+                onClick={() => navigate(`/playbooks/${p.id}`)}
+                role="button"
+                tabIndex={0}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" || e.key === " ") navigate(`/playbooks/${p.id}`);
+                }}
+              >
                 <PlaybookCard
                   state={p.state}
                   icon={p.icon}
