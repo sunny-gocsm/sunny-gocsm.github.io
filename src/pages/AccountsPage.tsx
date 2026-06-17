@@ -21,6 +21,7 @@ import {
   type LifecycleStage,
   type ActivityStatus,
 } from "@/fixtures";
+import { PlaybookActivationDrawer, type DrawerScope } from "@/components/playbooks/PlaybookActivationDrawer";
 
 const accounts = allAccounts();
 
@@ -139,6 +140,7 @@ export default function AccountsPage() {
   const [trackedOnly, setTrackedOnly] = useState(false);
   const [setupLostOnly, setSetupLostOnly] = useState(false);
   const [selectedIds, setSelectedIds] = useState<(string | number)[]>([]);
+  const [drawerScope, setDrawerScope] = useState<DrawerScope | null>(null);
   const [hiddenColumns, setHiddenColumns] = useState<string[]>([
     "adoption",
     "feedback",
@@ -273,11 +275,12 @@ export default function AccountsPage() {
         variant="primary"
         size="sm"
         icon={<Icon name="book-open" />}
-        onClick={() => {
-          // Stub — PlaybookActivation drawer lands in P14.
-          // eslint-disable-next-line no-console
-          console.log("Apply a Playbook to", selectedIds);
-        }}
+        onClick={() =>
+          setDrawerScope({
+            kind: "accounts",
+            accountIds: selectedIds.map(String),
+          })
+        }
       >
         Apply a Playbook
       </Button>
@@ -478,6 +481,12 @@ export default function AccountsPage() {
         onHiddenColumnsChange={setHiddenColumns}
       />
 
+      <PlaybookActivationDrawer
+        open={!!drawerScope}
+        scope={drawerScope}
+        accounts={accounts}
+        onClose={() => setDrawerScope(null)}
+      />
     </main>
   );
 }
