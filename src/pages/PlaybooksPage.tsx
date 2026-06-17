@@ -349,7 +349,7 @@ function OutcomesTab() {
             const pb = outcomePlaybook(o);
             const acct = outcomeAccount(o);
             return (
-              <Card key={o.id} padded>
+              <Card key={o.id} padded className={o.daysAgo === 0 ? "celebrate-pop" : undefined}>
                 <div style={{ display: "flex", flexDirection: "column", gap: "var(--s-3)" }}>
                   <ReceiptStrip
                     lead={o.lead}
