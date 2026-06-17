@@ -132,6 +132,21 @@
   --conf-projection:var(--warn-7); --conf-projection-soft:var(--warn-soft);
   --conf-guess:var(--neg-7);       --conf-guess-soft:var(--neg-soft);
   --live-fresh:var(--pos-7); --live-recent:var(--n-7); --live-stale:var(--warn-7); --live-error:var(--neg-7);
+
+  /* ─── Lifecycle stages — STRUCTURAL cool-slate axis (deepen forward, fade on
+     decline). NEVER the health bands; Health stays the only vivid signal. The
+     ramp lives in StageProgress; StageBadge keeps labels in legible ink. ─── */
+  --stage-onboarding:#aab4c5;   /* starting */
+  --stage-activated:#6b7d99;    /* first value */
+  --stage-established:#33425d;  /* habitual — peak (deepest) */
+  --stage-lapsing:#8c95a4;      /* slipping */
+  --stage-dormant:#b9c0cb;      /* quiet (fading) */
+  --stage-churned:#ccd1d9;      /* gone (faintest) */
+  --stage-soft:var(--n-2);      /* chip background */
+  --stage-track:var(--n-4);     /* progress connector / node ring */
+  --stage-ink:var(--n-11);      /* label ink — active stages */
+  --stage-ink-muted:var(--n-8); /* label ink — dormant / churned */
+  --stage-reactivated:var(--pos-7); /* transient win affix ONLY — never a persistent stage color */
 }
 
 /* ─── DARK MODE (v2.3 — real, not a stub). Semantic + soft aliases only. ─── */
@@ -150,4 +165,9 @@
   --ai-grad:linear-gradient(135deg,#1c1a3a 0%,#161430 35%,#1a1838 65%,#201d44 100%); /* @kind color */
   --viz-grid:rgba(255,255,255,0.07); --viz-area-fill:rgba(31,111,214,0.16);
   --sh-rest:inset 0 0 0 1px rgba(255,255,255,0.05),0 1px 1px rgba(0,0,0,0.3); /* @kind shadow */
+  /* Lifecycle stages — dark: brighten forward (peak brightest), dim decline. */
+  --stage-onboarding:#8a94a6; --stage-activated:#aab6c8; --stage-established:#cdd7e4;
+  --stage-lapsing:#7e8797; --stage-dormant:#646d7c; --stage-churned:#525a68;
+  --stage-soft:rgba(255,255,255,0.06); --stage-track:rgba(255,255,255,0.12);
+  --stage-ink:#eef1f5; --stage-ink-muted:#8a94a3;
 }

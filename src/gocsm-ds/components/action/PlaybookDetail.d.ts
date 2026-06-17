@@ -1,3 +1,44 @@
 import * as React from "react";
+import { PlaybookState } from "./PlaybookCard";
 
-export declare function PlaybookDetail(props: { icon?: any; stateLabel?: any; title?: any; subtitle?: any; outcome?: any; rails?: any; audiences?: any; guardrails?: any; receipts?: any; [key: string]: any }): React.ReactElement;
+export interface PlaybookAction {
+  icon?: string;
+  title?: React.ReactNode;
+  desc?: React.ReactNode;
+  on?: boolean;
+  /** Client-facing / higher-risk → shows "Needs your OK"; otherwise "Automatic". */
+  supervised?: boolean;
+  onToggle?: (on: boolean) => void;
+  onEdit?: () => void;
+}
+export interface PlaybookProof {
+  matchCount?: number;
+  drafts?: { channel?: React.ReactNode; icon?: string; preview?: React.ReactNode }[];
+}
+export interface PlaybookWatch {
+  /** Plain sentence: what it watches for. */
+  summary?: React.ReactNode;
+  /** e.g. "Checks nightly". */
+  cadence?: React.ReactNode;
+  /** Quiet "how it runs" line (GoCSM's call, not the owner's). */
+  via?: React.ReactNode;
+}
+export interface PlaybookDetailProps extends Omit<React.HTMLAttributes<HTMLDivElement>, "title"> {
+  icon?: string;
+  title?: React.ReactNode;
+  subtitle?: React.ReactNode;
+  state?: PlaybookState;
+  problem?: React.ReactNode;
+  does?: React.ReactNode;
+  outcome?: React.ReactNode;
+  watch?: PlaybookWatch;
+  actions?: PlaybookAction[];
+  proof?: PlaybookProof;
+  video?: React.ReactNode;
+  videoLabel?: React.ReactNode;
+  limits?: (string | { name?: React.ReactNode })[];
+  onRun?: () => void;
+  onPreview?: () => void;
+  primaryLabel?: React.ReactNode;
+}
+export function PlaybookDetail(props: PlaybookDetailProps): JSX.Element;
