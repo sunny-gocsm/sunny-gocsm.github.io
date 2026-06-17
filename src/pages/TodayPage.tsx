@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   BriefingHeader,
@@ -27,8 +27,10 @@ import {
   signalsForAccount,
   daysUntil,
   bandLabel,
+  allAccounts,
   type Account,
 } from "@/fixtures";
+import { PlaybookActivationDrawer, type DrawerScope } from "@/components/playbooks/PlaybookActivationDrawer";
 
 // ----------------------------------------------------------------------------
 // helpers
