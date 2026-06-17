@@ -16,6 +16,7 @@ import MoneyPage from "./pages/MoneyPage";
 import OnboardingPage from "./pages/OnboardingPage";
 import InsightsPage from "./pages/InsightsPage";
 import ConfigurePage from "./pages/ConfigurePage";
+import SetupPage from "./pages/SetupPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
