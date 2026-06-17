@@ -842,7 +842,7 @@ export default function AccountsPage() {
         open={!!drawerScope}
         scope={drawerScope}
         accounts={accounts}
-        onClose={() => setDrawerScope((null as unknown) as DrawerScope | null)}
+        onClose={() => setDrawerScope(null)}
       />
     </main>
   );
