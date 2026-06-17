@@ -26,6 +26,7 @@ import { LoginTab } from "@/components/account/LoginTab";
 import { AdoptionTab } from "@/components/account/AdoptionTab";
 import { RevenueTab } from "@/components/account/RevenueTab";
 import { FeedbackTab } from "@/components/account/FeedbackTab";
+import { OnboardingTab } from "@/components/account/OnboardingTab";
 
 const TAB_IDS = [
   "health",
@@ -286,6 +287,8 @@ export default function AccountDetailPage() {
             <RevenueTab account={account} />
           ) : tab === "feedback" ? (
             <FeedbackTab account={account} />
+          ) : tab === "onboarding" ? (
+            <OnboardingTab account={account} />
           ) : (
             <Card padded>
               <div style={{ display: "flex", flexDirection: "column", gap: "var(--s-2)" }}>
