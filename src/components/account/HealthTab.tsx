@@ -122,6 +122,7 @@ interface Props {
 export function HealthTab({ account, onNavigateTab }: Props) {
   const { health, identity, onboarding, lifecycle } = account;
   const [methodOpen, setMethodOpen] = useState(false);
+  const navigate = useNavigate();
 
   const pillars: PillarKey[] = ["productAdoption", "revenue", "login", "sentiment"];
   const weights = {
