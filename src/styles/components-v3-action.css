@@ -342,10 +342,11 @@
  * Mono timestamps/counts, observational outcomes, no zebra.      *
  * ============================================================== */
 .activity-log{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-lg);box-shadow:var(--sh-rest);overflow:hidden;}
-.activity-day{display:flex;align-items:center;gap:10px;padding:10px 20px;background:var(--bg-subtle);}
+.activity-day{display:block;}
+.activity-day .day-head{display:flex;align-items:center;gap:10px;padding:8px 20px;background:var(--bg-subtle);border-bottom:1px solid var(--border-soft);}
 .activity-day .d-label{font-family:var(--font-mono);font-size:10.5px;font-weight:600;letter-spacing:0.05em;text-transform:uppercase;color:var(--text-3);}
 .activity-day .d-count{font-family:var(--font-mono);font-size:10.5px;color:var(--text-3);margin-left:auto;}
-.activity-row{display:grid;grid-template-columns:64px 130px 1fr 92px;align-items:start;gap:14px;
+.activity-row{display:grid;grid-template-columns:64px 132px 1fr 116px;align-items:start;gap:14px;
   padding:13px 20px;border-bottom:1px solid var(--border-soft);}
 .activity-row:last-child{border-bottom:none;}
 .activity-row:hover{background:var(--bg-hover);}
@@ -359,7 +360,11 @@
 .activity-row .lr-line{font-size:13px;line-height:1.45;color:var(--text);}
 .activity-row .lr-line .play,.activity-row .lr-line .acct{font-weight:600;}
 .activity-row .lr-line .sep{color:var(--border-strong);margin:0 5px;}
-.activity-row .lr-outcome{font-size:12px;margin-top:4px;display:inline-flex;align-items:center;gap:6px;}
+.activity-row .lr-body{min-width:0;}
+.activity-row .lr-end{display:flex;flex-direction:column;align-items:flex-end;gap:6px;justify-self:end;text-align:right;}
+.activity-row .lr-auto{font-size:11px;font-weight:600;color:var(--ai-9);margin-top:3px;display:inline-flex;align-items:center;gap:4px;}
+.activity-row .lr-auto svg{width:11px;height:11px;color:var(--ai-7);}
+.activity-row .lr-outcome{font-size:12px;display:inline-flex;align-items:center;gap:6px;line-height:1.4;}
 .activity-row .lr-outcome.ok{color:var(--pos-9);} .activity-row .lr-outcome.ok i{color:var(--pos-7);}
 .activity-row .lr-outcome.pending,.activity-row .lr-outcome.muted{color:var(--text-3);}
 .activity-row .lr-blast{font-size:11px;color:var(--text-3);font-style:italic;margin-top:4px;}
@@ -1308,3 +1313,167 @@
 .log-foot .lf-link i{width: 13px; height: 13px;}
 .log-foot .lf-note{margin-left: auto; font-size: 12px; color: var(--text-3);}
 .log-foot .lf-note .mono{font-family: var(--font-mono); font-weight: 600; color: var(--text-2);}
+
+/* ============================================================================
+   LIFECYCLE STAGE — StageBadge + StageProgress (v3.1)
+   Structural cool-slate axis (--stage-*). Deliberately NOT the health bands:
+   the glyph carries meaning, color is quiet reinforcement, Health stays the
+   only vivid signal. Tone deepens forward (onboarding→established) and fades
+   on decline (lapsing→dormant→churned).
+   ============================================================================ */
+
+/* ── StageBadge — inline chip ── */
+.stage-badge{display:inline-flex;align-items:center;gap:6px;height:22px;padding:0 10px 0 9px;
+  border-radius:999px;background:var(--stage-soft);color:var(--stage-ink);
+  font-size:12px;font-weight:500;line-height:1;white-space:nowrap;
+  box-shadow:inset 0 0 0 1px var(--border);}
+.stage-badge svg{width:13px;height:13px;stroke-width:2;flex-shrink:0;}
+.stage-badge.onboarding svg{color:var(--stage-onboarding);}
+.stage-badge.activated svg{color:var(--stage-activated);}
+.stage-badge.established svg{color:var(--stage-established);}
+.stage-badge.lapsing svg{color:var(--stage-lapsing);}
+.stage-badge.dormant svg{color:var(--stage-dormant);}
+.stage-badge.churned svg{color:var(--stage-churned);}
+.stage-badge.dormant{color:var(--stage-ink-muted);}
+.stage-badge.churned{color:var(--stage-ink-muted);text-decoration:line-through;}
+.stage-badge .sb-react{display:inline-flex;align-items:center;gap:2px;margin-left:3px;padding:0 6px;
+  height:16px;border-radius:999px;background:var(--pos-soft);color:var(--pos-9);
+  font-size:10px;font-weight:600;text-decoration:none;}
+.stage-badge .sb-react svg{width:10px;height:10px;color:var(--pos-7);}
+
+/* ── StageProgress — horizontal journey track ── */
+.stage-progress{display:inline-flex;align-items:flex-start;gap:0;}
+.stage-progress .sp-node{display:inline-flex;flex-direction:column;align-items:center;gap:6px;}
+.stage-progress .sp-dot{display:inline-flex;align-items:center;justify-content:center;width:26px;height:26px;
+  border-radius:50%;background:var(--surface);box-shadow:inset 0 0 0 1.5px var(--stage-track);color:var(--n-8);}
+.stage-progress .sp-dot svg{width:13px;height:13px;stroke-width:2;}
+.stage-progress .sp-node.onboarding .sp-dot{color:var(--stage-onboarding);box-shadow:inset 0 0 0 1.5px var(--stage-onboarding);}
+.stage-progress .sp-node.activated .sp-dot{color:var(--stage-activated);box-shadow:inset 0 0 0 1.5px var(--stage-activated);}
+.stage-progress .sp-node.established .sp-dot{color:var(--stage-established);box-shadow:inset 0 0 0 1.5px var(--stage-established);}
+.stage-progress .sp-node.lapsing .sp-dot{color:var(--stage-lapsing);box-shadow:inset 0 0 0 1.5px var(--stage-lapsing);}
+.stage-progress .sp-node.dormant .sp-dot{color:var(--stage-dormant);box-shadow:inset 0 0 0 1.5px var(--stage-dormant);}
+.stage-progress .sp-node.churned .sp-dot{color:var(--stage-churned);box-shadow:inset 0 0 0 1.5px var(--stage-churned);}
+.stage-progress .sp-node.current .sp-dot{color:var(--n-0);}
+.stage-progress .sp-node.current.onboarding .sp-dot{background:var(--stage-onboarding);color:var(--n-11);}
+.stage-progress .sp-node.current.activated .sp-dot{background:var(--stage-activated);}
+.stage-progress .sp-node.current.established .sp-dot{background:var(--stage-established);}
+.stage-progress .sp-node.current.lapsing .sp-dot{background:var(--stage-lapsing);}
+.stage-progress .sp-node.current.dormant .sp-dot{background:var(--stage-dormant);color:var(--n-11);}
+.stage-progress .sp-node.current.churned .sp-dot{background:var(--stage-churned);color:var(--n-11);}
+.stage-progress .sp-label{font-size:11px;font-weight:500;color:var(--stage-ink-muted);white-space:nowrap;}
+.stage-progress .sp-node.current .sp-label{color:var(--stage-ink);font-weight:600;}
+.stage-progress .sp-line{width:26px;height:0;border-top:2px solid var(--stage-track);flex-shrink:0;margin-top:12px;}
+.stage-progress .sp-line.decline{border-top-style:dashed;}
+.stage-progress.compact .sp-line{width:16px;}
+
+/* ============================================================
+   Playbook rework — canonical anatomy + activation ladder
+   State: Off -> Ran once -> On (autopilot). Owner-facing.
+   ============================================================ */
+
+/* --- shared state-chip variants (.playbook-state on the card, .pd-state on the panel) --- */
+.playbook-state.off,
+.pd-state.off{background:var(--bg-subtle);color:var(--text-2);box-shadow:inset 0 0 0 1px var(--border-strong);}
+.playbook-state.ranonce,
+.pd-state.ranonce{background:var(--blue-2);color:var(--blue-9);}
+.playbook-state.ranonce svg,
+.pd-state.ranonce svg{color:var(--pos-7);}
+.playbook-state.on,
+.pd-state.on{background:var(--pos-soft);color:var(--pos-9);}
+.playbook-state.on .rdot,
+.pd-state.on .rdot{width:7px;height:7px;border-radius:50%;background:var(--pos-7);}
+.playbook-state.paused,
+.pd-state.paused{background:var(--warn-soft);color:var(--warn-9);}
+
+/* --- PlaybookCard: the live "N accounts match today" line --- */
+.pb-match{display:flex;align-items:center;gap:7px;margin-top:10px;font-size:12.5px;color:var(--text-2);}
+.pb-match svg{width:14px;height:14px;color:var(--text-3);}
+.pb-match .n{font-family:var(--font-mono);font-weight:700;color:var(--text);}
+
+/* --- PlaybookDetail: Situation narrative blocks --- */
+.pd-block{margin-top:14px;}
+.pd-block .blk-h{font-family:var(--font-mono);font-size:10.5px;font-weight:600;letter-spacing:0.05em;text-transform:uppercase;color:var(--text-3);margin-bottom:5px;}
+.pd-block p{margin:0;font-size:13.5px;line-height:1.5;color:var(--text-2);}
+
+/* --- PlaybookDetail: Trigger ("what it watches for") --- */
+.pd-watch{font-size:14px;font-weight:600;color:var(--text);line-height:1.45;}
+.pd-watch-meta{display:flex;align-items:center;flex-wrap:wrap;gap:8px 16px;margin-top:10px;}
+.pd-cadence{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:600;color:var(--text-2);background:var(--bg-subtle);padding:3px 9px;border-radius:999px;box-shadow:inset 0 0 0 1px var(--border-soft);}
+.pd-cadence svg{width:13px;height:13px;color:var(--text-3);}
+.pd-via{font-size:12px;color:var(--text-3);}
+
+/* --- PlaybookDetail: Actions ("what it does"), toggleable + editable --- */
+.pd-actions{display:flex;flex-direction:column;gap:8px;}
+.pd-action{display:flex;align-items:center;gap:12px;padding:12px 14px;border-radius:var(--r-md);background:var(--surface);box-shadow:inset 0 0 0 1px var(--border-soft);}
+.pd-action.off{opacity:0.6;}
+.pda-ico{width:34px;height:34px;border-radius:9px;background:var(--bg-subtle);display:flex;align-items:center;justify-content:center;color:var(--text-2);flex-shrink:0;}
+.pda-ico svg{width:16px;height:16px;}
+.pda-main{flex:1;min-width:0;}
+.pda-title{display:flex;align-items:center;gap:9px;font-size:13.5px;font-weight:600;color:var(--text);}
+.pda-tag{font-family:var(--font-mono);font-size:9.5px;font-weight:600;letter-spacing:0.04em;text-transform:uppercase;padding:2px 7px;border-radius:999px;white-space:nowrap;}
+.pda-tag.needsok{background:var(--warn-soft);color:var(--warn-9);}
+.pda-tag.auto{background:var(--pos-soft);color:var(--pos-9);}
+.pda-desc{margin-top:3px;font-size:12.5px;color:var(--text-3);line-height:1.4;}
+.pda-edit{display:inline-flex;align-items:center;gap:5px;border:0;background:transparent;cursor:pointer;font-size:12px;font-weight:600;color:var(--blue-7);padding:4px 6px;border-radius:var(--r-sm);flex-shrink:0;}
+.pda-edit svg{width:13px;height:13px;}
+.pda-edit:hover{background:var(--blue-2);}
+
+/* --- PlaybookDetail: quiet guardrail limits --- */
+.pd-limits{display:flex;align-items:center;flex-wrap:wrap;gap:8px;margin-top:12px;font-size:12px;color:var(--text-3);}
+.pd-limits svg{width:13px;height:13px;}
+.pd-limits .lim{background:var(--bg-subtle);padding:2px 8px;border-radius:999px;box-shadow:inset 0 0 0 1px var(--border-soft);}
+
+/* --- Proof block — shared look for the panel (.pd-) and the drawer (.pa-) --- */
+.pd-match,
+.pa-match{display:flex;align-items:center;gap:8px;font-size:14px;font-weight:600;color:var(--text);}
+.pa-match svg{width:15px;height:15px;color:var(--text-3);}
+.pd-match .n,
+.pa-match .n{font-family:var(--font-mono);font-weight:700;}
+.pd-drafts,
+.pa-drafts{display:flex;flex-direction:column;gap:7px;margin-top:12px;}
+.pd-draft,
+.pa-draft{display:flex;align-items:baseline;gap:10px;padding:9px 12px;border-radius:var(--r-sm);background:var(--bg-subtle);box-shadow:inset 0 0 0 1px var(--border-soft);}
+.pd-draft-ch,
+.pa-draft-ch{display:inline-flex;align-items:center;gap:5px;flex-shrink:0;font-family:var(--font-mono);font-size:10.5px;font-weight:600;letter-spacing:0.03em;text-transform:uppercase;color:var(--text-2);}
+.pd-draft-ch svg,
+.pa-draft-ch svg{width:13px;height:13px;color:var(--text-3);}
+.pd-draft-prev,
+.pa-draft-prev{font-size:13px;color:var(--text-2);line-height:1.45;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.pd-proof .btn{margin-top:14px;}
+
+/* --- PlaybookDetail: Explainer video --- */
+.pd-video{border-radius:var(--r-md);overflow:hidden;background:var(--bg-subtle);box-shadow:inset 0 0 0 1px var(--border-soft);}
+.pd-video iframe,.pd-video img,.pd-video video{display:block;width:100%;aspect-ratio:16/9;border:0;}
+.pd-video-ph{display:flex;align-items:center;gap:12px;padding:16px;font-size:13px;font-weight:600;color:var(--text-2);}
+.pv-play{width:38px;height:38px;border-radius:50%;background:var(--surface);box-shadow:inset 0 0 0 1px var(--border-strong);display:flex;align-items:center;justify-content:center;color:var(--blue-7);flex-shrink:0;}
+.pv-play svg{width:16px;height:16px;margin-left:2px;}
+
+/* ============================================================
+   PlaybookActivation — contextual run-once -> autopilot drawer
+   ============================================================ */
+.pb-activate{background:var(--surface);border-radius:var(--r-lg);box-shadow:inset 0 0 0 1px var(--border-soft);padding:20px;display:flex;flex-direction:column;gap:16px;}
+.pa-head{display:flex;align-items:flex-start;gap:12px;}
+.pa-ico{width:38px;height:38px;border-radius:var(--r-md);background:var(--ai-2);color:var(--ai-7);box-shadow:inset 0 0 0 1px var(--ai-4);display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.pa-ico svg{width:20px;height:20px;}
+.pa-titles{flex:1;min-width:0;}
+.pa-kicker{font-family:var(--font-mono);font-size:10px;font-weight:600;letter-spacing:0.05em;text-transform:uppercase;color:var(--ai-7);margin-bottom:3px;}
+.pa-title{font-size:16px;font-weight:700;color:var(--text);line-height:1.3;}
+.pa-close{border:0;background:transparent;cursor:pointer;color:var(--text-3);padding:4px;border-radius:var(--r-sm);flex-shrink:0;}
+.pa-close svg{width:18px;height:18px;}
+.pa-close:hover{background:var(--bg-subtle);color:var(--text);}
+.pa-situation{font-size:13.5px;color:var(--text-2);line-height:1.5;}
+.pa-proof{display:flex;flex-direction:column;padding:14px;border-radius:var(--r-md);background:var(--bg-subtle);box-shadow:inset 0 0 0 1px var(--border-soft);}
+.pa-proof .pa-draft{background:var(--surface);}
+.pa-preview{align-self:flex-start;display:inline-flex;align-items:center;gap:6px;margin-top:12px;border:0;background:transparent;cursor:pointer;font-size:12.5px;font-weight:600;color:var(--blue-7);padding:0;}
+.pa-preview svg{width:14px;height:14px;}
+.pa-ladder{display:flex;flex-direction:column;gap:10px;}
+.pa-ladder .btn{width:100%;justify-content:center;}
+.pa-note{font-size:12px;color:var(--text-3);text-align:center;}
+.pa-success{display:flex;align-items:center;justify-content:center;gap:8px;font-size:14px;font-weight:600;color:var(--pos-9);}
+.pa-success svg{width:17px;height:17px;color:var(--pos-7);}
+.pa-success .n{font-family:var(--font-mono);font-weight:700;}
+.pa-autopilot-offer{border-radius:var(--r-md);background:var(--bg-subtle);box-shadow:inset 0 0 0 1px var(--border-soft);padding:16px;display:flex;flex-direction:column;gap:8px;text-align:center;}
+.pao-title{font-size:14.5px;font-weight:700;color:var(--text);}
+.pao-note{font-size:12.5px;color:var(--text-3);line-height:1.45;}
+.pa-autopilot-offer .btn{margin-top:4px;}
+.pa-on{display:flex;flex-direction:column;gap:10px;align-items:center;}

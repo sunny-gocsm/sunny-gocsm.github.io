@@ -49,6 +49,7 @@ import "@gocsm/design-system/styles.css";
 ---
 ## Import-readiness (added for the GitHub → Lovable handoff)
 - **AppShell** added (operator-shell layout: Rail + main + brand stripe) — 59 components total.
+- **v3.1 — Lifecycle stages:** `StageBadge` (inline stage chip) + `StageProgress` (journey track) on a dedicated `--stage-*` cool-slate palette — a *structural* axis (deepen forward, fade on decline), deliberately never the health bands, so Health stays the only vivid signal. Verified: build (tsup ESM+CJS) + adherence-lint + oxlint + `tsc` + a render smoke-test from the built `dist`. **61 components total.**
 - **README.md**, **.gitignore**, and a **`prepare` build hook** added (a git-based `npm install` now builds `dist/` automatically).
 - The single `styles.css` already imports fonts + tokens + all component CSS, including the action layer.
 - **RESOLVED — icons:** converted the static `data-lucide` tags to a `lucide-react`-backed `Icon` wrapper across all components (`lucide-react` is a peer dependency). All 43 icon names verified to resolve; build, lint, and types green — icons render as real SVGs in React.
