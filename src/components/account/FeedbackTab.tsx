@@ -195,7 +195,7 @@ export function FeedbackTab({ account }: { account: Account }) {
                       font: "var(--t-meta)",
                     }}
                   />
-                  <Line type="monotone" dataKey="score" stroke="var(--viz-3)" strokeWidth={2} dot />
+                  <Line type="monotone" dataKey="score" stroke="var(--viz-seq-5)" strokeWidth={2} dot={{ r: 3, fill: "var(--viz-seq-5)" }} />
                 </LineChart>
               </ResponsiveContainer>
             </div>
