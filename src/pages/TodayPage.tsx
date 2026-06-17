@@ -158,6 +158,7 @@ function CohortCard({
 
 export default function TodayPage() {
   const navigate = useNavigate();
+  const { toast } = useToast();
   const [drawerScope, setDrawerScope] = useState<DrawerScope | null>(null);
   const openApply = (accs: Account[], suggested?: string) =>
     setDrawerScope({
