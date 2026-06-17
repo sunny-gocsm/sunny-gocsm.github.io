@@ -121,7 +121,7 @@ function revenueByPlan() {
 function revenueByProduct() {
   // SaaS subscription = sum of MRR.
   // Wallet spend (Email/SMS/WhatsApp/Premium actions) ≈ walletSpend30d, split with
-  // a fixed editorial mix — labelled as a projection.
+  // a fixed mix — surfaced as an estimate with limited data.
   const saas = live.reduce((s, a) => s + a.revenue.mrr, 0);
   const wallet30 = live.reduce((s, a) => s + (a.revenue.walletSpend30d || 0), 0);
   const mix = { Email: 0.32, SMS: 0.41, WhatsApp: 0.14, "Premium actions": 0.13 };
