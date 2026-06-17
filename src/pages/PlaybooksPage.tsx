@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { Badge, Card, PlaybookCard, Tabs, ConfTag, Icon, Mono } from "@/gocsm-ds";
 import {
   playbooks,
@@ -52,6 +53,7 @@ function activateLabel(state: PlaybookState): string {
 export default function PlaybooksPage() {
   const [tab, setTab] = useState<TabId>("library");
   const [filter, setFilter] = useState<Filter>("all");
+  const navigate = useNavigate();
   const [overrides, setOverrides] = useState<Record<string, PlaybookState>>({});
 
   const enriched = useMemo(
@@ -138,7 +140,16 @@ export default function PlaybooksPage() {
             }}
           >
             {filtered.map((p) => (
-              <div key={p.id} style={{ display: "flex", flexDirection: "column", gap: "var(--s-2)" }}>
+              <div
+                key={p.id}
+                style={{ display: "flex", flexDirection: "column", gap: "var(--s-2)", cursor: "pointer" }}
+                onClick={() => navigate(`/playbooks/${p.id}`)}
+                role="button"
+                tabIndex={0}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" || e.key === " ") navigate(`/playbooks/${p.id}`);
+                }}
+              >
                 <PlaybookCard
                   state={p.state}
                   icon={p.icon}
