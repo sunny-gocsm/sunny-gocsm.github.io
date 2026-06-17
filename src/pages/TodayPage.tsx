@@ -71,6 +71,7 @@ interface CohortCardProps {
   accounts: Account[];
   renderLine?: (a: Account) => React.ReactNode;
   onView: () => void;
+  onApply?: () => void;
   heavy?: boolean;
 }
 
