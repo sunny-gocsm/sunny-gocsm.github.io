@@ -257,8 +257,8 @@ export function LoginTab({ account }: { account: Account }) {
           },
         ]}
         empty={
-          <span style={{ color: "var(--text-3, var(--text))" }}>
-            No users match these filters.
+          <span style={{ color: "var(--text-2, var(--text))" }}>
+            No users in this slice — try a wider filter to see the whole team.
           </span>
         }
       />
