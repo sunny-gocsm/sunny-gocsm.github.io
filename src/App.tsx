@@ -12,6 +12,7 @@ import AccountsPage from "./pages/AccountsPage";
 import AccountDetailPage from "./pages/AccountDetailPage";
 import PlaybooksPage from "./pages/PlaybooksPage";
 import PlaybookDetailPage from "./pages/PlaybookDetailPage";
+import MoneyPage from "./pages/MoneyPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
