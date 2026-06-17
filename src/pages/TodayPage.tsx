@@ -145,10 +145,15 @@ function CohortCard({
           </p>
         )}
 
-        <div style={{ marginTop: "var(--s-1)" }}>
+        <div style={{ marginTop: "var(--s-1)", display: "flex", gap: "var(--s-2)" }}>
           <Button variant="ghost" size="sm" onClick={onView} icon={<Icon name="arrow-right" />}>
             View all
           </Button>
+          {onApply && accounts.length > 0 ? (
+            <Button variant="secondary" size="sm" onClick={onApply} icon={<Icon name="book-open" />}>
+              Apply a Playbook
+            </Button>
+          ) : null}
         </div>
       </div>
     </Card>
