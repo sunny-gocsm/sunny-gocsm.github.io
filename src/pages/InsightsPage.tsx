@@ -335,11 +335,11 @@ function FeedbackView() {
         columns={[
           { key: "name", header: "Account", sortable: true },
           { key: "nps", header: "NPS", mono: true, align: "right", sortable: true },
-          { key: "sentiment", header: "Sentiment", render: (r) => <Badge tone={r.sentiment === "negative" ? "neg" : r.sentiment === "positive" ? "pos" : "neutral"}>{r.sentiment}</Badge> },
+          { key: "sentiment", header: "Sentiment", render: (r) => <Badge variant={r.sentiment === "negative" ? "danger" : r.sentiment === "positive" ? "pos" : "neutral"}>{r.sentiment}</Badge> },
           { key: "promoters", header: "Promoters", mono: true, align: "right", sortable: true },
           { key: "detractors", header: "Detractors", mono: true, align: "right", sortable: true },
           { key: "last", header: "Last response", render: (r) => r.last ? new Date(r.last).toISOString().slice(0, 10) : "—" },
-          { key: "widget", header: "Widget", render: (r) => <Badge tone={r.widget ? "pos" : "neutral"}>{r.widget ? "on" : "off"}</Badge> },
+          { key: "widget", header: "Widget", render: (r) => <Badge variant={r.widget ? "pos" : "neutral"}>{r.widget ? "on" : "off"}</Badge> },
         ]}
       />
     </div>
