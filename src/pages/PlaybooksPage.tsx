@@ -311,7 +311,7 @@ function OutcomesTab() {
                       {o.attribution === "playbook-solo" ? "Solo (autopilot)" : "Assist (you approved)"}
                     </span>
                     <span style={{ marginLeft: "auto" }}>
-                      verified <Mono>{o.daysAgo}d</Mono> ago
+                      verified {o.daysAgo}d ago
                     </span>
                   </div>
                 </div>
