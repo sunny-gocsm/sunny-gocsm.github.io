@@ -702,27 +702,45 @@ export default function MoneyPage() {
 
       {tab === "overview" ? (
         <>
-          <section
-            style={{
-              display: "grid",
-              gap: "var(--s-3)",
-              gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
-            }}
-          >
-            {kpis.map((k) => (
-              <div key={k.key} onClick={() => onKpi(k.key)} style={{ cursor: "pointer" }}>
-                <MetricCard
-                  label={k.label}
-                  value={k.format ? k.format(k.rows) : <Mono>{k.rows.length}</Mono>}
-                  icon={<Icon name={k.icon} />}
-                  iconTone={k.accent === "neg" ? "neg" : k.accent === "pos" ? "pos" : "info"}
-                  accent={k.accent === "neg" ? "neg" : k.accent === "pos" ? "pos" : null}
-                  delta={k.deltaValue ? <Delta value={k.deltaValue} direction={k.deltaDir ?? "flat"} /> : undefined}
-                  context={k.context}
-                />
-              </div>
-            ))}
-          </section>
+          {(() => {
+            const groups: { id: string; title: string; keys: FilterKey[] }[] = [
+              { id: "risk", title: "Money at risk", keys: ["failed", "renew030", "renew3160", "downgrades", "churned"] },
+              { id: "in", title: "Money in", keys: ["top", "least", "upgrades"] },
+              { id: "change", title: "What's changing", keys: ["nonsaas"] },
+            ];
+            return groups.map((g) => {
+              const items = g.keys
+                .map((k) => kpis.find((x) => x.key === k))
+                .filter((x): x is Kpi => !!x);
+              if (!items.length) return null;
+              return (
+                <section key={g.id} style={{ display: "flex", flexDirection: "column", gap: "var(--s-3)" }}>
+                  <h3 style={{ font: "var(--t-h3)", margin: 0 }}>{g.title}</h3>
+                  <div
+                    style={{
+                      display: "grid",
+                      gap: "var(--s-3)",
+                      gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
+                    }}
+                  >
+                    {items.map((k) => (
+                      <div key={k.key} onClick={() => onKpi(k.key)} style={{ cursor: "pointer" }}>
+                        <MetricCard
+                          label={k.label}
+                          value={k.format ? k.format(k.rows) : <Mono>{k.rows.length}</Mono>}
+                          icon={<Icon name={k.icon} />}
+                          iconTone={k.accent === "neg" ? "neg" : k.accent === "pos" ? "pos" : "info"}
+                          accent={k.accent === "neg" ? "neg" : k.accent === "pos" ? "pos" : null}
+                          delta={k.deltaValue ? <Delta value={k.deltaValue} direction={k.deltaDir ?? "flat"} /> : undefined}
+                          context={k.context}
+                        />
+                      </div>
+                    ))}
+                  </div>
+                </section>
+              );
+            });
+          })()}
 
           <section
             style={{
