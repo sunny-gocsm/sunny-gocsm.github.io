@@ -8,6 +8,7 @@ import AppLayout from "./components/AppLayout";
 import Index from "./pages/Index";
 import Activity from "./pages/health/Activity";
 import StubPage from "./pages/stubs/StubPage";
+import AccountsPage from "./pages/AccountsPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -23,7 +24,7 @@ const App = () => (
             <Route element={<AppLayout />}>
               <Route path="/" element={<Index />} />
               <Route path="/today" element={<Index />} />
-              <Route path="/accounts" element={<StubPage title="Accounts" />} />
+              <Route path="/accounts" element={<AccountsPage />} />
               <Route path="/playbooks" element={<StubPage title="Playbooks" />} />
               <Route path="/onboarding" element={<StubPage title="Onboarding" />} />
               <Route path="/money" element={<StubPage title="Money" />} />
