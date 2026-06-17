@@ -5,11 +5,11 @@ import { daysSince, TODAY } from "@/fixtures";
 
 type UserActivity = ActivityStatus; // highly|moderately|low|ghosting
 
-const ACTIVITY_VARIANT: Record<UserActivity, "pos" | "info" | "warn" | "neg"> = {
+const ACTIVITY_VARIANT: Record<UserActivity, "pos" | "blue" | "warn" | "danger"> = {
   highly: "pos",
   moderately: "info",
   low: "warn",
-  ghosting: "neg",
+  ghosting: "danger",
 };
 
 const ACTIVITY_LABEL: Record<UserActivity, string> = {

@@ -19,7 +19,7 @@ const ALL_ASSET_TYPES: AssetType[] = [
   "CustomMenuLink",
 ];
 
-const engagementBand = (e: number): "pos" | "info" | "warn" | "neg" =>
+const engagementBand = (e: number): "pos" | "blue" | "warn" | "danger" =>
   e >= 70 ? "pos" : e >= 50 ? "info" : e >= 30 ? "warn" : "neg";
 
 const engagementLabel = (e: number): string =>
