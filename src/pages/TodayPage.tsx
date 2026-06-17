@@ -195,10 +195,10 @@ export default function TodayPage() {
   const briefingLine = useMemo(() => {
     const parts: string[] = [];
     if (lostSticky.length)
-      parts.push(`${lostSticky.length} just lost a sticky setup — heaviest regression signal`);
-    if (failed.length) parts.push(`${failed.length} with failed payments`);
+      parts.push(`${lostSticky.length} ${lostSticky.length === 1 ? "account" : "accounts"} just lost a sticky setup — biggest backwards move`);
+    if (failed.length) parts.push(`${failed.length} with failed payment${failed.length === 1 ? "" : "s"}`);
     if (renewingAtRisk.length)
-      parts.push(`${renewingAtRisk.length} at-risk accounts renew in ≤30 days`);
+      parts.push(`${renewingAtRisk.length} at-risk account${renewingAtRisk.length === 1 ? "" : "s"} renew in ≤30 days`);
     return parts.join(" · ") || "Quiet night — nothing urgent.";
   }, [lostSticky.length, failed.length, renewingAtRisk.length]);
 
