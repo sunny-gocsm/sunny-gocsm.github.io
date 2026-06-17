@@ -315,7 +315,7 @@ function DailyChart() {
     <Card padded>
       <header style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", marginBottom: "var(--s-2)" }}>
         <h3 style={{ font: "var(--t-h3)", margin: 0 }}>Daily revenue, cost, and margin</h3>
-        <ConfTag basis="projection" detail="synthetic 30-day shape" />
+        <ConfTag basis="projection" detail="Estimate — limited data" />
       </header>
       <div style={{ width: "100%", height: 240 }}>
         <ResponsiveContainer>
