@@ -372,36 +372,69 @@ export default function TodayPage() {
         gap: "var(--s-7)",
       }}
     >
-      {/* 1 — Briefing */}
-      <section aria-label="Briefing" style={{ display: "flex", flexDirection: "column", gap: "var(--s-4)" }}>
+      {/* 1 — Briefing ribbon (tinted band) */}
+      <section
+        aria-label="Briefing"
+        style={{
+          background:
+            "linear-gradient(180deg, var(--blue-2, var(--surface-2)) 0%, var(--surface) 100%)",
+          borderRadius: "var(--r-lg)",
+          padding: "var(--s-5) var(--s-5) var(--s-4)",
+          display: "flex",
+          flexDirection: "column",
+          gap: "var(--s-3)",
+        }}
+      >
         <PageRibbon
-          title="Today"
-          description={`${greetingFor("there")} Here's what GoCSM did overnight, and what needs you today.`}
+          title={greetingFor("there")}
+          description={briefingLine}
           trailing={<LiveStatus state="fresh" label="Synced moments ago" />}
           kpis={[
-            { label: "On the board", value: <Mono>{queue.length}</Mono> },
+            { label: "On the board", value: <Mono>{activeQueue.length}</Mono> },
             { label: "MRR at risk", value: <Mono>{fmtMoney(rollup.mrrAtRisk)}</Mono> },
             { label: "Renewals · 30d", value: <Mono>{renewalsWindow(0, 30).length}</Mono> },
           ]}
         />
-        <p style={{ font: "var(--t-body)", color: "var(--text-2, var(--text))", margin: 0 }}>
-          {briefingLine}
-        </p>
-        <Verdict tone={queue[0]?.health.band === "atrisk" ? "risk" : "watch"}>
-          {topReason}
-        </Verdict>
+        <Verdict tone={topTone}>{topReason}</Verdict>
       </section>
 
-
-      {/* 2 — Urgency queue */}
-      <section aria-label="Urgency queue" id="urgency-queue">
-        <MyQueue
-          member="Today"
-          scope={queue.length}
-          queue={queueNode}
-          empty="All caught up — no one needs you right now."
-        />
+      {/* 2 — Urgency queue (the visual focus) */}
+      <section
+        aria-label="Today's queue"
+        id="urgency-queue"
+        style={{ display: "flex", flexDirection: "column", gap: "var(--s-3)" }}
+      >
+        <header
+          style={{
+            display: "flex",
+            alignItems: "baseline",
+            justifyContent: "space-between",
+            gap: "var(--s-3)",
+          }}
+        >
+          <h2 style={{ font: "var(--t-h3)", margin: 0 }}>Today's queue</h2>
+          <span style={{ font: "var(--t-meta)", color: "var(--text-2, var(--text))" }}>
+            <Mono>{handledCount}</Mono> of <Mono>{queue.length}</Mono> handled today
+          </span>
+        </header>
+        <Card padded={false}>
+          {activeQueue.length ? (
+            <div>{activeQueue.map(renderQueueRow)}</div>
+          ) : (
+            <div
+              style={{
+                padding: "var(--s-6)",
+                textAlign: "center",
+                color: "var(--text-2, var(--text))",
+                font: "var(--t-body)",
+              }}
+            >
+              All caught up — no one needs you right now.
+            </div>
+          )}
+        </Card>
       </section>
+
 
       {/* 3 — Problem cohorts */}
       <section aria-label="Act by problem" style={{ display: "flex", flexDirection: "column", gap: "var(--s-3)" }}>
