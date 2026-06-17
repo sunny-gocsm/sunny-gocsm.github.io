@@ -194,7 +194,7 @@ function useKpis(): Kpi[] {
       icon: "trending-up",
       rows: top,
       format: () => <Mono>{fmtMoney(top.reduce((s, a) => s + a.revenue.mrr, 0))}</Mono>,
-      deltaValue: `${top.length} accounts`,
+      deltaValue: `${top.length} ${top.length === 1 ? "account" : "accounts"}`,
       deltaDir: "flat",
       context: "combined MRR",
     },
