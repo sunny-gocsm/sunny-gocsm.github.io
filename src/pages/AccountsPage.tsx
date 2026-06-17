@@ -140,6 +140,7 @@ export default function AccountsPage() {
   const [trackedOnly, setTrackedOnly] = useState(false);
   const [setupLostOnly, setSetupLostOnly] = useState(false);
   const [selectedIds, setSelectedIds] = useState<(string | number)[]>([]);
+  const [drawerScope, setDrawerScope] = useState<DrawerScope | null>(null);
   const [hiddenColumns, setHiddenColumns] = useState<string[]>([
     "adoption",
     "feedback",
