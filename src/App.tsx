@@ -30,6 +30,7 @@ const App = () => (
               <Route path="/accounts" element={<AccountsPage />} />
               <Route path="/accounts/:id" element={<AccountDetailPage />} />
               <Route path="/playbooks" element={<PlaybooksPage />} />
+              <Route path="/playbooks/:id" element={<PlaybookDetailPage />} />
               <Route path="/onboarding" element={<StubPage title="Onboarding" />} />
               <Route path="/money" element={<StubPage title="Money" />} />
               <Route path="/configure" element={<StubPage title="Configure" />} />
