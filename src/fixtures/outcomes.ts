@@ -36,7 +36,7 @@ function pick(name: string): string {
 export const outcomes: Outcome[] = [
   {
     id: "out-1",
-    playbookId: "save-domain",
+    playbookId: "pb-save-domain",
     kind: "save",
     accountId: pick("Modern Physio"),
     lead: "You reached out and saved a $1,490 renewal.",
@@ -51,7 +51,7 @@ export const outcomes: Outcome[] = [
   },
   {
     id: "out-2",
-    playbookId: "billing-failed",
+    playbookId: "pb-payment-failed",
     kind: "recovery",
     accountId: pick("Bright Smile Dental"),
     lead: "Dunning recovered a failed payment.",
@@ -66,7 +66,7 @@ export const outcomes: Outcome[] = [
   },
   {
     id: "out-3",
-    playbookId: "retention-noLogin",
+    playbookId: "pb-no-login",
     kind: "renewal",
     accountId: pick("Forge Fitness"),
     lead: "A warm check-in pulled a quiet account back.",
@@ -80,7 +80,7 @@ export const outcomes: Outcome[] = [
   },
   {
     id: "out-4",
-    playbookId: "adoption-featuredrop",
+    playbookId: "pb-feature-drop",
     kind: "adoption",
     accountId: pick("Stellar Studios"),
     lead: "An adoption nudge brought workflow usage back.",
@@ -94,7 +94,7 @@ export const outcomes: Outcome[] = [
   },
   {
     id: "out-5",
-    playbookId: "save-a2p",
+    playbookId: "pb-save-a2p",
     kind: "save",
     accountId: pick("Atlas Legal"),
     lead: "You reached out and protected $2,300 of MRR.",
@@ -109,7 +109,7 @@ export const outcomes: Outcome[] = [
   },
   {
     id: "out-6",
-    playbookId: "onboarding-stalled",
+    playbookId: "pb-onboarding-stalled",
     kind: "onboarding",
     accountId: pick("Lumen Wellness"),
     lead: "An unblock call moved a stalled launch forward.",
@@ -123,7 +123,7 @@ export const outcomes: Outcome[] = [
   },
   {
     id: "out-7",
-    playbookId: "expansion-thriving",
+    playbookId: "pb-expansion-ready",
     kind: "expansion",
     accountId: pick("Northwind Realty"),
     lead: "A roadmap chat opened an expansion lane.",

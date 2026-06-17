@@ -34,7 +34,7 @@ export const triggers: TriggerSpec[] = [
     when: "A payment is declined or marked failed.",
     cadence: "On each billing event.",
     via: "workflow watch",
-    populationPlaybookId: "billing-failed",
+    populationPlaybookId: "pb-payment-failed",
   },
   {
     id: "trg-nps-detractor",
@@ -53,7 +53,7 @@ export const triggers: TriggerSpec[] = [
     when: "Owner hasn't logged in for 21 or more days.",
     cadence: "Checks nightly.",
     via: "workflow watch",
-    populationPlaybookId: "retention-noLogin",
+    populationPlaybookId: "pb-no-login",
   },
   {
     id: "trg-feature-drop",
@@ -62,7 +62,7 @@ export const triggers: TriggerSpec[] = [
     when: "A core feature was used N times last month, fewer than half this month.",
     cadence: "Checks weekly.",
     via: "AI watch",
-    populationPlaybookId: "adoption-featuredrop",
+    populationPlaybookId: "pb-feature-drop",
   },
 
   // ----- Agentic / cross-pillar scheduler -----
@@ -82,7 +82,7 @@ export const triggers: TriggerSpec[] = [
     when: "Lifecycle is established, health is thriving, and a positive signal arrived.",
     cadence: "Checks weekly.",
     via: "AI watch",
-    populationPlaybookId: "expansion-thriving",
+    populationPlaybookId: "pb-expansion-ready",
     note: "Composed from health, lifecycle, and signal direction.",
   },
 
@@ -94,7 +94,7 @@ export const triggers: TriggerSpec[] = [
     when: "A previously connected domain came off.",
     cadence: "Checks every 15 minutes.",
     via: "workflow watch",
-    populationPlaybookId: "save-domain",
+    populationPlaybookId: "pb-save-domain",
     note: "Sticky-setup reversal — heaviest defection signal.",
   },
   {
@@ -104,7 +104,7 @@ export const triggers: TriggerSpec[] = [
     when: "Active A2P brand went back to unregistered.",
     cadence: "Checks every 15 minutes.",
     via: "workflow watch",
-    populationPlaybookId: "save-a2p",
+    populationPlaybookId: "pb-save-a2p",
   },
   {
     id: "trg-integration-removed",
@@ -113,7 +113,7 @@ export const triggers: TriggerSpec[] = [
     when: "A previously connected integration was disconnected.",
     cadence: "Checks hourly.",
     via: "AI watch",
-    populationPlaybookId: "save-integration",
+    populationPlaybookId: "pb-save-integration",
   },
 ];
 
