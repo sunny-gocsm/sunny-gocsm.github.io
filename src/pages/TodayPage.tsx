@@ -475,6 +475,8 @@ export default function TodayPage() {
         ) : null}
       </section>
 
+      <SinceLastReview onOpenAccount={(id) => navigate(`/accounts/${id}`)} failedAccounts={failed} />
+
       {/* 2 — Act by customer */}
       <section
         aria-label="Act by customer"
