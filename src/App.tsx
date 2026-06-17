@@ -15,6 +15,7 @@ import PlaybookDetailPage from "./pages/PlaybookDetailPage";
 import MoneyPage from "./pages/MoneyPage";
 import OnboardingPage from "./pages/OnboardingPage";
 import InsightsPage from "./pages/InsightsPage";
+import ConfigurePage from "./pages/ConfigurePage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -38,7 +39,7 @@ const App = () => (
               <Route path="/money" element={<MoneyPage />} />
               <Route path="/insights" element={<InsightsPage />} />
               <Route path="/insights/:view" element={<InsightsPage />} />
-              <Route path="/configure" element={<StubPage title="Configure" />} />
+              <Route path="/configure" element={<ConfigurePage />} />
               <Route path="/activity" element={<Activity />} />
             </Route>
             <Route path="*" element={<NotFound />} />
