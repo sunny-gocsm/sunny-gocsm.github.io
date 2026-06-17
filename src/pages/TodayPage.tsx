@@ -82,6 +82,7 @@ function CohortCard({
   accounts,
   renderLine,
   onView,
+  onApply,
   heavy,
 }: CohortCardProps) {
   const top = accounts.slice(0, 3);
