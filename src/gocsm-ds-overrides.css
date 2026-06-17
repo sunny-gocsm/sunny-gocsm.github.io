@@ -47,3 +47,104 @@ body {
   color: var(--info-7);
   font-weight: 600;
 }
+
+/* ──────────────────────────────────────────────────────────────────────────
+   R14 — Motion, affordance, micro-celebration
+   ────────────────────────────────────────────────────────────────────────── */
+
+/* Smooth state transitions across surfaces and chips. */
+.card,
+.metric-card,
+.playbook-card,
+.queue-row,
+.health-badge,
+.badge,
+.button,
+button {
+  transition:
+    box-shadow 180ms ease,
+    transform 180ms ease,
+    background-color 180ms ease,
+    color 180ms ease,
+    border-color 180ms ease;
+}
+
+/* Clickable card affordance — opt-in via [role="button"], [data-clickable],
+   or .card:has(> button[onclick]). Lift on hover, depress on press. */
+.card[role="button"],
+.card[data-clickable="true"],
+.playbook-card,
+.queue-row {
+  cursor: pointer;
+}
+.card[role="button"]:hover,
+.card[data-clickable="true"]:hover,
+.playbook-card:hover {
+  box-shadow: var(--sh-hover);
+  transform: translateY(-1px);
+}
+.card[role="button"]:active,
+.card[data-clickable="true"]:active,
+.playbook-card:active {
+  box-shadow: var(--sh-press);
+  transform: translateY(0);
+}
+
+/* Queue rows: gentle background warmth on hover. */
+.queue-row:hover {
+  background: var(--surface-2);
+}
+
+/* Consistent focus ring on every interactive element. */
+:where(button, a, [role="button"], [tabindex="0"], input, select, textarea):focus-visible {
+  outline: none;
+  box-shadow: var(--ring-focus);
+  border-radius: 8px;
+}
+
+/* Micro-celebration — applied when a queue row is checked or a win lands.
+   Use class .celebrate (one-shot) on the row/card. */
+@keyframes gocsm-celebrate {
+  0%   { transform: scale(1);    background: transparent; }
+  35%  { transform: scale(1.012); background: var(--pos-soft); }
+  100% { transform: scale(1);    background: transparent; }
+}
+.celebrate {
+  animation: gocsm-celebrate 520ms ease-out;
+}
+
+/* Sparkle pop for verified-win chips/badges. */
+@keyframes gocsm-pop {
+  0%   { transform: scale(0.92); opacity: 0; }
+  60%  { transform: scale(1.06); opacity: 1; }
+  100% { transform: scale(1);    opacity: 1; }
+}
+.celebrate-pop {
+  animation: gocsm-pop 360ms cubic-bezier(0.2, 0.9, 0.3, 1.2);
+}
+
+/* Today's momentum bar — soft pulse when it fills. */
+@keyframes gocsm-momentum-pulse {
+  0%, 100% { filter: brightness(1); }
+  50%      { filter: brightness(1.12); }
+}
+[role="progressbar"][aria-valuenow][aria-valuemax] > div {
+  transition: width 360ms cubic-bezier(0.2, 0.7, 0.2, 1);
+}
+
+/* Respect prefers-reduced-motion — neutralize all motion. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+  .card[role="button"]:hover,
+  .card[data-clickable="true"]:hover,
+  .playbook-card:hover {
+    transform: none;
+  }
+}
