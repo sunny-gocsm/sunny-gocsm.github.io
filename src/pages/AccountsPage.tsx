@@ -22,6 +22,7 @@ import {
   type ActivityStatus,
 } from "@/fixtures";
 import { PlaybookActivationDrawer, type DrawerScope } from "@/components/playbooks/PlaybookActivationDrawer";
+import { PageRibbon } from "@/components/PageRibbon";
 
 const accounts = allAccounts();
 
@@ -458,12 +459,16 @@ export default function AccountsPage() {
         color: "var(--text)",
       }}
     >
-      <header style={{ marginBottom: "var(--s-6)" }}>
-        <h1 style={{ font: "var(--t-h2)", margin: 0 }}>Accounts</h1>
-        <p style={{ font: "var(--t-body)", color: "var(--text-3, var(--text-2, var(--text)))", margin: "var(--s-1) 0 0" }}>
-          {baseRows.length} customers · sorted by urgency
-        </p>
-      </header>
+      <div style={{ marginBottom: "var(--s-6)" }}>
+        <PageRibbon
+          title="Accounts"
+          description="Every sub-account in your book. Filter, multi-select, and apply a Playbook."
+          kpis={[
+            { label: "Customers", value: <Mono>{baseRows.length}</Mono> },
+            { label: "Sort", value: "by urgency" },
+          ]}
+        />
+      </div>
 
       <DataTable<Account>
         rows={rows}
