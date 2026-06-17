@@ -263,8 +263,11 @@ export default function AccountDetailPage() {
               <span style={{ font: "var(--t-meta)", color: "var(--text-3, var(--text))" }}>
                 Owner {ownership.owner}
               </span>
-              <span style={{ marginLeft: "auto" }}>
-                <LiveStatus state="fresh" label="Synced 3m ago" watchingCount={1} />
+              <span style={{ marginLeft: "auto", display: "inline-flex", alignItems: "center", gap: "var(--s-2)" }}>
+                <LiveStatus state="fresh" label="Synced 3m ago" />
+                <span style={{ font: "var(--t-meta)", color: "var(--text-3, var(--text))" }}>
+                  · watching this account
+                </span>
               </span>
             </div>
 
