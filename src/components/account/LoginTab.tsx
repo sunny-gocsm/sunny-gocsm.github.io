@@ -7,7 +7,7 @@ type UserActivity = ActivityStatus; // highly|moderately|low|ghosting
 
 const ACTIVITY_VARIANT: Record<UserActivity, "pos" | "blue" | "warn" | "danger"> = {
   highly: "pos",
-  moderately: "info",
+  moderately: "blue",
   low: "warn",
   ghosting: "danger",
 };
@@ -99,7 +99,7 @@ export function LoginTab({ account }: { account: Account }) {
       (statusFilter === "all" || r.activity === statusFilter),
   );
 
-  const overallVariant: "pos" | "info" | "warn" | "neg" = ACTIVITY_VARIANT[login.activityStatus];
+  const overallVariant: "pos" | "blue" | "warn" | "danger" = ACTIVITY_VARIANT[login.activityStatus];
   const lowData = login.users.length <= 1;
 
   return (
@@ -156,7 +156,7 @@ export function LoginTab({ account }: { account: Account }) {
         {(["all", "owner", "admin", "user"] as const).map((r) => (
           <Badge
             key={r}
-            variant={roleFilter === r ? "info" : "neutral"}
+            variant={roleFilter === r ? "blue" : "neutral"}
             dot={false}
             onClick={() => setRoleFilter(r)}
             style={{ cursor: "pointer" }}
@@ -178,7 +178,7 @@ export function LoginTab({ account }: { account: Account }) {
         {(["all", "highly", "moderately", "low", "ghosting"] as const).map((s) => (
           <Badge
             key={s}
-            variant={statusFilter === s ? "info" : "neutral"}
+            variant={statusFilter === s ? "blue" : "neutral"}
             dot={false}
             onClick={() => setStatusFilter(s)}
             style={{ cursor: "pointer" }}

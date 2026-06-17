@@ -20,7 +20,7 @@ const ALL_ASSET_TYPES: AssetType[] = [
 ];
 
 const engagementBand = (e: number): "pos" | "blue" | "warn" | "danger" =>
-  e >= 70 ? "pos" : e >= 50 ? "info" : e >= 30 ? "warn" : "neg";
+  e >= 70 ? "pos" : e >= 50 ? "blue" : e >= 30 ? "warn" : "danger";
 
 const engagementLabel = (e: number): string =>
   e >= 70 ? "Strong" : e >= 50 ? "Steady" : e >= 30 ? "Underused" : "Dormant";
