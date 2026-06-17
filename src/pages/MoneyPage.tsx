@@ -392,7 +392,7 @@ function ProductChart() {
     <Card padded>
       <header style={{ marginBottom: "var(--s-2)", display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
         <h3 style={{ font: "var(--t-h3)", margin: 0 }}>Revenue by product</h3>
-        <ConfTag basis="projection" detail="wallet split is editorial" />
+        <ConfTag basis="projection" detail="Estimate — limited data" />
       </header>
       <div style={{ width: "100%", height: 220 }}>
         <ResponsiveContainer>
