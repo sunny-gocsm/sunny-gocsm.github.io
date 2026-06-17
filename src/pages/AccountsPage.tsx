@@ -325,13 +325,13 @@ export default function AccountsPage() {
       <DataTable<Account>
         rows={rows}
         columns={columns}
-        getRowId={(a) => a.id}
+        getRowId={(a) => a.identity.id}
         selectable
         selectedIds={selectedIds}
         onSelectionChange={setSelectedIds}
         toolbar={toolbar}
         selectionActions={selectionActions}
-        onRowClick={(a) => setOpenAccountId(a.id)}
+        onRowClick={(a) => setOpenAccountId(a.identity.id)}
         stickyHeader
       />
 
