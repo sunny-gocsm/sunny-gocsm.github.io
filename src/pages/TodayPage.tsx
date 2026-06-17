@@ -98,10 +98,10 @@ function CohortCard({
           <span className={`icon-chip ${accent}`} aria-hidden>
             <Icon name={icon} />
           </span>
-          <span style={{ font: "var(--t-meta)", color: "var(--text-3, var(--text))", textTransform: "uppercase", letterSpacing: "0.04em" }}>
+          <span style={{ font: "var(--t-h5, var(--t-body))", color: "var(--text)", fontWeight: 600 }}>
             {title}
           </span>
-          <span style={{ marginLeft: "auto", font: "var(--t-meta)", color: "var(--text-3, var(--text))" }}>
+          <span style={{ marginLeft: "auto", font: "var(--t-meta)", color: "var(--text-2, var(--text))" }}>
             <Mono>{accounts.length}</Mono>
             {mrr > 0 ? <> · <Mono>{fmtMoney(mrr)}</Mono></> : null}
           </span>
