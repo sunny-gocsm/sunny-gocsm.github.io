@@ -30,6 +30,8 @@ import {
   type Account,
 } from "@/fixtures";
 import { PlaybookActivationDrawer, type DrawerScope } from "@/components/playbooks/PlaybookActivationDrawer";
+import { outcomes as allOutcomes, outcomeAccount, outcomePlaybook } from "@/fixtures/outcomes";
+import { ReceiptStrip } from "@/gocsm-ds/components/action/Receipts.jsx";
 
 
 // ----------------------------------------------------------------------------
