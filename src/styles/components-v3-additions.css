@@ -67,3 +67,57 @@
 .panel-body{padding:var(--pad-panel);}
 .page-section{margin-bottom:var(--gap-section);}
 .page-section + .page-section{margin-top:0;}
+
+/* =================================================================
+   v3.1 VISUAL UPLIFT — additive only (loads after the above).
+   Building blocks for the re-skin: pillar score cards that defuse the
+   "wall of red", a reusable coloured icon chip, and status accent rails.
+   No existing selector is touched; no component API changes.
+   ================================================================= */
+
+/* ─── Pillar score cards — neutral surface, the SCORE carries the band
+   colour, a thin bar shows the level. Only the single worst pillar gets
+   .worst (accent rail + faint tint) so four flooded cards become one
+   marked card among four legible ones, and the eye lands on what to fix
+   first. The Health-tab pillar grid composes these. ─── */
+.pillar-card{background:var(--surface);border-radius:var(--r-md);box-shadow:var(--sh-rest);
+  padding:var(--s-4) var(--s-5);display:flex;flex-direction:column;gap:7px;position:relative;}
+.pillar-card .p-label{font-size:10.5px;font-weight:600;letter-spacing:0.05em;text-transform:uppercase;color:var(--text-2);}
+.pillar-card .p-score{font-family:var(--font-mono);font-size:27px;font-weight:600;letter-spacing:-0.02em;line-height:1;color:var(--text);}
+.pillar-card .p-bar{height:5px;border-radius:var(--r-pill);background:var(--n-3);overflow:hidden;}
+.pillar-card .p-bar > i{display:block;height:100%;border-radius:var(--r-pill);transition:width var(--d-slow) var(--ease);}
+.pillar-card.thriving .p-score{color:var(--health-thriving-strong);} .pillar-card.thriving .p-bar>i{background:var(--health-thriving);}
+.pillar-card.healthy  .p-score{color:var(--health-healthy-strong);}  .pillar-card.healthy  .p-bar>i{background:var(--health-healthy);}
+.pillar-card.watch    .p-score{color:var(--health-watch-strong);}    .pillar-card.watch    .p-bar>i{background:var(--health-watch);}
+.pillar-card.atrisk   .p-score{color:var(--health-atrisk-strong);}   .pillar-card.atrisk   .p-bar>i{background:var(--health-atrisk);}
+.pillar-card.worst{border-left:3px solid var(--health-atrisk-strong);
+  background:linear-gradient(90deg,var(--health-atrisk-soft),var(--surface) 72%);}
+.pillar-card.worst.watch{border-left-color:var(--health-watch-strong);
+  background:linear-gradient(90deg,var(--health-watch-soft),var(--surface) 72%);}
+
+/* ─── Reusable coloured icon chip — generalises the metric-card .icon
+   pattern so cohort / playbook / section cards get a scannable colour
+   identity (soft tint disc + saturated glyph). ─── */
+.icon-chip{width:38px;height:38px;border-radius:11px;display:grid;place-items:center;flex:none;}
+.icon-chip svg{width:19px;height:19px;}
+.icon-chip.info{background:var(--info-soft);color:var(--info-7);}
+.icon-chip.pos,.icon-chip.thriving{background:var(--pos-soft);color:var(--pos-7);}
+.icon-chip.healthy{background:var(--health-healthy-soft);color:var(--health-healthy-strong);}
+.icon-chip.warn,.icon-chip.watch{background:var(--warn-soft);color:var(--warn-7);}
+.icon-chip.neg,.icon-chip.atrisk{background:var(--health-atrisk-soft);color:var(--health-atrisk-strong);}
+.icon-chip.slate{background:var(--n-3);color:var(--n-9);}
+.icon-chip.ai{background:var(--ai-2);color:var(--ai-7);}
+.icon-chip.brand{background:var(--blue-2);color:var(--blue-7);}
+
+/* ─── Status accent rails — a thin coloured edge that encodes status on an
+   otherwise neutral content card (left rail) or a cohort card (top rail). ─── */
+.accent-l{border-left:3px solid var(--border-strong);}
+.accent-l.pos{border-left-color:var(--pos-7);} .accent-l.neg{border-left-color:var(--neg-7);}
+.accent-l.warn{border-left-color:var(--warn-7);} .accent-l.info{border-left-color:var(--info-7);}
+.accent-l.atrisk{border-left-color:var(--health-atrisk-strong);}
+.accent-t{border-top:3px solid var(--border-strong);}
+.accent-t.atrisk,.accent-t.neg{border-top-color:var(--health-atrisk-strong);}
+.accent-t.healthy,.accent-t.info{border-top-color:var(--health-healthy-strong);}
+.accent-t.watch,.accent-t.warn{border-top-color:var(--warn-7);}
+.accent-t.thriving,.accent-t.pos{border-top-color:var(--pos-7);}
+.accent-t.ai{border-top-color:var(--ai-7);}
