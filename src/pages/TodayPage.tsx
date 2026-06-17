@@ -342,6 +342,7 @@ export default function TodayPage() {
                 : "lost a sticky setup";
             }}
             onView={() => navigate("/accounts")}
+            onApply={() => openApply(lostSticky, "pb-save-domain")}
             heavy
           />
           <CohortCard
@@ -351,6 +352,7 @@ export default function TodayPage() {
             accounts={renewingAtRisk}
             renderLine={(a) => `renews in ${daysUntil(a.revenue.renewalDate)}d · ${bandLabel(a.health.band)}`}
             onView={() => navigate("/accounts?renewing=30")}
+            onApply={() => openApply(renewingAtRisk, "pb-no-login")}
           />
           <CohortCard
             icon="credit-card"
@@ -359,6 +361,7 @@ export default function TodayPage() {
             accounts={failed}
             renderLine={(a) => `${a.revenue.paymentAttempts.filter(p => p.status === "failed").length || 1} failed attempt(s)`}
             onView={() => navigate("/accounts")}
+            onApply={() => openApply(failed, "pb-payment-failed")}
           />
           <CohortCard
             icon="moon"
@@ -367,6 +370,7 @@ export default function TodayPage() {
             accounts={goneQuiet}
             renderLine={(a) => `last login ${a.login.lastLoginDaysAgo}d ago`}
             onView={() => navigate("/accounts")}
+            onApply={() => openApply(goneQuiet, "pb-no-login")}
           />
           <CohortCard
             icon="rocket"
@@ -377,6 +381,7 @@ export default function TodayPage() {
               `stuck on "${a.onboarding.current_step}" for ${a.onboarding.days_on_current_step}d`
             }
             onView={() => navigate("/onboarding")}
+            onApply={() => openApply(stalled, "pb-onboarding-stalled")}
           />
           <CohortCard
             icon="sparkles"
@@ -385,6 +390,7 @@ export default function TodayPage() {
             accounts={dormantUp}
             renderLine={(a) => `health +${a.health.delta} this week`}
             onView={() => navigate("/accounts")}
+            onApply={() => openApply(dormantUp, "pb-expansion-ready")}
           />
         </div>
       </section>
