@@ -71,7 +71,8 @@ interface CohortCardProps {
   renderLine?: (a: Account) => React.ReactNode;
   onView: () => void;
   onApply?: () => void;
-  heavy?: boolean;
+  accent: "atrisk" | "healthy" | "warn" | "pos" | "slate" | "info" | "neg" | "watch" | "thriving";
+  emptyLine: string;
 }
 
 function CohortCard({
@@ -82,27 +83,18 @@ function CohortCard({
   renderLine,
   onView,
   onApply,
-  heavy,
+  accent,
+  emptyLine,
 }: CohortCardProps) {
   const top = accounts.slice(0, 3);
   const mrr = accounts.reduce((sum, a) => sum + a.revenue.mrr, 0);
+  const accentClasses = `accent-t ${accent}`;
+  const extraStyle = accent === "slate" ? { borderTopColor: "var(--n-7)" } : undefined;
   return (
-    <Card padded>
+    <Card padded className={accentClasses} style={extraStyle}>
       <div style={{ display: "flex", flexDirection: "column", gap: "var(--s-3)" }}>
         <header style={{ display: "flex", alignItems: "center", gap: "var(--s-2)" }}>
-          <span
-            aria-hidden
-            style={{
-              display: "inline-flex",
-              alignItems: "center",
-              justifyContent: "center",
-              width: 28,
-              height: 28,
-              borderRadius: 8,
-              background: heavy ? "var(--red-1, var(--surface-2))" : "var(--surface-2)",
-              color: heavy ? "var(--red-7, var(--text))" : "var(--text-2, var(--text))",
-            }}
-          >
+          <span className={`icon-chip ${accent}`} aria-hidden>
             <Icon name={icon} />
           </span>
           <span style={{ font: "var(--t-meta)", color: "var(--text-3, var(--text))", textTransform: "uppercase", letterSpacing: "0.04em" }}>
@@ -139,8 +131,8 @@ function CohortCard({
             ))}
           </ul>
         ) : (
-          <p style={{ font: "var(--t-meta)", color: "var(--text-3, var(--text))", margin: 0 }}>
-            Nothing in this group right now.
+          <p style={{ font: "var(--t-body-sm)", color: "var(--text-2, var(--text))", margin: 0 }}>
+            {emptyLine}
           </p>
         )}
 
