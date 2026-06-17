@@ -217,22 +217,10 @@ export default function PlaybooksPage() {
             ) : null}
           </div>
         </>
+      ) : tab === "triggers" ? (
+        <TriggersTab />
       ) : (
-        <Card padded>
-          <div style={{ display: "flex", flexDirection: "column", gap: "var(--s-2)" }}>
-            <div style={{ display: "flex", alignItems: "center", gap: "var(--s-2)" }}>
-              <Icon name="wrench" />
-              <h3 style={{ font: "var(--t-h3)", margin: 0 }}>
-                {tab === "triggers" ? "Triggers" : "Outcomes"}
-              </h3>
-            </div>
-            <p style={{ font: "var(--t-body)", color: "var(--text-3, var(--text))", margin: 0 }}>
-              {tab === "triggers"
-                ? "Trigger explorer ships in P14 — the page that shows every Signal a play watches for."
-                : "Outcome reporting ships in P14 — who matched, who acted, what changed."}
-            </p>
-          </div>
-        </Card>
+        <OutcomesTab />
       )}
     </main>
   );
