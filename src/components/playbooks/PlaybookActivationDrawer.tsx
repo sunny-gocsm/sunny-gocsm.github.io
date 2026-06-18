@@ -25,6 +25,7 @@ import {
   type Playbook,
 } from "@/fixtures/playbooks";
 import type { Account } from "@/fixtures";
+import { autopilotStore } from "@/state/autopilot";
 
 export type DrawerScope =
   | { kind: "playbook"; playbookId: string }
