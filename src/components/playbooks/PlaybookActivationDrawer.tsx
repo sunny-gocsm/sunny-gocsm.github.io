@@ -25,6 +25,7 @@ import {
   type Playbook,
 } from "@/fixtures/playbooks";
 import type { Account } from "@/fixtures";
+import { autopilotStore } from "@/state/autopilot";
 
 export type DrawerScope =
   | { kind: "playbook"; playbookId: string }
@@ -181,10 +182,22 @@ export function PlaybookActivationDrawer({ open, scope, accounts, onClose }: Pro
   };
 
   const turnOnAutopilot = () => {
+    if (!playbook) return;
+    autopilotStore.enable(playbook.id);
     setAutopilotChoice("on");
-    toast.success("Autopilot on", {
-      description: `GoCSM will run ${playbook?.title} whenever this happens. Change anytime in Playbooks.`,
+    toast.success(`${playbook.title} is on autopilot`, {
+      description: "Reversible · undo for 5 seconds. Change or pause anytime in Playbooks.",
+      duration: 5000,
+      action: {
+        label: "Undo",
+        onClick: () => {
+          autopilotStore.disable(playbook.id);
+          toast("Autopilot paused.");
+        },
+      },
     });
+    // Close the drawer shortly after so the brief success card is visible.
+    setTimeout(() => close(), 600);
   };
 
   // ---------- render ----------
@@ -612,6 +625,11 @@ function AutopilotSetup({
   onNotNow,
   onPublish,
 }: AutopilotSetupProps) {
+  // Lifted summary state, populated by Step1/Step2 and read by Step3.
+  const [ruleSentence, setRuleSentence] = useState<string>("");
+  const [ruleCount, setRuleCount] = useState<number>(0);
+  const [enabledLabels, setEnabledLabels] = useState<string[]>([]);
+
   return (
     <Card padded className="accent-t info">
       <div style={{ display: "flex", flexDirection: "column", gap: "var(--s-4)" }}>
@@ -635,16 +653,33 @@ function AutopilotSetup({
         </div>
 
         <div style={{ display: "flex", flexDirection: "column", gap: "var(--s-3)" }}>
-          {stepIndex === 1 ? <Step1Audience playbook={playbook} /> : null}
+          <div style={{ display: stepIndex === 1 ? "block" : "none" }}>
+            <Step1Audience
+              playbook={playbook}
+              onRuleChange={(sentence, count) => {
+                setRuleSentence(sentence);
+                setRuleCount(count);
+              }}
+            />
+          </div>
 
-          {stepIndex === 2 ? <Step2Actions playbook={playbook} /> : null}
+          <div style={{ display: stepIndex === 2 ? "block" : "none" }}>
+            <Step2Actions
+              playbook={playbook}
+              onEnabledChange={setEnabledLabels}
+            />
+          </div>
 
           {stepIndex === 3 ? (
-            <p style={{ margin: 0, font: "var(--t-body)", color: "var(--text-2, var(--text))" }}>
-              Ready to keep this running? You can turn it off anytime from Playbooks.
-            </p>
+            <Step3Summary
+              ruleSentence={ruleSentence}
+              ruleCount={ruleCount}
+              enabledLabels={enabledLabels}
+            />
           ) : null}
         </div>
+
+
 
 
         <div
@@ -679,7 +714,7 @@ function AutopilotSetup({
               </Button>
             ) : (
               <Button variant="primary" onClick={onPublish} icon={<Icon name="zap" />}>
-                Publish
+                Publish automation
               </Button>
             )}
           </div>
@@ -817,7 +852,13 @@ function ChipBadge({ cond, onRemove }: { cond: Cond; onRemove: () => void }) {
   );
 }
 
-function Step1Audience({ playbook }: { playbook: Playbook }) {
+function Step1Audience({
+  playbook,
+  onRuleChange,
+}: {
+  playbook: Playbook;
+  onRuleChange?: (sentence: string, count: number) => void;
+}) {
   const [mode, setMode] = useState<"auto" | "review">("auto");
   const [conds, setConds] = useState<Cond[]>([]);
   const [draft, setDraft] = useState("");
@@ -830,6 +871,17 @@ function Step1Audience({ playbook }: { playbook: Playbook }) {
     const preds = conds.filter((c) => c.predicate).map((c) => c.predicate!);
     return base.filter((a) => preds.every((p) => p(a)));
   }, [base, conds]);
+
+  const ruleSentence = useMemo(() => {
+    const extras = conds.filter((c) => c.predicate).map((c) => c.label.toLowerCase());
+    const extra = extras.length ? ` (${extras.join(", ")})` : "";
+    return `Runs automatically for accounts that ${eventPhrase(playbook)}${extra}.`;
+  }, [playbook, conds]);
+
+  useEffect(() => {
+    onRuleChange?.(ruleSentence, matches.length);
+  }, [ruleSentence, matches.length, onRuleChange]);
+
 
   const addCond = (c: Omit<Cond, "id">) => {
     setConds((prev) => [...prev, { ...c, id: `c-${Date.now()}-${Math.random().toString(36).slice(2, 6)}` }]);
@@ -1202,7 +1254,13 @@ const ACTION_ICON: Record<ActionKind, string> = {
   sms: "smartphone",
 };
 
-function Step2Actions({ playbook }: { playbook: Playbook }) {
+function Step2Actions({
+  playbook,
+  onEnabledChange,
+}: {
+  playbook: Playbook;
+  onEnabledChange?: (labels: string[]) => void;
+}) {
   const plan = useMemo(() => buildPlayPlan(playbook), [playbook]);
 
   const [enabled, setEnabled] = useState<Record<string, boolean>>(() => {
@@ -1228,6 +1286,18 @@ function Step2Actions({ playbook }: { playbook: Playbook }) {
   const [previewOpen, setPreviewOpen] = useState<Record<string, boolean>>({});
 
   const setOn = (id: string, on: boolean) => setEnabled((p) => ({ ...p, [id]: on }));
+
+  // Emit enabled labels (actions + escalation if on) for Step 3 summary.
+  useEffect(() => {
+    const labels: string[] = [];
+    plan.actions.forEach((a) => {
+      if (enabled[a.id]) labels.push(a.label);
+    });
+    if (plan.escalation && enabled[plan.escalation.id]) {
+      labels.push(plan.escalation.sentence);
+    }
+    onEnabledChange?.(labels);
+  }, [enabled, plan, onEnabledChange]);
 
   const groupActions = (g: AudienceGroup) => plan.actions.filter((a) => a.group === g);
 
@@ -1364,6 +1434,118 @@ function Step2Actions({ playbook }: { playbook: Playbook }) {
       >
         This is your automation. The next step opens it in your HighLevel workflow builder to
         review and publish.
+      </p>
+    </div>
+  );
+}
+
+// ============================================================
+// Step 3 — "Publish" (summary + reassurance)
+// ============================================================
+
+function Step3Summary({
+  ruleSentence,
+  ruleCount,
+  enabledLabels,
+}: {
+  ruleSentence: string;
+  ruleCount: number;
+  enabledLabels: string[];
+}) {
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: "var(--s-3)" }}>
+      <p style={{ margin: 0, font: "var(--t-body)", color: "var(--text-2, var(--text))" }}>
+        Quick recap before you publish.
+      </p>
+
+      {/* Rule */}
+      <div
+        style={{
+          display: "flex",
+          flexDirection: "column",
+          gap: 4,
+          padding: "var(--s-3)",
+          borderRadius: "var(--r-md)",
+          background: "var(--surface-2)",
+        }}
+      >
+        <span
+          style={{
+            font: "var(--t-meta)",
+            textTransform: "uppercase",
+            letterSpacing: "0.04em",
+            color: "var(--text-3, var(--text))",
+          }}
+        >
+          The rule
+        </span>
+        <span style={{ font: "var(--t-body)", color: "var(--text)" }}>
+          {ruleSentence || "Runs automatically when the play's signal appears."}
+        </span>
+        <span style={{ font: "var(--t-meta)", color: "var(--text-3, var(--text))" }}>
+          <Mono>{ruleCount}</Mono> account{ruleCount === 1 ? "" : "s"} match right now.
+        </span>
+      </div>
+
+      {/* Steps you turned on */}
+      <div
+        style={{
+          display: "flex",
+          flexDirection: "column",
+          gap: "var(--s-2)",
+          padding: "var(--s-3)",
+          borderRadius: "var(--r-md)",
+          background: "var(--surface-2)",
+        }}
+      >
+        <span
+          style={{
+            font: "var(--t-meta)",
+            textTransform: "uppercase",
+            letterSpacing: "0.04em",
+            color: "var(--text-3, var(--text))",
+          }}
+        >
+          Steps you turned on
+        </span>
+        {enabledLabels.length === 0 ? (
+          <span style={{ font: "var(--t-body-sm)", color: "var(--text-2, var(--text))" }}>
+            Nothing enabled yet — go back to Step 2 to switch on at least one step.
+          </span>
+        ) : (
+          <ul style={{ listStyle: "none", padding: 0, margin: 0, display: "flex", flexDirection: "column", gap: 4 }}>
+            {enabledLabels.map((l, i) => (
+              <li
+                key={i}
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "var(--s-2)",
+                  font: "var(--t-body-sm)",
+                  color: "var(--text)",
+                }}
+              >
+                <Icon name="check" />
+                <span>{l}</span>
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
+
+      {/* Reassurance */}
+      <p style={{ margin: 0, font: "var(--t-meta)", color: "var(--text-2, var(--text))" }}>
+        Client emails still ask for your OK · reversible · change or pause anytime in Playbooks.
+      </p>
+      <p
+        style={{
+          margin: 0,
+          font: "var(--t-meta)",
+          color: "var(--text-3, var(--text))",
+          fontStyle: "italic",
+        }}
+      >
+        In production this publishes the workflow in HighLevel.
       </p>
     </div>
   );

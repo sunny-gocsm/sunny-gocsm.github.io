@@ -5,8 +5,10 @@ import {
   Button,
   Icon,
   Mono,
+  Badge,
   LiveStatus,
 } from "@/gocsm-ds";
+import { useIsAutopilot } from "@/state/autopilot";
 import { useToast } from "@/hooks/use-toast";
 import { ToastAction } from "@/components/ui/toast";
 import { PageRibbon } from "@/components/PageRibbon";
@@ -70,6 +72,7 @@ interface CohortCardProps {
   onApply?: () => void;
   accent: "atrisk" | "healthy" | "warn" | "pos" | "slate" | "info" | "neg" | "watch" | "thriving";
   emptyLine: string;
+  playbookId?: string;
 }
 
 function CohortCard({
@@ -81,12 +84,14 @@ function CohortCard({
   onApply,
   accent,
   emptyLine,
+  playbookId,
 }: CohortCardProps) {
   const mrr = accounts.reduce((sum, a) => sum + a.revenue.mrr, 0);
   const accentClasses = `accent-t ${accent}`;
   const extraStyle: React.CSSProperties =
     accent === "slate" ? { borderTopColor: "var(--n-7)" } : {};
   const empty = accounts.length === 0;
+  const onAutopilot = useIsAutopilot(playbookId ?? "");
   return (
     <Card padded className={accentClasses} style={{ ...extraStyle, opacity: empty ? 0.7 : 1 }}>
       <div style={{ display: "flex", flexDirection: "column", gap: "var(--s-2)" }}>
@@ -97,6 +102,14 @@ function CohortCard({
           <span style={{ font: "var(--t-body)", color: "var(--text)", fontWeight: 600, flex: 1, minWidth: 0 }}>
             {title}
           </span>
+          {onAutopilot ? (
+            <Badge variant="blue" dot={false}>
+              <span style={{ display: "inline-flex", alignItems: "center", gap: 4 }}>
+                <Icon name="zap" />
+                On autopilot
+              </span>
+            </Badge>
+          ) : null}
           <span style={{ font: "var(--t-meta)", color: "var(--text-2, var(--text))", whiteSpace: "nowrap" }}>
             <Mono>{accounts.length}</Mono>
             {mrr > 0 ? <> · <Mono>{fmtMoney(mrr)}</Mono></> : null}
@@ -106,6 +119,12 @@ function CohortCard({
         {empty ? (
           <p style={{ font: "var(--t-body-sm)", color: "var(--text-2, var(--text))", margin: 0 }}>
             {emptyLine}
+          </p>
+        ) : null}
+
+        {onAutopilot && !empty ? (
+          <p style={{ font: "var(--t-meta)", color: "var(--text-2, var(--text))", margin: 0 }}>
+            New matches handled automatically.
           </p>
         ) : null}
 
@@ -123,6 +142,7 @@ function CohortCard({
     </Card>
   );
 }
+
 
 // ----------------------------------------------------------------------------
 // Reassurance line (collapsed recap)
@@ -865,6 +885,7 @@ export default function TodayPage() {
               accent: "atrisk" as const,
               actionLabel: "Win them back",
               emptyLine: "All setups holding steady.",
+              playbookId: "pb-save-domain",
               onView: () => navigate("/accounts"),
               onApply: () => openApply(lostSticky, "pb-save-domain"),
             },
@@ -875,6 +896,7 @@ export default function TodayPage() {
               accent: "healthy" as const,
               actionLabel: "Protect these renewals",
               emptyLine: "No renewals in danger.",
+              playbookId: "pb-no-login",
               onView: () => navigate("/accounts?renewing=30"),
               onApply: () => openApply(renewingAtRisk, "pb-no-login"),
             },
@@ -885,6 +907,7 @@ export default function TodayPage() {
               accent: "atrisk" as const,
               actionLabel: "Recover payments",
               emptyLine: "Payments are flowing.",
+              playbookId: "pb-payment-failed",
               onView: () => navigate("/accounts"),
               onApply: () => openApply(failed, "pb-payment-failed"),
             },
@@ -895,6 +918,7 @@ export default function TodayPage() {
               accent: "slate" as const,
               actionLabel: "Send a nudge",
               emptyLine: "Everyone's still showing up.",
+              playbookId: "pb-no-login",
               onView: () => navigate("/accounts"),
               onApply: () => openApply(goneQuiet, "pb-no-login"),
             },
@@ -905,6 +929,7 @@ export default function TodayPage() {
               accent: "warn" as const,
               actionLabel: "Unblock onboarding",
               emptyLine: "New accounts are moving.",
+              playbookId: "pb-onboarding-stalled",
               onView: () => navigate("/onboarding"),
               onApply: () => openApply(stalled, "pb-onboarding-stalled"),
             },
@@ -915,6 +940,7 @@ export default function TodayPage() {
               accent: "pos" as const,
               actionLabel: "Welcome them back",
               emptyLine: "No comebacks yet — your saves are holding.",
+              playbookId: "pb-expansion-ready",
               onView: () => navigate("/accounts"),
               onApply: () => openApply(dormantUp, "pb-expansion-ready"),
             },
@@ -929,6 +955,7 @@ export default function TodayPage() {
                 accent={c.accent}
                 actionLabel={c.actionLabel}
                 emptyLine={c.emptyLine}
+                playbookId={c.playbookId}
                 onView={c.onView}
                 onApply={c.onApply}
               />

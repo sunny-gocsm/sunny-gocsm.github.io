@@ -36,6 +36,10 @@ import {
   TRIGGER_CLASS_LABEL,
   type TriggerClass,
 } from "@/fixtures/triggers";
+import { useIsAutopilot, autopilotStore } from "@/state/autopilot";
+import { toast } from "sonner";
+
+
 
 type TabId = "library" | "triggers" | "outcomes";
 
@@ -212,9 +216,12 @@ export default function PlaybooksPage() {
                     paddingInline: "var(--s-2)",
                   }}
                 >
-                  <Badge variant={STATE_VARIANT[p.state]} dot={p.state === "off"}>
-                    {STATE_LABEL[p.state]}
-                  </Badge>
+                  <div style={{ display: "flex", alignItems: "center", gap: "var(--s-2)" }}>
+                    <Badge variant={STATE_VARIANT[p.state]} dot={p.state === "off"}>
+                      {STATE_LABEL[p.state]}
+                    </Badge>
+                    <AutopilotRowBadge playbookId={p.id} />
+                  </div>
                   {p.count > 0 ? (
                     <span style={{ font: "var(--t-meta)", color: "var(--text-3, var(--text))" }}>
                       <Mono
@@ -594,5 +601,47 @@ function TriggersTab() {
         </Card>
       </section>
     </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Autopilot row badge + Pause control
+// ---------------------------------------------------------------------------
+
+function AutopilotRowBadge({ playbookId }: { playbookId: string }) {
+  const on = useIsAutopilot(playbookId);
+  if (!on) return null;
+  return (
+    <span
+      style={{ display: "inline-flex", alignItems: "center", gap: "var(--s-2)" }}
+      onClick={(e) => e.stopPropagation()}
+    >
+      <Badge variant="blue" dot={false}>
+        <span style={{ display: "inline-flex", alignItems: "center", gap: 4 }}>
+          <Icon name="zap" />
+          On autopilot
+        </span>
+      </Badge>
+      <button
+        type="button"
+        onClick={(e) => {
+          e.stopPropagation();
+          autopilotStore.disable(playbookId);
+          toast("Autopilot paused.");
+        }}
+        style={{
+          background: "transparent",
+          border: 0,
+          color: "var(--text-3, var(--text))",
+          font: "var(--t-meta)",
+          cursor: "pointer",
+          padding: "2px 6px",
+          borderRadius: "var(--r-sm)",
+        }}
+        aria-label="Pause autopilot"
+      >
+        Pause
+      </button>
+    </span>
   );
 }
