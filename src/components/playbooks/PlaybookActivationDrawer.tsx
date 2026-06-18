@@ -637,12 +637,7 @@ function AutopilotSetup({
         <div style={{ display: "flex", flexDirection: "column", gap: "var(--s-3)" }}>
           {stepIndex === 1 ? <Step1Audience playbook={playbook} /> : null}
 
-          {stepIndex === 2 ? (
-            <p style={{ margin: 0, font: "var(--t-body)", color: "var(--text-2, var(--text))" }}>
-              The same steps you just approved will run each time — and GoCSM will still ask before
-              emailing anyone.
-            </p>
-          ) : null}
+          {stepIndex === 2 ? <Step2Actions playbook={playbook} /> : null}
 
           {stepIndex === 3 ? (
             <p style={{ margin: 0, font: "var(--t-body)", color: "var(--text-2, var(--text))" }}>
