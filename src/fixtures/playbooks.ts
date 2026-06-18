@@ -63,7 +63,23 @@ const usageReverse = (a: Account, subjects: SignalSubject[], windowDays = 60): b
       daysSince(s.detectedAt) <= windowDays,
   );
 
-export const playbooks: Playbook[] = [
+// Per-play video assignments. All point to the placeholder for now;
+// production swaps these for the real recordings keyed by play id.
+const PLAY_VIDEOS: Record<string, string> = {
+  "pb-no-login": PLACEHOLDER_VIDEO,
+  "pb-payment-failed": PLACEHOLDER_VIDEO,
+  "pb-plan-downgrade": PLACEHOLDER_VIDEO,
+  "pb-feature-drop": PLACEHOLDER_VIDEO,
+  "pb-onboarding-stalled": PLACEHOLDER_VIDEO,
+  "pb-save-domain": PLACEHOLDER_VIDEO,
+  "pb-save-integration": PLACEHOLDER_VIDEO,
+  "pb-save-a2p": PLACEHOLDER_VIDEO,
+  "pb-expansion-ready": PLACEHOLDER_VIDEO,
+};
+
+type PlaybookSeed = Omit<Playbook, "videoUrl">;
+
+const playbookSeeds: PlaybookSeed[] = [
   // ----- Retention / lifecycle -----
   {
     id: "pb-no-login",
