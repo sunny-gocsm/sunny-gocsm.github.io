@@ -290,6 +290,17 @@ export default function PlaybooksPage() {
       ) : (
         <OutcomesTab />
       )}
+
+      <PlaybookActivationDrawer
+        open={!!drawerScope}
+        scope={drawerScope}
+        accounts={allAccounts()}
+        initial={drawerInitial}
+        onClose={() => {
+          setDrawerScope(null);
+          setDrawerInitial(undefined);
+        }}
+      />
     </main>
   );
 }
