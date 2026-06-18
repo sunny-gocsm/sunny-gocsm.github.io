@@ -72,6 +72,7 @@ interface CohortCardProps {
   onApply?: () => void;
   accent: "atrisk" | "healthy" | "warn" | "pos" | "slate" | "info" | "neg" | "watch" | "thriving";
   emptyLine: string;
+  playbookId?: string;
 }
 
 function CohortCard({
@@ -83,12 +84,14 @@ function CohortCard({
   onApply,
   accent,
   emptyLine,
+  playbookId,
 }: CohortCardProps) {
   const mrr = accounts.reduce((sum, a) => sum + a.revenue.mrr, 0);
   const accentClasses = `accent-t ${accent}`;
   const extraStyle: React.CSSProperties =
     accent === "slate" ? { borderTopColor: "var(--n-7)" } : {};
   const empty = accounts.length === 0;
+  const onAutopilot = useIsAutopilot(playbookId ?? "");
   return (
     <Card padded className={accentClasses} style={{ ...extraStyle, opacity: empty ? 0.7 : 1 }}>
       <div style={{ display: "flex", flexDirection: "column", gap: "var(--s-2)" }}>
@@ -99,6 +102,14 @@ function CohortCard({
           <span style={{ font: "var(--t-body)", color: "var(--text)", fontWeight: 600, flex: 1, minWidth: 0 }}>
             {title}
           </span>
+          {onAutopilot ? (
+            <Badge variant="blue" dot={false}>
+              <span style={{ display: "inline-flex", alignItems: "center", gap: 4 }}>
+                <Icon name="zap" />
+                On autopilot
+              </span>
+            </Badge>
+          ) : null}
           <span style={{ font: "var(--t-meta)", color: "var(--text-2, var(--text))", whiteSpace: "nowrap" }}>
             <Mono>{accounts.length}</Mono>
             {mrr > 0 ? <> · <Mono>{fmtMoney(mrr)}</Mono></> : null}
@@ -108,6 +119,12 @@ function CohortCard({
         {empty ? (
           <p style={{ font: "var(--t-body-sm)", color: "var(--text-2, var(--text))", margin: 0 }}>
             {emptyLine}
+          </p>
+        ) : null}
+
+        {onAutopilot && !empty ? (
+          <p style={{ font: "var(--t-meta)", color: "var(--text-2, var(--text))", margin: 0 }}>
+            New matches handled automatically.
           </p>
         ) : null}
 
@@ -125,6 +142,7 @@ function CohortCard({
     </Card>
   );
 }
+
 
 // ----------------------------------------------------------------------------
 // Reassurance line (collapsed recap)
