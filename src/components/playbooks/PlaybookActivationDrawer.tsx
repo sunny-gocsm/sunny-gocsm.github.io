@@ -463,7 +463,7 @@ export function PlaybookActivationDrawer({ open, scope, accounts, onClose }: Pro
               </div>
             </Card>
 
-            {autopilotChoice === "pending" ? (
+            {autopilotChoice === "pending" && autopilotSetupStep === 0 ? (
               <Card padded className="accent-t info">
                 <div style={{ display: "flex", flexDirection: "column", gap: "var(--s-3)" }}>
                   <div style={{ display: "flex", alignItems: "center", gap: "var(--s-2)" }}>
@@ -478,7 +478,7 @@ export function PlaybookActivationDrawer({ open, scope, accounts, onClose }: Pro
                     Whenever {plainTrigger(playbook)}, GoCSM will run <strong>{playbook.title}</strong> for you — and still ask before emailing anyone.
                   </p>
                   <div style={{ display: "flex", gap: "var(--s-2)", alignItems: "center" }}>
-                    <Button variant="primary" onClick={turnOnAutopilot} icon={<Icon name="zap" />}>
+                    <Button variant="primary" onClick={() => setAutopilotSetupStep(1)} icon={<Icon name="zap" />}>
                       Turn on autopilot
                     </Button>
                     <Button variant="ghost" size="sm" onClick={() => setAutopilotChoice("no")}>
@@ -490,6 +490,15 @@ export function PlaybookActivationDrawer({ open, scope, accounts, onClose }: Pro
                   </span>
                 </div>
               </Card>
+            ) : autopilotChoice === "pending" && autopilotSetupStep > 0 ? (
+              <AutopilotSetup
+                playbook={playbook}
+                stepIndex={autopilotSetupStep}
+                onStepChange={(n) => setAutopilotSetupStep(n as 1 | 2 | 3)}
+                targetCount={targetCount}
+                onNotNow={() => setAutopilotSetupStep(0)}
+                onPublish={turnOnAutopilot}
+              />
             ) : (
               <Card padded>
                 <div style={{ display: "flex", alignItems: "center", gap: "var(--s-2)" }}>
