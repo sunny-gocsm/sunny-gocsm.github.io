@@ -181,10 +181,22 @@ export function PlaybookActivationDrawer({ open, scope, accounts, onClose }: Pro
   };
 
   const turnOnAutopilot = () => {
+    if (!playbook) return;
+    autopilotStore.enable(playbook.id);
     setAutopilotChoice("on");
-    toast.success("Autopilot on", {
-      description: `GoCSM will run ${playbook?.title} whenever this happens. Change anytime in Playbooks.`,
+    toast.success(`${playbook.title} is on autopilot`, {
+      description: "Reversible · undo for 5 seconds. Change or pause anytime in Playbooks.",
+      duration: 5000,
+      action: {
+        label: "Undo",
+        onClick: () => {
+          autopilotStore.disable(playbook.id);
+          toast("Autopilot paused.");
+        },
+      },
     });
+    // Close the drawer shortly after so the brief success card is visible.
+    setTimeout(() => close(), 600);
   };
 
   // ---------- render ----------
