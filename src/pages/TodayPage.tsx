@@ -742,11 +742,25 @@ export default function TodayPage() {
             }}
           >
             <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
-              <h2 style={{ font: "var(--t-h3)", margin: 0, color: "var(--text)", fontWeight: 600 }}>
-                Needs you
-              </h2>
+              <div style={{ display: "flex", alignItems: "center", gap: "var(--s-2)" }}>
+                <h2 style={{ font: "var(--t-h3)", margin: 0, color: "var(--text)", fontWeight: 600 }}>
+                  Needs you
+                </h2>
+                <span
+                  style={{
+                    font: "var(--t-meta)",
+                    fontWeight: 700,
+                    padding: "2px 8px",
+                    borderRadius: 999,
+                    background: "var(--health-atrisk-soft)",
+                    color: "var(--health-atrisk-strong)",
+                  }}
+                >
+                  <Mono>{activeNeeds.length}</Mono>
+                </span>
+              </div>
               <p style={{ font: "var(--t-body-sm)", color: "var(--text-2, var(--text))", margin: 0 }}>
-                Accounts where a human is still required — most urgent first.
+                GoCSM did what it could. These need a person.
               </p>
             </div>
             <span
@@ -756,15 +770,15 @@ export default function TodayPage() {
                 fontWeight: handledCount > 0 ? 600 : 400,
               }}
             >
-              {handledCount === queue.length && queue.length > 0 ? "🎉 " : ""}
-              <Mono>{handledCount}</Mono> of <Mono>{queue.length}</Mono> handled today
+              {handledCount === totalNeeds && totalNeeds > 0 ? "🎉 " : ""}
+              <Mono>{handledCount}</Mono> of <Mono>{totalNeeds}</Mono> handled today
             </span>
           </div>
-          {queue.length > 0 && (
+          {totalNeeds > 0 && (
             <div
               role="progressbar"
               aria-valuemin={0}
-              aria-valuemax={queue.length}
+              aria-valuemax={totalNeeds}
               aria-valuenow={handledCount}
               style={{
                 height: 6,
@@ -776,7 +790,7 @@ export default function TodayPage() {
               <div
                 style={{
                   height: "100%",
-                  width: `${(handledCount / queue.length) * 100}%`,
+                  width: `${(handledCount / totalNeeds) * 100}%`,
                   background:
                     "linear-gradient(90deg, var(--pos-soft) 0%, var(--pos-7) 100%)",
                   transition: "width 360ms ease",
