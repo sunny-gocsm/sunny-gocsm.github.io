@@ -885,6 +885,7 @@ export default function TodayPage() {
               accent: "atrisk" as const,
               actionLabel: "Win them back",
               emptyLine: "All setups holding steady.",
+              playbookId: "pb-save-domain",
               onView: () => navigate("/accounts"),
               onApply: () => openApply(lostSticky, "pb-save-domain"),
             },
@@ -895,6 +896,7 @@ export default function TodayPage() {
               accent: "healthy" as const,
               actionLabel: "Protect these renewals",
               emptyLine: "No renewals in danger.",
+              playbookId: "pb-no-login",
               onView: () => navigate("/accounts?renewing=30"),
               onApply: () => openApply(renewingAtRisk, "pb-no-login"),
             },
@@ -905,6 +907,7 @@ export default function TodayPage() {
               accent: "atrisk" as const,
               actionLabel: "Recover payments",
               emptyLine: "Payments are flowing.",
+              playbookId: "pb-payment-failed",
               onView: () => navigate("/accounts"),
               onApply: () => openApply(failed, "pb-payment-failed"),
             },
@@ -915,6 +918,7 @@ export default function TodayPage() {
               accent: "slate" as const,
               actionLabel: "Send a nudge",
               emptyLine: "Everyone's still showing up.",
+              playbookId: "pb-no-login",
               onView: () => navigate("/accounts"),
               onApply: () => openApply(goneQuiet, "pb-no-login"),
             },
@@ -925,6 +929,7 @@ export default function TodayPage() {
               accent: "warn" as const,
               actionLabel: "Unblock onboarding",
               emptyLine: "New accounts are moving.",
+              playbookId: "pb-onboarding-stalled",
               onView: () => navigate("/onboarding"),
               onApply: () => openApply(stalled, "pb-onboarding-stalled"),
             },
@@ -935,6 +940,7 @@ export default function TodayPage() {
               accent: "pos" as const,
               actionLabel: "Welcome them back",
               emptyLine: "No comebacks yet — your saves are holding.",
+              playbookId: "pb-expansion-ready",
               onView: () => navigate("/accounts"),
               onApply: () => openApply(dormantUp, "pb-expansion-ready"),
             },
@@ -949,6 +955,7 @@ export default function TodayPage() {
                 accent={c.accent}
                 actionLabel={c.actionLabel}
                 emptyLine={c.emptyLine}
+                playbookId={c.playbookId}
                 onView={c.onView}
                 onApply={c.onApply}
               />
