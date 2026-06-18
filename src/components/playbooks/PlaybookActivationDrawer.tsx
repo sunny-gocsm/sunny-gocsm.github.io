@@ -32,11 +32,17 @@ export type DrawerScope =
   | { kind: "playbook"; playbookId: string }
   | { kind: "accounts"; accountIds: string[]; suggested?: string };
 
+// Optional deep-link: jump straight into the autopilot setup at a given step.
+// Used by the Playbooks page "Edit rule" / "Review steps" controls so the same
+// setup screens (Step 1 / Step 2) are reused for editing an existing play.
+export type DrawerInitial = { mode: "autopilot"; step: 1 | 2 | 3 };
+
 interface Props {
   open: boolean;
   scope: DrawerScope | null;
   accounts: Account[]; // available pool to resolve ids
   onClose: () => void;
+  initial?: DrawerInitial;
 }
 
 type Step = "pick" | "setup" | "done";
