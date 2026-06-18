@@ -636,43 +636,140 @@ function TriggersTab() {
 }
 
 // ---------------------------------------------------------------------------
-// Autopilot row badge + Pause control
+// PlaybookAutomationRow — per-row automation state and controls.
+//
+// Shows: On autopilot / Paused / Off, a one-line rule summary when the rule
+// exists, last run (if any), and the Pause/Resume, Edit rule, Review steps,
+// Watch (1 min) controls. Conditions live behind "Edit rule" — never on this
+// page directly.
 // ---------------------------------------------------------------------------
 
-function AutopilotRowBadge({ playbookId }: { playbookId: string }) {
-  const on = useIsAutopilot(playbookId);
-  if (!on) return null;
+const AUTOPILOT_STATUS_LABEL: Record<AutopilotStatus, string> = {
+  on: "On autopilot",
+  paused: "Paused",
+  off: "Off",
+};
+
+const AUTOPILOT_STATUS_VARIANT: Record<AutopilotStatus, "blue" | "warn" | "neutral"> = {
+  on: "blue",
+  paused: "warn",
+  off: "neutral",
+};
+
+// Plain-English rule summary built from the playbook's own problem sentence.
+// Kept here (and intentionally short) so the page reads calmly without
+// exposing any condition syntax.
+function ruleSummary(p: Playbook): string {
+  const tail = p.problem.replace(/^The /, "").replace(/\.$/, "").toLowerCase();
+  return `Runs for accounts where ${tail}`;
+}
+
+function lastRunLabel(playbookId: string): string | null {
+  const recent = outcomesFor(playbookId).sort((a, b) => a.daysAgo - b.daysAgo)[0];
+  if (!recent) return null;
+  if (recent.daysAgo === 0) return "Last run: today";
+  if (recent.daysAgo === 1) return "Last run: yesterday";
+  return `Last run: ${recent.daysAgo}d ago`;
+}
+
+function PlaybookAutomationRow({
+  playbook,
+  onEditRule,
+  onReviewSteps,
+}: {
+  playbook: Playbook;
+  onEditRule: () => void;
+  onReviewSteps: () => void;
+}) {
+  const status = useAutopilotStatus(playbook.id);
+  const hasRule = status !== "off";
+  const lastRun = lastRunLabel(playbook.id);
+
   return (
-    <span
-      style={{ display: "inline-flex", alignItems: "center", gap: "var(--s-2)" }}
-      onClick={(e) => e.stopPropagation()}
+    <div
+      style={{
+        display: "flex",
+        flexDirection: "column",
+        gap: "var(--s-2)",
+        padding: "var(--s-3)",
+        marginInline: "var(--s-2)",
+        borderRadius: "var(--r-md)",
+        background: "var(--surface-2)",
+        border: "1px solid var(--border)",
+      }}
     >
-      <Badge variant="blue" dot={false}>
-        <span style={{ display: "inline-flex", alignItems: "center", gap: 4 }}>
-          <Icon name="zap" />
-          On autopilot
-        </span>
-      </Badge>
-      <button
-        type="button"
-        onClick={(e) => {
-          e.stopPropagation();
-          autopilotStore.disable(playbookId);
-          toast("Autopilot paused.");
-        }}
-        style={{
-          background: "transparent",
-          border: 0,
-          color: "var(--text-3, var(--text))",
-          font: "var(--t-meta)",
-          cursor: "pointer",
-          padding: "2px 6px",
-          borderRadius: "var(--r-sm)",
-        }}
-        aria-label="Pause autopilot"
-      >
-        Pause
-      </button>
-    </span>
+      {/* Status + rule summary */}
+      <div style={{ display: "flex", alignItems: "center", gap: "var(--s-2)", flexWrap: "wrap" }}>
+        <Badge variant={AUTOPILOT_STATUS_VARIANT[status]} dot={status === "off"}>
+          <span style={{ display: "inline-flex", alignItems: "center", gap: 4 }}>
+            {status === "on" ? <Icon name="zap" /> : status === "paused" ? <Icon name="pause" /> : null}
+            {AUTOPILOT_STATUS_LABEL[status]}
+          </span>
+        </Badge>
+        {hasRule ? (
+          <span style={{ font: "var(--t-body-sm)", color: "var(--text-2, var(--text))" }}>
+            {ruleSummary(playbook)}
+          </span>
+        ) : (
+          <span style={{ font: "var(--t-body-sm)", color: "var(--text-3, var(--text))" }}>
+            No autopilot rule yet — run it once to set one up.
+          </span>
+        )}
+        {lastRun ? (
+          <span style={{ marginLeft: "auto", font: "var(--t-meta)", color: "var(--text-3, var(--text))" }}>
+            {lastRun}
+          </span>
+        ) : null}
+      </div>
+
+      {/* Controls — Pause/Resume, Edit rule, Review steps, Watch */}
+      <div style={{ display: "flex", alignItems: "center", gap: "var(--s-2)", flexWrap: "wrap" }}>
+        {status === "on" ? (
+          <Button
+            variant="ghost"
+            size="sm"
+            icon={<Icon name="pause" />}
+            onClick={() => {
+              autopilotStore.pause(playbook.id);
+              toast("Autopilot paused — the rule is kept.");
+            }}
+          >
+            Pause
+          </Button>
+        ) : status === "paused" ? (
+          <Button
+            variant="ghost"
+            size="sm"
+            icon={<Icon name="play" />}
+            onClick={() => {
+              autopilotStore.resume(playbook.id);
+              toast.success("Autopilot resumed.");
+            }}
+          >
+            Resume
+          </Button>
+        ) : null}
+        <Button
+          variant="ghost"
+          size="sm"
+          icon={<Icon name="sliders" />}
+          onClick={onEditRule}
+          disabled={!hasRule}
+        >
+          Edit rule
+        </Button>
+        <Button
+          variant="ghost"
+          size="sm"
+          icon={<Icon name="list" />}
+          onClick={onReviewSteps}
+          disabled={!hasRule}
+        >
+          Review steps
+        </Button>
+        <PlayVideoButton playbook={playbook} label="Watch (1 min)" />
+      </div>
+    </div>
   );
 }
+
