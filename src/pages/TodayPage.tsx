@@ -5,8 +5,10 @@ import {
   Button,
   Icon,
   Mono,
+  Badge,
   LiveStatus,
 } from "@/gocsm-ds";
+import { useIsAutopilot } from "@/state/autopilot";
 import { useToast } from "@/hooks/use-toast";
 import { ToastAction } from "@/components/ui/toast";
 import { PageRibbon } from "@/components/PageRibbon";
