@@ -216,8 +216,12 @@ export default function PlaybooksPage() {
                     paddingInline: "var(--s-2)",
                   }}
                 >
-                  <Badge variant={STATE_VARIANT[p.state]} dot={p.state === "off"}>
-                    {STATE_LABEL[p.state]}
+                  <div style={{ display: "flex", alignItems: "center", gap: "var(--s-2)" }}>
+                    <Badge variant={STATE_VARIANT[p.state]} dot={p.state === "off"}>
+                      {STATE_LABEL[p.state]}
+                    </Badge>
+                    <AutopilotRowBadge playbookId={p.id} />
+                  </div>
                   </Badge>
                   {p.count > 0 ? (
                     <span style={{ font: "var(--t-meta)", color: "var(--text-3, var(--text))" }}>
