@@ -93,6 +93,8 @@ export function PlaybookActivationDrawer({ open, scope, accounts, onClose }: Pro
   const [previewOpenFor, setPreviewOpenFor] = useState<string | null>(null);
   const [previewDraft, setPreviewDraft] = useState<string>("");
   const [autopilotChoice, setAutopilotChoice] = useState<"pending" | "on" | "no">("pending");
+  // 0 = not in setup; 1..3 = stepped autopilot setup inside the drawer
+  const [autopilotSetupStep, setAutopilotSetupStep] = useState<0 | 1 | 2 | 3>(0);
 
   // Resolve the effective playbook
   const playbookId = useMemo(() => {
