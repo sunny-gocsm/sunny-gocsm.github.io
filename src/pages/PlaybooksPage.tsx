@@ -36,6 +36,10 @@ import {
   TRIGGER_CLASS_LABEL,
   type TriggerClass,
 } from "@/fixtures/triggers";
+import { useIsAutopilot, autopilotStore } from "@/state/autopilot";
+import { toast } from "sonner";
+import { Icon } from "@/gocsm-ds";
+
 
 type TabId = "library" | "triggers" | "outcomes";
 
