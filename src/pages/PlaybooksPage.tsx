@@ -222,7 +222,6 @@ export default function PlaybooksPage() {
                     </Badge>
                     <AutopilotRowBadge playbookId={p.id} />
                   </div>
-                  </Badge>
                   {p.count > 0 ? (
                     <span style={{ font: "var(--t-meta)", color: "var(--text-3, var(--text))" }}>
                       <Mono
