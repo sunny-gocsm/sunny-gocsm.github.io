@@ -843,91 +843,78 @@ export default function TodayPage() {
       {/* 4 — Fix a problem */}
       <section aria-label="Fix a problem" style={{ display: "flex", flexDirection: "column", gap: "var(--s-3)" }}>
         <header style={{ display: "flex", flexDirection: "column", gap: 2 }}>
-          <h2 style={{ font: "var(--t-h3)", margin: 0, color: "var(--text)", fontWeight: 600 }}>
+          <h2 style={{ font: "var(--t-h4, var(--t-body))", margin: 0, color: "var(--text)", fontWeight: 600 }}>
             Fix a problem
           </h2>
           <p style={{ font: "var(--t-body-sm)", color: "var(--text-2, var(--text))", margin: 0 }}>
-            Grouped by the problem they share.
+            Same problem across several accounts — fix them together.
           </p>
         </header>
         <div
           style={{
             display: "grid",
             gap: "var(--s-3)",
-            gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))",
+            gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))",
           }}
         >
           {[
             {
               icon: "alert-triangle",
               title: "Setup lost — may be leaving",
-              blurb: "A sticky setup (domain, A2P, funnel) just went backwards — the biggest backwards move on the board.",
               accounts: lostSticky,
               accent: "atrisk" as const,
-              emptyLine: "All setups holding steady — nothing sliding backward.",
-              renderLine: (a: Account) => {
-                const sig = signalsForAccount(a.identity.id).find(
-                  (s) => s.sticky && s.direction === "reverse",
-                );
-                return sig
-                  ? `${sig.label.toLowerCase()} — may be moving to another platform`
-                  : "lost a sticky setup";
-              },
+              actionLabel: "Win them back",
+              emptyLine: "All setups holding steady.",
               onView: () => navigate("/accounts"),
               onApply: () => openApply(lostSticky, "pb-save-domain"),
             },
             {
               icon: "calendar-clock",
               title: "Renewing soon & at risk",
-              blurb: "At-risk or watch accounts with a renewal in the next 30 days.",
               accounts: renewingAtRisk,
               accent: "healthy" as const,
-              emptyLine: "No renewals in danger — the pipeline looks calm.",
-              renderLine: (a: Account) => `renews in ${daysUntil(a.revenue.renewalDate)}d · ${bandLabel(a.health.band)}`,
+              actionLabel: "Protect these renewals",
+              emptyLine: "No renewals in danger.",
               onView: () => navigate("/accounts?renewing=30"),
               onApply: () => openApply(renewingAtRisk, "pb-no-login"),
             },
             {
               icon: "credit-card",
               title: "Payment failed",
-              blurb: "Cards declined or invoices unpaid in the last cycle.",
               accounts: failed,
               accent: "atrisk" as const,
-              emptyLine: "Payments are flowing — no cards need attention.",
-              renderLine: (a: Account) => `${a.revenue.paymentAttempts.filter((p: { status: string }) => p.status === "failed").length || 1} failed attempt(s)`,
+              actionLabel: "Recover payments",
+              emptyLine: "Payments are flowing.",
               onView: () => navigate("/accounts"),
               onApply: () => openApply(failed, "pb-payment-failed"),
             },
             {
               icon: "moon",
               title: "Gone quiet",
-              blurb: "No meaningful logins for 3+ weeks.",
               accounts: goneQuiet,
               accent: "slate" as const,
-              emptyLine: "Everyone’s still showing up — no one’s gone dark.",
-              renderLine: (a: Account) => `last login ${a.login.lastLoginDaysAgo}d ago`,
+              actionLabel: "Send a nudge",
+              emptyLine: "Everyone's still showing up.",
               onView: () => navigate("/accounts"),
               onApply: () => openApply(goneQuiet, "pb-no-login"),
             },
             {
               icon: "rocket",
               title: "Onboarding stalled",
-              blurb: "New accounts stuck on a setup step past SLA.",
               accounts: stalled,
               accent: "warn" as const,
-              emptyLine: "New accounts are moving — no one stuck at the gate.",
-              renderLine: (a: Account) => `stuck on "${a.onboarding.current_step}" for ${a.onboarding.days_on_current_step}d`,
+              actionLabel: "Unblock onboarding",
+              emptyLine: "New accounts are moving.",
               onView: () => navigate("/onboarding"),
               onApply: () => openApply(stalled, "pb-onboarding-stalled"),
             },
             {
               icon: "sparkles",
               title: "Coming back to life",
-              blurb: "Dormant accounts trending up — worth a warm nudge.",
               accounts: dormantUp,
               accent: "pos" as const,
+              actionLabel: "Welcome them back",
               emptyLine: "No comebacks yet — your saves are holding.",
-              renderLine: (a: Account) => `health +${a.health.delta} this week`,
               onView: () => navigate("/accounts"),
               onApply: () => openApply(dormantUp, "pb-expansion-ready"),
             },
@@ -938,11 +925,10 @@ export default function TodayPage() {
                 key={c.title}
                 icon={c.icon}
                 title={c.title}
-                blurb={c.blurb}
                 accounts={c.accounts}
                 accent={c.accent}
+                actionLabel={c.actionLabel}
                 emptyLine={c.emptyLine}
-                renderLine={c.renderLine}
                 onView={c.onView}
                 onApply={c.onApply}
               />
