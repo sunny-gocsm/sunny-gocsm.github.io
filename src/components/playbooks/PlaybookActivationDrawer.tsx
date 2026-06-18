@@ -1254,7 +1254,13 @@ const ACTION_ICON: Record<ActionKind, string> = {
   sms: "smartphone",
 };
 
-function Step2Actions({ playbook }: { playbook: Playbook }) {
+function Step2Actions({
+  playbook,
+  onEnabledChange,
+}: {
+  playbook: Playbook;
+  onEnabledChange?: (labels: string[]) => void;
+}) {
   const plan = useMemo(() => buildPlayPlan(playbook), [playbook]);
 
   const [enabled, setEnabled] = useState<Record<string, boolean>>(() => {
@@ -1280,6 +1286,18 @@ function Step2Actions({ playbook }: { playbook: Playbook }) {
   const [previewOpen, setPreviewOpen] = useState<Record<string, boolean>>({});
 
   const setOn = (id: string, on: boolean) => setEnabled((p) => ({ ...p, [id]: on }));
+
+  // Emit enabled labels (actions + escalation if on) for Step 3 summary.
+  useEffect(() => {
+    const labels: string[] = [];
+    plan.actions.forEach((a) => {
+      if (enabled[a.id]) labels.push(a.label);
+    });
+    if (plan.escalation && enabled[plan.escalation.id]) {
+      labels.push(plan.escalation.sentence);
+    }
+    onEnabledChange?.(labels);
+  }, [enabled, plan, onEnabledChange]);
 
   const groupActions = (g: AudienceGroup) => plan.actions.filter((a) => a.group === g);
 
