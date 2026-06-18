@@ -675,7 +675,7 @@ function AutopilotSetup({
                 onClick={() => onStepChange((stepIndex + 1) as 1 | 2 | 3)}
                 icon={<Icon name="arrow-right" />}
               >
-                Next
+                {stepIndex === 2 ? "Continue to publish" : "Next"}
               </Button>
             ) : (
               <Button variant="primary" onClick={onPublish} icon={<Icon name="zap" />}>
