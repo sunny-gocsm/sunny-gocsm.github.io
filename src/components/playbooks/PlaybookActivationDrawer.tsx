@@ -493,7 +493,7 @@ export function PlaybookActivationDrawer({ open, scope, accounts, onClose }: Pro
             ) : autopilotChoice === "pending" && autopilotSetupStep > 0 ? (
               <AutopilotSetup
                 playbook={playbook}
-                stepIndex={autopilotSetupStep}
+                stepIndex={autopilotSetupStep as 1 | 2 | 3}
                 onStepChange={(n) => setAutopilotSetupStep(n as 1 | 2 | 3)}
                 targetCount={targetCount}
                 onNotNow={() => setAutopilotSetupStep(0)}
