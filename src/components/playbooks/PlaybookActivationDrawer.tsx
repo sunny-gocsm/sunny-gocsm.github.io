@@ -24,7 +24,7 @@ import {
   matchesToday,
   type Playbook,
 } from "@/fixtures/playbooks";
-import type { Account } from "@/fixtures";
+import { accounts as allAccounts, type Account, type HealthBand } from "@/fixtures";
 
 export type DrawerScope =
   | { kind: "playbook"; playbookId: string }
