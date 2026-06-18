@@ -503,26 +503,8 @@ export default function TodayPage() {
   };
 
 
-  const teamMembers = [
-    {
-      name: "Sinan",
-      stats: [
-        { v: 4, l: "open" },
-        { v: 1, l: "due", tone: "warn" },
-      ],
-    },
-    {
-      name: "Maya",
-      stats: [
-        { v: 3, l: "open" },
-        { v: 2, l: "breach", tone: "neg" },
-      ],
-    },
-    {
-      name: "Auto",
-      stats: [{ v: 6, l: "handled overnight", tone: "pos" }],
-    },
-  ];
+
+
 
   const AiAttribution = (
     <span
