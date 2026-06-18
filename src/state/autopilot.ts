@@ -1,33 +1,61 @@
-// Tiny global store for which playbooks are "on autopilot".
+// Tiny global store for playbook autopilot state.
+// Each playbook is in one of three states:
+//   off     — no autopilot rule set
+//   on      — autopilot rule active, auto-runs allowed
+//   paused  — rule retained but auto-runs stopped (resumable)
+//
 // Survives within the SPA session; subscribers update via useSyncExternalStore.
 
 import { useSyncExternalStore } from "react";
 
+export type AutopilotStatus = "off" | "on" | "paused";
+
 type Listener = () => void;
 
-const ids = new Set<string>();
+const onIds = new Set<string>();
+const pausedIds = new Set<string>();
 const listeners = new Set<Listener>();
 
+// Snapshot identity bumps on every change so useSyncExternalStore re-renders.
+let version = 0;
 function emit() {
+  version += 1;
   listeners.forEach((l) => l());
 }
 
 export const autopilotStore = {
   enable(id: string) {
-    if (ids.has(id)) return;
-    ids.add(id);
+    pausedIds.delete(id);
+    if (onIds.has(id)) return;
+    onIds.add(id);
     emit();
   },
   disable(id: string) {
-    if (!ids.has(id)) return;
-    ids.delete(id);
+    const had = onIds.delete(id) || pausedIds.delete(id);
+    if (had) emit();
+  },
+  pause(id: string) {
+    if (!onIds.has(id)) return;
+    onIds.delete(id);
+    pausedIds.add(id);
+    emit();
+  },
+  resume(id: string) {
+    if (!pausedIds.has(id)) return;
+    pausedIds.delete(id);
+    onIds.add(id);
     emit();
   },
   has(id: string) {
-    return ids.has(id);
+    return onIds.has(id);
   },
-  snapshot(): ReadonlySet<string> {
-    return ids;
+  status(id: string): AutopilotStatus {
+    if (onIds.has(id)) return "on";
+    if (pausedIds.has(id)) return "paused";
+    return "off";
+  },
+  snapshot() {
+    return version;
   },
   subscribe(l: Listener): () => void {
     listeners.add(l);
@@ -35,7 +63,7 @@ export const autopilotStore = {
   },
 };
 
-export function useAutopilotIds(): ReadonlySet<string> {
+function useVersion(): number {
   return useSyncExternalStore(
     (l) => autopilotStore.subscribe(l),
     () => autopilotStore.snapshot(),
@@ -44,6 +72,11 @@ export function useAutopilotIds(): ReadonlySet<string> {
 }
 
 export function useIsAutopilot(id: string): boolean {
-  const set = useAutopilotIds();
-  return set.has(id);
+  useVersion();
+  return autopilotStore.has(id);
+}
+
+export function useAutopilotStatus(id: string): AutopilotStatus {
+  useVersion();
+  return autopilotStore.status(id);
 }
