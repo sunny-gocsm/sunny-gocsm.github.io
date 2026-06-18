@@ -358,8 +358,6 @@ export default function TodayPage() {
   );
 
   const rollup = useMemo(() => agencyRollup(), []);
-  const dist = useMemo(() => healthDistribution(), []);
-  const liveCount = rollup.liveAccounts || 1;
 
   const briefingLine = useMemo(() => {
     const parts: string[] = [];
@@ -371,15 +369,6 @@ export default function TodayPage() {
     return parts.join(" · ") || "Quiet night — nothing urgent.";
   }, [lostSticky.length, failed.length, renewingAtRisk.length]);
 
-  const topReason = queue[0]
-    ? reasonFor(queue[0])
-    : "All clear — nothing urgent on the board.";
-  const topTone: "pos" | "watch" | "risk" =
-    queue[0]?.health.band === "atrisk"
-      ? "risk"
-      : queue[0]
-      ? "watch"
-      : "pos";
 
   const [handled, setHandled] = useState<Set<string>>(new Set());
   const markHandled = (id: string, reason: "applied" | "dismissed") => {
