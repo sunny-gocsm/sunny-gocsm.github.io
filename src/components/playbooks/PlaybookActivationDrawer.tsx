@@ -635,18 +635,7 @@ function AutopilotSetup({
         </div>
 
         <div style={{ display: "flex", flexDirection: "column", gap: "var(--s-3)" }}>
-          {stepIndex === 1 ? (
-            <p style={{ margin: 0, font: "var(--t-body)", color: "var(--text-2, var(--text))" }}>
-              GoCSM will run this for any account where {playbook.problem
-                .replace(/^The /, "the ")
-                .replace(/\.$/, "")}.
-              {targetCount > 0 ? (
-                <>
-                  {" "}Right now that's <strong>{targetCount}</strong> account{targetCount === 1 ? "" : "s"}.
-                </>
-              ) : null}
-            </p>
-          ) : null}
+          {stepIndex === 1 ? <Step1Audience playbook={playbook} /> : null}
 
           {stepIndex === 2 ? (
             <p style={{ margin: 0, font: "var(--t-body)", color: "var(--text-2, var(--text))" }}>
@@ -661,6 +650,7 @@ function AutopilotSetup({
             </p>
           ) : null}
         </div>
+
 
         <div
           style={{
@@ -701,5 +691,407 @@ function AutopilotSetup({
         </div>
       </div>
     </Card>
+  );
+}
+
+// ============================================================
+// Step 1 — "Who it runs for" with AI-assisted refiner (simulated)
+// ============================================================
+
+type CondKind = "band" | "minMrr" | "noLoginDays" | "plan" | "notify" | "other";
+interface Cond {
+  id: string;
+  kind: CondKind;
+  group: "audience" | "signal" | "notify";
+  label: string;
+  // applied to the candidate pool — undefined means display-only (no filter)
+  predicate?: (a: Account) => boolean;
+}
+
+// Short, plain-English phrase for the play's fixed event.
+function eventPhrase(p: Playbook): string {
+  const map: Record<string, string> = {
+    "pb-save-a2p": "lose A2P registration",
+    "pb-save-domain": "disconnect their custom domain",
+    "pb-save-integration": "remove a key integration",
+    "pb-payment-failed": "have a failed payment",
+    "pb-no-login": "go quiet for 21+ days",
+    "pb-onboarding-stalled": "stall in onboarding",
+    "pb-plan-downgrade": "downgrade or drop an add-on",
+    "pb-feature-drop": "stop using a core feature",
+    "pb-expansion-ready": "look ready to expand",
+  };
+  return map[p.id] ?? p.problem.replace(/^The /, "").replace(/\.$/, "").toLowerCase();
+}
+
+const SUGGESTED: Omit<Cond, "id">[] = [
+  {
+    kind: "band",
+    group: "audience",
+    label: "Only at-risk",
+    predicate: (a) => a.health.band === "atrisk",
+  },
+  {
+    kind: "plan",
+    group: "audience",
+    label: "Annual plans",
+    // No billing-cycle field in fixtures — display-only chip.
+  },
+  {
+    kind: "minMrr",
+    group: "audience",
+    label: "Over $500 MRR",
+    predicate: (a) => a.revenue.mrr > 500,
+  },
+  {
+    kind: "noLoginDays",
+    group: "signal",
+    label: "No login in 30 days",
+    predicate: (a) => a.login.lastLoginDaysAgo >= 30,
+  },
+  {
+    kind: "notify",
+    group: "notify",
+    label: "Notify Sinan",
+  },
+];
+
+// Very small NL → chip parser. Real wiring lands later.
+function parsePhrase(raw: string): Omit<Cond, "id"> | null {
+  const s = raw.trim().toLowerCase();
+  if (!s) return null;
+  if (/at[- ]?risk/.test(s)) return SUGGESTED[0];
+  if (/annual/.test(s)) return SUGGESTED[1];
+  const mrr = s.match(/\$?\s*(\d{2,5})\s*(?:mrr|\/mo|\b)/);
+  if (mrr) {
+    const n = parseInt(mrr[1], 10);
+    return {
+      kind: "minMrr",
+      group: "audience",
+      label: `Over $${n} MRR`,
+      predicate: (a) => a.revenue.mrr > n,
+    };
+  }
+  const noLogin = s.match(/no login.*?(\d+)/);
+  if (noLogin) {
+    const n = parseInt(noLogin[1], 10);
+    return {
+      kind: "noLoginDays",
+      group: "signal",
+      label: `No login in ${n} days`,
+      predicate: (a) => a.login.lastLoginDaysAgo >= n,
+    };
+  }
+  const notify = s.match(/notify\s+([a-z]+)/);
+  if (notify) {
+    const name = notify[1][0].toUpperCase() + notify[1].slice(1);
+    return { kind: "notify", group: "notify", label: `Notify ${name}` };
+  }
+  return { kind: "other", group: "audience", label: raw.trim() };
+}
+
+const GROUP_LABEL: Record<Cond["group"], string> = {
+  audience: "Audience",
+  signal: "And also…",
+  notify: "Notify",
+};
+
+function ChipBadge({ cond, onRemove }: { cond: Cond; onRemove: () => void }) {
+  return (
+    <Badge variant="neutral" dot={false}>
+      <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
+        {cond.label}
+        <button
+          aria-label={`Remove ${cond.label}`}
+          onClick={onRemove}
+          style={{
+            display: "inline-flex",
+            alignItems: "center",
+            justifyContent: "center",
+            background: "transparent",
+            border: 0,
+            padding: 0,
+            color: "inherit",
+            cursor: "pointer",
+          }}
+        >
+          <Icon name="x" />
+        </button>
+      </span>
+    </Badge>
+  );
+}
+
+function Step1Audience({ playbook }: { playbook: Playbook }) {
+  const [mode, setMode] = useState<"auto" | "review">("auto");
+  const [conds, setConds] = useState<Cond[]>([]);
+  const [draft, setDraft] = useState("");
+  const [showPreview, setShowPreview] = useState(false);
+  const [freqDays, setFreqDays] = useState(30);
+  const [skipOpenTask, setSkipOpenTask] = useState(true);
+
+  const base = useMemo(() => matchesToday(playbook), [playbook]);
+  const matches = useMemo(() => {
+    const preds = conds.filter((c) => c.predicate).map((c) => c.predicate!);
+    return base.filter((a) => preds.every((p) => p(a)));
+  }, [base, conds]);
+
+  const addCond = (c: Omit<Cond, "id">) => {
+    setConds((prev) => [...prev, { ...c, id: `c-${Date.now()}-${Math.random().toString(36).slice(2, 6)}` }]);
+  };
+  const removeCond = (id: string) => setConds((prev) => prev.filter((c) => c.id !== id));
+
+  const submitDraft = () => {
+    const parsed = parsePhrase(draft);
+    if (parsed) addCond(parsed);
+    setDraft("");
+  };
+
+  const grouped = (g: Cond["group"]) => conds.filter((c) => c.group === g);
+  const expanded = mode === "review";
+
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: "var(--s-3)" }}>
+      {/* The rule sentence + live count */}
+      <p style={{ margin: 0, font: "var(--t-body)", color: "var(--text-2, var(--text))" }}>
+        Runs automatically for accounts that {eventPhrase(playbook)} —{" "}
+        <strong style={{ color: "var(--text)", font: "var(--t-h4, var(--t-body))" }}>
+          <Mono>{matches.length}</Mono>
+        </strong>{" "}
+        right now.
+      </p>
+
+      {/* Mode toggle (segmented) */}
+      <div
+        role="tablist"
+        style={{
+          display: "inline-flex",
+          gap: 4,
+          padding: 4,
+          borderRadius: "var(--r-md)",
+          background: "var(--surface-2)",
+          alignSelf: "flex-start",
+        }}
+      >
+        {([
+          { v: "auto", label: "Let GoCSM set it up" },
+          { v: "review", label: "Review each piece" },
+        ] as const).map((opt) => {
+          const on = mode === opt.v;
+          return (
+            <button
+              key={opt.v}
+              role="tab"
+              aria-selected={on}
+              onClick={() => setMode(opt.v)}
+              style={{
+                border: 0,
+                cursor: "pointer",
+                padding: "6px 12px",
+                borderRadius: "var(--r-sm)",
+                background: on ? "var(--surface)" : "transparent",
+                color: on ? "var(--text)" : "var(--text-3, var(--text))",
+                font: "var(--t-meta)",
+                fontWeight: on ? 600 : 400,
+                boxShadow: on ? "var(--elev-1, 0 1px 2px rgba(0,0,0,0.06))" : "none",
+              }}
+            >
+              {opt.label}
+            </button>
+          );
+        })}
+      </div>
+
+      {/* Fixed event (read-only) */}
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          gap: "var(--s-2)",
+          padding: "var(--s-2) var(--s-3)",
+          borderRadius: "var(--r-md)",
+          background: "var(--surface-2)",
+          font: "var(--t-meta)",
+          color: "var(--text-2, var(--text))",
+        }}
+      >
+        <Icon name="lock" />
+        <span>
+          Runs when an account {eventPhrase(playbook)}.
+        </span>
+      </div>
+
+      {/* Narrow it (refiner) */}
+      {expanded ? (
+        <div style={{ display: "flex", flexDirection: "column", gap: "var(--s-3)" }}>
+          <div style={{ display: "flex", flexDirection: "column", gap: "var(--s-2)" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: "var(--s-2)" }}>
+              <Icon name="sparkles" />
+              <span style={{ font: "var(--t-meta)", fontWeight: 600, color: "var(--text)" }}>
+                Narrow it
+              </span>
+              <Badge variant="neutral" dot={false}>simulated · plain-language wiring lands later</Badge>
+            </div>
+
+            <div style={{ display: "flex", gap: "var(--s-2)" }}>
+              <input
+                value={draft}
+                onChange={(e) => setDraft(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    e.preventDefault();
+                    submitDraft();
+                  }
+                }}
+                placeholder="Tell GoCSM who this should run for…"
+                style={{
+                  flex: 1,
+                  font: "var(--t-body-sm)",
+                  color: "var(--text)",
+                  background: "var(--surface)",
+                  border: "1px solid var(--border)",
+                  borderRadius: "var(--r-md)",
+                  padding: "var(--s-2) var(--s-3)",
+                }}
+              />
+              <Button variant="ghost" size="sm" onClick={submitDraft} icon={<Icon name="plus" />}>
+                Add
+              </Button>
+            </div>
+
+            <div style={{ display: "flex", flexWrap: "wrap", gap: "var(--s-2)" }}>
+              {SUGGESTED.map((s) => (
+                <button
+                  key={s.label}
+                  onClick={() => addCond(s)}
+                  style={{
+                    cursor: "pointer",
+                    border: "1px dashed var(--border)",
+                    background: "transparent",
+                    color: "var(--text-2, var(--text))",
+                    padding: "4px 10px",
+                    borderRadius: "999px",
+                    font: "var(--t-meta)",
+                  }}
+                >
+                  + {s.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Grouped chips */}
+          {(["audience", "signal", "notify"] as const).map((g) => {
+            const list = grouped(g);
+            if (list.length === 0) return null;
+            return (
+              <div key={g} style={{ display: "flex", flexDirection: "column", gap: "var(--s-2)" }}>
+                <span style={{ font: "var(--t-meta)", textTransform: "uppercase", letterSpacing: "0.04em", color: "var(--text-3, var(--text))" }}>
+                  {GROUP_LABEL[g]}
+                </span>
+                <div style={{ display: "flex", flexWrap: "wrap", gap: "var(--s-2)" }}>
+                  {list.map((c) => (
+                    <ChipBadge key={c.id} cond={c} onRemove={() => removeCond(c.id)} />
+                  ))}
+                </div>
+              </div>
+            );
+          })}
+
+          {/* Guardrails */}
+          <div style={{ display: "flex", flexDirection: "column", gap: "var(--s-2)" }}>
+            <span style={{ font: "var(--t-meta)", textTransform: "uppercase", letterSpacing: "0.04em", color: "var(--text-3, var(--text))" }}>
+              Guardrails
+            </span>
+
+            <label style={{ display: "flex", alignItems: "center", gap: "var(--s-2)", font: "var(--t-body-sm)", color: "var(--text-2, var(--text))" }}>
+              Run at most once every
+              <input
+                type="number"
+                min={1}
+                value={freqDays}
+                onChange={(e) => setFreqDays(Math.max(1, parseInt(e.target.value || "1", 10)))}
+                style={{
+                  width: 64,
+                  font: "var(--t-body-sm)",
+                  color: "var(--text)",
+                  background: "var(--surface)",
+                  border: "1px solid var(--border)",
+                  borderRadius: "var(--r-sm)",
+                  padding: "2px 6px",
+                  textAlign: "right",
+                }}
+              />
+              days per account
+            </label>
+
+            <div style={{ display: "flex", alignItems: "center", gap: "var(--s-2)" }}>
+              <Toggle on={true} onChange={() => {}} />
+              <span style={{ font: "var(--t-body-sm)", color: "var(--text-2, var(--text))" }}>
+                Client emails always ask for your OK
+              </span>
+              <Badge variant="neutral" dot={false}>locked</Badge>
+            </div>
+
+            <div style={{ display: "flex", alignItems: "center", gap: "var(--s-2)" }}>
+              <Toggle on={skipOpenTask} onChange={setSkipOpenTask} />
+              <span style={{ font: "var(--t-body-sm)", color: "var(--text-2, var(--text))" }}>
+                Skip accounts with an open task
+              </span>
+            </div>
+          </div>
+        </div>
+      ) : (
+        <p style={{ margin: 0, font: "var(--t-meta)", color: "var(--text-3, var(--text))" }}>
+          GoCSM picked sensible defaults. Switch to <em>Review each piece</em> to narrow it down.
+        </p>
+      )}
+
+      {/* Preview who this affects */}
+      <div style={{ display: "flex", flexDirection: "column", gap: "var(--s-2)" }}>
+        <Button
+          variant="ghost"
+          size="sm"
+          icon={<Icon name={showPreview ? "chevron-up" : "eye"} />}
+          onClick={() => setShowPreview((s) => !s)}
+        >
+          {showPreview ? "Hide preview" : `Preview who this affects (${matches.length})`}
+        </Button>
+        {showPreview ? (
+          <ul style={{ listStyle: "none", padding: 0, margin: 0, display: "flex", flexDirection: "column", gap: 6 }}>
+            {matches.length === 0 ? (
+              <li style={{ font: "var(--t-meta)", color: "var(--text-3, var(--text))" }}>
+                No accounts match right now.
+              </li>
+            ) : (
+              matches.slice(0, 8).map((a) => (
+                <li
+                  key={a.identity.id}
+                  style={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                    gap: "var(--s-2)",
+                    padding: "6px 10px",
+                    borderRadius: "var(--r-sm)",
+                    background: "var(--surface-2)",
+                    font: "var(--t-body-sm)",
+                  }}
+                >
+                  <span style={{ color: "var(--text)" }}>{a.identity.name}</span>
+                  <span style={{ color: "var(--text-3, var(--text))" }}>
+                    <Mono>${a.revenue.mrr}</Mono> · {a.health.band}
+                  </span>
+                </li>
+              ))
+            )}
+            {matches.length > 8 ? (
+              <li style={{ font: "var(--t-meta)", color: "var(--text-3, var(--text))" }}>
+                +{matches.length - 8} more
+              </li>
+            ) : null}
+          </ul>
+        ) : null}
+      </div>
+    </div>
   );
 }
