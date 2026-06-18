@@ -602,9 +602,9 @@ export default function TodayPage() {
       <ReassuranceLine onOpenAccount={(id) => navigate(`/accounts/${id}`)} />
 
 
-      {/* 2 — Act by customer */}
+      {/* 3 — Needs you */}
       <section
-        aria-label="Act by customer"
+        aria-label="Needs you"
         id="urgency-queue"
         style={{ display: "flex", flexDirection: "column", gap: "var(--s-3)" }}
       >
@@ -625,10 +625,10 @@ export default function TodayPage() {
           >
             <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
               <h2 style={{ font: "var(--t-h3)", margin: 0, color: "var(--text)", fontWeight: 600 }}>
-                Act by customer
+                Needs you
               </h2>
               <p style={{ font: "var(--t-body-sm)", color: "var(--text-2, var(--text))", margin: 0 }}>
-                Account by account, most urgent first.
+                Accounts where a human is still required — most urgent first.
               </p>
             </div>
             <span
