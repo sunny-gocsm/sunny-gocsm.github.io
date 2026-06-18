@@ -1438,3 +1438,115 @@ function Step2Actions({
     </div>
   );
 }
+
+// ============================================================
+// Step 3 — "Publish" (summary + reassurance)
+// ============================================================
+
+function Step3Summary({
+  ruleSentence,
+  ruleCount,
+  enabledLabels,
+}: {
+  ruleSentence: string;
+  ruleCount: number;
+  enabledLabels: string[];
+}) {
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: "var(--s-3)" }}>
+      <p style={{ margin: 0, font: "var(--t-body)", color: "var(--text-2, var(--text))" }}>
+        Quick recap before you publish.
+      </p>
+
+      {/* Rule */}
+      <div
+        style={{
+          display: "flex",
+          flexDirection: "column",
+          gap: 4,
+          padding: "var(--s-3)",
+          borderRadius: "var(--r-md)",
+          background: "var(--surface-2)",
+        }}
+      >
+        <span
+          style={{
+            font: "var(--t-meta)",
+            textTransform: "uppercase",
+            letterSpacing: "0.04em",
+            color: "var(--text-3, var(--text))",
+          }}
+        >
+          The rule
+        </span>
+        <span style={{ font: "var(--t-body)", color: "var(--text)" }}>
+          {ruleSentence || "Runs automatically when the play's signal appears."}
+        </span>
+        <span style={{ font: "var(--t-meta)", color: "var(--text-3, var(--text))" }}>
+          <Mono>{ruleCount}</Mono> account{ruleCount === 1 ? "" : "s"} match right now.
+        </span>
+      </div>
+
+      {/* Steps you turned on */}
+      <div
+        style={{
+          display: "flex",
+          flexDirection: "column",
+          gap: "var(--s-2)",
+          padding: "var(--s-3)",
+          borderRadius: "var(--r-md)",
+          background: "var(--surface-2)",
+        }}
+      >
+        <span
+          style={{
+            font: "var(--t-meta)",
+            textTransform: "uppercase",
+            letterSpacing: "0.04em",
+            color: "var(--text-3, var(--text))",
+          }}
+        >
+          Steps you turned on
+        </span>
+        {enabledLabels.length === 0 ? (
+          <span style={{ font: "var(--t-body-sm)", color: "var(--text-2, var(--text))" }}>
+            Nothing enabled yet — go back to Step 2 to switch on at least one step.
+          </span>
+        ) : (
+          <ul style={{ listStyle: "none", padding: 0, margin: 0, display: "flex", flexDirection: "column", gap: 4 }}>
+            {enabledLabels.map((l, i) => (
+              <li
+                key={i}
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "var(--s-2)",
+                  font: "var(--t-body-sm)",
+                  color: "var(--text)",
+                }}
+              >
+                <Icon name="check" />
+                <span>{l}</span>
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
+
+      {/* Reassurance */}
+      <p style={{ margin: 0, font: "var(--t-meta)", color: "var(--text-2, var(--text))" }}>
+        Client emails still ask for your OK · reversible · change or pause anytime in Playbooks.
+      </p>
+      <p
+        style={{
+          margin: 0,
+          font: "var(--t-meta)",
+          color: "var(--text-3, var(--text))",
+          fontStyle: "italic",
+        }}
+      >
+        In production this publishes the workflow in HighLevel.
+      </p>
+    </div>
+  );
+}
