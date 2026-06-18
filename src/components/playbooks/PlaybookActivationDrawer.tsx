@@ -155,6 +155,7 @@ export function PlaybookActivationDrawer({ open, scope, accounts, onClose }: Pro
     setPreviewOpenFor(null);
     setPreviewDraft("");
     setAutopilotChoice("pending");
+    setAutopilotSetupStep(0);
   };
   const close = () => {
     reset();
