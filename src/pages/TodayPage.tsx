@@ -710,7 +710,7 @@ export default function TodayPage() {
           }
           trailing={<LiveStatus state="fresh" label="Synced moments ago" />}
           kpis={[
-            { label: "On the board", value: <Mono>{activeQueue.length}</Mono> },
+            { label: "Needs you", value: <Mono>{activeNeeds.length}</Mono> },
             { label: "MRR at risk", value: <Mono>{fmtMoney(rollup.mrrAtRisk)}</Mono> },
             { label: "Renewals · 30d", value: <Mono>{renewalsWindow(0, 30).length}</Mono> },
           ]}
