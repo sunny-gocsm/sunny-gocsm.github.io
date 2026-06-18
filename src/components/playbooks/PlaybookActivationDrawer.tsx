@@ -93,8 +93,9 @@ function plainTrigger(p: Playbook): string {
   return t;
 }
 
-export function PlaybookActivationDrawer({ open, scope, accounts, onClose }: Props) {
-  const [step, setStep] = useState<Step>("pick");
+export function PlaybookActivationDrawer({ open, scope, accounts, onClose, initial }: Props) {
+  const directAutopilot = initial?.mode === "autopilot";
+  const [step, setStep] = useState<Step>(directAutopilot ? "done" : "pick");
   const [selectedId, setSelectedId] = useState<string>("");
   const [showAlternates, setShowAlternates] = useState(false);
   const [stepToggles, setStepToggles] = useState<Record<string, boolean>>({});
@@ -102,7 +103,9 @@ export function PlaybookActivationDrawer({ open, scope, accounts, onClose }: Pro
   const [previewDraft, setPreviewDraft] = useState<string>("");
   const [autopilotChoice, setAutopilotChoice] = useState<"pending" | "on" | "no">("pending");
   // 0 = not in setup; 1..3 = stepped autopilot setup inside the drawer
-  const [autopilotSetupStep, setAutopilotSetupStep] = useState<0 | 1 | 2 | 3>(0);
+  const [autopilotSetupStep, setAutopilotSetupStep] = useState<0 | 1 | 2 | 3>(
+    directAutopilot ? (initial!.step as 1 | 2 | 3) : 0,
+  );
 
   // Resolve the effective playbook
   const playbookId = useMemo(() => {
