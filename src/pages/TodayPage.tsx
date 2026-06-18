@@ -597,51 +597,10 @@ export default function TodayPage() {
             { label: "Renewals · 30d", value: <Mono>{renewalsWindow(0, 30).length}</Mono> },
           ]}
         />
-        {queue[0] ? (
-          <div
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: "var(--s-3)",
-              padding: "var(--s-2) var(--s-3)",
-              borderRadius: "var(--r-md)",
-              background: "var(--surface)",
-              border: "1px solid var(--border)",
-              font: "var(--t-body-sm)",
-              color: "var(--text)",
-            }}
-          >
-            <span
-              aria-hidden
-              style={{
-                width: 8,
-                height: 8,
-                borderRadius: 999,
-                background:
-                  topTone === "risk"
-                    ? "var(--health-atrisk-strong)"
-                    : topTone === "watch"
-                    ? "var(--health-watch-strong)"
-                    : "var(--pos-7)",
-                flexShrink: 0,
-              }}
-            />
-            <span style={{ flex: 1, minWidth: 0 }}>
-              Highest priority right now: <strong style={{ fontWeight: 600 }}>{queue[0].identity.name}</strong> — {reasonFor(queue[0])}
-            </span>
-            <Button
-              size="sm"
-              variant="primary"
-              icon={<Icon name="arrow-right" />}
-              onClick={() => applyToOne(queue[0])}
-            >
-              Start here
-            </Button>
-          </div>
-        ) : null}
       </section>
 
-      <SinceLastReview onOpenAccount={(id) => navigate(`/accounts/${id}`)} failedAccounts={failed} />
+      <ReassuranceLine onOpenAccount={(id) => navigate(`/accounts/${id}`)} />
+
 
       {/* 2 — Act by customer */}
       <section
