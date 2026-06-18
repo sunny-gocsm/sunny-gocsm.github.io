@@ -471,24 +471,23 @@ export function PlaybookActivationDrawer({ open, scope, accounts, onClose, initi
         {/* ============= STEP 3 + 4 — DONE + AUTOPILOT ============= */}
         {step === "done" && playbook ? (
           <>
-            <Card
-              padded
-              className="accent-t pos"
-            >
-              <div style={{ display: "flex", flexDirection: "column", gap: "var(--s-2)" }}>
-                <div style={{ display: "flex", alignItems: "center", gap: "var(--s-2)" }}>
-                  <span className="icon-chip pos" aria-hidden>
-                    <Icon name="check-circle" />
+            {!directAutopilot ? (
+              <Card padded className="accent-t pos">
+                <div style={{ display: "flex", flexDirection: "column", gap: "var(--s-2)" }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: "var(--s-2)" }}>
+                    <span className="icon-chip pos" aria-hidden>
+                      <Icon name="check-circle" />
+                    </span>
+                    <strong style={{ font: "var(--t-h4, var(--t-body))", fontWeight: 600 }}>
+                      {playbook.title} is running{batchSuffix}.
+                    </strong>
+                  </div>
+                  <span style={{ font: "var(--t-body-sm)", color: "var(--text-2, var(--text))" }}>
+                    We'll report back with what changed within 24h. The originating item is cleared from Today.
                   </span>
-                  <strong style={{ font: "var(--t-h4, var(--t-body))", fontWeight: 600 }}>
-                    {playbook.title} is running{batchSuffix}.
-                  </strong>
                 </div>
-                <span style={{ font: "var(--t-body-sm)", color: "var(--text-2, var(--text))" }}>
-                  We'll report back with what changed within 24h. The originating item is cleared from Today.
-                </span>
-              </div>
-            </Card>
+              </Card>
+            ) : null}
 
             {autopilotChoice === "pending" && autopilotSetupStep === 0 ? (
               <Card padded className="accent-t info">
