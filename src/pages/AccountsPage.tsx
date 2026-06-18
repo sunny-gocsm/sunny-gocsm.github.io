@@ -816,7 +816,7 @@ export default function AccountsPage() {
         color: "var(--text)",
       }}
     >
-      <div style={{ marginBottom: "var(--s-6)" }}>
+      <div style={{ marginBottom: "var(--s-6)", display: "flex", flexDirection: "column", gap: "var(--s-5)" }}>
         <PageRibbon
           title="Accounts"
           description="Every sub-account in your book. Pick a View, multi-select, and apply a Playbook."
@@ -826,6 +826,9 @@ export default function AccountsPage() {
             { label: "Sort", value: "by urgency" },
           ]}
         />
+
+        <PortfolioStatus />
+        <TeamPulseSection />
       </div>
 
       <DataTable<Account>
