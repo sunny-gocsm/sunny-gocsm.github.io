@@ -205,6 +205,11 @@ const playbookSeeds: PlaybookSeed[] = [
   },
 ];
 
+export const playbooks: Playbook[] = playbookSeeds.map((p) => ({
+  ...p,
+  videoUrl: PLAY_VIDEOS[p.id] ?? PLACEHOLDER_VIDEO,
+}));
+
 // ----- Selectors -----
 
 export const matchesToday = (p: Playbook): Account[] =>
