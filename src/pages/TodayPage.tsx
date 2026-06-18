@@ -369,14 +369,135 @@ export default function TodayPage() {
     return parts.join(" · ") || "Quiet night — nothing urgent.";
   }, [lostSticky.length, failed.length, renewingAtRisk.length]);
 
+  // ---- Needs you: prioritized list of human-required actions ----
+  type NeedsYouMode = "play" | "human";
+  interface NeedsYouItem {
+    id: string;
+    account: Account;
+    problem: string;
+    urgencyLabel?: string;
+    urgencyHot?: boolean;
+    helper: string;
+    mode: NeedsYouMode;
+    actionLabel: string;
+    playId?: string;
+  }
+
+  const needsYouAll: NeedsYouItem[] = useMemo(() => {
+    const failedIds = new Set(failed.map((a) => a.identity.id));
+    const lostIds = new Set(lostSticky.map((a) => a.identity.id));
+    const stalledIds = new Set(stalled.map((a) => a.identity.id));
+    const goneQuietIds = new Set(goneQuiet.map((a) => a.identity.id));
+
+    return queue.map<NeedsYouItem>((a) => {
+      const days = daysUntil(a.revenue.renewalDate);
+      const urgencyHot = days >= 0 && days <= 7;
+      const urgencyLabel =
+        days >= 0 ? `Renews in ${days} ${days === 1 ? "day" : "days"}` : `${Math.abs(days)}d overdue`;
+      const problem = reasonFor(a);
+
+      // Failed payment → exhausted automation, needs a call
+      if (failedIds.has(a.identity.id)) {
+        const attempts = a.revenue.paymentAttempts.filter((p) => p.status === "failed").length || 3;
+        return {
+          id: a.identity.id,
+          account: a,
+          problem,
+          urgencyLabel,
+          urgencyHot,
+          helper: `GoCSM tried dunning (${attempts} retries) — it needs you now.`,
+          mode: "human",
+          actionLabel: `Call ${a.identity.name}`,
+        };
+      }
+
+      // Lost sticky setup → fixable with a save play
+      if (lostIds.has(a.identity.id)) {
+        return {
+          id: a.identity.id,
+          account: a,
+          problem,
+          urgencyLabel,
+          urgencyHot,
+          helper: "GoCSM suggests: Save the setup",
+          mode: "play",
+          actionLabel: "Win them back",
+          playId: "pb-save-domain",
+        };
+      }
+
+      // Onboarding stalled → unblock
+      if (stalledIds.has(a.identity.id)) {
+        return {
+          id: a.identity.id,
+          account: a,
+          problem: `Stuck on "${a.onboarding.current_step}" for ${a.onboarding.days_on_current_step}d`,
+          urgencyLabel,
+          urgencyHot,
+          helper: "GoCSM suggests: Unblock onboarding",
+          mode: "play",
+          actionLabel: "Unblock setup",
+          playId: "pb-onboarding-stalled",
+        };
+      }
+
+      // Renewal near + at risk → call
+      if (urgencyHot && a.health.band === "atrisk") {
+        return {
+          id: a.identity.id,
+          account: a,
+          problem,
+          urgencyLabel,
+          urgencyHot,
+          helper: "GoCSM tried reminders — it needs you now.",
+          mode: "human",
+          actionLabel: `Call ${a.identity.name}`,
+        };
+      }
+
+      // Gone quiet → check-in
+      if (goneQuietIds.has(a.identity.id)) {
+        return {
+          id: a.identity.id,
+          account: a,
+          problem,
+          urgencyLabel,
+          urgencyHot,
+          helper: "GoCSM suggests: Send a check-in",
+          mode: "play",
+          actionLabel: "Send a check-in",
+          playId: "pb-no-login",
+        };
+      }
+
+      // Default: a play can still help
+      return {
+        id: a.identity.id,
+        account: a,
+        problem,
+        urgencyLabel,
+        urgencyHot,
+        helper: "GoCSM suggests: Send a check-in",
+        mode: "play",
+        actionLabel: "Send a check-in",
+        playId: "pb-no-login",
+      };
+    });
+  }, [queue, failed, lostSticky, stalled, goneQuiet]);
 
   const [handled, setHandled] = useState<Set<string>>(new Set());
-  const markHandled = (id: string, reason: "applied" | "dismissed") => {
+  const markHandled = (id: string, reason: "applied" | "called" | "dismissed") => {
     setHandled((prev) => new Set(prev).add(id));
-    const acc = queue.find((a) => a.identity.id === id);
+    const item = needsYouAll.find((n) => n.id === id);
+    const title =
+      reason === "applied"
+        ? "Play queued"
+        : reason === "called"
+        ? "Marked as handled"
+        : "Cleared from today";
     toast({
-      title: reason === "applied" ? "Play queued for this account" : "Marked done",
-      description: acc ? `${acc.identity.name} cleared from today.` : undefined,
+      title,
+      description: item ? `${item.account.identity.name} cleared from today.` : undefined,
       action: (
         <ToastAction
           altText="Undo"
@@ -393,12 +514,20 @@ export default function TodayPage() {
       ),
     });
   };
-  const applyToOne = (a: Account) => {
-    openApply([a]);
-    markHandled(a.identity.id, "applied");
+
+  const runPlay = (item: NeedsYouItem) => {
+    openApply([item.account], item.playId);
+    markHandled(item.id, "applied");
   };
-  const activeQueue = queue.filter((a) => !handled.has(a.identity.id));
-  const handledCount = queue.filter((a) => handled.has(a.identity.id)).length;
+  const logHuman = (item: NeedsYouItem) => {
+    markHandled(item.id, "called");
+  };
+
+  const activeNeeds = needsYouAll.filter((n) => !handled.has(n.id));
+  const visibleNeeds = activeNeeds.slice(0, 5);
+  const overflowCount = Math.max(0, activeNeeds.length - visibleNeeds.length);
+  const totalNeeds = needsYouAll.length;
+  const handledCount = needsYouAll.filter((n) => handled.has(n.id)).length;
 
   const initials = (name: string) =>
     name
@@ -418,25 +547,40 @@ export default function TodayPage() {
       ? "var(--health-watch-strong)"
       : "var(--health-atrisk-strong)";
 
-  const renderQueueRow = (a: Account) => {
-    const days = daysUntil(a.revenue.renewalDate);
-    const breach = days >= 0 && days <= 7;
+  const renderNeedsYouRow = (item: NeedsYouItem) => {
+    const a = item.account;
+    const onRowClick = () => navigate(`/accounts/${a.identity.id}`);
+    const stop = (e: React.MouseEvent) => e.stopPropagation();
     return (
-      <div key={a.identity.id} className="queue-row">
+      <div
+        key={item.id}
+        className="queue-row"
+        role="button"
+        tabIndex={0}
+        onClick={onRowClick}
+        onKeyDown={(e) => {
+          if (e.key === "Enter" || e.key === " ") {
+            e.preventDefault();
+            onRowClick();
+          }
+        }}
+        style={{ cursor: "pointer", alignItems: "flex-start", padding: "var(--s-3) var(--s-4)" }}
+      >
         <span
           aria-hidden
           style={{
             display: "inline-flex",
             alignItems: "center",
             justifyContent: "center",
-            width: 28,
-            height: 28,
+            width: 32,
+            height: 32,
             borderRadius: 999,
             background: "var(--surface-2)",
             color: "var(--text-2, var(--text))",
             fontSize: 11,
             fontWeight: 600,
             flexShrink: 0,
+            marginTop: 2,
           }}
         >
           {initials(a.identity.name)}
@@ -450,57 +594,61 @@ export default function TodayPage() {
             borderRadius: 999,
             background: bandColor(a.health.band),
             flexShrink: 0,
+            marginTop: 14,
           }}
         />
-        <div style={{ flex: 1, minWidth: 0, fontSize: 14 }}>
-          <strong style={{ color: "var(--text)", fontWeight: 600 }}>{a.identity.name}</strong>{" "}
-          <span style={{ color: "var(--text-2, var(--text))" }}>· {reasonFor(a)}</span>
+        <div style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", gap: 2 }}>
+          <div style={{ display: "flex", alignItems: "baseline", gap: "var(--s-2)", flexWrap: "wrap" }}>
+            <strong style={{ color: "var(--text)", fontWeight: 600, fontSize: 14 }}>
+              {a.identity.name}
+            </strong>
+            <span style={{ color: "var(--text-2, var(--text))", fontSize: 13 }}>· {item.problem}</span>
+            {item.urgencyLabel ? (
+              <span
+                style={{
+                  fontFamily: "var(--font-mono)",
+                  fontVariantNumeric: "tabular-nums",
+                  fontSize: 11,
+                  fontWeight: 600,
+                  padding: "2px 8px",
+                  borderRadius: 999,
+                  background: item.urgencyHot ? "var(--health-atrisk-soft)" : "var(--surface-2)",
+                  color: item.urgencyHot ? "var(--health-atrisk-strong)" : "var(--text-2, var(--text))",
+                }}
+              >
+                {item.urgencyLabel}
+              </span>
+            ) : null}
+          </div>
+          <span style={{ font: "var(--t-meta)", color: "var(--text-2, var(--text))" }}>
+            {item.helper}
+          </span>
         </div>
-        <span className="queue-impact">{fmtMoney(a.revenue.mrr)}</span>
         <span
-          style={{
-            fontFamily: "var(--font-mono)",
-            fontVariantNumeric: "tabular-nums",
-            fontSize: 11,
-            fontWeight: 600,
-            padding: "3px 8px",
-            borderRadius: 999,
-            background: breach ? "var(--health-atrisk-soft)" : "var(--surface-2)",
-            color: breach ? "var(--health-atrisk-strong)" : "var(--text-2, var(--text))",
-            flexShrink: 0,
-          }}
+          style={{ display: "inline-flex", gap: "var(--s-2)", flexShrink: 0, alignItems: "center" }}
+          onClick={stop}
         >
-          {days >= 0 ? `${days}d to renewal` : `${Math.abs(days)}d overdue`}
-        </span>
-        <span style={{ display: "inline-flex", gap: "var(--s-1)", flexShrink: 0 }}>
           <Button
             size="sm"
             variant="primary"
-            icon={<Icon name="book-open" />}
-            onClick={() => applyToOne(a)}
+            icon={<Icon name={item.mode === "human" ? "phone" : "play"} />}
+            onClick={() => (item.mode === "play" ? runPlay(item) : logHuman(item))}
           >
-            Apply play
-          </Button>
-          <Button
-            size="sm"
-            variant="ghost"
-            onClick={() => navigate(`/accounts/${a.identity.id}`)}
-          >
-            Open
+            {item.actionLabel}
           </Button>
           <Button
             size="sm"
             variant="ghost"
             title="Clear this row from today"
-            icon={<Icon name="check" />}
-            onClick={() => markHandled(a.identity.id, "dismissed")}
+            onClick={() => markHandled(item.id, "dismissed")}
           >
-            Mark done
+            Not now
           </Button>
         </span>
       </div>
     );
   };
+
 
 
 
