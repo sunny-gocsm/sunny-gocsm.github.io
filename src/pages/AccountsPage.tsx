@@ -250,6 +250,134 @@ function adoptionPct(a: Account): number {
   return total ? Math.round((active / total) * 100) : 0;
 }
 
+const fmtMoney = (n: number) => "$" + Math.round(n).toLocaleString();
+
+// ----- Portfolio status (KPI ribbon + band tiles) --------------------------
+
+function PortfolioStatus() {
+  const rollup = agencyRollup();
+  const dist = healthDistribution();
+  const liveCount = rollup.liveAccounts || 1;
+  const renewing30 = renewalsWindow(0, 30);
+  const renewing30AtRisk = renewing30.filter(
+    (a) => a.health.band === "atrisk" || a.health.band === "watch",
+  ).length;
+
+  return (
+    <section
+      aria-label="Portfolio status"
+      style={{ display: "flex", flexDirection: "column", gap: "var(--s-3)" }}
+    >
+      <div
+        style={{
+          display: "grid",
+          gap: "var(--s-3)",
+          gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
+        }}
+      >
+        <MetricCard
+          label="Total MRR"
+          value={<Mono>{fmtMoney(rollup.mrr)}</Mono>}
+          icon={<Icon name="wallet" />}
+          iconTone="pos"
+          delta={<Delta value="+4%" direction="up" />}
+          context="vs last month"
+        />
+        <MetricCard
+          label="MRR at risk"
+          value={<Mono>{fmtMoney(rollup.mrrAtRisk)}</Mono>}
+          icon={<Icon name="alert-triangle" />}
+          iconTone="neg"
+          accent="neg"
+          delta={
+            <Delta
+              value={`${Math.round((rollup.mrrAtRisk / Math.max(1, rollup.mrr)) * 100)}%`}
+              direction="bad-up"
+            />
+          }
+          context="of total MRR"
+        />
+        <MetricCard
+          label="At-risk accounts"
+          value={<Mono>{dist.atrisk}</Mono>}
+          icon={<Icon name="users" />}
+          iconTone="warn"
+          delta={
+            <Delta value={`${Math.round((dist.atrisk / liveCount) * 100)}%`} direction="bad-up" />
+          }
+          context="of the book"
+        />
+        <MetricCard
+          label="Renewals · 30d"
+          value={<Mono>{renewing30.length}</Mono>}
+          icon={<Icon name="calendar-clock" />}
+          iconTone="info"
+          delta={<Delta value={`${renewing30AtRisk} at risk`} direction="flat" />}
+          context="of those renewing"
+        />
+      </div>
+
+      <div
+        style={{
+          display: "grid",
+          gap: "var(--s-3)",
+          gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))",
+        }}
+      >
+        {(["thriving", "healthy", "watch", "atrisk"] as const).map((b) => (
+          <HealthTile
+            key={b}
+            band={b}
+            count={<Mono>{dist[b]}</Mono>}
+            pct={`${Math.round((dist[b] / liveCount) * 100)}%`}
+            label={bandLabel(b)}
+          />
+        ))}
+      </div>
+    </section>
+  );
+}
+
+// ----- Team pulse (only when more than one member) -------------------------
+
+const TEAM_MEMBERS = [
+  {
+    name: "Sinan",
+    stats: [
+      { v: 4, l: "open" },
+      { v: 1, l: "due", tone: "warn" },
+    ],
+  },
+  {
+    name: "Maya",
+    stats: [
+      { v: 3, l: "open" },
+      { v: 2, l: "breach", tone: "neg" },
+    ],
+  },
+  {
+    name: "Auto",
+    stats: [{ v: 6, l: "handled overnight", tone: "pos" }],
+  },
+];
+
+function TeamPulseSection() {
+  if (TEAM_MEMBERS.length <= 1) return null;
+  return (
+    <section aria-label="Team pulse">
+      <TeamPulseStrip
+        title="Team pulse"
+        sub="What humans are carrying today"
+        load={{ open: 7, due: 3, breach: 2 }}
+        members={TEAM_MEMBERS}
+        escalations={[
+          { text: "Modern Physio — renewal call needs an owner (Sinan)" },
+        ]}
+      />
+    </section>
+  );
+}
+
 // ----- Page ----------------------------------------------------------------
 
 export default function AccountsPage() {
