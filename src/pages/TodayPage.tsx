@@ -5,10 +5,6 @@ import {
   Button,
   Icon,
   Mono,
-  MetricCard,
-  Delta,
-  HealthTile,
-  TeamPulseStrip,
   LiveStatus,
 } from "@/gocsm-ds";
 import { useToast } from "@/hooks/use-toast";
@@ -22,7 +18,6 @@ import {
   stalledOnboarding,
   dormantGrowth,
   agencyRollup,
-  healthDistribution,
   signalsForAccount,
   daysUntil,
   bandLabel,
@@ -155,10 +150,8 @@ function CohortCard({
 }
 
 // ----------------------------------------------------------------------------
-// Since your last review (recap)
+// Reassurance line (collapsed recap)
 // ----------------------------------------------------------------------------
-
-type RecapTag = "Autopilot" | "You approved" | "Needs you";
 
 interface RecapItem {
   id: string;
@@ -166,7 +159,7 @@ interface RecapItem {
   accountName: string;
   did: string;
   outcome: string;
-  tag: RecapTag;
+  tag: "Autopilot" | "You approved";
   amount?: number;
 }
 
@@ -174,38 +167,24 @@ function fmtMoneySmall(n: number) {
   return "$" + Math.round(n).toLocaleString();
 }
 
-function SinceLastReview({
+function ReassuranceLine({
   onOpenAccount,
-  failedAccounts,
 }: {
   onOpenAccount: (id: string) => void;
-  failedAccounts: Account[];
 }) {
-  const [open, setOpen] = useState(true);
+  const [open, setOpen] = useState(false);
 
   const recent = allOutcomes.filter((o) => o.daysAgo <= 7);
-
   const autopilot = recent.filter((o) => o.attribution === "playbook-solo");
   const approved = recent.filter((o) => o.attribution === "playbook-assist");
 
-  const autopilotAmount = autopilot.reduce((s, o) => s + (o.amount ?? 0), 0);
-  const approvedAmount = approved.reduce((s, o) => s + (o.amount ?? 0), 0);
+  const totalHandled = autopilot.length + approved.length;
+  const protectedAmount =
+    autopilot.reduce((s, o) => s + (o.amount ?? 0), 0) +
+    approved.reduce((s, o) => s + (o.amount ?? 0), 0);
 
-  // "Needs you anyway" — plays that ran but the situation is still open.
-  // Use existing failed-payment accounts as the source of truth.
-  const needsYou: RecapItem[] = failedAccounts.slice(0, 2).map((a) => ({
-    id: `need-${a.identity.id}`,
-    accountId: a.identity.id,
-    accountName: a.identity.name,
-    did: "Dunning ran (retry sequence sent)",
-    outcome: "payment still failed — needs your call",
-    tag: "Needs you",
-    amount: a.revenue.mrr,
-  }));
-  const needsYouAmount = needsYou.reduce((s, i) => s + (i.amount ?? 0), 0);
-
-  const recapItems: RecapItem[] = [
-    ...autopilot.slice(0, 2).map<RecapItem>((o) => {
+  const items: RecapItem[] = [
+    ...autopilot.slice(0, 3).map<RecapItem>((o) => {
       const acc = outcomeAccount(o);
       return {
         id: o.id,
@@ -220,7 +199,7 @@ function SinceLastReview({
         amount: o.amount,
       };
     }),
-    ...approved.slice(0, 2).map<RecapItem>((o) => {
+    ...approved.slice(0, 3).map<RecapItem>((o) => {
       const acc = outcomeAccount(o);
       return {
         id: o.id,
@@ -235,51 +214,13 @@ function SinceLastReview({
         amount: o.amount,
       };
     }),
-    ...needsYou,
-  ].slice(0, 5);
-
-  const tiles = [
-    {
-      key: "auto",
-      icon: "zap",
-      tone: "pos" as const,
-      label: "Handled on autopilot",
-      count: autopilot.length,
-      sub:
-        autopilotAmount > 0
-          ? `${fmtMoneySmall(autopilotAmount)} recovered, no human touch`
-          : "Resolved without a human touch",
-    },
-    {
-      key: "approved",
-      icon: "check-circle",
-      tone: "info" as const,
-      label: "You approved",
-      count: approved.length,
-      sub:
-        approvedAmount > 0
-          ? `${fmtMoneySmall(approvedAmount)} saved with your OK`
-          : "Drafts sent after your OK",
-    },
-    {
-      key: "needs",
-      icon: "alert-triangle",
-      tone: "warn" as const,
-      label: "Needed you anyway",
-      count: needsYou.length,
-      sub:
-        needsYouAmount > 0
-          ? `${fmtMoneySmall(needsYouAmount)} of MRR still open`
-          : "Still open — your call",
-    },
   ];
 
-  const tagStyle = (tag: RecapTag): React.CSSProperties => {
-    const map: Record<RecapTag, { bg: string; fg: string }> = {
+  const tagStyle = (tag: RecapItem["tag"]): React.CSSProperties => {
+    const map = {
       Autopilot: { bg: "var(--pos-soft)", fg: "var(--pos-7)" },
       "You approved": { bg: "var(--info-soft, var(--blue-2))", fg: "var(--info-7, var(--text))" },
-      "Needs you": { bg: "var(--warn-soft, var(--health-watch-soft))", fg: "var(--warn-7, var(--health-watch-strong))" },
-    };
+    } as const;
     const c = map[tag];
     return {
       font: "var(--t-meta)",
@@ -293,136 +234,88 @@ function SinceLastReview({
   };
 
   return (
-    <section
-      aria-label="Since your last review"
-      style={{ display: "flex", flexDirection: "column", gap: "var(--s-3)" }}
-    >
-      <header
+    <Card padded>
+      <div
         style={{
           display: "flex",
-          alignItems: "baseline",
-          justifyContent: "space-between",
+          alignItems: "center",
           gap: "var(--s-3)",
+          flexWrap: "wrap",
         }}
       >
-        <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
-          <h2 style={{ font: "var(--t-h3)", margin: 0, color: "var(--text)", fontWeight: 600 }}>
-            Since your last review
-          </h2>
-          <p style={{ font: "var(--t-body-sm)", color: "var(--text-2, var(--text))", margin: 0 }}>
-            What GoCSM delivered in the last 7 days — and where you were still needed.
-          </p>
-        </div>
+        <span className="icon-chip pos" aria-hidden>
+          <Icon name="shield-check" />
+        </span>
+        <span style={{ flex: 1, minWidth: 0, font: "var(--t-body)", color: "var(--text)" }}>
+          GoCSM handled <strong style={{ fontWeight: 600 }}><Mono>{totalHandled}</Mono> things</strong> overnight and protected{" "}
+          <strong style={{ fontWeight: 600 }}><Mono>{fmtMoneySmall(protectedAmount)}</Mono></strong> this week.
+        </span>
         <Button
           variant="ghost"
           size="sm"
-          icon={<Icon name={open ? "chevron-up" : "chevron-down"} />}
+          icon={<Icon name={open ? "chevron-up" : "arrow-right"} />}
           onClick={() => setOpen((o) => !o)}
         >
-          {open ? "Collapse" : "Expand"}
+          {open ? "Hide" : "See what it did"}
         </Button>
-      </header>
+      </div>
 
-      <Card padded>
-        <div
-          style={{
-            display: "grid",
-            gap: "var(--s-3)",
-            gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
-          }}
-        >
-          {tiles.map((t) => (
-            <div
-              key={t.key}
-              style={{
-                display: "flex",
-                gap: "var(--s-3)",
-                alignItems: "flex-start",
-                padding: "var(--s-3)",
-                borderRadius: "var(--r-md)",
-                background: "var(--surface-2)",
-              }}
-            >
-              <span className={`icon-chip ${t.tone}`} aria-hidden>
-                <Icon name={t.icon} />
-              </span>
-              <div style={{ display: "flex", flexDirection: "column", gap: 2, minWidth: 0 }}>
-                <span style={{ font: "var(--t-meta)", color: "var(--text-2, var(--text))", textTransform: "uppercase", letterSpacing: "0.04em" }}>
-                  {t.label}
-                </span>
-                <span style={{ font: "var(--t-h3)", color: "var(--text)", fontWeight: 600, lineHeight: 1.1 }}>
-                  <Mono>{t.count}</Mono>
-                </span>
-                <span style={{ font: "var(--t-body-sm)", color: "var(--text-2, var(--text))" }}>
-                  {t.sub}
-                </span>
-              </div>
-            </div>
-          ))}
-        </div>
-
-        {open ? (
-          <div style={{ marginTop: "var(--s-4)", display: "flex", flexDirection: "column", gap: "var(--s-2)" }}>
-            {recapItems.length === 0 ? (
-              <p style={{ font: "var(--t-body)", color: "var(--text-2, var(--text))", margin: 0 }}>
-                Quiet week — nothing verified yet. We'll log wins here as downstream signals confirm them.
-              </p>
-            ) : (
-              recapItems.map((item) => {
-                const isNeedsYou = item.tag === "Needs you";
-                return (
-                  <div
-                    key={item.id}
-                    style={{
-                      display: "flex",
-                      gap: "var(--s-3)",
-                      alignItems: "flex-start",
-                      padding: "var(--s-3)",
-                      borderRadius: "var(--r-md)",
-                      background: isNeedsYou ? "var(--warn-soft, var(--health-watch-soft))" : "var(--surface)",
-                      borderLeft: isNeedsYou
-                        ? "3px solid var(--warn-7, var(--health-watch-strong))"
-                        : item.tag === "Autopilot"
-                        ? "3px solid var(--pos-7)"
-                        : "3px solid var(--info-7, var(--blue-7, var(--text-2)))",
-                    }}
-                  >
-                    <div style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", gap: 2 }}>
-                      <div style={{ display: "flex", alignItems: "center", gap: "var(--s-2)", flexWrap: "wrap" }}>
-                        <strong style={{ color: "var(--text)", fontWeight: 600 }}>{item.accountName}</strong>
-                        <span style={tagStyle(item.tag)}>{item.tag}</span>
-                      </div>
-                      <span style={{ font: "var(--t-body-sm)", color: "var(--text-2, var(--text))" }}>
-                        GoCSM: {item.did} — <span style={{ color: "var(--text)" }}>{item.outcome}</span>
-                      </span>
-                    </div>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      icon={<Icon name="arrow-right" />}
-                      onClick={() => onOpenAccount(item.accountId)}
-                    >
-                      See log
-                    </Button>
-                  </div>
-                );
-              })
-            )}
-
-            <p
-              style={{
-                margin: "var(--s-2) 0 0",
-                font: "var(--t-meta)",
-                color: "var(--text-2, var(--text))",
-                fontStyle: "italic",
-              }}
-            >
-              Wins are only counted when a downstream signal confirmed the change.
+      {open ? (
+        <div style={{ marginTop: "var(--s-4)", display: "flex", flexDirection: "column", gap: "var(--s-2)" }}>
+          {items.length === 0 ? (
+            <p style={{ font: "var(--t-body-sm)", color: "var(--text-2, var(--text))", margin: 0 }}>
+              Quiet week — nothing verified yet. We'll log wins here as downstream signals confirm them.
             </p>
-          </div>
-        ) : null}
-      </Card>
-    </section>
+          ) : (
+            items.map((item) => (
+              <div
+                key={item.id}
+                style={{
+                  display: "flex",
+                  gap: "var(--s-3)",
+                  alignItems: "flex-start",
+                  padding: "var(--s-3)",
+                  borderRadius: "var(--r-md)",
+                  background: "var(--surface)",
+                  borderLeft:
+                    item.tag === "Autopilot"
+                      ? "3px solid var(--pos-7)"
+                      : "3px solid var(--info-7, var(--blue-7, var(--text-2)))",
+                }}
+              >
+                <div style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", gap: 2 }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: "var(--s-2)", flexWrap: "wrap" }}>
+                    <strong style={{ color: "var(--text)", fontWeight: 600 }}>{item.accountName}</strong>
+                    <span style={tagStyle(item.tag)}>{item.tag}</span>
+                  </div>
+                  <span style={{ font: "var(--t-body-sm)", color: "var(--text-2, var(--text))" }}>
+                    GoCSM: {item.did} — <span style={{ color: "var(--text)" }}>{item.outcome}</span>
+                  </span>
+                </div>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  icon={<Icon name="arrow-right" />}
+                  onClick={() => onOpenAccount(item.accountId)}
+                >
+                  See log
+                </Button>
+              </div>
+            ))
+          )}
+          <p
+            style={{
+              margin: "var(--s-2) 0 0",
+              font: "var(--t-meta)",
+              color: "var(--text-2, var(--text))",
+              fontStyle: "italic",
+            }}
+          >
+            Wins are only counted when a downstream signal confirmed the change.
+          </p>
+        </div>
+      ) : null}
+    </Card>
   );
 }
 
@@ -465,8 +358,6 @@ export default function TodayPage() {
   );
 
   const rollup = useMemo(() => agencyRollup(), []);
-  const dist = useMemo(() => healthDistribution(), []);
-  const liveCount = rollup.liveAccounts || 1;
 
   const briefingLine = useMemo(() => {
     const parts: string[] = [];
@@ -478,15 +369,6 @@ export default function TodayPage() {
     return parts.join(" · ") || "Quiet night — nothing urgent.";
   }, [lostSticky.length, failed.length, renewingAtRisk.length]);
 
-  const topReason = queue[0]
-    ? reasonFor(queue[0])
-    : "All clear — nothing urgent on the board.";
-  const topTone: "pos" | "watch" | "risk" =
-    queue[0]?.health.band === "atrisk"
-      ? "risk"
-      : queue[0]
-      ? "watch"
-      : "pos";
 
   const [handled, setHandled] = useState<Set<string>>(new Set());
   const markHandled = (id: string, reason: "applied" | "dismissed") => {
@@ -621,26 +503,8 @@ export default function TodayPage() {
   };
 
 
-  const teamMembers = [
-    {
-      name: "Sinan",
-      stats: [
-        { v: 4, l: "open" },
-        { v: 1, l: "due", tone: "warn" },
-      ],
-    },
-    {
-      name: "Maya",
-      stats: [
-        { v: 3, l: "open" },
-        { v: 2, l: "breach", tone: "neg" },
-      ],
-    },
-    {
-      name: "Auto",
-      stats: [{ v: 6, l: "handled overnight", tone: "pos" }],
-    },
-  ];
+
+
 
   const AiAttribution = (
     <span
@@ -703,55 +567,14 @@ export default function TodayPage() {
             { label: "Renewals · 30d", value: <Mono>{renewalsWindow(0, 30).length}</Mono> },
           ]}
         />
-        {queue[0] ? (
-          <div
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: "var(--s-3)",
-              padding: "var(--s-2) var(--s-3)",
-              borderRadius: "var(--r-md)",
-              background: "var(--surface)",
-              border: "1px solid var(--border)",
-              font: "var(--t-body-sm)",
-              color: "var(--text)",
-            }}
-          >
-            <span
-              aria-hidden
-              style={{
-                width: 8,
-                height: 8,
-                borderRadius: 999,
-                background:
-                  topTone === "risk"
-                    ? "var(--health-atrisk-strong)"
-                    : topTone === "watch"
-                    ? "var(--health-watch-strong)"
-                    : "var(--pos-7)",
-                flexShrink: 0,
-              }}
-            />
-            <span style={{ flex: 1, minWidth: 0 }}>
-              Highest priority right now: <strong style={{ fontWeight: 600 }}>{queue[0].identity.name}</strong> — {reasonFor(queue[0])}
-            </span>
-            <Button
-              size="sm"
-              variant="primary"
-              icon={<Icon name="arrow-right" />}
-              onClick={() => applyToOne(queue[0])}
-            >
-              Start here
-            </Button>
-          </div>
-        ) : null}
       </section>
 
-      <SinceLastReview onOpenAccount={(id) => navigate(`/accounts/${id}`)} failedAccounts={failed} />
+      <ReassuranceLine onOpenAccount={(id) => navigate(`/accounts/${id}`)} />
 
-      {/* 2 — Act by customer */}
+
+      {/* 3 — Needs you */}
       <section
-        aria-label="Act by customer"
+        aria-label="Needs you"
         id="urgency-queue"
         style={{ display: "flex", flexDirection: "column", gap: "var(--s-3)" }}
       >
@@ -772,10 +595,10 @@ export default function TodayPage() {
           >
             <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
               <h2 style={{ font: "var(--t-h3)", margin: 0, color: "var(--text)", fontWeight: 600 }}>
-                Act by customer
+                Needs you
               </h2>
               <p style={{ font: "var(--t-body-sm)", color: "var(--text-2, var(--text))", margin: 0 }}>
-                Account by account, most urgent first.
+                Accounts where a human is still required — most urgent first.
               </p>
             </div>
             <span
@@ -858,11 +681,11 @@ export default function TodayPage() {
 
 
 
-      {/* 3 — Problem cohorts */}
-      <section aria-label="Act by problem" style={{ display: "flex", flexDirection: "column", gap: "var(--s-3)" }}>
+      {/* 4 — Fix a problem */}
+      <section aria-label="Fix a problem" style={{ display: "flex", flexDirection: "column", gap: "var(--s-3)" }}>
         <header style={{ display: "flex", flexDirection: "column", gap: 2 }}>
           <h2 style={{ font: "var(--t-h3)", margin: 0, color: "var(--text)", fontWeight: 600 }}>
-            Act by problem
+            Fix a problem
           </h2>
           <p style={{ font: "var(--t-body-sm)", color: "var(--text-2, var(--text))", margin: 0 }}>
             Grouped by the problem they share.
@@ -966,83 +789,6 @@ export default function TodayPage() {
               />
             ))}
         </div>
-      </section>
-
-      {/* 4 — Money / counts strip */}
-      <section aria-label="Agency rollup" style={{ display: "flex", flexDirection: "column", gap: "var(--s-3)" }}>
-        <h2 style={{ font: "var(--t-h3)", margin: 0, color: "var(--text)", fontWeight: 600 }}>The book, in numbers</h2>
-        <div
-          style={{
-            display: "grid",
-            gap: "var(--s-3)",
-            gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
-          }}
-        >
-          <MetricCard
-            label="Total MRR"
-            value={<Mono>{fmtMoney(rollup.mrr)}</Mono>}
-            icon={<Icon name="wallet" />}
-            iconTone="pos"
-            delta={<Delta value="+4%" direction="up" />}
-            context="vs last month"
-          />
-          <MetricCard
-            label="MRR at risk"
-            value={<Mono>{fmtMoney(rollup.mrrAtRisk)}</Mono>}
-            icon={<Icon name="alert-triangle" />}
-            iconTone="neg"
-            accent="neg"
-            delta={<Delta value={`${Math.round((rollup.mrrAtRisk / Math.max(1, rollup.mrr)) * 100)}%`} direction="bad-up" />}
-            context="of total MRR"
-          />
-          <MetricCard
-            label="At-risk accounts"
-            value={<Mono>{dist.atrisk}</Mono>}
-            icon={<Icon name="users" />}
-            iconTone="warn"
-            delta={<Delta value={`${Math.round((dist.atrisk / liveCount) * 100)}%`} direction="bad-up" />}
-            context="of the book"
-          />
-          <MetricCard
-            label="Renewals · 30d"
-            value={<Mono>{renewalsWindow(0, 30).length}</Mono>}
-            icon={<Icon name="calendar-clock" />}
-            iconTone="info"
-            delta={<Delta value={`${renewingAtRisk.length} at risk`} direction="flat" />}
-            context="of those renewing"
-          />
-        </div>
-
-        <div
-          style={{
-            display: "grid",
-            gap: "var(--s-3)",
-            gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))",
-          }}
-        >
-          {(["thriving", "healthy", "watch", "atrisk"] as const).map((b) => (
-            <HealthTile
-              key={b}
-              band={b}
-              count={<Mono>{dist[b]}</Mono>}
-              pct={`${Math.round((dist[b] / liveCount) * 100)}%`}
-              label={bandLabel(b)}
-            />
-          ))}
-        </div>
-      </section>
-
-      {/* 5 — Team pulse */}
-      <section aria-label="Team pulse">
-        <TeamPulseStrip
-          title="Team pulse"
-          sub="What humans are carrying today"
-          load={{ open: 7, due: 3, breach: 2 }}
-          members={teamMembers}
-          escalations={[
-            { text: "Modern Physio — renewal call needs an owner (Sinan)" },
-          ]}
-        />
       </section>
 
       <PlaybookActivationDrawer
