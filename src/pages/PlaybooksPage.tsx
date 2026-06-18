@@ -36,9 +36,12 @@ import {
   TRIGGER_CLASS_LABEL,
   type TriggerClass,
 } from "@/fixtures/triggers";
-import { useIsAutopilot, autopilotStore } from "@/state/autopilot";
+import { useIsAutopilot, useAutopilotStatus, autopilotStore, type AutopilotStatus } from "@/state/autopilot";
 import { toast } from "sonner";
 import { PlayVideoButton } from "@/components/playbooks/PlayVideoButton";
+import { PlaybookActivationDrawer, type DrawerScope, type DrawerInitial } from "@/components/playbooks/PlaybookActivationDrawer";
+import { outcomesFor } from "@/fixtures/outcomes";
+import { allAccounts } from "@/fixtures";
 
 
 
