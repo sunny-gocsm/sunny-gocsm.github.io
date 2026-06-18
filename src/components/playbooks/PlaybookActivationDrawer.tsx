@@ -637,12 +637,7 @@ function AutopilotSetup({
         <div style={{ display: "flex", flexDirection: "column", gap: "var(--s-3)" }}>
           {stepIndex === 1 ? <Step1Audience playbook={playbook} /> : null}
 
-          {stepIndex === 2 ? (
-            <p style={{ margin: 0, font: "var(--t-body)", color: "var(--text-2, var(--text))" }}>
-              The same steps you just approved will run each time — and GoCSM will still ask before
-              emailing anyone.
-            </p>
-          ) : null}
+          {stepIndex === 2 ? <Step2Actions playbook={playbook} /> : null}
 
           {stepIndex === 3 ? (
             <p style={{ margin: 0, font: "var(--t-body)", color: "var(--text-2, var(--text))" }}>
@@ -680,7 +675,7 @@ function AutopilotSetup({
                 onClick={() => onStepChange((stepIndex + 1) as 1 | 2 | 3)}
                 icon={<Icon name="arrow-right" />}
               >
-                Next
+                {stepIndex === 2 ? "Continue to publish" : "Next"}
               </Button>
             ) : (
               <Button variant="primary" onClick={onPublish} icon={<Icon name="zap" />}>
@@ -1092,6 +1087,284 @@ function Step1Audience({ playbook }: { playbook: Playbook }) {
           </ul>
         ) : null}
       </div>
+    </div>
+  );
+}
+
+// ============================================================
+// Step 2 — "Review the steps" (actions review)
+// ============================================================
+
+type AudienceGroup = "team" | "customer";
+type ActionKind = "notify" | "slack" | "task" | "email" | "sms";
+
+interface ActionItem {
+  id: string;
+  group: AudienceGroup;
+  kind: ActionKind;
+  label: string;
+  coreDefault?: boolean;
+  draft?: string;
+}
+
+interface EscalationItem {
+  id: string;
+  sentence: string;
+}
+
+interface PlayPlan {
+  actions: ActionItem[];
+  escalation?: EscalationItem;
+}
+
+function buildPlayPlan(p: Playbook): PlayPlan {
+  const byId: Record<string, PlayPlan> = {
+    "pb-save-a2p": {
+      actions: [
+        { id: "a-notify", group: "team", kind: "notify", label: "Alert the account owner in GoCSM", coreDefault: true },
+        { id: "a-slack", group: "team", kind: "slack", label: "Post to #cs-saves in Slack" },
+        { id: "a-task", group: "team", kind: "task", label: "Create a re-registration assist task" },
+        {
+          id: "a-email",
+          group: "customer",
+          kind: "email",
+          label: "Email the owner with a re-registration offer",
+          draft:
+            "Hi {first_name} — heads up: your A2P registration just lapsed, which means your SMS will stop sending. We can help you re-register today — want us to take it from here?",
+        },
+        { id: "a-sms", group: "customer", kind: "sms", label: "SMS the owner a short heads-up" },
+      ],
+      escalation: { id: "esc-a2p", sentence: "If still unregistered after 7 days, alert you directly." },
+    },
+    "pb-payment-failed": {
+      actions: [
+        { id: "p-notify", group: "team", kind: "notify", label: "Alert the account owner in GoCSM", coreDefault: true },
+        { id: "p-slack", group: "team", kind: "slack", label: "Post to #cs-billing in Slack" },
+        { id: "p-task", group: "team", kind: "task", label: "Create a dunning follow-up task" },
+        {
+          id: "p-email",
+          group: "customer",
+          kind: "email",
+          label: "Send the dunning email",
+          draft:
+            "Hi {first_name} — your last payment didn't go through. Most of the time it's just an expired card. Update it here and we'll keep everything running.",
+        },
+        { id: "p-sms", group: "customer", kind: "sms", label: "SMS a payment reminder" },
+      ],
+      escalation: { id: "esc-pay", sentence: "If still unpaid after 7 days, alert you." },
+    },
+    "pb-no-login": {
+      actions: [
+        { id: "n-notify", group: "team", kind: "notify", label: "Alert the assigned CSM", coreDefault: true },
+        { id: "n-slack", group: "team", kind: "slack", label: "Post to #cs-watch in Slack" },
+        { id: "n-task", group: "team", kind: "task", label: "Queue a follow-up call task" },
+        {
+          id: "n-email",
+          group: "customer",
+          kind: "email",
+          label: "Send a warm check-in email",
+          draft:
+            "Hi {first_name} — noticed it's been a couple of weeks since you logged in. Anything we can help unblock? Happy to hop on a quick call.",
+        },
+        { id: "n-sms", group: "customer", kind: "sms", label: "SMS a short check-in" },
+      ],
+      escalation: { id: "esc-login", sentence: "If no reply after 5 days, alert you." },
+    },
+  };
+
+  if (byId[p.id]) return byId[p.id];
+
+  return {
+    actions: [
+      { id: "g-notify", group: "team", kind: "notify", label: `Alert the account owner about ${p.title.toLowerCase()}`, coreDefault: true },
+      { id: "g-slack", group: "team", kind: "slack", label: "Post a heads-up to Slack" },
+      { id: "g-task", group: "team", kind: "task", label: "Create a follow-up task" },
+      {
+        id: "g-email",
+        group: "customer",
+        kind: "email",
+        label: "Send a check-in email",
+        draft: `Hi {first_name} — quick note from our team about ${p.problem
+          .replace(/^The /, "the ")
+          .replace(/\.$/, "")}. Want us to help sort it out?`,
+      },
+      { id: "g-sms", group: "customer", kind: "sms", label: "SMS a short follow-up" },
+    ],
+    escalation: { id: "esc-g", sentence: "If nothing changes after 7 days, alert you." },
+  };
+}
+
+const ACTION_ICON: Record<ActionKind, string> = {
+  notify: "bell",
+  slack: "message-square",
+  task: "check-square",
+  email: "mail",
+  sms: "smartphone",
+};
+
+function Step2Actions({ playbook }: { playbook: Playbook }) {
+  const plan = useMemo(() => buildPlayPlan(playbook), [playbook]);
+
+  const [enabled, setEnabled] = useState<Record<string, boolean>>(() => {
+    const init: Record<string, boolean> = {};
+    let coreUsed = false;
+    plan.actions.forEach((a) => {
+      const on = !coreUsed && !!a.coreDefault;
+      if (on) coreUsed = true;
+      init[a.id] = on;
+    });
+    if (plan.escalation) init[plan.escalation.id] = false;
+    return init;
+  });
+
+  const [drafts, setDrafts] = useState<Record<string, string>>(() => {
+    const init: Record<string, string> = {};
+    plan.actions.forEach((a) => {
+      if (a.kind === "email" && a.draft) init[a.id] = a.draft;
+    });
+    return init;
+  });
+
+  const [previewOpen, setPreviewOpen] = useState<Record<string, boolean>>({});
+
+  const setOn = (id: string, on: boolean) => setEnabled((p) => ({ ...p, [id]: on }));
+
+  const groupActions = (g: AudienceGroup) => plan.actions.filter((a) => a.group === g);
+
+  const renderRow = (a: ActionItem) => {
+    const on = !!enabled[a.id];
+    return (
+      <li
+        key={a.id}
+        style={{
+          display: "flex",
+          flexDirection: "column",
+          gap: "var(--s-2)",
+          padding: "var(--s-3)",
+          borderRadius: "var(--r-md)",
+          background: "var(--surface-2)",
+        }}
+      >
+        <div style={{ display: "flex", alignItems: "center", gap: "var(--s-2)" }}>
+          <Toggle on={on} onChange={(next) => setOn(a.id, next)} />
+          <Icon name={ACTION_ICON[a.kind]} />
+          <span style={{ flex: 1, font: "var(--t-body)", color: "var(--text)" }}>{a.label}</span>
+          {a.kind === "email" ? (
+            <Badge variant="warn" dot={false}>needs your OK</Badge>
+          ) : a.group === "team" ? (
+            <Badge variant="neutral" dot={false}>internal</Badge>
+          ) : (
+            <Badge variant="neutral" dot={false}>customer</Badge>
+          )}
+        </div>
+
+        {on && a.kind === "email" ? (
+          <div style={{ display: "flex", flexDirection: "column", gap: "var(--s-2)" }}>
+            <Button
+              variant="ghost"
+              size="sm"
+              icon={<Icon name={previewOpen[a.id] ? "chevron-up" : "eye"} />}
+              onClick={() => setPreviewOpen((p) => ({ ...p, [a.id]: !p[a.id] }))}
+            >
+              {previewOpen[a.id] ? "Hide preview" : "Preview & edit"}
+            </Button>
+            {previewOpen[a.id] ? (
+              <textarea
+                value={drafts[a.id] ?? ""}
+                onChange={(e) => setDrafts((p) => ({ ...p, [a.id]: e.target.value }))}
+                rows={5}
+                style={{
+                  width: "100%",
+                  font: "var(--t-body-sm)",
+                  color: "var(--text)",
+                  background: "var(--surface)",
+                  border: "1px solid var(--border)",
+                  borderRadius: "var(--r-md)",
+                  padding: "var(--s-2)",
+                  resize: "vertical",
+                }}
+              />
+            ) : null}
+          </div>
+        ) : null}
+      </li>
+    );
+  };
+
+  const Section = ({ title, items }: { title: string; items: ActionItem[] }) => (
+    <div style={{ display: "flex", flexDirection: "column", gap: "var(--s-2)" }}>
+      <span
+        style={{
+          font: "var(--t-meta)",
+          textTransform: "uppercase",
+          letterSpacing: "0.04em",
+          color: "var(--text-3, var(--text))",
+        }}
+      >
+        {title}
+      </span>
+      <ul style={{ listStyle: "none", padding: 0, margin: 0, display: "flex", flexDirection: "column", gap: "var(--s-2)" }}>
+        {items.map(renderRow)}
+      </ul>
+    </div>
+  );
+
+  const teamItems = groupActions("team");
+  const customerItems = groupActions("customer");
+
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: "var(--s-4)" }}>
+      <p style={{ margin: 0, font: "var(--t-body-sm)", color: "var(--text-2, var(--text))" }}>
+        Everything's off by default — switch on only what you want to run.
+      </p>
+
+      {teamItems.length > 0 ? <Section title="What your team sees" items={teamItems} /> : null}
+      {customerItems.length > 0 ? <Section title="What the customer gets" items={customerItems} /> : null}
+
+      {plan.escalation ? (
+        <div style={{ display: "flex", flexDirection: "column", gap: "var(--s-2)" }}>
+          <span
+            style={{
+              font: "var(--t-meta)",
+              textTransform: "uppercase",
+              letterSpacing: "0.04em",
+              color: "var(--text-3, var(--text))",
+            }}
+          >
+            If it doesn't work
+          </span>
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: "var(--s-2)",
+              padding: "var(--s-3)",
+              borderRadius: "var(--r-md)",
+              background: "var(--surface-2)",
+            }}
+          >
+            <Toggle
+              on={!!enabled[plan.escalation.id]}
+              onChange={(next) => setOn(plan.escalation!.id, next)}
+            />
+            <span style={{ flex: 1, font: "var(--t-body)", color: "var(--text)" }}>
+              {plan.escalation.sentence}
+            </span>
+          </div>
+        </div>
+      ) : null}
+
+      <p
+        style={{
+          margin: 0,
+          font: "var(--t-meta)",
+          color: "var(--text-2, var(--text))",
+          fontStyle: "italic",
+        }}
+      >
+        This is your automation. The next step opens it in your HighLevel workflow builder to
+        review and publish.
+      </p>
     </div>
   );
 }
