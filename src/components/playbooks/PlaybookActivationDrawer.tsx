@@ -714,7 +714,7 @@ function AutopilotSetup({
               </Button>
             ) : (
               <Button variant="primary" onClick={onPublish} icon={<Icon name="zap" />}>
-                Publish
+                Publish automation
               </Button>
             )}
           </div>
