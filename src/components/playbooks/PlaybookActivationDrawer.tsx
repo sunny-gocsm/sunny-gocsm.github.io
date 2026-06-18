@@ -852,7 +852,13 @@ function ChipBadge({ cond, onRemove }: { cond: Cond; onRemove: () => void }) {
   );
 }
 
-function Step1Audience({ playbook }: { playbook: Playbook }) {
+function Step1Audience({
+  playbook,
+  onRuleChange,
+}: {
+  playbook: Playbook;
+  onRuleChange?: (sentence: string, count: number) => void;
+}) {
   const [mode, setMode] = useState<"auto" | "review">("auto");
   const [conds, setConds] = useState<Cond[]>([]);
   const [draft, setDraft] = useState("");
@@ -865,6 +871,17 @@ function Step1Audience({ playbook }: { playbook: Playbook }) {
     const preds = conds.filter((c) => c.predicate).map((c) => c.predicate!);
     return base.filter((a) => preds.every((p) => p(a)));
   }, [base, conds]);
+
+  const ruleSentence = useMemo(() => {
+    const extras = conds.filter((c) => c.predicate).map((c) => c.label.toLowerCase());
+    const extra = extras.length ? ` (${extras.join(", ")})` : "";
+    return `Runs automatically for accounts that ${eventPhrase(playbook)}${extra}.`;
+  }, [playbook, conds]);
+
+  useEffect(() => {
+    onRuleChange?.(ruleSentence, matches.length);
+  }, [ruleSentence, matches.length, onRuleChange]);
+
 
   const addCond = (c: Omit<Cond, "id">) => {
     setConds((prev) => [...prev, { ...c, id: `c-${Date.now()}-${Math.random().toString(36).slice(2, 6)}` }]);
