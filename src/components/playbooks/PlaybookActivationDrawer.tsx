@@ -26,6 +26,7 @@ import {
 } from "@/fixtures/playbooks";
 import type { Account } from "@/fixtures";
 import { autopilotStore } from "@/state/autopilot";
+import { PlayVideoButton } from "@/components/playbooks/PlayVideoButton";
 
 export type DrawerScope =
   | { kind: "playbook"; playbookId: string }
@@ -647,9 +648,7 @@ function AutopilotSetup({
           <p style={{ margin: 0, font: "var(--t-body)", color: "var(--text-2, var(--text))" }}>
             {playbook.does}
           </p>
-          <Button variant="ghost" size="sm" icon={<Icon name="play" />}>
-            What this play does · Watch (1 min)
-          </Button>
+          <PlayVideoButton playbook={playbook} label="What this play does · Watch (1 min)" />
         </div>
 
         <div style={{ display: "flex", flexDirection: "column", gap: "var(--s-3)" }}>

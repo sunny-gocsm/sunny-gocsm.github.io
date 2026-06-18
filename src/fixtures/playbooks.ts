@@ -32,7 +32,14 @@ export interface Playbook {
   outcome: string;
   /** Pure predicate against the unified fixtures. */
   match: (a: Account) => boolean;
+  /** Short explainer video for this play (~1 min). Placeholder until real video lands. */
+  videoUrl: string;
+  /** Optional poster image shown before the video plays. */
+  videoPoster?: string;
 }
+
+// Single placeholder while real per-play recordings are produced.
+const PLACEHOLDER_VIDEO = "https://www.w3schools.com/html/mov_bbb.mp4";
 
 const STICKY_REVERSE_DAYS = 30;
 const stickyReverseSubjects = (a: Account, subjects: SignalSubject[]): boolean =>
@@ -56,7 +63,23 @@ const usageReverse = (a: Account, subjects: SignalSubject[], windowDays = 60): b
       daysSince(s.detectedAt) <= windowDays,
   );
 
-export const playbooks: Playbook[] = [
+// Per-play video assignments. All point to the placeholder for now;
+// production swaps these for the real recordings keyed by play id.
+const PLAY_VIDEOS: Record<string, string> = {
+  "pb-no-login": PLACEHOLDER_VIDEO,
+  "pb-payment-failed": PLACEHOLDER_VIDEO,
+  "pb-plan-downgrade": PLACEHOLDER_VIDEO,
+  "pb-feature-drop": PLACEHOLDER_VIDEO,
+  "pb-onboarding-stalled": PLACEHOLDER_VIDEO,
+  "pb-save-domain": PLACEHOLDER_VIDEO,
+  "pb-save-integration": PLACEHOLDER_VIDEO,
+  "pb-save-a2p": PLACEHOLDER_VIDEO,
+  "pb-expansion-ready": PLACEHOLDER_VIDEO,
+};
+
+type PlaybookSeed = Omit<Playbook, "videoUrl">;
+
+const playbookSeeds: PlaybookSeed[] = [
   // ----- Retention / lifecycle -----
   {
     id: "pb-no-login",
@@ -181,6 +204,11 @@ export const playbooks: Playbook[] = [
       a.health.band === "thriving",
   },
 ];
+
+export const playbooks: Playbook[] = playbookSeeds.map((p) => ({
+  ...p,
+  videoUrl: PLAY_VIDEOS[p.id] ?? PLACEHOLDER_VIDEO,
+}));
 
 // ----- Selectors -----
 

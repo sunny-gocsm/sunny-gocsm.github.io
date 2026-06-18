@@ -38,6 +38,7 @@ import {
 } from "@/fixtures/triggers";
 import { useIsAutopilot, autopilotStore } from "@/state/autopilot";
 import { toast } from "sonner";
+import { PlayVideoButton } from "@/components/playbooks/PlayVideoButton";
 
 
 
@@ -216,11 +217,14 @@ export default function PlaybooksPage() {
                     paddingInline: "var(--s-2)",
                   }}
                 >
-                  <div style={{ display: "flex", alignItems: "center", gap: "var(--s-2)" }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: "var(--s-2)", flexWrap: "wrap" }}>
                     <Badge variant={STATE_VARIANT[p.state]} dot={p.state === "off"}>
                       {STATE_LABEL[p.state]}
                     </Badge>
                     <AutopilotRowBadge playbookId={p.id} />
+                    <span onClick={(e) => e.stopPropagation()}>
+                      <PlayVideoButton playbook={p} />
+                    </span>
                   </div>
                   {p.count > 0 ? (
                     <span style={{ font: "var(--t-meta)", color: "var(--text-3, var(--text))" }}>
