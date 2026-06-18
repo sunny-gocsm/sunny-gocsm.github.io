@@ -93,6 +93,8 @@ export function PlaybookActivationDrawer({ open, scope, accounts, onClose }: Pro
   const [previewOpenFor, setPreviewOpenFor] = useState<string | null>(null);
   const [previewDraft, setPreviewDraft] = useState<string>("");
   const [autopilotChoice, setAutopilotChoice] = useState<"pending" | "on" | "no">("pending");
+  // 0 = not in setup; 1..3 = stepped autopilot setup inside the drawer
+  const [autopilotSetupStep, setAutopilotSetupStep] = useState<0 | 1 | 2 | 3>(0);
 
   // Resolve the effective playbook
   const playbookId = useMemo(() => {
@@ -153,6 +155,7 @@ export function PlaybookActivationDrawer({ open, scope, accounts, onClose }: Pro
     setPreviewOpenFor(null);
     setPreviewDraft("");
     setAutopilotChoice("pending");
+    setAutopilotSetupStep(0);
   };
   const close = () => {
     reset();
@@ -460,7 +463,7 @@ export function PlaybookActivationDrawer({ open, scope, accounts, onClose }: Pro
               </div>
             </Card>
 
-            {autopilotChoice === "pending" ? (
+            {autopilotChoice === "pending" && autopilotSetupStep === 0 ? (
               <Card padded className="accent-t info">
                 <div style={{ display: "flex", flexDirection: "column", gap: "var(--s-3)" }}>
                   <div style={{ display: "flex", alignItems: "center", gap: "var(--s-2)" }}>
@@ -475,7 +478,7 @@ export function PlaybookActivationDrawer({ open, scope, accounts, onClose }: Pro
                     Whenever {plainTrigger(playbook)}, GoCSM will run <strong>{playbook.title}</strong> for you — and still ask before emailing anyone.
                   </p>
                   <div style={{ display: "flex", gap: "var(--s-2)", alignItems: "center" }}>
-                    <Button variant="primary" onClick={turnOnAutopilot} icon={<Icon name="zap" />}>
+                    <Button variant="primary" onClick={() => setAutopilotSetupStep(1)} icon={<Icon name="zap" />}>
                       Turn on autopilot
                     </Button>
                     <Button variant="ghost" size="sm" onClick={() => setAutopilotChoice("no")}>
@@ -487,6 +490,15 @@ export function PlaybookActivationDrawer({ open, scope, accounts, onClose }: Pro
                   </span>
                 </div>
               </Card>
+            ) : autopilotChoice === "pending" && autopilotSetupStep > 0 ? (
+              <AutopilotSetup
+                playbook={playbook}
+                stepIndex={autopilotSetupStep as 1 | 2 | 3}
+                onStepChange={(n) => setAutopilotSetupStep(n as 1 | 2 | 3)}
+                targetCount={targetCount}
+                onNotNow={() => setAutopilotSetupStep(0)}
+                onPublish={turnOnAutopilot}
+              />
             ) : (
               <Card padded>
                 <div style={{ display: "flex", alignItems: "center", gap: "var(--s-2)" }}>
@@ -518,5 +530,176 @@ export function PlaybookActivationDrawer({ open, scope, accounts, onClose }: Pro
         ) : null}
       </div>
     </div>
+  );
+}
+
+// ============================================================
+// Autopilot setup — 3-step flow inside the same drawer.
+// ============================================================
+
+const AP_STEPS: { n: 1 | 2 | 3; label: string }[] = [
+  { n: 1, label: "Who it runs for" },
+  { n: 2, label: "Review the steps" },
+  { n: 3, label: "Publish" },
+];
+
+function StepDots({ current }: { current: 1 | 2 | 3 }) {
+  return (
+    <div style={{ display: "flex", alignItems: "center", gap: "var(--s-2)", flexWrap: "wrap" }}>
+      {AP_STEPS.map((s, i) => {
+        const done = s.n < current;
+        const active = s.n === current;
+        return (
+          <div key={s.n} style={{ display: "flex", alignItems: "center", gap: "var(--s-2)" }}>
+            <span
+              aria-current={active ? "step" : undefined}
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                justifyContent: "center",
+                width: 22,
+                height: 22,
+                borderRadius: "999px",
+                background: done
+                  ? "var(--pos-7, var(--success-7))"
+                  : active
+                  ? "var(--info-7, var(--blue-7))"
+                  : "var(--surface-2)",
+                color: done || active ? "var(--on-accent, #fff)" : "var(--text-3, var(--text))",
+                font: "var(--t-meta)",
+                fontWeight: 600,
+                border: "1px solid var(--border)",
+              }}
+            >
+              {done ? <Icon name="check" /> : s.n}
+            </span>
+            <span
+              style={{
+                font: "var(--t-meta)",
+                color: active ? "var(--text)" : "var(--text-3, var(--text))",
+                fontWeight: active ? 600 : 400,
+              }}
+            >
+              {s.label}
+            </span>
+            {i < AP_STEPS.length - 1 ? (
+              <span
+                aria-hidden
+                style={{ width: 18, height: 1, background: "var(--border)" }}
+              />
+            ) : null}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+interface AutopilotSetupProps {
+  playbook: Playbook;
+  stepIndex: 1 | 2 | 3;
+  onStepChange: (n: 1 | 2 | 3) => void;
+  targetCount: number;
+  onNotNow: () => void;
+  onPublish: () => void;
+}
+
+function AutopilotSetup({
+  playbook,
+  stepIndex,
+  onStepChange,
+  targetCount,
+  onNotNow,
+  onPublish,
+}: AutopilotSetupProps) {
+  return (
+    <Card padded className="accent-t info">
+      <div style={{ display: "flex", flexDirection: "column", gap: "var(--s-4)" }}>
+        <StepDots current={stepIndex} />
+
+        <div style={{ display: "flex", flexDirection: "column", gap: "var(--s-2)" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: "var(--s-2)" }}>
+            <span className="icon-chip info" aria-hidden>
+              <Icon name={playbook.icon} />
+            </span>
+            <strong style={{ font: "var(--t-h4, var(--t-body))", fontWeight: 600 }}>
+              {playbook.title}
+            </strong>
+          </div>
+          <p style={{ margin: 0, font: "var(--t-body)", color: "var(--text-2, var(--text))" }}>
+            {playbook.does}
+          </p>
+          <Button variant="ghost" size="sm" icon={<Icon name="play" />}>
+            What this play does · Watch (1 min)
+          </Button>
+        </div>
+
+        <div style={{ display: "flex", flexDirection: "column", gap: "var(--s-3)" }}>
+          {stepIndex === 1 ? (
+            <p style={{ margin: 0, font: "var(--t-body)", color: "var(--text-2, var(--text))" }}>
+              GoCSM will run this for any account where {playbook.problem
+                .replace(/^The /, "the ")
+                .replace(/\.$/, "")}.
+              {targetCount > 0 ? (
+                <>
+                  {" "}Right now that's <strong>{targetCount}</strong> account{targetCount === 1 ? "" : "s"}.
+                </>
+              ) : null}
+            </p>
+          ) : null}
+
+          {stepIndex === 2 ? (
+            <p style={{ margin: 0, font: "var(--t-body)", color: "var(--text-2, var(--text))" }}>
+              The same steps you just approved will run each time — and GoCSM will still ask before
+              emailing anyone.
+            </p>
+          ) : null}
+
+          {stepIndex === 3 ? (
+            <p style={{ margin: 0, font: "var(--t-body)", color: "var(--text-2, var(--text))" }}>
+              Ready to keep this running? You can turn it off anytime from Playbooks.
+            </p>
+          ) : null}
+        </div>
+
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            gap: "var(--s-2)",
+          }}
+        >
+          <Button variant="ghost" size="sm" onClick={onNotNow}>
+            Not now
+          </Button>
+          <div style={{ display: "flex", gap: "var(--s-2)" }}>
+            {stepIndex > 1 ? (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => onStepChange((stepIndex - 1) as 1 | 2 | 3)}
+                icon={<Icon name="arrow-left" />}
+              >
+                Back
+              </Button>
+            ) : null}
+            {stepIndex < 3 ? (
+              <Button
+                variant="primary"
+                onClick={() => onStepChange((stepIndex + 1) as 1 | 2 | 3)}
+                icon={<Icon name="arrow-right" />}
+              >
+                Next
+              </Button>
+            ) : (
+              <Button variant="primary" onClick={onPublish} icon={<Icon name="zap" />}>
+                Publish
+              </Button>
+            )}
+          </div>
+        </div>
+      </div>
+    </Card>
   );
 }
