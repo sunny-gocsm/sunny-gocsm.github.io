@@ -64,9 +64,8 @@ function reasonFor(a: Account): string {
 interface CohortCardProps {
   icon: string;
   title: string;
-  blurb: string;
   accounts: Account[];
-  renderLine?: (a: Account) => React.ReactNode;
+  actionLabel: string;
   onView: () => void;
   onApply?: () => void;
   accent: "atrisk" | "healthy" | "warn" | "pos" | "slate" | "info" | "neg" | "watch" | "thriving";
@@ -76,68 +75,44 @@ interface CohortCardProps {
 function CohortCard({
   icon,
   title,
-  blurb,
   accounts,
-  renderLine,
+  actionLabel,
   onView,
   onApply,
   accent,
   emptyLine,
 }: CohortCardProps) {
-  const top = accounts.slice(0, 3);
   const mrr = accounts.reduce((sum, a) => sum + a.revenue.mrr, 0);
   const accentClasses = `accent-t ${accent}`;
-  const extraStyle = accent === "slate" ? { borderTopColor: "var(--n-7)" } : undefined;
+  const extraStyle: React.CSSProperties =
+    accent === "slate" ? { borderTopColor: "var(--n-7)" } : {};
+  const empty = accounts.length === 0;
   return (
-    <Card padded className={accentClasses} style={extraStyle}>
-      <div style={{ display: "flex", flexDirection: "column", gap: "var(--s-3)" }}>
+    <Card padded className={accentClasses} style={{ ...extraStyle, opacity: empty ? 0.7 : 1 }}>
+      <div style={{ display: "flex", flexDirection: "column", gap: "var(--s-2)" }}>
         <header style={{ display: "flex", alignItems: "center", gap: "var(--s-2)" }}>
           <span className={`icon-chip ${accent}`} aria-hidden>
             <Icon name={icon} />
           </span>
-          <span style={{ font: "var(--t-h5, var(--t-body))", color: "var(--text)", fontWeight: 600 }}>
+          <span style={{ font: "var(--t-body)", color: "var(--text)", fontWeight: 600, flex: 1, minWidth: 0 }}>
             {title}
           </span>
-          <span style={{ marginLeft: "auto", font: "var(--t-meta)", color: "var(--text-2, var(--text))" }}>
+          <span style={{ font: "var(--t-meta)", color: "var(--text-2, var(--text))", whiteSpace: "nowrap" }}>
             <Mono>{accounts.length}</Mono>
             {mrr > 0 ? <> · <Mono>{fmtMoney(mrr)}</Mono></> : null}
           </span>
         </header>
 
-        <p style={{ font: "var(--t-body)", color: "var(--text-2, var(--text))", margin: 0 }}>
-          {blurb}
-        </p>
-
-        {top.length ? (
-          <ul style={{ listStyle: "none", padding: 0, margin: 0, display: "flex", flexDirection: "column", gap: "var(--s-2)" }}>
-            {top.map((a) => (
-              <li
-                key={a.identity.id}
-                style={{
-                  display: "flex",
-                  gap: "var(--s-2)",
-                  alignItems: "baseline",
-                  font: "var(--t-body)",
-                  color: "var(--text)",
-                }}
-              >
-                <span style={{ fontWeight: 500 }}>{a.identity.name}</span>
-                <span style={{ color: "var(--text-2, var(--text))", fontSize: 13, flex: 1, minWidth: 0 }}>
-                  {renderLine ? renderLine(a) : reasonFor(a)}
-                </span>
-              </li>
-            ))}
-          </ul>
-        ) : (
+        {empty ? (
           <p style={{ font: "var(--t-body-sm)", color: "var(--text-2, var(--text))", margin: 0 }}>
             {emptyLine}
           </p>
-        )}
+        ) : null}
 
-        <div style={{ marginTop: "var(--s-1)", display: "flex", gap: "var(--s-2)" }}>
-          {onApply && accounts.length > 0 ? (
-            <Button variant="primary" size="sm" onClick={onApply} icon={<Icon name="book-open" />}>
-              Apply a Playbook
+        <div style={{ marginTop: "var(--s-1)", display: "flex", gap: "var(--s-2)", alignItems: "center" }}>
+          {onApply && !empty ? (
+            <Button variant="primary" size="sm" onClick={onApply} icon={<Icon name="play" />}>
+              {actionLabel}
             </Button>
           ) : null}
           <Button variant="ghost" size="sm" onClick={onView} icon={<Icon name="arrow-right" />}>
