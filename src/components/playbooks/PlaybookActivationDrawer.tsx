@@ -32,11 +32,17 @@ export type DrawerScope =
   | { kind: "playbook"; playbookId: string }
   | { kind: "accounts"; accountIds: string[]; suggested?: string };
 
+// Optional deep-link: jump straight into the autopilot setup at a given step.
+// Used by the Playbooks page "Edit rule" / "Review steps" controls so the same
+// setup screens (Step 1 / Step 2) are reused for editing an existing play.
+export type DrawerInitial = { mode: "autopilot"; step: 1 | 2 | 3 };
+
 interface Props {
   open: boolean;
   scope: DrawerScope | null;
   accounts: Account[]; // available pool to resolve ids
   onClose: () => void;
+  initial?: DrawerInitial;
 }
 
 type Step = "pick" | "setup" | "done";
@@ -87,8 +93,9 @@ function plainTrigger(p: Playbook): string {
   return t;
 }
 
-export function PlaybookActivationDrawer({ open, scope, accounts, onClose }: Props) {
-  const [step, setStep] = useState<Step>("pick");
+export function PlaybookActivationDrawer({ open, scope, accounts, onClose, initial }: Props) {
+  const directAutopilot = initial?.mode === "autopilot";
+  const [step, setStep] = useState<Step>(directAutopilot ? "done" : "pick");
   const [selectedId, setSelectedId] = useState<string>("");
   const [showAlternates, setShowAlternates] = useState(false);
   const [stepToggles, setStepToggles] = useState<Record<string, boolean>>({});
@@ -96,7 +103,9 @@ export function PlaybookActivationDrawer({ open, scope, accounts, onClose }: Pro
   const [previewDraft, setPreviewDraft] = useState<string>("");
   const [autopilotChoice, setAutopilotChoice] = useState<"pending" | "on" | "no">("pending");
   // 0 = not in setup; 1..3 = stepped autopilot setup inside the drawer
-  const [autopilotSetupStep, setAutopilotSetupStep] = useState<0 | 1 | 2 | 3>(0);
+  const [autopilotSetupStep, setAutopilotSetupStep] = useState<0 | 1 | 2 | 3>(
+    directAutopilot ? (initial!.step as 1 | 2 | 3) : 0,
+  );
 
   // Resolve the effective playbook
   const playbookId = useMemo(() => {
@@ -235,7 +244,7 @@ export function PlaybookActivationDrawer({ open, scope, accounts, onClose }: Pro
         {/* Header */}
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
           <span style={{ font: "var(--t-meta)", color: "var(--text-3, var(--text))" }}>
-            {step === "done" ? "Done" : step === "setup" ? "Review & set up" : "GoCSM's pick"} · scoped to{" "}
+            {directAutopilot ? "Edit autopilot" : step === "done" ? "Done" : step === "setup" ? "Review & set up" : "GoCSM's pick"} · scoped to{" "}
             <Mono>{targetCount}</Mono> account{targetCount === 1 ? "" : "s"}
           </span>
           <Button variant="ghost" size="sm" onClick={close}>
@@ -462,24 +471,23 @@ export function PlaybookActivationDrawer({ open, scope, accounts, onClose }: Pro
         {/* ============= STEP 3 + 4 — DONE + AUTOPILOT ============= */}
         {step === "done" && playbook ? (
           <>
-            <Card
-              padded
-              className="accent-t pos"
-            >
-              <div style={{ display: "flex", flexDirection: "column", gap: "var(--s-2)" }}>
-                <div style={{ display: "flex", alignItems: "center", gap: "var(--s-2)" }}>
-                  <span className="icon-chip pos" aria-hidden>
-                    <Icon name="check-circle" />
+            {!directAutopilot ? (
+              <Card padded className="accent-t pos">
+                <div style={{ display: "flex", flexDirection: "column", gap: "var(--s-2)" }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: "var(--s-2)" }}>
+                    <span className="icon-chip pos" aria-hidden>
+                      <Icon name="check-circle" />
+                    </span>
+                    <strong style={{ font: "var(--t-h4, var(--t-body))", fontWeight: 600 }}>
+                      {playbook.title} is running{batchSuffix}.
+                    </strong>
+                  </div>
+                  <span style={{ font: "var(--t-body-sm)", color: "var(--text-2, var(--text))" }}>
+                    We'll report back with what changed within 24h. The originating item is cleared from Today.
                   </span>
-                  <strong style={{ font: "var(--t-h4, var(--t-body))", fontWeight: 600 }}>
-                    {playbook.title} is running{batchSuffix}.
-                  </strong>
                 </div>
-                <span style={{ font: "var(--t-body-sm)", color: "var(--text-2, var(--text))" }}>
-                  We'll report back with what changed within 24h. The originating item is cleared from Today.
-                </span>
-              </div>
-            </Card>
+              </Card>
+            ) : null}
 
             {autopilotChoice === "pending" && autopilotSetupStep === 0 ? (
               <Card padded className="accent-t info">
