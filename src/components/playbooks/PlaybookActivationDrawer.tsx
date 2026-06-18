@@ -635,18 +635,7 @@ function AutopilotSetup({
         </div>
 
         <div style={{ display: "flex", flexDirection: "column", gap: "var(--s-3)" }}>
-          {stepIndex === 1 ? (
-            <p style={{ margin: 0, font: "var(--t-body)", color: "var(--text-2, var(--text))" }}>
-              GoCSM will run this for any account where {playbook.problem
-                .replace(/^The /, "the ")
-                .replace(/\.$/, "")}.
-              {targetCount > 0 ? (
-                <>
-                  {" "}Right now that's <strong>{targetCount}</strong> account{targetCount === 1 ? "" : "s"}.
-                </>
-              ) : null}
-            </p>
-          ) : null}
+          {stepIndex === 1 ? <Step1Audience playbook={playbook} /> : null}
 
           {stepIndex === 2 ? (
             <p style={{ margin: 0, font: "var(--t-body)", color: "var(--text-2, var(--text))" }}>
@@ -661,6 +650,7 @@ function AutopilotSetup({
             </p>
           ) : null}
         </div>
+
 
         <div
           style={{
