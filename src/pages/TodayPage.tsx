@@ -800,8 +800,29 @@ export default function TodayPage() {
           )}
         </header>
         <Card padded={false}>
-          {activeQueue.length ? (
-            <div>{activeQueue.map(renderQueueRow)}</div>
+          {visibleNeeds.length ? (
+            <>
+              <div>{visibleNeeds.map(renderNeedsYouRow)}</div>
+              {overflowCount > 0 ? (
+                <div
+                  style={{
+                    padding: "var(--s-3) var(--s-4)",
+                    borderTop: "1px solid var(--border)",
+                    display: "flex",
+                    justifyContent: "flex-end",
+                  }}
+                >
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    icon={<Icon name="arrow-right" />}
+                    onClick={() => navigate("/accounts?filter=needs-you")}
+                  >
+                    See all ({activeNeeds.length})
+                  </Button>
+                </div>
+              ) : null}
+            </>
           ) : (
             <div
               style={{
@@ -831,7 +852,7 @@ export default function TodayPage() {
                 <Icon name="check-circle" />
               </div>
               <strong style={{ font: "var(--t-h4)" }}>
-                {handledCount > 0 ? "Inbox zero — nice work." : "All caught up."}
+                {handledCount > 0 ? "Inbox zero — nice work." : "Nothing needs you right now."}
               </strong>
               <span style={{ font: "var(--t-meta)", color: "var(--text-2, var(--text))" }}>
                 GoCSM is watching the board. We'll surface the next thing the moment it matters.
@@ -840,6 +861,7 @@ export default function TodayPage() {
           )}
         </Card>
       </section>
+
 
 
 
