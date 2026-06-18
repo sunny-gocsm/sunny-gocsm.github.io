@@ -102,6 +102,15 @@ export default function PlaybooksPage() {
   const navigate = useNavigate();
   const [overrides, setOverrides] = useState<Record<string, PlaybookState>>({});
 
+  // Drawer wiring — reuses Step 1 (Edit rule) and Step 2 (Review steps) of the
+  // autopilot setup for already-configured plays.
+  const [drawerScope, setDrawerScope] = useState<DrawerScope | null>(null);
+  const [drawerInitial, setDrawerInitial] = useState<DrawerInitial | undefined>(undefined);
+  const openAutopilotEditor = (playbookId: string, step: 1 | 2) => {
+    setDrawerScope({ kind: "playbook", playbookId });
+    setDrawerInitial({ mode: "autopilot", step });
+  };
+
   const enriched = useMemo(
     () =>
       playbooks.map((p) => ({
