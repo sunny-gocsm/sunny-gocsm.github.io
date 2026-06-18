@@ -625,6 +625,11 @@ function AutopilotSetup({
   onNotNow,
   onPublish,
 }: AutopilotSetupProps) {
+  // Lifted summary state, populated by Step1/Step2 and read by Step3.
+  const [ruleSentence, setRuleSentence] = useState<string>("");
+  const [ruleCount, setRuleCount] = useState<number>(0);
+  const [enabledLabels, setEnabledLabels] = useState<string[]>([]);
+
   return (
     <Card padded className="accent-t info">
       <div style={{ display: "flex", flexDirection: "column", gap: "var(--s-4)" }}>
@@ -648,16 +653,33 @@ function AutopilotSetup({
         </div>
 
         <div style={{ display: "flex", flexDirection: "column", gap: "var(--s-3)" }}>
-          {stepIndex === 1 ? <Step1Audience playbook={playbook} /> : null}
+          <div style={{ display: stepIndex === 1 ? "block" : "none" }}>
+            <Step1Audience
+              playbook={playbook}
+              onRuleChange={(sentence, count) => {
+                setRuleSentence(sentence);
+                setRuleCount(count);
+              }}
+            />
+          </div>
 
-          {stepIndex === 2 ? <Step2Actions playbook={playbook} /> : null}
+          <div style={{ display: stepIndex === 2 ? "block" : "none" }}>
+            <Step2Actions
+              playbook={playbook}
+              onEnabledChange={setEnabledLabels}
+            />
+          </div>
 
           {stepIndex === 3 ? (
-            <p style={{ margin: 0, font: "var(--t-body)", color: "var(--text-2, var(--text))" }}>
-              Ready to keep this running? You can turn it off anytime from Playbooks.
-            </p>
+            <Step3Summary
+              ruleSentence={ruleSentence}
+              ruleCount={ruleCount}
+              enabledLabels={enabledLabels}
+            />
           ) : null}
         </div>
+
+
 
 
         <div
