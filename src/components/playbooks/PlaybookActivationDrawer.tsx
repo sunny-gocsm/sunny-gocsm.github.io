@@ -337,7 +337,9 @@ export function PlaybookActivationDrawer({ open, scope, accounts, onClose }: Pro
           </>
         ) : null}
 
-        {/* ============= STEP 2 — SETUP ============= */}
+        {/* ============= STEP 2 — REVIEW & RUN (one-time, light) =============
+            Intentionally minimal: no rule refiner, no per-step toggles, no publish.
+            Autopilot is only reachable from the Done view via "Turn on autopilot". */}
         {step === "setup" && playbook ? (
           <>
             <Card padded>
@@ -346,90 +348,92 @@ export function PlaybookActivationDrawer({ open, scope, accounts, onClose }: Pro
                   <Icon name={playbook.icon} />
                   <strong style={{ font: "var(--t-h4, var(--t-body))", fontWeight: 600 }}>{playbook.title}</strong>
                 </div>
+
+                {/* Plain summary — read-only list of what happens */}
                 <span style={{ font: "var(--t-body-sm)", color: "var(--text-2, var(--text))" }}>
                   Here's what will happen{isBatch ? ` for each of the ${targetCount} accounts` : ""}:
                 </span>
-
-                <ul style={{ listStyle: "none", padding: 0, margin: 0, display: "flex", flexDirection: "column", gap: "var(--s-2)" }}>
-                  {playSteps.map((s) => {
-                    const on = !!stepToggles[s.id];
-                    return (
-                      <li
-                        key={s.id}
-                        style={{
-                          display: "flex",
-                          flexDirection: "column",
-                          gap: "var(--s-2)",
-                          padding: "var(--s-3)",
-                          borderRadius: "var(--r-md)",
-                          background: "var(--surface-2)",
-                        }}
-                      >
-                        <div style={{ display: "flex", alignItems: "center", gap: "var(--s-2)" }}>
-                          <Toggle
-                            on={on}
-                            onChange={(next) =>
-                              setStepToggles((prev) => ({ ...prev, [s.id]: next }))
-                            }
-                          />
-                          <span style={{ flex: 1, font: "var(--t-body)", color: "var(--text)" }}>
-                            {s.label}
-                          </span>
-                          {s.kind === "client" ? (
-                            <Badge variant="warn" dot={false}>needs your OK</Badge>
-                          ) : s.kind === "internal" ? (
-                            <Badge variant="neutral" dot={false}>internal</Badge>
-                          ) : (
-                            <Badge variant="neutral" dot={false}>task</Badge>
-                          )}
-                        </div>
-
-                        {on && s.kind === "client" ? (
-                          <div style={{ display: "flex", flexDirection: "column", gap: "var(--s-2)" }}>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              icon={<Icon name={previewOpenFor === s.id ? "chevron-up" : "eye"} />}
-                              onClick={() => {
-                                if (previewOpenFor === s.id) {
-                                  setPreviewOpenFor(null);
-                                } else {
-                                  setPreviewOpenFor(s.id);
-                                  setPreviewDraft(s.preview ?? "");
-                                }
-                              }}
-                            >
-                              {previewOpenFor === s.id ? "Hide preview" : isBatch ? "Preview on one account" : "Preview & edit"}
-                            </Button>
-                            {previewOpenFor === s.id ? (
-                              <textarea
-                                value={previewDraft}
-                                onChange={(e) => setPreviewDraft(e.target.value)}
-                                rows={4}
-                                style={{
-                                  width: "100%",
-                                  font: "var(--t-body-sm)",
-                                  color: "var(--text)",
-                                  background: "var(--surface)",
-                                  border: "1px solid var(--border)",
-                                  borderRadius: "var(--r-md)",
-                                  padding: "var(--s-2)",
-                                  resize: "vertical",
-                                }}
-                              />
-                            ) : null}
-                          </div>
-                        ) : null}
-
-                        {on && s.kind === "internal" && s.needsConnect ? (
-                          <Button variant="ghost" size="sm" icon={<Icon name="link" />}>
-                            Connect Slack
-                          </Button>
-                        ) : null}
-                      </li>
-                    );
-                  })}
+                <ul style={{ listStyle: "none", padding: 0, margin: 0, display: "flex", flexDirection: "column", gap: "var(--s-1)" }}>
+                  {playSteps.map((s) => (
+                    <li
+                      key={s.id}
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "var(--s-2)",
+                        padding: "var(--s-2) var(--s-3)",
+                        borderRadius: "var(--r-md)",
+                        background: "var(--surface-2)",
+                      }}
+                    >
+                      <Icon name={s.kind === "client" ? "mail" : s.kind === "internal" ? "bell" : "check-square"} />
+                      <span style={{ flex: 1, font: "var(--t-body)", color: "var(--text)" }}>{s.label}</span>
+                      {s.kind === "client" ? (
+                        <Badge variant="warn" dot={false}>needs your OK</Badge>
+                      ) : null}
+                    </li>
+                  ))}
                 </ul>
+
+                {/* Email preview & edit — only the first client-facing step */}
+                {playSteps.filter((s) => s.kind === "client").slice(0, 1).map((s) => (
+                  <div key={s.id} style={{ display: "flex", flexDirection: "column", gap: "var(--s-2)" }}>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      icon={<Icon name={previewOpenFor === s.id ? "chevron-up" : "eye"} />}
+                      onClick={() => {
+                        if (previewOpenFor === s.id) {
+                          setPreviewOpenFor(null);
+                        } else {
+                          setPreviewOpenFor(s.id);
+                          setPreviewDraft(s.preview ?? "");
+                        }
+                      }}
+                    >
+                      {previewOpenFor === s.id ? "Hide preview" : isBatch ? "Preview on one account" : "Preview & edit"}
+                    </Button>
+                    {previewOpenFor === s.id ? (
+                      <textarea
+                        value={previewDraft}
+                        onChange={(e) => setPreviewDraft(e.target.value)}
+                        rows={4}
+                        style={{
+                          width: "100%",
+                          font: "var(--t-body-sm)",
+                          color: "var(--text)",
+                          background: "var(--surface)",
+                          border: "1px solid var(--border)",
+                          borderRadius: "var(--r-md)",
+                          padding: "var(--s-2)",
+                          resize: "vertical",
+                        }}
+                      />
+                    ) : null}
+                  </div>
+                ))}
+
+                {/* Single optional toggle */}
+                <div
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "var(--s-2)",
+                    padding: "var(--s-2) var(--s-3)",
+                    borderRadius: "var(--r-md)",
+                    border: "1px solid var(--border)",
+                  }}
+                >
+                  <Toggle
+                    on={!!stepToggles["__notify_team__"]}
+                    onChange={(next) =>
+                      setStepToggles((prev) => ({ ...prev, __notify_team__: next }))
+                    }
+                  />
+                  <span style={{ flex: 1, font: "var(--t-body)", color: "var(--text)" }}>
+                    Also notify me/my team
+                  </span>
+                </div>
 
                 <p
                   style={{
