@@ -829,6 +829,46 @@ function buildExtraCond(id: ExtraCondId, picks: ExtraCondPicks): ExtraCond {
 
 // ---- Tap card primitives ----------------------------------------------------
 
+function PillRow<T extends string>({
+  label,
+  value,
+  options,
+  onChange,
+}: {
+  label: string;
+  value: T;
+  options: { v: T; label: string }[];
+  onChange: (v: T) => void;
+}) {
+  return (
+    <div style={{ display: "flex", alignItems: "center", gap: "var(--s-2)", flexWrap: "wrap" }}>
+      <span style={{ font: "var(--t-meta)", color: "var(--text-3, var(--text))" }}>{label}</span>
+      {options.map((o) => {
+        const on = value === o.v;
+        return (
+          <button
+            key={o.v}
+            onClick={() => onChange(o.v)}
+            aria-pressed={on}
+            style={{
+              cursor: "pointer",
+              padding: "4px 10px",
+              borderRadius: 999,
+              border: `1px solid ${on ? "var(--info-7, var(--blue-7))" : "var(--border)"}`,
+              background: on ? "var(--surface-2)" : "transparent",
+              color: "var(--text)",
+              font: "var(--t-meta)",
+              fontWeight: on ? 600 : 400,
+            }}
+          >
+            {o.label}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
 function TapCard({
   active,
   onClick,
