@@ -760,14 +760,8 @@ function WorkflowHandoff({
             <strong style={{ font: "var(--t-body)", fontWeight: 600 }}>
               How to finish (1 min)
             </strong>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => toast("Video coming soon.")}
-              icon={<Icon name="play" />}
-            >
-              Watch (1 min)
-            </Button>
+            <PlayVideoButton playbook={playbook} label="Watch (1 min)" />
+
           </div>
           <ul style={{ listStyle: "none", padding: 0, margin: 0, display: "flex", flexDirection: "column", gap: 4 }}>
             {[
