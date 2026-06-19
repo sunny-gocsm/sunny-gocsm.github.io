@@ -766,7 +766,7 @@ function PlaybookAutomationRow({
           onClick={onReviewSteps}
           disabled={!hasRule}
         >
-          Review what GoCSM does
+          Review messages
         </Button>
         <PlayVideoButton playbook={playbook} label="Watch (1 min)" />
       </div>
