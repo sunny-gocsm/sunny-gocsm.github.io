@@ -171,6 +171,7 @@ export function PlaybookActivationDrawer({ open, scope, accounts, onClose, initi
     setPreviewDraft("");
     setAutopilotChoice("pending");
     setAutopilotSetupStep(0);
+    setRanOnce(false);
   };
   const close = () => {
     reset();
