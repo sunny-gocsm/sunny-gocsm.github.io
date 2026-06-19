@@ -676,7 +676,7 @@ function lastRunLabel(playbookId: string): string | null {
 function PlaybookAutomationRow({
   playbook,
   onEditRule,
-  onReviewSteps,
+
 }: {
   playbook: Playbook;
   onEditRule: () => void;
