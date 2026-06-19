@@ -192,6 +192,7 @@ export function PlaybookActivationDrawer({ open, scope, accounts, onClose, initi
         onClick: () => toast("Stopped — nothing was sent."),
       },
     });
+    setRanOnce(true);
     setStep("done");
   };
 
