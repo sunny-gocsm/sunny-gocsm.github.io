@@ -271,11 +271,10 @@ export default function PlaybooksPage() {
                 <span onClick={(e) => e.stopPropagation()}>
                   <PlaybookAutomationRow
                     playbook={p}
-                    onEditRule={() => openAutopilotEditor(p.id, 2)}
-                    onReviewSteps={() => openAutopilotEditor(p.id, 1)}
-
+                    onEditRule={() => openAutopilotEditor(p.id, 1)}
                   />
                 </span>
+
               </div>
             ))}
             {filtered.length === 0 ? (
