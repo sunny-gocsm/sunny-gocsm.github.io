@@ -458,12 +458,19 @@ export default function TodayPage() {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [drawerScope, setDrawerScope] = useState<DrawerScope | null>(null);
-  const openApply = (accs: Account[], suggested?: string) =>
+  const [drawerInitial, setDrawerInitial] = useState<DrawerInitial | undefined>(undefined);
+  const openApply = (accs: Account[], suggested?: string) => {
+    setDrawerInitial(undefined);
     setDrawerScope({
       kind: "accounts",
       accountIds: accs.map((a) => a.identity.id),
       suggested,
     });
+  };
+  const openAutopilotEditor = (playbookId: string, step: 1 | 2 = 1, showHandoff = false) => {
+    setDrawerScope({ kind: "playbook", playbookId });
+    setDrawerInitial({ mode: "autopilot", step, showHandoff });
+  };
 
 
   const queue = useMemo(() => atRiskByUrgency().slice(0, 8), []);
