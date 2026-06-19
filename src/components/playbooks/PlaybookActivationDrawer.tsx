@@ -307,6 +307,7 @@ export function PlaybookActivationDrawer({ open, scope, accounts, onClose, initi
               onCta={() => setStep("handoff")}
               onBack={() => setStep("pick")}
               mode="onetime"
+              scopeLabel={`for ${isBatch ? `these ${targetCount} accounts` : "this 1 account"}`}
             />
           </Card>
         ) : null}
@@ -322,6 +323,7 @@ export function PlaybookActivationDrawer({ open, scope, accounts, onClose, initi
             }}
           />
         ) : null}
+
 
 
         {/* ============= STEP DONE + AUTOPILOT OFFER ============= */}
