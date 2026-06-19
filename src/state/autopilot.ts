@@ -12,8 +12,11 @@ export type AutopilotStatus = "off" | "on" | "paused";
 
 type Listener = () => void;
 
+export type OverseeMode = "auto" | "ease" | "review";
+
 const onIds = new Set<string>();
 const pausedIds = new Set<string>();
+const overseeMap = new Map<string, OverseeMode>();
 const listeners = new Set<Listener>();
 
 // Snapshot identity bumps on every change so useSyncExternalStore re-renders.
