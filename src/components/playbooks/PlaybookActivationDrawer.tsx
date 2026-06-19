@@ -372,11 +372,12 @@ export function PlaybookActivationDrawer({ open, scope, accounts, onClose, initi
                   <div style={{ display: "flex", gap: "var(--s-2)", alignItems: "center" }}>
                     <Button
                       variant="primary"
-                      onClick={() => setAutopilotSetupStep(ranOnce ? 2 : 1)}
+                      onClick={() => setAutopilotSetupStep(1)}
                       icon={<Icon name="zap" />}
                     >
-                      {ranOnce ? "Keep it running — publish in HighLevel" : "Turn on autopilot"}
+                      {ranOnce ? "Keep it running" : "Turn on autopilot"}
                     </Button>
+
                     <Button variant="ghost" size="sm" onClick={() => setAutopilotChoice("no")}>
                       No thanks
                     </Button>
