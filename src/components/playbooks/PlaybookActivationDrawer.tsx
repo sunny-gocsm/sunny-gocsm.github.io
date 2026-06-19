@@ -509,6 +509,7 @@ interface AutopilotSetupProps {
   targetCount: number;
   onNotNow: () => void;
   onPublish: () => void;
+  onOverseeChange?: (m: "auto" | "ease" | "review") => void;
   initialShowHandoff?: boolean;
 }
 
@@ -518,6 +519,7 @@ function AutopilotSetup({
   onStepChange,
   onNotNow,
   onPublish,
+  onOverseeChange,
   initialShowHandoff = false,
 }: AutopilotSetupProps) {
   // Lifted summary state populated by Step 1 (When it runs) and read by Step 2.
