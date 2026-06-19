@@ -70,6 +70,7 @@ export function PlaybookActivationDrawer({ open, scope, accounts, onClose, initi
   // True after a one-time run completes — used to skip the wizard when the
   // user then turns on autopilot (their HighLevel workflow is already configured).
   const [ranOnce, setRanOnce] = useState(false);
+  const [publishOversee, setPublishOversee] = useState<"auto" | "ease" | "review">("auto");
 
 
 
