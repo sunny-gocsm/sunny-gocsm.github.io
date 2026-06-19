@@ -73,6 +73,12 @@ export function HowThisPlayWorks({
         <p style={{ margin: 0, font: "var(--t-body)", color: "var(--text-2, var(--text))" }}>
           {playbook.does}
         </p>
+        {scopeLabel ? (
+          <span style={{ font: "var(--t-meta)", color: "var(--text-3, var(--text))" }}>
+            {scopeLabel}
+          </span>
+        ) : null}
+
       </div>
 
       {/* 3-step checklist */}
