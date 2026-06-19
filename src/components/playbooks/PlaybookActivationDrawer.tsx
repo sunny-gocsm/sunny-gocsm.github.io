@@ -50,51 +50,12 @@ interface Props {
 
 type Step = "pick" | "setup" | "done";
 
-type StepKind = "client" | "internal" | "task";
-interface PlayStep {
-  id: string;
-  label: string;
-  kind: StepKind;
-  preview?: string; // for client-facing
-  needsConnect?: boolean; // for internal Slack steps
-}
-
-// Split a playbook's "does" sentence into 2-3 plain steps and classify each.
-function deriveSteps(p: Playbook): PlayStep[] {
-  const chunks = p.does
-    .split(/,| and (?=[a-z])/i)
-    .map((s) => s.trim().replace(/\.$/, ""))
-    .filter(Boolean);
-
-  return chunks.map((label, i) => {
-    const l = label.toLowerCase();
-    let kind: StepKind = "task";
-    if (/email|message|sms|note|check-?in|sequence|drip/.test(l)) kind = "client";
-    else if (/slack|alert|notif|flag|pause|surface|cs[mt]|owner/.test(l)) kind = "internal";
-    else if (/call|task|book|queue|schedule|tour/.test(l)) kind = "task";
-
-    const step: PlayStep = {
-      id: `${p.id}-step-${i}`,
-      label: label.charAt(0).toUpperCase() + label.slice(1),
-      kind,
-    };
-    if (kind === "client") {
-      step.preview = `Hi {first_name} — we noticed ${p.problem
-        .replace(/^The /, "the ")
-        .replace(/\.$/, "")}. Want to jump on a quick call this week?`;
-    }
-    if (kind === "internal" && /slack/.test(l)) {
-      step.needsConnect = true;
-    }
-    return step;
-  });
-}
-
 // Plain-English trigger phrase from the playbook's problem.
 function plainTrigger(p: Playbook): string {
   const t = p.problem.replace(/^The /, "the ").replace(/\.$/, "");
   return t;
 }
+
 
 export function PlaybookActivationDrawer({ open, scope, accounts, onClose, initial }: Props) {
   const directAutopilot = initial?.mode === "autopilot";
