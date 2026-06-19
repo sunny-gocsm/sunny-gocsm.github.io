@@ -347,103 +347,21 @@ export function PlaybookActivationDrawer({ open, scope, accounts, onClose, initi
           </>
         ) : null}
 
-        {/* ============= STEP 2 — REVIEW & RUN (one-time, light) =============
-            Intentionally minimal: no rule refiner, no per-step toggles, no publish.
-            Autopilot is only reachable from the Done view via "Turn on autopilot". */}
+        {/* ============= STEP 2 — WHAT GOCSM DOES (one-time run) =============
+            Reuses the same surface as the autopilot actions step. No inline
+            editor — message editing happens in HighLevel. */}
         {step === "setup" && playbook ? (
           <>
             <Card padded>
               <div style={{ display: "flex", flexDirection: "column", gap: "var(--s-3)" }}>
                 <div style={{ display: "flex", alignItems: "center", gap: "var(--s-2)" }}>
                   <Icon name={playbook.icon} />
-                  <strong style={{ font: "var(--t-h4, var(--t-body))", fontWeight: 600 }}>{playbook.title}</strong>
+                  <strong style={{ font: "var(--t-h4, var(--t-body))", fontWeight: 600 }}>
+                    What GoCSM does
+                  </strong>
                 </div>
 
-                {/* Plain summary — read-only list of what happens */}
-                <span style={{ font: "var(--t-body-sm)", color: "var(--text-2, var(--text))" }}>
-                  Here's what will happen{isBatch ? ` for each of the ${targetCount} accounts` : ""}:
-                </span>
-                <ul style={{ listStyle: "none", padding: 0, margin: 0, display: "flex", flexDirection: "column", gap: "var(--s-1)" }}>
-                  {playSteps.map((s) => (
-                    <li
-                      key={s.id}
-                      style={{
-                        display: "flex",
-                        alignItems: "center",
-                        gap: "var(--s-2)",
-                        padding: "var(--s-2) var(--s-3)",
-                        borderRadius: "var(--r-md)",
-                        background: "var(--surface-2)",
-                      }}
-                    >
-                      <Icon name={s.kind === "client" ? "mail" : s.kind === "internal" ? "bell" : "check-square"} />
-                      <span style={{ flex: 1, font: "var(--t-body)", color: "var(--text)" }}>{s.label}</span>
-                      {s.kind === "client" ? (
-                        <Badge variant="warn" dot={false}>needs your OK</Badge>
-                      ) : null}
-                    </li>
-                  ))}
-                </ul>
-
-                {/* Email preview & edit — only the first client-facing step */}
-                {playSteps.filter((s) => s.kind === "client").slice(0, 1).map((s) => (
-                  <div key={s.id} style={{ display: "flex", flexDirection: "column", gap: "var(--s-2)" }}>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      icon={<Icon name={previewOpenFor === s.id ? "chevron-up" : "eye"} />}
-                      onClick={() => {
-                        if (previewOpenFor === s.id) {
-                          setPreviewOpenFor(null);
-                        } else {
-                          setPreviewOpenFor(s.id);
-                          setPreviewDraft(s.preview ?? "");
-                        }
-                      }}
-                    >
-                      {previewOpenFor === s.id ? "Hide preview" : isBatch ? "Preview on one account" : "Preview & edit"}
-                    </Button>
-                    {previewOpenFor === s.id ? (
-                      <textarea
-                        value={previewDraft}
-                        onChange={(e) => setPreviewDraft(e.target.value)}
-                        rows={4}
-                        style={{
-                          width: "100%",
-                          font: "var(--t-body-sm)",
-                          color: "var(--text)",
-                          background: "var(--surface)",
-                          border: "1px solid var(--border)",
-                          borderRadius: "var(--r-md)",
-                          padding: "var(--s-2)",
-                          resize: "vertical",
-                        }}
-                      />
-                    ) : null}
-                  </div>
-                ))}
-
-                {/* Single optional toggle */}
-                <div
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: "var(--s-2)",
-                    padding: "var(--s-2) var(--s-3)",
-                    borderRadius: "var(--r-md)",
-                    border: "1px solid var(--border)",
-                  }}
-                >
-                  <Toggle
-                    on={!!stepToggles["__notify_team__"]}
-                    onChange={(next) =>
-                      setStepToggles((prev) => ({ ...prev, __notify_team__: next }))
-                    }
-                  />
-                  <span style={{ flex: 1, font: "var(--t-body)", color: "var(--text)" }}>
-                    Also notify me/my team
-                  </span>
-                </div>
+                <WhatGoCSMDoes playbook={playbook} />
 
                 <p
                   style={{
@@ -461,13 +379,14 @@ export function PlaybookActivationDrawer({ open, scope, accounts, onClose, initi
                     Back
                   </Button>
                   <Button variant="primary" onClick={runNow} icon={<Icon name="play" />}>
-                    Run it{batchSuffix}
+                    Run it now{batchSuffix}
                   </Button>
                 </div>
               </div>
             </Card>
           </>
         ) : null}
+
 
         {/* ============= STEP 3 + 4 — DONE + AUTOPILOT ============= */}
         {step === "done" && playbook ? (
