@@ -337,15 +337,16 @@ export function PlaybookActivationDrawer({ open, scope, accounts, onClose, initi
                       <Icon name="check-circle" />
                     </span>
                     <strong style={{ font: "var(--t-h4, var(--t-body))", fontWeight: 600 }}>
-                      {playbook.title} is running{batchSuffix}.
+                      Ran for <Mono>{targetCount}</Mono> account{targetCount === 1 ? "" : "s"}.
                     </strong>
                   </div>
                   <span style={{ font: "var(--t-body-sm)", color: "var(--text-2, var(--text))" }}>
-                    We'll report back with what changed within 24h. The originating item is cleared from Today.
+                    {playbook.title} is set up in HighLevel. The originating item is cleared from Today — we'll report back with what changed within 24h.
                   </span>
                 </div>
               </Card>
             ) : null}
+
 
             {autopilotChoice === "pending" && autopilotSetupStep === 0 ? (
               <Card padded className="accent-t info">
