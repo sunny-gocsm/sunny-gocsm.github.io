@@ -167,9 +167,11 @@ interface Props {
   playbook: Playbook;
   /** Lifts the labels of currently-enabled channels (used by the autopilot summary). */
   onEnabledChange?: (labels: string[]) => void;
+  /** Lifts the ids of channels the owner edited in HighLevel (used by the summary). */
+  onEditedChange?: (editedIds: ChannelId[]) => void;
 }
 
-export function WhatGoCSMDoes({ playbook, onEnabledChange }: Props) {
+export function WhatGoCSMDoes({ playbook, onEnabledChange, onEditedChange }: Props) {
   const channels = useMemo(() => getChannelsForPlay(playbook), [playbook]);
   const [enabled, setEnabled] = useState<Record<ChannelId, boolean>>(() => defaultEnabledFor(playbook));
   // Channels whose message the owner has "edited in HighLevel" (simulated return).
@@ -188,6 +190,11 @@ export function WhatGoCSMDoes({ playbook, onEnabledChange }: Props) {
     const labels = channels.filter((c) => enabled[c.id]).map((c) => c.label);
     onEnabledChange?.(labels);
   }, [enabled, channels, onEnabledChange]);
+
+  useEffect(() => {
+    const ids = channels.filter((c) => edited[c.id]).map((c) => c.id);
+    onEditedChange?.(ids);
+  }, [edited, channels, onEditedChange]);
 
   const team = channels.filter((c) => c.group === "team");
   const client = channels.filter((c) => c.group === "client");

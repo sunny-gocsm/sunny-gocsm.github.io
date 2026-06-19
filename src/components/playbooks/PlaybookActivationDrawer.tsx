@@ -28,7 +28,8 @@ import {
 import type { Account } from "@/fixtures";
 import { autopilotStore } from "@/state/autopilot";
 import { PlayVideoButton } from "@/components/playbooks/PlayVideoButton";
-import { WhatGoCSMDoes } from "@/components/playbooks/WhatGoCSMDoes";
+import { WhatGoCSMDoes, getChannelsForPlay } from "@/components/playbooks/WhatGoCSMDoes";
+import type { ChannelId } from "@/components/playbooks/WhatGoCSMDoes";
 
 export type DrawerScope =
   | { kind: "playbook"; playbookId: string }
@@ -568,6 +569,7 @@ function AutopilotSetup({
   const [ruleSentence, setRuleSentence] = useState<string>("");
   const [ruleCount, setRuleCount] = useState<number>(0);
   const [enabledLabels, setEnabledLabels] = useState<string[]>([]);
+  const [editedIds, setEditedIds] = useState<ChannelId[]>([]);
 
   return (
     <Card padded className="accent-t info">
@@ -594,6 +596,7 @@ function AutopilotSetup({
             <WhatGoCSMDoes
               playbook={playbook}
               onEnabledChange={setEnabledLabels}
+              onEditedChange={setEditedIds}
             />
           </div>
 
@@ -612,6 +615,7 @@ function AutopilotSetup({
               ruleSentence={ruleSentence}
               ruleCount={ruleCount}
               enabledLabels={enabledLabels}
+              editedLabels={useMemo(() => getChannelsForPlay(playbook).filter(c => editedIds.includes(c.id)).map(c => c.label), [playbook, editedIds])}
             />
           ) : null}
         </div>
@@ -651,8 +655,8 @@ function AutopilotSetup({
                 {stepIndex === 2 ? "Continue to publish" : "Next"}
               </Button>
             ) : (
-              <Button variant="primary" onClick={onPublish} icon={<Icon name="zap" />}>
-                Publish automation
+              <Button variant="primary" onClick={onPublish} icon={<Icon name="external-link" />}>
+                Open in HighLevel & publish
               </Button>
             )}
           </div>
@@ -1607,10 +1611,12 @@ function Step3Summary({
   ruleSentence,
   ruleCount,
   enabledLabels,
+  editedLabels,
 }: {
   ruleSentence: string;
   ruleCount: number;
   enabledLabels: string[];
+  editedLabels: string[];
 }) {
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "var(--s-3)" }}>
@@ -1618,7 +1624,7 @@ function Step3Summary({
         Quick recap before you publish.
       </p>
 
-      {/* Rule */}
+      {/* THE RULE */}
       <div
         style={{
           display: "flex",
@@ -1647,7 +1653,7 @@ function Step3Summary({
         </span>
       </div>
 
-      {/* Steps you turned on */}
+      {/* WHAT GOCSM WILL DO */}
       <div
         style={{
           display: "flex",
@@ -1666,11 +1672,11 @@ function Step3Summary({
             color: "var(--text-3, var(--text))",
           }}
         >
-          Steps you turned on
+          What GoCSM will do
         </span>
         {enabledLabels.length === 0 ? (
           <span style={{ font: "var(--t-body-sm)", color: "var(--text-2, var(--text))" }}>
-            Nothing enabled yet — go back to Step 2 to switch on at least one step.
+            Nothing enabled yet — go back to Step 1 to switch on at least one channel.
           </span>
         ) : (
           <ul style={{ listStyle: "none", padding: 0, margin: 0, display: "flex", flexDirection: "column", gap: 4 }}>
@@ -1687,6 +1693,13 @@ function Step3Summary({
               >
                 <Icon name="check" />
                 <span>{l}</span>
+                {editedLabels.includes(l) ? (
+                  <Badge variant="pos" dot={false}>
+                    <span style={{ display: "inline-flex", alignItems: "center", gap: 4 }}>
+                      <Icon name="check" /> edited in HighLevel
+                    </span>
+                  </Badge>
+                ) : null}
               </li>
             ))}
           </ul>
@@ -1705,7 +1718,7 @@ function Step3Summary({
           fontStyle: "italic",
         }}
       >
-        In production this publishes the workflow in HighLevel.
+        In production this opens your HighLevel workflow to review the flow and publish.
       </p>
     </div>
   );
