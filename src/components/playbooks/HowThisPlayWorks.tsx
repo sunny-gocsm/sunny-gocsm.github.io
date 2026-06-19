@@ -7,7 +7,9 @@ interface Props {
   onCta: () => void;
   onBack?: () => void;
   mode?: "onetime" | "autopilot";
+  scopeLabel?: string;
 }
+
 
 export function HowThisPlayWorks({
   playbook,
