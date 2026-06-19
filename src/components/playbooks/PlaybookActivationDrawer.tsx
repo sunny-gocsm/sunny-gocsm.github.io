@@ -1376,9 +1376,11 @@ function Q4Notify({ answers, set }: QProps) {
 function WhenItRuns({
   playbook,
   onRuleChange,
+  onOverseeChange,
 }: {
   playbook: Playbook;
   onRuleChange?: (sentence: string, count: number) => void;
+  onOverseeChange?: (m: "auto" | "ease" | "review") => void;
 }) {
   const [path, setPath] = useState<"auto" | "guided">("auto");
   const [answers, setAnswers] = useState<Answers>(DEFAULT_ANSWERS);
