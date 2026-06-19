@@ -103,6 +103,9 @@ export function PlaybookActivationDrawer({ open, scope, accounts, onClose, initi
   const [previewOpenFor, setPreviewOpenFor] = useState<string | null>(null);
   const [previewDraft, setPreviewDraft] = useState<string>("");
   const [autopilotChoice, setAutopilotChoice] = useState<"pending" | "on" | "no">("pending");
+  // True once the play has been run one-time in this session — autopilot then
+  // skips Step 1 ("What it does", already configured) and opens at Step 2.
+  const [ranOnce, setRanOnce] = useState(false);
   // 0 = not in setup; 1..3 = stepped autopilot setup inside the drawer
   const [autopilotSetupStep, setAutopilotSetupStep] = useState<0 | 1 | 2 | 3>(
     directAutopilot ? (initial!.step as 1 | 2 | 3) : 0,
@@ -168,6 +171,7 @@ export function PlaybookActivationDrawer({ open, scope, accounts, onClose, initi
     setPreviewDraft("");
     setAutopilotChoice("pending");
     setAutopilotSetupStep(0);
+    setRanOnce(false);
   };
   const close = () => {
     reset();
@@ -189,6 +193,7 @@ export function PlaybookActivationDrawer({ open, scope, accounts, onClose, initi
         onClick: () => toast("Stopped — nothing was sent."),
       },
     });
+    setRanOnce(true);
     setStep("done");
   };
 
@@ -424,7 +429,7 @@ export function PlaybookActivationDrawer({ open, scope, accounts, onClose, initi
                     Whenever {plainTrigger(playbook)}, GoCSM will run <strong>{playbook.title}</strong> for you — and still ask before emailing anyone.
                   </p>
                   <div style={{ display: "flex", gap: "var(--s-2)", alignItems: "center" }}>
-                    <Button variant="primary" onClick={() => setAutopilotSetupStep(1)} icon={<Icon name="zap" />}>
+                    <Button variant="primary" onClick={() => setAutopilotSetupStep(ranOnce ? 2 : 1)} icon={<Icon name="zap" />}>
                       Turn on autopilot
                     </Button>
                     <Button variant="ghost" size="sm" onClick={() => setAutopilotChoice("no")}>
@@ -484,9 +489,9 @@ export function PlaybookActivationDrawer({ open, scope, accounts, onClose, initi
 // ============================================================
 
 const AP_STEPS: { n: 1 | 2 | 3; label: string }[] = [
-  { n: 1, label: "Who it runs for" },
-  { n: 2, label: "What GoCSM does" },
-  { n: 3, label: "Publish" },
+  { n: 1, label: "What it does" },
+  { n: 2, label: "When it runs" },
+  { n: 3, label: "Finish & publish" },
 ];
 
 function StepDots({ current }: { current: 1 | 2 | 3 }) {
@@ -585,6 +590,13 @@ function AutopilotSetup({
 
         <div style={{ display: "flex", flexDirection: "column", gap: "var(--s-3)" }}>
           <div style={{ display: stepIndex === 1 ? "block" : "none" }}>
+            <WhatGoCSMDoes
+              playbook={playbook}
+              onEnabledChange={setEnabledLabels}
+            />
+          </div>
+
+          <div style={{ display: stepIndex === 2 ? "block" : "none" }}>
             <Step1Audience
               playbook={playbook}
               onRuleChange={(sentence, count) => {
@@ -594,14 +606,6 @@ function AutopilotSetup({
             />
           </div>
 
-          <div style={{ display: stepIndex === 2 ? "block" : "none" }}>
-            <WhatGoCSMDoes
-              playbook={playbook}
-              onEnabledChange={setEnabledLabels}
-            />
-          </div>
-
-
           {stepIndex === 3 ? (
             <Step3Summary
               ruleSentence={ruleSentence}
@@ -610,6 +614,7 @@ function AutopilotSetup({
             />
           ) : null}
         </div>
+
 
 
 
