@@ -759,15 +759,8 @@ function PlaybookAutomationRow({
         >
           Edit rule
         </Button>
-        <Button
-          variant="ghost"
-          size="sm"
-          icon={<Icon name="list" />}
-          onClick={onReviewSteps}
-          disabled={!hasRule}
-        >
-          Review messages
-        </Button>
+        {/* "Review messages" removed — message editing lives in HighLevel. */}
+
         <PlayVideoButton playbook={playbook} label="Watch (1 min)" />
       </div>
     </div>
