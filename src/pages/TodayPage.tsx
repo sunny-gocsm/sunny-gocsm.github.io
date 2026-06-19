@@ -857,6 +857,9 @@ export default function TodayPage() {
 
       <ReassuranceLine onOpenAccount={(id) => navigate(`/accounts/${id}`)} />
 
+      <PendingApprovalsItem />
+
+
 
       {/* 3 — Needs you */}
       <section
