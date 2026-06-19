@@ -120,6 +120,7 @@ export function PlaybookActivationDrawer({ open, scope, accounts, onClose, initi
     setShowAlternates(false);
     setAutopilotChoice("pending");
     setAutopilotSetupStep(0);
+    setRanOnce(false);
   };
   const close = () => {
     reset();
@@ -132,16 +133,18 @@ export function PlaybookActivationDrawer({ open, scope, accounts, onClose, initi
 
   const runNow = () => {
     if (!playbook) return;
-    toast.success(`${playbook.title} — running${batchSuffix}`, {
-      description: "Nothing sends to clients without your OK · undo for 5 seconds.",
+    toast.success(`Ran for ${targetCount} account${targetCount === 1 ? "" : "s"}`, {
+      description: `${playbook.title} is set up in HighLevel. Originating item cleared from Today.`,
       duration: 5000,
       action: {
         label: "Undo",
-        onClick: () => toast("Stopped — nothing was sent."),
+        onClick: () => toast("Reverted — item back on Today."),
       },
     });
+    setRanOnce(true);
     setStep("done");
   };
+
 
 
 
