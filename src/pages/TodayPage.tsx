@@ -14,7 +14,6 @@ import { ToastAction } from "@/components/ui/toast";
 import { PageRibbon } from "@/components/PageRibbon";
 import {
   autopilotSentEmails,
-  autopilotPendingEmails,
   sentEmailsForOnPlaybooks,
   pendingEmailsForPlaybooks,
   type AutopilotEmail,
