@@ -1652,7 +1652,7 @@ function WhenItRuns({
         style={{
           display: "flex",
           flexDirection: "column",
-          gap: "var(--s-2)",
+          gap: "var(--s-3)",
           padding: "var(--s-3)",
           borderRadius: "var(--r-md)",
           background: "var(--surface-2)",
@@ -1681,13 +1681,67 @@ function WhenItRuns({
           />
           days per account
         </label>
-        <div style={{ display: "flex", alignItems: "center", gap: "var(--s-2)" }}>
-          <Toggle on={true} locked onChange={() => {}} />
-          <span style={{ flex: 1, font: "var(--t-body-sm)", color: "var(--text-2, var(--text))" }}>
-            Client emails always ask for your OK
+
+        <div style={{ display: "flex", flexDirection: "column", gap: "var(--s-2)" }}>
+          <span style={{ font: "var(--t-body-sm)", color: "var(--text-3, var(--text))" }}>
+            GoCSM only sends the exact message you approved in HighLevel — it never writes its own.
           </span>
-          <Badge variant="neutral" dot={false}>locked</Badge>
+          <span style={{ font: "var(--t-meta)", color: "var(--text-3, var(--text))" }}>
+            Client email oversight
+          </span>
+          <div
+            role="tablist"
+            style={{
+              display: "inline-flex",
+              gap: 4,
+              padding: 4,
+              borderRadius: "var(--r-md)",
+              background: "var(--surface)",
+              alignSelf: "stretch",
+            }}
+          >
+            {([
+              { v: "auto" as const, label: "Send automatically", hint: "Sends the message you approved to matching accounts, hands-off.", tag: "(recommended)" },
+              { v: "ease" as const, label: "Ease in", hint: "Asks you to approve the first 3 sends, then sends automatically.", tag: undefined },
+              { v: "review" as const, label: "Review every send", hint: "Holds each client email for your OK first. Best for a few accounts — not hands-off.", tag: undefined },
+            ]).map((opt) => {
+              const on = overseeMode === opt.v;
+              return (
+                <button
+                  key={opt.v}
+                  role="tab"
+                  aria-selected={on}
+                  onClick={() => setOverseeMode(opt.v)}
+                  style={{
+                    flex: 1,
+                    border: 0,
+                    cursor: "pointer",
+                    padding: "var(--s-2) var(--s-3)",
+                    borderRadius: "var(--r-sm)",
+                    background: on ? "var(--surface-2)" : "transparent",
+                    color: on ? "var(--text)" : "var(--text-3, var(--text))",
+                    font: "var(--t-meta)",
+                    fontWeight: on ? 600 : 400,
+                    boxShadow: on ? "var(--elev-1, 0 1px 2px rgba(0,0,0,0.06))" : "none",
+                    textAlign: "left",
+                    display: "flex",
+                    flexDirection: "column",
+                    gap: 2,
+                  }}
+                >
+                  <span style={{ display: "flex", alignItems: "center", gap: 4, flexWrap: "wrap" }}>
+                    {opt.label}
+                    {opt.tag ? <Badge variant="blue" dot={false}>{opt.tag}</Badge> : null}
+                  </span>
+                  <span style={{ font: "var(--t-meta)", fontWeight: 400, color: "var(--text-3, var(--text))" }}>
+                    {opt.hint}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
         </div>
+
         <div style={{ display: "flex", alignItems: "center", gap: "var(--s-2)" }}>
           <Toggle on={skipOpenTask} onChange={setSkipOpenTask} />
           <span style={{ font: "var(--t-body-sm)", color: "var(--text-2, var(--text))" }}>
