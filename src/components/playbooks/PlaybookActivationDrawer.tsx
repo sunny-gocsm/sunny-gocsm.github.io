@@ -615,6 +615,7 @@ function AutopilotSetup({
               ruleSentence={ruleSentence}
               ruleCount={ruleCount}
               enabledLabels={enabledLabels}
+              editedLabels={useMemo(() => getChannelsForPlay(playbook).filter(c => editedIds.includes(c.id)).map(c => c.label), [playbook, editedIds])}
             />
           ) : null}
         </div>
