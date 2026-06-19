@@ -17,7 +17,9 @@ export function HowThisPlayWorks({
   onCta,
   onBack,
   mode = "autopilot",
+  scopeLabel,
 }: Props) {
+
   const steps = [
     "Turn on the steps you want",
     "Check the messages",
