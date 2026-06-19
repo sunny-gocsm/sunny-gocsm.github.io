@@ -372,11 +372,12 @@ export function PlaybookActivationDrawer({ open, scope, accounts, onClose, initi
                   <div style={{ display: "flex", gap: "var(--s-2)", alignItems: "center" }}>
                     <Button
                       variant="primary"
-                      onClick={() => setAutopilotSetupStep(ranOnce ? 2 : 1)}
+                      onClick={() => setAutopilotSetupStep(1)}
                       icon={<Icon name="zap" />}
                     >
-                      {ranOnce ? "Keep it running — publish in HighLevel" : "Turn on autopilot"}
+                      {ranOnce ? "Keep it running" : "Turn on autopilot"}
                     </Button>
+
                     <Button variant="ghost" size="sm" onClick={() => setAutopilotChoice("no")}>
                       No thanks
                     </Button>
@@ -394,8 +395,8 @@ export function PlaybookActivationDrawer({ open, scope, accounts, onClose, initi
                 targetCount={targetCount}
                 onNotNow={() => setAutopilotSetupStep(0)}
                 onPublish={turnOnAutopilot}
-                initialShowHandoff={ranOnce}
               />
+
 
 
             ) : (
@@ -439,8 +440,9 @@ export function PlaybookActivationDrawer({ open, scope, accounts, onClose, initi
 
 const AP_STEPS: { n: 1 | 2; label: string }[] = [
   { n: 1, label: "When it runs" },
-  { n: 2, label: "Finish & publish" },
+  { n: 2, label: "Finish in HighLevel" },
 ];
+
 
 function StepDots({ current }: { current: 1 | 2 }) {
   return (
