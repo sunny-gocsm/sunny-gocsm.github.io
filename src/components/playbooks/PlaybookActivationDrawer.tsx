@@ -149,7 +149,6 @@ export function PlaybookActivationDrawer({ open, scope, accounts, onClose, initi
 
 
 
-  const [publishOversee, setPublishOversee] = useState<"auto" | "ease" | "review">("auto");
 
   const turnOnAutopilot = () => {
     if (!playbook) return;
