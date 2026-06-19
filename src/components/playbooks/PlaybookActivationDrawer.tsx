@@ -298,12 +298,22 @@ export function PlaybookActivationDrawer({ open, scope, accounts, onClose, initi
           </>
         ) : null}
 
-        {/* The one-time-run channel-toggle/edit screen has been removed.
-            Action configuration and message editing live in HighLevel. */}
+        {/* ============= STEP EXPLAIN — How this play works ============= */}
+        {step === "explain" && playbook ? (
+          <Card padded className="accent-t info">
+            <HowThisPlayWorks
+              playbook={playbook}
+              ctaLabel="Set it up & run in HighLevel"
+              onCta={() => {
+                runNow();
+              }}
+              onBack={() => setStep("pick")}
+              mode="onetime"
+            />
+          </Card>
+        ) : null}
 
-
-
-        {/* ============= STEP 3 + 4 — DONE + AUTOPILOT ============= */}
+        {/* ============= STEP DONE + AUTOPILOT OFFER ============= */}
         {step === "done" && playbook ? (
           <>
             {!directAutopilot ? (
