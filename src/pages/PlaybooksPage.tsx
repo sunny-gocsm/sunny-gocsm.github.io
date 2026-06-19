@@ -679,11 +679,13 @@ function lastRunLabel(playbookId: string): string | null {
 function PlaybookAutomationRow({
   playbook,
   onEditRule,
-
+  onOpenHighLevel,
 }: {
   playbook: Playbook;
   onEditRule: () => void;
+  onOpenHighLevel: () => void;
 }) {
+
 
   const status = useAutopilotStatus(playbook.id);
   const hasRule = status !== "off";
