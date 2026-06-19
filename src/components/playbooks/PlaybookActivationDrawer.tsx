@@ -47,7 +47,7 @@ interface Props {
   initial?: DrawerInitial;
 }
 
-type Step = "pick" | "explain" | "done";
+type Step = "pick" | "explain" | "handoff" | "done";
 
 // Plain-English trigger phrase from the playbook's problem.
 function plainTrigger(p: Playbook): string {
@@ -304,14 +304,25 @@ export function PlaybookActivationDrawer({ open, scope, accounts, onClose, initi
             <HowThisPlayWorks
               playbook={playbook}
               ctaLabel="Set it up & run in HighLevel"
-              onCta={() => {
-                runNow();
-              }}
+              onCta={() => setStep("handoff")}
               onBack={() => setStep("pick")}
               mode="onetime"
             />
           </Card>
         ) : null}
+
+        {/* ============= STEP HANDOFF — one-time HighLevel handoff ============= */}
+        {step === "handoff" && playbook ? (
+          <WorkflowHandoff
+            playbook={playbook}
+            mode="onetime"
+            onBack={() => setStep("explain")}
+            onComplete={() => {
+              runNow();
+            }}
+          />
+        ) : null}
+
 
         {/* ============= STEP DONE + AUTOPILOT OFFER ============= */}
         {step === "done" && playbook ? (
@@ -493,12 +504,13 @@ function AutopilotSetup({
     return (
       <WorkflowHandoff
         playbook={playbook}
-        enabledLabels={[]}
+        mode="autopilot"
         onBack={() => setShowHandoff(false)}
-        onPublished={onPublish}
+        onComplete={onPublish}
       />
     );
   }
+
 
 
   return (
@@ -576,25 +588,39 @@ function AutopilotSetup({
 
 function WorkflowHandoff({
   playbook,
-  enabledLabels,
+  mode,
   onBack,
-  onPublished,
+  onComplete,
 }: {
   playbook: Playbook;
-  enabledLabels: string[];
+  mode: "onetime" | "autopilot";
   onBack: () => void;
-  onPublished: () => void;
+  onComplete: () => void;
 }) {
+  // Non-interactive workflow preview. Steps are shipped pre-built; optional
+  // ones are clearly marked "off" so the owner sees there is nothing to
+  // configure in GoCSM — they turn on what they want inside HighLevel.
   const triggerLabel = `When ${eventPhrase(playbook)}`;
-  const followUp = `If still ${eventPhrase(playbook)} after 7 days, alert me`;
-  const steps = [triggerLabel, ...enabledLabels, followUp];
+  type PreviewStep = { label: string; optional: boolean; icon: string };
+  const steps: PreviewStep[] = [
+    { label: triggerLabel, optional: false, icon: "zap" },
+    { label: "Alert you", optional: false, icon: "bell" },
+    { label: "Email the account owner", optional: true, icon: "mail" },
+    { label: "Post to Slack", optional: true, icon: "message-square" },
+    { label: `If still unresolved after 7 days, alert you`, optional: true, icon: "clock" },
+  ];
 
-  const publish = () => {
-    // Parent (turnOnAutopilot) enables the store, fires the success+Undo toast,
-    // and closes the drawer. Keep this thin so we don't double-toast.
-    onPublished();
+  const ctaLabel = mode === "autopilot" ? "I've published it" : "I've set it up in HighLevel";
+
+  const complete = () => {
+    if (mode === "onetime") {
+      toast.success(`${playbook.title} — set up in HighLevel`, {
+        description: "Returning to GoCSM. We'll report back with what changed.",
+        duration: 4000,
+      });
+    }
+    onComplete();
   };
-
 
   return (
     <Card padded className="accent-t info">
@@ -620,9 +646,9 @@ function WorkflowHandoff({
               fontStyle: "italic",
             }}
           >
-            This is a preview — HighLevel's real workflow builder isn't recreated here. In production
-            this deep-links into the pre-built workflow where the messages, conditions, and sticky
-            notes already live; you'll edit and publish there.
+            In production this opens HighLevel's workflow builder (steps disabled, messages pre-drafted,
+            these sticky notes inside) where you configure and {mode === "autopilot" ? "publish" : "run"} natively;
+            GoCSM detects it. HighLevel's real builder isn't recreated here.
           </p>
         </div>
 
@@ -636,10 +662,10 @@ function WorkflowHandoff({
               color: "var(--text-3, var(--text))",
             }}
           >
-            Workflow preview
+            Workflow preview · pre-built, disabled by default
           </span>
           <div style={{ display: "flex", flexDirection: "column", gap: 0 }}>
-            {steps.map((label, i) => (
+            {steps.map((s, i) => (
               <div key={i} style={{ display: "flex", flexDirection: "column", alignItems: "stretch" }}>
                 <div
                   aria-disabled
@@ -653,30 +679,33 @@ function WorkflowHandoff({
                     display: "flex",
                     alignItems: "center",
                     gap: "var(--s-2)",
-                    opacity: 0.95,
+                    opacity: s.optional ? 0.75 : 1,
                     userSelect: "none",
                   }}
                 >
-                  <Icon
-                    name={
-                      i === 0
-                        ? "zap"
-                        : i === steps.length - 1
-                          ? "clock"
-                          : "check"
-                    }
-                  />
-                  <span>{label}</span>
+                  <Icon name={s.icon} />
+                  <span style={{ flex: 1 }}>{s.label}</span>
+                  {s.optional ? (
+                    <span
+                      style={{
+                        font: "var(--t-meta)",
+                        textTransform: "uppercase",
+                        letterSpacing: "0.04em",
+                        padding: "2px 6px",
+                        borderRadius: "var(--r-sm, 4px)",
+                        background: "var(--surface)",
+                        border: "1px solid var(--border)",
+                        color: "var(--text-3, var(--text))",
+                      }}
+                    >
+                      off
+                    </span>
+                  ) : null}
                 </div>
                 {i < steps.length - 1 ? (
                   <div
                     aria-hidden
-                    style={{
-                      width: 1,
-                      height: 14,
-                      background: "var(--border)",
-                      margin: "0 auto",
-                    }}
+                    style={{ width: 1, height: 14, background: "var(--border)", margin: "0 auto" }}
                   />
                 ) : null}
               </div>
@@ -703,13 +732,12 @@ function WorkflowHandoff({
               How to finish (1 min)
             </strong>
             <PlayVideoButton playbook={playbook} label="Watch (1 min)" />
-
           </div>
           <ul style={{ listStyle: "none", padding: 0, margin: 0, display: "flex", flexDirection: "column", gap: 4 }}>
             {[
+              "Turn on the steps you want",
               "Check the messages",
-              "Adjust the conditions if you want",
-              "Hit Publish",
+              mode === "autopilot" ? "Publish" : "Run it",
             ].map((item, i) => (
               <li
                 key={i}
@@ -751,21 +779,22 @@ function WorkflowHandoff({
             fontStyle: "italic",
           }}
         >
-          In production GoCSM detects the publish and flips the state automatically.
+          In production GoCSM detects {mode === "autopilot" ? "the publish" : "the run"} and flips the state automatically.
         </p>
 
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: "var(--s-2)" }}>
           <Button variant="ghost" size="sm" onClick={onBack} icon={<Icon name="arrow-left" />}>
             Back
           </Button>
-          <Button variant="primary" onClick={publish} icon={<Icon name="check" />}>
-            I've published it
+          <Button variant="primary" onClick={complete} icon={<Icon name="check" />}>
+            {ctaLabel}
           </Button>
         </div>
       </div>
     </Card>
   );
 }
+
 
 
 
