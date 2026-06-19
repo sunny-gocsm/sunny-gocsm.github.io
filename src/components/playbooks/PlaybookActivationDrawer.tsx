@@ -395,8 +395,8 @@ export function PlaybookActivationDrawer({ open, scope, accounts, onClose, initi
                 targetCount={targetCount}
                 onNotNow={() => setAutopilotSetupStep(0)}
                 onPublish={turnOnAutopilot}
-                />
               />
+
 
 
             ) : (
