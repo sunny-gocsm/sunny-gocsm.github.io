@@ -1101,6 +1101,8 @@ export default function TodayPage() {
                 playbookId={c.playbookId}
                 onView={c.onView}
                 onApply={c.onApply}
+                onEditRule={(id) => openAutopilotEditor(id, 1)}
+                onOpenHighLevel={(id) => openAutopilotEditor(id, 2, true)}
               />
             ))}
         </div>
@@ -1110,7 +1112,11 @@ export default function TodayPage() {
         open={!!drawerScope}
         scope={drawerScope}
         accounts={allAccounts()}
-        onClose={() => setDrawerScope(null)}
+        initial={drawerInitial}
+        onClose={() => {
+          setDrawerScope(null);
+          setDrawerInitial(undefined);
+        }}
       />
     </main>
   );
