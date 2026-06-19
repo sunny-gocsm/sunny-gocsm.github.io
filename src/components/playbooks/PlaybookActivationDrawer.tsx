@@ -493,12 +493,13 @@ function AutopilotSetup({
     return (
       <WorkflowHandoff
         playbook={playbook}
-        enabledLabels={[]}
+        mode="autopilot"
         onBack={() => setShowHandoff(false)}
-        onPublished={onPublish}
+        onComplete={onPublish}
       />
     );
   }
+
 
 
   return (
