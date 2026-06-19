@@ -47,7 +47,7 @@ interface Props {
   initial?: DrawerInitial;
 }
 
-type Step = "pick" | "done";
+type Step = "pick" | "explain" | "done";
 
 // Plain-English trigger phrase from the playbook's problem.
 function plainTrigger(p: Playbook): string {
