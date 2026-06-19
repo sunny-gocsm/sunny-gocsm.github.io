@@ -304,14 +304,25 @@ export function PlaybookActivationDrawer({ open, scope, accounts, onClose, initi
             <HowThisPlayWorks
               playbook={playbook}
               ctaLabel="Set it up & run in HighLevel"
-              onCta={() => {
-                runNow();
-              }}
+              onCta={() => setStep("handoff")}
               onBack={() => setStep("pick")}
               mode="onetime"
             />
           </Card>
         ) : null}
+
+        {/* ============= STEP HANDOFF — one-time HighLevel handoff ============= */}
+        {step === "handoff" && playbook ? (
+          <WorkflowHandoff
+            playbook={playbook}
+            mode="onetime"
+            onBack={() => setStep("explain")}
+            onComplete={() => {
+              runNow();
+            }}
+          />
+        ) : null}
+
 
         {/* ============= STEP DONE + AUTOPILOT OFFER ============= */}
         {step === "done" && playbook ? (
