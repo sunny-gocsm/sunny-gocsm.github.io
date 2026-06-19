@@ -115,7 +115,6 @@ export function PlaybookActivationDrawer({ open, scope, accounts, onClose, initi
     setShowAlternates(false);
     setAutopilotChoice("pending");
     setAutopilotSetupStep(0);
-    setRanOnce(false);
   };
   const close = () => {
     reset();
@@ -136,9 +135,9 @@ export function PlaybookActivationDrawer({ open, scope, accounts, onClose, initi
         onClick: () => toast("Stopped — nothing was sent."),
       },
     });
-    setRanOnce(true);
     setStep("done");
   };
+
 
 
   const turnOnAutopilot = () => {
