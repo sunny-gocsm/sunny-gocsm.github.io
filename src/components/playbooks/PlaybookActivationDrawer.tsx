@@ -484,9 +484,9 @@ export function PlaybookActivationDrawer({ open, scope, accounts, onClose, initi
 // ============================================================
 
 const AP_STEPS: { n: 1 | 2 | 3; label: string }[] = [
-  { n: 1, label: "Who it runs for" },
-  { n: 2, label: "What GoCSM does" },
-  { n: 3, label: "Publish" },
+  { n: 1, label: "What it does" },
+  { n: 2, label: "When it runs" },
+  { n: 3, label: "Finish & publish" },
 ];
 
 function StepDots({ current }: { current: 1 | 2 | 3 }) {
