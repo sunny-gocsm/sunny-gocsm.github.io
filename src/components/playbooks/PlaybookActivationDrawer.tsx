@@ -703,19 +703,11 @@ function WorkflowHandoff({
   const steps = [triggerLabel, ...enabledLabels, followUp];
 
   const publish = () => {
-    toast.success("Published — now on autopilot", {
-      description: "New matches handled automatically · undo for 5 seconds.",
-      duration: 5000,
-      action: {
-        label: "Undo",
-        onClick: () => {
-          autopilotStore.disable(playbook.id);
-          toast("Autopilot paused.");
-        },
-      },
-    });
+    // Parent (turnOnAutopilot) enables the store, fires the success+Undo toast,
+    // and closes the drawer. Keep this thin so we don't double-toast.
     onPublished();
   };
+
 
   return (
     <Card padded className="accent-t info">
