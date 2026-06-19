@@ -597,7 +597,7 @@ function AutopilotSetup({
           </div>
 
           <div style={{ display: stepIndex === 2 ? "block" : "none" }}>
-            <Step1Audience
+            <WhenItRuns
               playbook={playbook}
               onRuleChange={(sentence, count) => {
                 setRuleSentence(sentence);
