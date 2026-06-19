@@ -67,6 +67,10 @@ export function PlaybookActivationDrawer({ open, scope, accounts, onClose, initi
   const [autopilotSetupStep, setAutopilotSetupStep] = useState<0 | 1 | 2>(
     directAutopilot ? (initial!.step as 1 | 2) : 0,
   );
+  // True after a one-time run completes — used to skip the wizard when the
+  // user then turns on autopilot (their HighLevel workflow is already configured).
+  const [ranOnce, setRanOnce] = useState(false);
+
 
 
   // Resolve the effective playbook
@@ -116,6 +120,7 @@ export function PlaybookActivationDrawer({ open, scope, accounts, onClose, initi
     setShowAlternates(false);
     setAutopilotChoice("pending");
     setAutopilotSetupStep(0);
+    setRanOnce(false);
   };
   const close = () => {
     reset();
@@ -128,16 +133,18 @@ export function PlaybookActivationDrawer({ open, scope, accounts, onClose, initi
 
   const runNow = () => {
     if (!playbook) return;
-    toast.success(`${playbook.title} — running${batchSuffix}`, {
-      description: "Nothing sends to clients without your OK · undo for 5 seconds.",
+    toast.success(`Ran for ${targetCount} account${targetCount === 1 ? "" : "s"}`, {
+      description: `${playbook.title} is set up in HighLevel. Originating item cleared from Today.`,
       duration: 5000,
       action: {
         label: "Undo",
-        onClick: () => toast("Stopped — nothing was sent."),
+        onClick: () => toast("Reverted — item back on Today."),
       },
     });
+    setRanOnce(true);
     setStep("done");
   };
+
 
 
 
@@ -307,6 +314,7 @@ export function PlaybookActivationDrawer({ open, scope, accounts, onClose, initi
               onCta={() => setStep("handoff")}
               onBack={() => setStep("pick")}
               mode="onetime"
+              scopeLabel={`for ${isBatch ? `these ${targetCount} accounts` : "this 1 account"}`}
             />
           </Card>
         ) : null}
@@ -324,6 +332,7 @@ export function PlaybookActivationDrawer({ open, scope, accounts, onClose, initi
         ) : null}
 
 
+
         {/* ============= STEP DONE + AUTOPILOT OFFER ============= */}
         {step === "done" && playbook ? (
           <>
@@ -335,15 +344,16 @@ export function PlaybookActivationDrawer({ open, scope, accounts, onClose, initi
                       <Icon name="check-circle" />
                     </span>
                     <strong style={{ font: "var(--t-h4, var(--t-body))", fontWeight: 600 }}>
-                      {playbook.title} is running{batchSuffix}.
+                      Ran for <Mono>{targetCount}</Mono> account{targetCount === 1 ? "" : "s"}.
                     </strong>
                   </div>
                   <span style={{ font: "var(--t-body-sm)", color: "var(--text-2, var(--text))" }}>
-                    We'll report back with what changed within 24h. The originating item is cleared from Today.
+                    {playbook.title} is set up in HighLevel. The originating item is cleared from Today — we'll report back with what changed within 24h.
                   </span>
                 </div>
               </Card>
             ) : null}
+
 
             {autopilotChoice === "pending" && autopilotSetupStep === 0 ? (
               <Card padded className="accent-t info">
@@ -360,8 +370,12 @@ export function PlaybookActivationDrawer({ open, scope, accounts, onClose, initi
                     Whenever {plainTrigger(playbook)}, GoCSM will run <strong>{playbook.title}</strong> for you — and still ask before emailing anyone.
                   </p>
                   <div style={{ display: "flex", gap: "var(--s-2)", alignItems: "center" }}>
-                    <Button variant="primary" onClick={() => setAutopilotSetupStep(1)} icon={<Icon name="zap" />}>
-                      Turn on autopilot
+                    <Button
+                      variant="primary"
+                      onClick={() => setAutopilotSetupStep(ranOnce ? 2 : 1)}
+                      icon={<Icon name="zap" />}
+                    >
+                      {ranOnce ? "Keep it running — publish in HighLevel" : "Turn on autopilot"}
                     </Button>
                     <Button variant="ghost" size="sm" onClick={() => setAutopilotChoice("no")}>
                       No thanks
@@ -380,7 +394,9 @@ export function PlaybookActivationDrawer({ open, scope, accounts, onClose, initi
                 targetCount={targetCount}
                 onNotNow={() => setAutopilotSetupStep(0)}
                 onPublish={turnOnAutopilot}
+                initialShowHandoff={ranOnce}
               />
+
 
             ) : (
               <Card padded>
@@ -485,6 +501,7 @@ interface AutopilotSetupProps {
   targetCount: number;
   onNotNow: () => void;
   onPublish: () => void;
+  initialShowHandoff?: boolean;
 }
 
 function AutopilotSetup({
@@ -493,12 +510,14 @@ function AutopilotSetup({
   onStepChange,
   onNotNow,
   onPublish,
+  initialShowHandoff = false,
 }: AutopilotSetupProps) {
   // Lifted summary state populated by Step 1 (When it runs) and read by Step 2.
   const [ruleSentence, setRuleSentence] = useState<string>("");
   const [ruleCount, setRuleCount] = useState<number>(0);
   // AP7 — workflow handoff representation (non-editable preview + sticky note).
-  const [showHandoff, setShowHandoff] = useState(false);
+  const [showHandoff, setShowHandoff] = useState(initialShowHandoff);
+
 
   if (showHandoff) {
     return (

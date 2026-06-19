@@ -7,7 +7,9 @@ interface Props {
   onCta: () => void;
   onBack?: () => void;
   mode?: "onetime" | "autopilot";
+  scopeLabel?: string;
 }
+
 
 export function HowThisPlayWorks({
   playbook,
@@ -15,7 +17,9 @@ export function HowThisPlayWorks({
   onCta,
   onBack,
   mode = "autopilot",
+  scopeLabel,
 }: Props) {
+
   const steps = [
     "Turn on the steps you want",
     "Check the messages",
@@ -69,6 +73,12 @@ export function HowThisPlayWorks({
         <p style={{ margin: 0, font: "var(--t-body)", color: "var(--text-2, var(--text))" }}>
           {playbook.does}
         </p>
+        {scopeLabel ? (
+          <span style={{ font: "var(--t-meta)", color: "var(--text-3, var(--text))" }}>
+            {scopeLabel}
+          </span>
+        ) : null}
+
       </div>
 
       {/* 3-step checklist */}
