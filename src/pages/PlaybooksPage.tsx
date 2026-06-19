@@ -273,8 +273,10 @@ export default function PlaybooksPage() {
                   <PlaybookAutomationRow
                     playbook={p}
                     onEditRule={() => openAutopilotEditor(p.id, 1)}
+                    onOpenHighLevel={() => openAutopilotEditor(p.id, 2, true)}
                   />
                 </span>
+
 
               </div>
             ))}
