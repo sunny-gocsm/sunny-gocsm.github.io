@@ -1339,6 +1339,154 @@ function WhenItRuns({
         </div>
       ) : null}
 
+      {/* Add more conditions — quiet, secondary, hidden until asked for */}
+      <div style={{ display: "flex", flexDirection: "column", gap: "var(--s-2)" }}>
+        <Button
+          variant="ghost"
+          size="sm"
+          icon={<Icon name={showAdvanced ? "chevron-up" : "plus"} />}
+          onClick={() => setShowAdvanced((s) => !s)}
+        >
+          {showAdvanced ? "Hide advanced conditions" : `Add more conditions${extras.length ? ` (${extras.length})` : ""}`}
+        </Button>
+        {showAdvanced ? (
+          <div
+            style={{
+              display: "flex",
+              flexDirection: "column",
+              gap: "var(--s-3)",
+              padding: "var(--s-3)",
+              borderRadius: "var(--r-md)",
+              border: "1px dashed var(--border)",
+              background: "var(--surface)",
+            }}
+          >
+            <span style={{ font: "var(--t-meta)", color: "var(--text-3, var(--text))" }}>
+              For power users — tap to add. Choices fold into the rule above.
+            </span>
+
+            {/* Tappable chips */}
+            <div style={{ display: "flex", flexWrap: "wrap", gap: "var(--s-2)" }}>
+              {([
+                { id: "no-login-30" as const, label: "No login in 30 days" },
+                { id: "stage" as const, label: `Lifecycle stage: ${STAGE_LABEL[stagePick]} ▾` },
+                { id: "age" as const, label: `Account age: ${AGE_LABEL[agePick]} ▾` },
+                { id: "tag" as const, label: `Tag: ${tagPick} ▾` },
+                { id: "signal" as const, label: `Other signals: ${SIGNAL_LABEL[signalPick]} ▾` },
+              ]).map((c) => {
+                const on = extras.includes(c.id);
+                return (
+                  <button
+                    key={c.id}
+                    onClick={() =>
+                      setExtras((prev) => (on ? prev.filter((x) => x !== c.id) : [...prev, c.id]))
+                    }
+                    aria-pressed={on}
+                    style={{
+                      cursor: "pointer",
+                      padding: "6px 12px",
+                      borderRadius: 999,
+                      border: `1px solid ${on ? "var(--info-7, var(--blue-7))" : "var(--border)"}`,
+                      background: on ? "var(--surface-2)" : "transparent",
+                      color: "var(--text)",
+                      font: "var(--t-meta)",
+                      fontWeight: on ? 600 : 400,
+                    }}
+                  >
+                    {on ? "✓ " : "+ "}
+                    {c.label}
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* Submenus for the active dropdown-style chips */}
+            {extras.includes("stage") ? (
+              <PillRow
+                label="Stage"
+                value={stagePick}
+                options={(["onboarding", "established", "churned"] as LifecycleStage[]).map((v) => ({ v, label: STAGE_LABEL[v] }))}
+                onChange={setStagePick}
+              />
+            ) : null}
+            {extras.includes("age") ? (
+              <PillRow
+                label="Age"
+                value={agePick}
+                options={(["under90", "90-365", "over365"] as AgeBucket[]).map((v) => ({ v, label: AGE_LABEL[v] }))}
+                onChange={setAgePick}
+              />
+            ) : null}
+            {extras.includes("tag") ? (
+              <PillRow
+                label="Tag"
+                value={tagPick}
+                options={TAGS.map((v) => ({ v, label: v }))}
+                onChange={setTagPick}
+              />
+            ) : null}
+            {extras.includes("signal") ? (
+              <PillRow
+                label="Signal"
+                value={signalPick}
+                options={(["a2p-lost", "domain-lost", "integration-lost"] as OtherSignal[]).map((v) => ({ v, label: SIGNAL_LABEL[v] }))}
+                onChange={setSignalPick}
+              />
+            ) : null}
+          </div>
+        ) : null}
+      </div>
+
+      {/* Guardrails */}
+      <div
+        style={{
+          display: "flex",
+          flexDirection: "column",
+          gap: "var(--s-2)",
+          padding: "var(--s-3)",
+          borderRadius: "var(--r-md)",
+          background: "var(--surface-2)",
+        }}
+      >
+        <span style={{ font: "var(--t-meta)", textTransform: "uppercase", letterSpacing: "0.04em", color: "var(--text-3, var(--text))" }}>
+          Guardrails
+        </span>
+        <label style={{ display: "flex", alignItems: "center", gap: "var(--s-2)", font: "var(--t-body-sm)", color: "var(--text-2, var(--text))", flexWrap: "wrap" }}>
+          Run at most once every
+          <input
+            type="number"
+            min={1}
+            value={frequencyDays}
+            onChange={(e) => setFrequencyDays(Math.max(1, parseInt(e.target.value || "1", 10)))}
+            style={{
+              width: 64,
+              font: "var(--t-body-sm)",
+              color: "var(--text)",
+              background: "var(--surface)",
+              border: "1px solid var(--border)",
+              borderRadius: "var(--r-sm)",
+              padding: "2px 6px",
+              textAlign: "right",
+            }}
+          />
+          days per account
+        </label>
+        <div style={{ display: "flex", alignItems: "center", gap: "var(--s-2)" }}>
+          <Toggle on={true} locked onChange={() => {}} />
+          <span style={{ flex: 1, font: "var(--t-body-sm)", color: "var(--text-2, var(--text))" }}>
+            Client emails always ask for your OK
+          </span>
+          <Badge variant="neutral" dot={false}>locked</Badge>
+        </div>
+        <div style={{ display: "flex", alignItems: "center", gap: "var(--s-2)" }}>
+          <Toggle on={skipOpenTask} onChange={setSkipOpenTask} />
+          <span style={{ font: "var(--t-body-sm)", color: "var(--text-2, var(--text))" }}>
+            Skip accounts with an open task
+          </span>
+        </div>
+      </div>
+
+
       {/* Running summary + live count */}
       <div
         style={{
