@@ -488,6 +488,7 @@ interface AutopilotSetupProps {
   targetCount: number;
   onNotNow: () => void;
   onPublish: () => void;
+  initialShowHandoff?: boolean;
 }
 
 function AutopilotSetup({
@@ -496,12 +497,14 @@ function AutopilotSetup({
   onStepChange,
   onNotNow,
   onPublish,
+  initialShowHandoff = false,
 }: AutopilotSetupProps) {
   // Lifted summary state populated by Step 1 (When it runs) and read by Step 2.
   const [ruleSentence, setRuleSentence] = useState<string>("");
   const [ruleCount, setRuleCount] = useState<number>(0);
   // AP7 — workflow handoff representation (non-editable preview + sticky note).
-  const [showHandoff, setShowHandoff] = useState(false);
+  const [showHandoff, setShowHandoff] = useState(initialShowHandoff);
+
 
   if (showHandoff) {
     return (
