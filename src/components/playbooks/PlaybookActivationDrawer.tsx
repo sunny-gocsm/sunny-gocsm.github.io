@@ -570,6 +570,20 @@ function AutopilotSetup({
   const [ruleCount, setRuleCount] = useState<number>(0);
   const [enabledLabels, setEnabledLabels] = useState<string[]>([]);
   const [editedIds, setEditedIds] = useState<ChannelId[]>([]);
+  // AP7 — workflow handoff representation (non-editable preview + sticky note).
+  const [showHandoff, setShowHandoff] = useState(false);
+
+  if (showHandoff) {
+    return (
+      <WorkflowHandoff
+        playbook={playbook}
+        enabledLabels={enabledLabels}
+        onBack={() => setShowHandoff(false)}
+        onPublished={onPublish}
+      />
+    );
+  }
+
 
   return (
     <Card padded className="accent-t info">
