@@ -1719,14 +1719,11 @@ function WhenItRuns({
 function Step3Summary({
   ruleSentence,
   ruleCount,
-  enabledLabels,
-  editedLabels,
 }: {
   ruleSentence: string;
   ruleCount: number;
-  enabledLabels: string[];
-  editedLabels: string[];
 }) {
+
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "var(--s-3)" }}>
       <p style={{ margin: 0, font: "var(--t-body)", color: "var(--text-2, var(--text))" }}>
