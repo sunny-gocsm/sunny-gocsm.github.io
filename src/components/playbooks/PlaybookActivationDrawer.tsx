@@ -894,12 +894,7 @@ function WorkflowHandoff({
   );
 }
 
-          </div>
-        </div>
-      </div>
-    </Card>
-  );
-}
+
 
 // ============================================================
 // Step 2 — "When it runs"
