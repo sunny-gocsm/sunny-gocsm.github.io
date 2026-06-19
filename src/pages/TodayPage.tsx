@@ -8,10 +8,16 @@ import {
   Badge,
   LiveStatus,
 } from "@/gocsm-ds";
-import { useIsAutopilot } from "@/state/autopilot";
+import { useIsAutopilot, useAllAutopilotOn, autopilotStore } from "@/state/autopilot";
 import { useToast } from "@/hooks/use-toast";
 import { ToastAction } from "@/components/ui/toast";
 import { PageRibbon } from "@/components/PageRibbon";
+import {
+  autopilotSentEmails,
+  sentEmailsForOnPlaybooks,
+  pendingEmailsForPlaybooks,
+  type AutopilotEmail,
+} from "@/fixtures/autopilotActivity";
 import {
   atRiskByUrgency,
   renewalsWindow,
@@ -26,7 +32,7 @@ import {
   allAccounts,
   type Account,
 } from "@/fixtures";
-import { PlaybookActivationDrawer, type DrawerScope } from "@/components/playbooks/PlaybookActivationDrawer";
+import { PlaybookActivationDrawer, type DrawerScope, type DrawerInitial } from "@/components/playbooks/PlaybookActivationDrawer";
 import { outcomes as allOutcomes, outcomeAccount, outcomePlaybook } from "@/fixtures/outcomes";
 
 
@@ -73,6 +79,8 @@ interface CohortCardProps {
   accent: "atrisk" | "healthy" | "warn" | "pos" | "slate" | "info" | "neg" | "watch" | "thriving";
   emptyLine: string;
   playbookId?: string;
+  onEditRule?: (playbookId: string) => void;
+  onOpenHighLevel?: (playbookId: string) => void;
 }
 
 function CohortCard({
@@ -85,7 +93,10 @@ function CohortCard({
   accent,
   emptyLine,
   playbookId,
+  onEditRule,
+  onOpenHighLevel,
 }: CohortCardProps) {
+  const { toast: t } = useToast();
   const mrr = accounts.reduce((sum, a) => sum + a.revenue.mrr, 0);
   const accentClasses = `accent-t ${accent}`;
   const extraStyle: React.CSSProperties =
@@ -128,15 +139,50 @@ function CohortCard({
           </p>
         ) : null}
 
-        <div style={{ marginTop: "var(--s-1)", display: "flex", gap: "var(--s-2)", alignItems: "center" }}>
-          {onApply && !empty ? (
-            <Button variant="primary" size="sm" onClick={onApply} icon={<Icon name="play" />}>
-              {actionLabel}
-            </Button>
-          ) : null}
-          <Button variant="ghost" size="sm" onClick={onView} icon={<Icon name="arrow-right" />}>
-            View all
-          </Button>
+        <div style={{ marginTop: "var(--s-1)", display: "flex", gap: "var(--s-2)", alignItems: "center", flexWrap: "wrap" }}>
+          {onAutopilot && playbookId ? (
+            <>
+              <Button
+                variant="ghost"
+                size="sm"
+                icon={<Icon name="pause" />}
+                onClick={() => {
+                  autopilotStore.pause(playbookId);
+                  t({ title: "Autopilot paused", description: "Sends stopped — the rule is kept." });
+                }}
+              >
+                Pause
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                icon={<Icon name="sliders" />}
+                onClick={() => onEditRule?.(playbookId)}
+              >
+                Edit rule
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                icon={<Icon name="external-link" />}
+                onClick={() => onOpenHighLevel?.(playbookId)}
+                title="Reopen the HighLevel workflow to change the message"
+              >
+                Open in HighLevel
+              </Button>
+            </>
+          ) : (
+            <>
+              {onApply && !empty ? (
+                <Button variant="primary" size="sm" onClick={onApply} icon={<Icon name="play" />}>
+                  {actionLabel}
+                </Button>
+              ) : null}
+              <Button variant="ghost" size="sm" onClick={onView} icon={<Icon name="arrow-right" />}>
+                View all
+              </Button>
+            </>
+          )}
         </div>
       </div>
     </Card>
@@ -168,6 +214,7 @@ function ReassuranceLine({
   onOpenAccount: (id: string) => void;
 }) {
   const [open, setOpen] = useState(false);
+  const [emailsOpen, setEmailsOpen] = useState(false);
 
   const recent = allOutcomes.filter((o) => o.daysAgo <= 7);
   const autopilot = recent.filter((o) => o.attribution === "playbook-solo");
@@ -177,6 +224,13 @@ function ReassuranceLine({
   const protectedAmount =
     autopilot.reduce((s, o) => s + (o.amount ?? 0), 0) +
     approved.reduce((s, o) => s + (o.amount ?? 0), 0);
+
+  // Client emails sent by autopilot overnight — only for plays currently on.
+  const onIds = useAllAutopilotOn();
+  const sentEmails: AutopilotEmail[] = onIds.length
+    ? sentEmailsForOnPlaybooks(onIds)
+    : autopilotSentEmails; // for demo: show fixture sample even when nothing on
+  const sentCount = sentEmails.length;
 
   const items: RecapItem[] = [
     ...autopilot.slice(0, 3).map<RecapItem>((o) => {
@@ -242,8 +296,38 @@ function ReassuranceLine({
           <Icon name="shield-check" />
         </span>
         <span style={{ flex: 1, minWidth: 0, font: "var(--t-body)", color: "var(--text)" }}>
-          GoCSM handled <strong style={{ fontWeight: 600 }}><Mono>{totalHandled}</Mono> things</strong> overnight and protected{" "}
-          <strong style={{ fontWeight: 600 }}><Mono>{fmtMoneySmall(protectedAmount)}</Mono></strong> this week.
+          GoCSM handled <strong style={{ fontWeight: 600 }}><Mono>{totalHandled}</Mono> things</strong> overnight
+          {sentCount > 0 ? (
+            <>
+              {" "}and sent{" "}
+              <strong style={{ fontWeight: 600 }}>
+                <Mono>{sentCount}</Mono> client email{sentCount === 1 ? "" : "s"}
+              </strong>{" "}
+              —{" "}
+              <button
+                type="button"
+                onClick={() => setEmailsOpen((o) => !o)}
+                style={{
+                  background: "none",
+                  border: "none",
+                  padding: 0,
+                  color: "var(--info-7, var(--blue-7))",
+                  font: "inherit",
+                  fontWeight: 600,
+                  cursor: "pointer",
+                  textDecoration: "underline",
+                }}
+              >
+                {emailsOpen ? "hide them" : "see them"}
+              </button>
+              .
+            </>
+          ) : (
+            <>
+              {" "}and protected{" "}
+              <strong style={{ fontWeight: 600 }}><Mono>{fmtMoneySmall(protectedAmount)}</Mono></strong> this week.
+            </>
+          )}
         </span>
         <Button
           variant="ghost"
@@ -254,6 +338,56 @@ function ReassuranceLine({
           {open ? "Hide" : "See what it did"}
         </Button>
       </div>
+
+      {emailsOpen ? (
+        <div
+          style={{
+            marginTop: "var(--s-3)",
+            padding: "var(--s-3)",
+            borderRadius: "var(--r-md)",
+            background: "var(--surface-2)",
+            border: "1px solid var(--border)",
+            display: "flex",
+            flexDirection: "column",
+            gap: "var(--s-2)",
+          }}
+        >
+          <span style={{ font: "var(--t-meta)", color: "var(--text-2, var(--text))", fontWeight: 600 }}>
+            Client emails sent overnight
+          </span>
+          {sentEmails.map((e) => (
+            <div
+              key={e.id}
+              style={{
+                display: "flex",
+                gap: "var(--s-3)",
+                alignItems: "flex-start",
+                padding: "var(--s-2) var(--s-3)",
+                borderRadius: "var(--r-sm)",
+                background: "var(--surface)",
+              }}
+            >
+              <div style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", gap: 2 }}>
+                <div style={{ display: "flex", gap: "var(--s-2)", alignItems: "baseline", flexWrap: "wrap" }}>
+                  <strong style={{ color: "var(--text)", fontWeight: 600 }}>{e.accountName}</strong>
+                  <span style={{ color: "var(--text-2, var(--text))", font: "var(--t-body-sm)" }}>
+                    · {e.subject}
+                  </span>
+                  <span style={{ marginLeft: "auto", font: "var(--t-meta)", color: "var(--text-3, var(--text))" }}>
+                    {e.whenLabel}
+                  </span>
+                </div>
+                <span style={{ font: "var(--t-body-sm)", color: "var(--text-2, var(--text))" }}>
+                  {e.snippet}
+                </span>
+              </div>
+            </div>
+          ))}
+          <span style={{ font: "var(--t-meta)", color: "var(--text-3, var(--text))", fontStyle: "italic" }}>
+            These are the exact messages you approved in HighLevel at setup.
+          </span>
+        </div>
+      ) : null}
 
       {open ? (
         <div style={{ marginTop: "var(--s-4)", display: "flex", flexDirection: "column", gap: "var(--s-2)" }}>
@@ -314,20 +448,137 @@ function ReassuranceLine({
   );
 }
 
+
+// ----------------------------------------------------------------------------
+// Pending approvals — ONLY surfaces when an autopilot play is on "Ease in" or
+// "Review every send". Absent/empty when every on-play is "Send automatically".
+// ----------------------------------------------------------------------------
+
+function PendingApprovalsItem() {
+  const onIds = useAllAutopilotOn();
+  const [open, setOpen] = useState(false);
+  const [approvedIds, setApprovedIds] = useState<Set<string>>(new Set());
+
+  // Only the heavier oversight modes generate pending sends.
+  const heavyIds = onIds.filter((id) => {
+    const m = autopilotStore.oversee(id);
+    return m === "ease" || m === "review";
+  });
+  const pending = pendingEmailsForPlaybooks(heavyIds).filter((e) => !approvedIds.has(e.id));
+
+  if (pending.length === 0) return null;
+
+  const approve = (id: string) => {
+    setApprovedIds((prev) => new Set(prev).add(id));
+  };
+  const approveAll = () => {
+    setApprovedIds((prev) => {
+      const next = new Set(prev);
+      pending.forEach((p) => next.add(p.id));
+      return next;
+    });
+  };
+
+  return (
+    <Card padded className="accent-t warn">
+      <div style={{ display: "flex", flexDirection: "column", gap: "var(--s-3)" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: "var(--s-3)", flexWrap: "wrap" }}>
+          <span className="icon-chip warn" aria-hidden>
+            <Icon name="mail" />
+          </span>
+          <span style={{ flex: 1, minWidth: 0, font: "var(--t-body)", color: "var(--text)" }}>
+            <strong style={{ fontWeight: 600 }}>
+              <Mono>{pending.length}</Mono> client email{pending.length === 1 ? "" : "s"}
+            </strong>{" "}
+            waiting for your OK
+            <span style={{ color: "var(--text-2, var(--text))" }}>
+              {" "}— from plays you set to review before sending.
+            </span>
+          </span>
+          <Button
+            variant="ghost"
+            size="sm"
+            icon={<Icon name={open ? "chevron-up" : "arrow-right"} />}
+            onClick={() => setOpen((o) => !o)}
+          >
+            {open ? "Hide" : "Review"}
+          </Button>
+        </div>
+        {open ? (
+          <div style={{ display: "flex", flexDirection: "column", gap: "var(--s-2)" }}>
+            {pending.map((e) => (
+              <div
+                key={e.id}
+                style={{
+                  display: "flex",
+                  alignItems: "flex-start",
+                  gap: "var(--s-3)",
+                  padding: "var(--s-3)",
+                  borderRadius: "var(--r-md)",
+                  background: "var(--surface-2)",
+                  border: "1px solid var(--border)",
+                }}
+              >
+                <div style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", gap: 2 }}>
+                  <div style={{ display: "flex", gap: "var(--s-2)", alignItems: "baseline", flexWrap: "wrap" }}>
+                    <strong style={{ color: "var(--text)", fontWeight: 600 }}>{e.accountName}</strong>
+                    <span style={{ color: "var(--text-2, var(--text))", font: "var(--t-body-sm)" }}>
+                      · {e.subject}
+                    </span>
+                    <span style={{ marginLeft: "auto", font: "var(--t-meta)", color: "var(--text-3, var(--text))" }}>
+                      {e.whenLabel}
+                    </span>
+                  </div>
+                  <span style={{ font: "var(--t-body-sm)", color: "var(--text-2, var(--text))" }}>
+                    {e.snippet}
+                  </span>
+                </div>
+                <Button
+                  size="sm"
+                  variant="primary"
+                  icon={<Icon name="check" />}
+                  onClick={() => approve(e.id)}
+                >
+                  Approve & send
+                </Button>
+              </div>
+            ))}
+            <div style={{ display: "flex", justifyContent: "flex-end" }}>
+              <Button size="sm" variant="ghost" onClick={approveAll}>
+                Approve all ({pending.length})
+              </Button>
+            </div>
+          </div>
+        ) : null}
+      </div>
+    </Card>
+  );
+}
+
+
 // ----------------------------------------------------------------------------
 // Page
 // ----------------------------------------------------------------------------
+
+
 
 export default function TodayPage() {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [drawerScope, setDrawerScope] = useState<DrawerScope | null>(null);
-  const openApply = (accs: Account[], suggested?: string) =>
+  const [drawerInitial, setDrawerInitial] = useState<DrawerInitial | undefined>(undefined);
+  const openApply = (accs: Account[], suggested?: string) => {
+    setDrawerInitial(undefined);
     setDrawerScope({
       kind: "accounts",
       accountIds: accs.map((a) => a.identity.id),
       suggested,
     });
+  };
+  const openAutopilotEditor = (playbookId: string, step: 1 | 2 = 1, showHandoff = false) => {
+    setDrawerScope({ kind: "playbook", playbookId });
+    setDrawerInitial({ mode: "autopilot", step, showHandoff });
+  };
 
 
   const queue = useMemo(() => atRiskByUrgency().slice(0, 8), []);
@@ -714,6 +965,9 @@ export default function TodayPage() {
 
       <ReassuranceLine onOpenAccount={(id) => navigate(`/accounts/${id}`)} />
 
+      <PendingApprovalsItem />
+
+
 
       {/* 3 — Needs you */}
       <section
@@ -958,6 +1212,8 @@ export default function TodayPage() {
                 playbookId={c.playbookId}
                 onView={c.onView}
                 onApply={c.onApply}
+                onEditRule={(id) => openAutopilotEditor(id, 1)}
+                onOpenHighLevel={(id) => openAutopilotEditor(id, 2, true)}
               />
             ))}
         </div>
@@ -967,7 +1223,11 @@ export default function TodayPage() {
         open={!!drawerScope}
         scope={drawerScope}
         accounts={allAccounts()}
-        onClose={() => setDrawerScope(null)}
+        initial={drawerInitial}
+        onClose={() => {
+          setDrawerScope(null);
+          setDrawerInitial(undefined);
+        }}
       />
     </main>
   );

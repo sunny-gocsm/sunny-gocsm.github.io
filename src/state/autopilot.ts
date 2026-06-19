@@ -12,8 +12,11 @@ export type AutopilotStatus = "off" | "on" | "paused";
 
 type Listener = () => void;
 
+export type OverseeMode = "auto" | "ease" | "review";
+
 const onIds = new Set<string>();
 const pausedIds = new Set<string>();
+const overseeMap = new Map<string, OverseeMode>();
 const listeners = new Set<Listener>();
 
 // Snapshot identity bumps on every change so useSyncExternalStore re-renders.
@@ -24,11 +27,22 @@ function emit() {
 }
 
 export const autopilotStore = {
-  enable(id: string) {
+  enable(id: string, oversee: OverseeMode = "auto") {
     pausedIds.delete(id);
-    if (onIds.has(id)) return;
+    overseeMap.set(id, oversee);
+    if (onIds.has(id)) {
+      emit();
+      return;
+    }
     onIds.add(id);
     emit();
+  },
+  setOversee(id: string, oversee: OverseeMode) {
+    overseeMap.set(id, oversee);
+    emit();
+  },
+  oversee(id: string): OverseeMode {
+    return overseeMap.get(id) ?? "auto";
   },
   disable(id: string) {
     const had = onIds.delete(id) || pausedIds.delete(id);
@@ -53,6 +67,9 @@ export const autopilotStore = {
     if (onIds.has(id)) return "on";
     if (pausedIds.has(id)) return "paused";
     return "off";
+  },
+  listOn(): string[] {
+    return Array.from(onIds);
   },
   snapshot() {
     return version;
@@ -79,4 +96,15 @@ export function useIsAutopilot(id: string): boolean {
 export function useAutopilotStatus(id: string): AutopilotStatus {
   useVersion();
   return autopilotStore.status(id);
+}
+
+export function useAutopilotOversee(id: string): OverseeMode {
+  useVersion();
+  return autopilotStore.oversee(id);
+}
+
+// All playbook IDs currently on (not paused).
+export function useAllAutopilotOn(): string[] {
+  useVersion();
+  return autopilotStore.listOn();
 }

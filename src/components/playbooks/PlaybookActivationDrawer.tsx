@@ -148,9 +148,11 @@ export function PlaybookActivationDrawer({ open, scope, accounts, onClose, initi
 
 
 
+  const [publishOversee, setPublishOversee] = useState<"auto" | "ease" | "review">("auto");
+
   const turnOnAutopilot = () => {
     if (!playbook) return;
-    autopilotStore.enable(playbook.id);
+    autopilotStore.enable(playbook.id, publishOversee);
     setAutopilotChoice("on");
     toast.success(`${playbook.title} is on autopilot`, {
       description: "Reversible · undo for 5 seconds. Change or pause anytime in Playbooks.",
@@ -396,6 +398,7 @@ export function PlaybookActivationDrawer({ open, scope, accounts, onClose, initi
                 targetCount={targetCount}
                 onNotNow={() => setAutopilotSetupStep(0)}
                 onPublish={turnOnAutopilot}
+                onOverseeChange={setPublishOversee}
                 initialShowHandoff={directAutopilot && initial?.showHandoff === true}
               />
 
@@ -506,6 +509,7 @@ interface AutopilotSetupProps {
   targetCount: number;
   onNotNow: () => void;
   onPublish: () => void;
+  onOverseeChange?: (m: "auto" | "ease" | "review") => void;
   initialShowHandoff?: boolean;
 }
 
@@ -515,6 +519,7 @@ function AutopilotSetup({
   onStepChange,
   onNotNow,
   onPublish,
+  onOverseeChange,
   initialShowHandoff = false,
 }: AutopilotSetupProps) {
   // Lifted summary state populated by Step 1 (When it runs) and read by Step 2.
@@ -565,6 +570,7 @@ function AutopilotSetup({
                 setRuleSentence(sentence);
                 setRuleCount(count);
               }}
+              onOverseeChange={onOverseeChange}
             />
 
             <div
@@ -1370,9 +1376,11 @@ function Q4Notify({ answers, set }: QProps) {
 function WhenItRuns({
   playbook,
   onRuleChange,
+  onOverseeChange,
 }: {
   playbook: Playbook;
   onRuleChange?: (sentence: string, count: number) => void;
+  onOverseeChange?: (m: "auto" | "ease" | "review") => void;
 }) {
   const [path, setPath] = useState<"auto" | "guided">("auto");
   const [answers, setAnswers] = useState<Answers>(DEFAULT_ANSWERS);
@@ -1422,6 +1430,10 @@ function WhenItRuns({
   useEffect(() => {
     onRuleChange?.(ruleSentence, matches.length);
   }, [ruleSentence, matches.length, onRuleChange]);
+
+  useEffect(() => {
+    onOverseeChange?.(overseeMode);
+  }, [overseeMode, onOverseeChange]);
 
 
   const TOTAL = 4;
