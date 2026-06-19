@@ -1431,6 +1431,10 @@ function WhenItRuns({
     onRuleChange?.(ruleSentence, matches.length);
   }, [ruleSentence, matches.length, onRuleChange]);
 
+  useEffect(() => {
+    onOverseeChange?.(overseeMode);
+  }, [overseeMode, onOverseeChange]);
+
 
   const TOTAL = 4;
   const next = () => setQIdx((i) => (Math.min(TOTAL - 1, i + 1) as 0 | 1 | 2 | 3));
