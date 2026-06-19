@@ -570,6 +570,7 @@ function AutopilotSetup({
                 setRuleSentence(sentence);
                 setRuleCount(count);
               }}
+              onOverseeChange={onOverseeChange}
             />
 
             <div
