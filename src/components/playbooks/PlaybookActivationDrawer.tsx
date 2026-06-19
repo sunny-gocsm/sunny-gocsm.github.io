@@ -759,11 +759,73 @@ function applyPredicates(base: Account[], a: Answers): Account[] {
   });
 }
 
-function buildRuleSentence(p: Playbook, a: Answers): string {
-  const extras = extrasFor(a);
-  const tail = extras.length ? ` (${extras.join(", ")})` : "";
+function buildRuleSentence(p: Playbook, a: Answers, extra: ExtraCond[] = []): string {
+  const parts = [...extrasFor(a), ...extra.map((c) => c.label.toLowerCase())];
+  const tail = parts.length ? ` (${parts.join(", ")})` : "";
   return `Runs for accounts that ${eventPhrase(p)}${tail}.`;
 }
+
+// ---- Advanced refiner (quiet, secondary) -----------------------------------
+
+export type ExtraCondId = "no-login-30" | "stage" | "age" | "tag" | "signal";
+export type LifecycleStage = "onboarding" | "established" | "churned";
+export type AgeBucket = "under90" | "90-365" | "over365";
+export type OtherSignal = "a2p-lost" | "domain-lost" | "integration-lost";
+
+export const TAGS = ["VIP", "Enterprise", "Beta", "Trial"] as const;
+
+const STAGE_LABEL: Record<LifecycleStage, string> = {
+  onboarding: "Onboarding",
+  established: "Established",
+  churned: "Churned",
+};
+const AGE_LABEL: Record<AgeBucket, string> = {
+  under90: "Under 90 days old",
+  "90-365": "90-365 days old",
+  over365: "Over 1 year old",
+};
+const SIGNAL_LABEL: Record<OtherSignal, string> = {
+  "a2p-lost": "A2P registration lost",
+  "domain-lost": "Domain disconnected",
+  "integration-lost": "Integration removed",
+};
+
+export interface ExtraCond {
+  id: ExtraCondId;
+  label: string;
+  predicate?: (a: Account) => boolean;
+}
+
+interface ExtraCondPicks {
+  stagePick: LifecycleStage;
+  agePick: AgeBucket;
+  tagPick: string;
+  signalPick: OtherSignal;
+}
+
+function buildExtraCond(id: ExtraCondId, picks: ExtraCondPicks): ExtraCond {
+  switch (id) {
+    case "no-login-30":
+      return {
+        id,
+        label: "No login in 30 days",
+        predicate: (a) => a.login.lastLoginDaysAgo >= 30,
+      };
+    case "stage":
+      return {
+        id,
+        label: `Stage: ${STAGE_LABEL[picks.stagePick]}`,
+        predicate: (a) => (a.lifecycle.stage as LifecycleStage) === picks.stagePick,
+      };
+    case "age":
+      return { id, label: `Age: ${AGE_LABEL[picks.agePick]}` };
+    case "tag":
+      return { id, label: `Tag: ${picks.tagPick}` };
+    case "signal":
+      return { id, label: SIGNAL_LABEL[picks.signalPick] };
+  }
+}
+
 
 // ---- Tap card primitives ----------------------------------------------------
 
