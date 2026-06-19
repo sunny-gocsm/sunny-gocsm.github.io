@@ -94,3 +94,20 @@ export function useAutopilotStatus(id: string): AutopilotStatus {
   useVersion();
   return autopilotStore.status(id);
 }
+
+export function useAutopilotOversee(id: string): OverseeMode {
+  useVersion();
+  return autopilotStore.oversee(id);
+}
+
+// All playbook IDs currently on (not paused).
+export function useAllAutopilotOn(): string[] {
+  useVersion();
+  const ids: string[] = [];
+  // Iterate the internal sets via the store's public surface.
+  // Cheap: only a handful of playbooks.
+  ["pb-save-domain","pb-no-login","pb-payment-failed","pb-onboarding-stalled","pb-expansion-ready"].forEach((id) => {
+    if (autopilotStore.has(id)) ids.push(id);
+  });
+  return ids;
+}
