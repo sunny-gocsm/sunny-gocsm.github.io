@@ -28,17 +28,15 @@ import {
 import type { Account } from "@/fixtures";
 import { autopilotStore } from "@/state/autopilot";
 import { PlayVideoButton } from "@/components/playbooks/PlayVideoButton";
-import { WhatGoCSMDoes, getChannelsForPlay } from "@/components/playbooks/WhatGoCSMDoes";
-import type { ChannelId } from "@/components/playbooks/WhatGoCSMDoes";
 
 export type DrawerScope =
   | { kind: "playbook"; playbookId: string }
   | { kind: "accounts"; accountIds: string[]; suggested?: string };
 
 // Optional deep-link: jump straight into the autopilot setup at a given step.
-// Used by the Playbooks page "Edit rule" / "Review steps" controls so the same
-// setup screens (Step 1 / Step 2) are reused for editing an existing play.
-export type DrawerInitial = { mode: "autopilot"; step: 1 | 2 | 3 };
+// Now only two steps: 1 = "When it runs", 2 = "Finish & publish".
+export type DrawerInitial = { mode: "autopilot"; step: 1 | 2 };
+
 
 interface Props {
   open: boolean;
