@@ -585,6 +585,13 @@ function AutopilotSetup({
 
         <div style={{ display: "flex", flexDirection: "column", gap: "var(--s-3)" }}>
           <div style={{ display: stepIndex === 1 ? "block" : "none" }}>
+            <WhatGoCSMDoes
+              playbook={playbook}
+              onEnabledChange={setEnabledLabels}
+            />
+          </div>
+
+          <div style={{ display: stepIndex === 2 ? "block" : "none" }}>
             <Step1Audience
               playbook={playbook}
               onRuleChange={(sentence, count) => {
@@ -594,14 +601,6 @@ function AutopilotSetup({
             />
           </div>
 
-          <div style={{ display: stepIndex === 2 ? "block" : "none" }}>
-            <WhatGoCSMDoes
-              playbook={playbook}
-              onEnabledChange={setEnabledLabels}
-            />
-          </div>
-
-
           {stepIndex === 3 ? (
             <Step3Summary
               ruleSentence={ruleSentence}
@@ -610,6 +609,7 @@ function AutopilotSetup({
             />
           ) : null}
         </div>
+
 
 
 
