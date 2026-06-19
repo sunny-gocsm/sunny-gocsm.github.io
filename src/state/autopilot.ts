@@ -27,11 +27,22 @@ function emit() {
 }
 
 export const autopilotStore = {
-  enable(id: string) {
+  enable(id: string, oversee: OverseeMode = "auto") {
     pausedIds.delete(id);
-    if (onIds.has(id)) return;
+    overseeMap.set(id, oversee);
+    if (onIds.has(id)) {
+      emit();
+      return;
+    }
     onIds.add(id);
     emit();
+  },
+  setOversee(id: string, oversee: OverseeMode) {
+    overseeMap.set(id, oversee);
+    emit();
+  },
+  oversee(id: string): OverseeMode {
+    return overseeMap.get(id) ?? "auto";
   },
   disable(id: string) {
     const had = onIds.delete(id) || pausedIds.delete(id);
