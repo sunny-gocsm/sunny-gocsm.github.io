@@ -439,8 +439,9 @@ export function PlaybookActivationDrawer({ open, scope, accounts, onClose, initi
 
 const AP_STEPS: { n: 1 | 2; label: string }[] = [
   { n: 1, label: "When it runs" },
-  { n: 2, label: "Finish & publish" },
+  { n: 2, label: "Finish in HighLevel" },
 ];
+
 
 function StepDots({ current }: { current: 1 | 2 }) {
   return (
