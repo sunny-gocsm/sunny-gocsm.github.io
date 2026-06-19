@@ -1407,9 +1407,17 @@ function WhenItRuns({
 
   const ruleSentence = useMemo(() => {
     const baseSentence = buildRuleSentence(playbook, activeAnswers, extraConds);
-    if (path === "auto" && extraConds.length === 0) return baseSentence;
-    return `${baseSentence.replace(/\.$/, "")} · ${notifyPhrase(activeAnswers)}.`;
-  }, [playbook, activeAnswers, path, extraConds]);
+    let sentence = baseSentence;
+    if (!(path === "auto" && extraConds.length === 0)) {
+      sentence = `${baseSentence.replace(/\.$/, "")} · ${notifyPhrase(activeAnswers)}.`;
+    }
+    if (overseeMode === "ease") {
+      sentence = `${sentence.replace(/\.$/, "")} — you'll review the first 3 sends.`;
+    } else if (overseeMode === "review") {
+      sentence = `${sentence.replace(/\.$/, "")} — you'll review every send.`;
+    }
+    return sentence;
+  }, [playbook, activeAnswers, path, extraConds, overseeMode]);
 
   useEffect(() => {
     onRuleChange?.(ruleSentence, matches.length);
