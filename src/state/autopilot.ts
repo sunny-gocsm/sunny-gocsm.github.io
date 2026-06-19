@@ -68,6 +68,9 @@ export const autopilotStore = {
     if (pausedIds.has(id)) return "paused";
     return "off";
   },
+  listOn(): string[] {
+    return Array.from(onIds);
+  },
   snapshot() {
     return version;
   },
