@@ -242,7 +242,7 @@ export function PlaybookActivationDrawer({ open, scope, accounts, onClose, initi
                   </span>
                 </div>
                 <div style={{ display: "flex", gap: "var(--s-2)", marginTop: "var(--s-1)" }}>
-                  <Button variant="primary" onClick={runNow} icon={<Icon name="play" />}>
+                  <Button variant="primary" onClick={() => setStep("explain")} icon={<Icon name="play" />}>
                     Run it now{batchSuffix}
                   </Button>
 
