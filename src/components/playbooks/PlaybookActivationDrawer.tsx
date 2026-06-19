@@ -595,11 +595,12 @@ function AutopilotSetup({
           </div>
 
           <div style={{ display: stepIndex === 2 ? "block" : "none" }}>
-            <Step2Actions
+            <WhatGoCSMDoes
               playbook={playbook}
               onEnabledChange={setEnabledLabels}
             />
           </div>
+
 
           {stepIndex === 3 ? (
             <Step3Summary
