@@ -451,8 +451,117 @@ function ReassuranceLine({
 
 
 // ----------------------------------------------------------------------------
+// Pending approvals — ONLY surfaces when an autopilot play is on "Ease in" or
+// "Review every send". Absent/empty when every on-play is "Send automatically".
+// ----------------------------------------------------------------------------
+
+function PendingApprovalsItem() {
+  const onIds = useAllAutopilotOn();
+  const [open, setOpen] = useState(false);
+  const [approvedIds, setApprovedIds] = useState<Set<string>>(new Set());
+
+  // Only the heavier oversight modes generate pending sends.
+  const heavyIds = onIds.filter((id) => {
+    const m = autopilotStore.oversee(id);
+    return m === "ease" || m === "review";
+  });
+  const pending = pendingEmailsForPlaybooks(heavyIds).filter((e) => !approvedIds.has(e.id));
+
+  if (pending.length === 0) return null;
+
+  const approve = (id: string) => {
+    setApprovedIds((prev) => new Set(prev).add(id));
+  };
+  const approveAll = () => {
+    setApprovedIds((prev) => {
+      const next = new Set(prev);
+      pending.forEach((p) => next.add(p.id));
+      return next;
+    });
+  };
+
+  return (
+    <Card padded className="accent-t warn">
+      <div style={{ display: "flex", flexDirection: "column", gap: "var(--s-3)" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: "var(--s-3)", flexWrap: "wrap" }}>
+          <span className="icon-chip warn" aria-hidden>
+            <Icon name="mail" />
+          </span>
+          <span style={{ flex: 1, minWidth: 0, font: "var(--t-body)", color: "var(--text)" }}>
+            <strong style={{ fontWeight: 600 }}>
+              <Mono>{pending.length}</Mono> client email{pending.length === 1 ? "" : "s"}
+            </strong>{" "}
+            waiting for your OK
+            <span style={{ color: "var(--text-2, var(--text))" }}>
+              {" "}— from plays you set to review before sending.
+            </span>
+          </span>
+          <Button
+            variant="ghost"
+            size="sm"
+            icon={<Icon name={open ? "chevron-up" : "arrow-right"} />}
+            onClick={() => setOpen((o) => !o)}
+          >
+            {open ? "Hide" : "Review"}
+          </Button>
+        </div>
+        {open ? (
+          <div style={{ display: "flex", flexDirection: "column", gap: "var(--s-2)" }}>
+            {pending.map((e) => (
+              <div
+                key={e.id}
+                style={{
+                  display: "flex",
+                  alignItems: "flex-start",
+                  gap: "var(--s-3)",
+                  padding: "var(--s-3)",
+                  borderRadius: "var(--r-md)",
+                  background: "var(--surface-2)",
+                  border: "1px solid var(--border)",
+                }}
+              >
+                <div style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", gap: 2 }}>
+                  <div style={{ display: "flex", gap: "var(--s-2)", alignItems: "baseline", flexWrap: "wrap" }}>
+                    <strong style={{ color: "var(--text)", fontWeight: 600 }}>{e.accountName}</strong>
+                    <span style={{ color: "var(--text-2, var(--text))", font: "var(--t-body-sm)" }}>
+                      · {e.subject}
+                    </span>
+                    <span style={{ marginLeft: "auto", font: "var(--t-meta)", color: "var(--text-3, var(--text))" }}>
+                      {e.whenLabel}
+                    </span>
+                  </div>
+                  <span style={{ font: "var(--t-body-sm)", color: "var(--text-2, var(--text))" }}>
+                    {e.snippet}
+                  </span>
+                </div>
+                <Button
+                  size="sm"
+                  variant="primary"
+                  icon={<Icon name="check" />}
+                  onClick={() => approve(e.id)}
+                >
+                  Approve & send
+                </Button>
+              </div>
+            ))}
+            <div style={{ display: "flex", justifyContent: "flex-end" }}>
+              <Button size="sm" variant="ghost" onClick={approveAll}>
+                Approve all ({pending.length})
+              </Button>
+            </div>
+          </div>
+        ) : null}
+      </div>
+    </Card>
+  );
+}
+
+
+// ----------------------------------------------------------------------------
 // Page
 // ----------------------------------------------------------------------------
+
+
 
 export default function TodayPage() {
   const navigate = useNavigate();
