@@ -148,9 +148,11 @@ export function PlaybookActivationDrawer({ open, scope, accounts, onClose, initi
 
 
 
+  const [publishOversee, setPublishOversee] = useState<"auto" | "ease" | "review">("auto");
+
   const turnOnAutopilot = () => {
     if (!playbook) return;
-    autopilotStore.enable(playbook.id);
+    autopilotStore.enable(playbook.id, publishOversee);
     setAutopilotChoice("on");
     toast.success(`${playbook.title} is on autopilot`, {
       description: "Reversible · undo for 5 seconds. Change or pause anytime in Playbooks.",
