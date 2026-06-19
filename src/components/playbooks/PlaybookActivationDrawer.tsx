@@ -395,16 +395,16 @@ export function PlaybookActivationDrawer({ open, scope, accounts, onClose, initi
 }
 
 // ============================================================
-// Autopilot setup — 3-step flow inside the same drawer.
+// Autopilot setup — 2-step flow inside the same drawer.
+// Channel/message configuration lives in HighLevel (no GoCSM editor).
 // ============================================================
 
-const AP_STEPS: { n: 1 | 2 | 3; label: string }[] = [
-  { n: 1, label: "What it does" },
-  { n: 2, label: "When it runs" },
-  { n: 3, label: "Finish & publish" },
+const AP_STEPS: { n: 1 | 2; label: string }[] = [
+  { n: 1, label: "When it runs" },
+  { n: 2, label: "Finish & publish" },
 ];
 
-function StepDots({ current }: { current: 1 | 2 | 3 }) {
+function StepDots({ current }: { current: 1 | 2 }) {
   return (
     <div style={{ display: "flex", alignItems: "center", gap: "var(--s-2)", flexWrap: "wrap" }}>
       {AP_STEPS.map((s, i) => {
@@ -458,8 +458,8 @@ function StepDots({ current }: { current: 1 | 2 | 3 }) {
 
 interface AutopilotSetupProps {
   playbook: Playbook;
-  stepIndex: 1 | 2 | 3;
-  onStepChange: (n: 1 | 2 | 3) => void;
+  stepIndex: 1 | 2;
+  onStepChange: (n: 1 | 2) => void;
   targetCount: number;
   onNotNow: () => void;
   onPublish: () => void;
@@ -469,15 +469,12 @@ function AutopilotSetup({
   playbook,
   stepIndex,
   onStepChange,
-  targetCount,
   onNotNow,
   onPublish,
 }: AutopilotSetupProps) {
-  // Lifted summary state, populated by Step1/Step2 and read by Step3.
+  // Lifted summary state populated by Step 1 (When it runs) and read by Step 2.
   const [ruleSentence, setRuleSentence] = useState<string>("");
   const [ruleCount, setRuleCount] = useState<number>(0);
-  const [enabledLabels, setEnabledLabels] = useState<string[]>([]);
-  const [editedIds, setEditedIds] = useState<ChannelId[]>([]);
   // AP7 — workflow handoff representation (non-editable preview + sticky note).
   const [showHandoff, setShowHandoff] = useState(false);
 
@@ -485,7 +482,7 @@ function AutopilotSetup({
     return (
       <WorkflowHandoff
         playbook={playbook}
-        enabledLabels={enabledLabels}
+        enabledLabels={[]}
         onBack={() => setShowHandoff(false)}
         onPublished={onPublish}
       />
@@ -515,14 +512,6 @@ function AutopilotSetup({
 
         <div style={{ display: "flex", flexDirection: "column", gap: "var(--s-3)" }}>
           <div style={{ display: stepIndex === 1 ? "block" : "none" }}>
-            <WhatGoCSMDoes
-              playbook={playbook}
-              onEnabledChange={setEnabledLabels}
-              onEditedChange={setEditedIds}
-            />
-          </div>
-
-          <div style={{ display: stepIndex === 2 ? "block" : "none" }}>
             <WhenItRuns
               playbook={playbook}
               onRuleChange={(sentence, count) => {
@@ -532,19 +521,13 @@ function AutopilotSetup({
             />
           </div>
 
-          {stepIndex === 3 ? (
+          {stepIndex === 2 ? (
             <Step3Summary
               ruleSentence={ruleSentence}
               ruleCount={ruleCount}
-              enabledLabels={enabledLabels}
-              editedLabels={useMemo(() => getChannelsForPlay(playbook).filter(c => editedIds.includes(c.id)).map(c => c.label), [playbook, editedIds])}
             />
           ) : null}
         </div>
-
-
-
-
 
         <div
           style={{
@@ -562,19 +545,19 @@ function AutopilotSetup({
               <Button
                 variant="ghost"
                 size="sm"
-                onClick={() => onStepChange((stepIndex - 1) as 1 | 2 | 3)}
+                onClick={() => onStepChange((stepIndex - 1) as 1 | 2)}
                 icon={<Icon name="arrow-left" />}
               >
                 Back
               </Button>
             ) : null}
-            {stepIndex < 3 ? (
+            {stepIndex < 2 ? (
               <Button
                 variant="primary"
-                onClick={() => onStepChange((stepIndex + 1) as 1 | 2 | 3)}
+                onClick={() => onStepChange((stepIndex + 1) as 1 | 2)}
                 icon={<Icon name="arrow-right" />}
               >
-                {stepIndex === 2 ? "Continue to publish" : "Next"}
+                Continue to publish
               </Button>
             ) : (
               <Button variant="primary" onClick={() => setShowHandoff(true)} icon={<Icon name="external-link" />}>
@@ -587,6 +570,8 @@ function AutopilotSetup({
     </Card>
   );
 }
+
+
 
 // ============================================================
 // AP7 — Workflow handoff (REPRESENTATION, not an editor)
