@@ -244,8 +244,7 @@ export function PlaybookActivationDrawer({ open, scope, accounts, onClose, initi
                   <Button variant="primary" onClick={runNow} icon={<Icon name="play" />}>
                     Run it now{batchSuffix}
                   </Button>
-                  {/* placeholder so block below stays parseable */}
-                  <span style={{ display: "none" }}>
+
 
                   {scope.kind === "accounts" && alternates.length > 0 ? (
                     <Button variant="ghost" size="sm" onClick={() => setShowAlternates((s) => !s)}>
