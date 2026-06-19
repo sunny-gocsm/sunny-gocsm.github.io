@@ -27,6 +27,7 @@ import {
 import type { Account } from "@/fixtures";
 import { autopilotStore } from "@/state/autopilot";
 import { PlayVideoButton } from "@/components/playbooks/PlayVideoButton";
+import { WhatGoCSMDoes } from "@/components/playbooks/WhatGoCSMDoes";
 
 export type DrawerScope =
   | { kind: "playbook"; playbookId: string }
