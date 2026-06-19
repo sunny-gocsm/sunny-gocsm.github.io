@@ -9,6 +9,7 @@
 // Never shows the full play catalog by default. The quiet "Choose a different play"
 // reveals only plays valid for this signal.
 
+import * as React from "react";
 import { useEffect, useMemo, useState } from "react";
 import {
   Badge,
