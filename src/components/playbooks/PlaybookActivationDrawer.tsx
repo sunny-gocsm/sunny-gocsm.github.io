@@ -46,7 +46,7 @@ interface Props {
   initial?: DrawerInitial;
 }
 
-type Step = "pick" | "setup" | "done";
+type Step = "pick" | "done";
 
 // Plain-English trigger phrase from the playbook's problem.
 function plainTrigger(p: Playbook): string {
@@ -61,13 +61,12 @@ export function PlaybookActivationDrawer({ open, scope, accounts, onClose, initi
   const [selectedId, setSelectedId] = useState<string>("");
   const [showAlternates, setShowAlternates] = useState(false);
   const [autopilotChoice, setAutopilotChoice] = useState<"pending" | "on" | "no">("pending");
-  // True once the play has been run one-time in this session — autopilot then
-  // skips Step 1 ("What it does", already configured) and opens at Step 2.
-  const [ranOnce, setRanOnce] = useState(false);
-  // 0 = not in setup; 1..3 = stepped autopilot setup inside the drawer
-  const [autopilotSetupStep, setAutopilotSetupStep] = useState<0 | 1 | 2 | 3>(
-    directAutopilot ? (initial!.step as 1 | 2 | 3) : 0,
+  // 0 = not in setup; 1..2 = stepped autopilot setup inside the drawer.
+  // Steps are now: 1 "When it runs", 2 "Finish & publish".
+  const [autopilotSetupStep, setAutopilotSetupStep] = useState<0 | 1 | 2>(
+    directAutopilot ? (initial!.step as 1 | 2) : 0,
   );
+
 
   // Resolve the effective playbook
   const playbookId = useMemo(() => {
