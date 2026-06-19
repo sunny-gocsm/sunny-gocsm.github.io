@@ -764,10 +764,21 @@ function PlaybookAutomationRow({
         >
           Edit rule
         </Button>
-        {/* "Review messages" removed — message editing lives in HighLevel. */}
+        <Button
+          variant="ghost"
+          size="sm"
+          icon={<Icon name="external-link" />}
+          onClick={onOpenHighLevel}
+          disabled={!hasRule}
+          title="Reopen the HighLevel handoff to reconfigure steps or messages natively"
+        >
+          Open in HighLevel
+        </Button>
+        {/* Step & message edits happen in HighLevel — no editor here. */}
 
         <PlayVideoButton playbook={playbook} label="Watch (1 min)" />
       </div>
+
     </div>
   );
 }
