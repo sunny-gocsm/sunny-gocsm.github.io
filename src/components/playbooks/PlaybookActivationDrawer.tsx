@@ -370,8 +370,12 @@ export function PlaybookActivationDrawer({ open, scope, accounts, onClose, initi
                     Whenever {plainTrigger(playbook)}, GoCSM will run <strong>{playbook.title}</strong> for you — and still ask before emailing anyone.
                   </p>
                   <div style={{ display: "flex", gap: "var(--s-2)", alignItems: "center" }}>
-                    <Button variant="primary" onClick={() => setAutopilotSetupStep(1)} icon={<Icon name="zap" />}>
-                      Turn on autopilot
+                    <Button
+                      variant="primary"
+                      onClick={() => setAutopilotSetupStep(ranOnce ? 2 : 1)}
+                      icon={<Icon name="zap" />}
+                    >
+                      {ranOnce ? "Keep it running — publish in HighLevel" : "Turn on autopilot"}
                     </Button>
                     <Button variant="ghost" size="sm" onClick={() => setAutopilotChoice("no")}>
                       No thanks
@@ -390,7 +394,9 @@ export function PlaybookActivationDrawer({ open, scope, accounts, onClose, initi
                 targetCount={targetCount}
                 onNotNow={() => setAutopilotSetupStep(0)}
                 onPublish={turnOnAutopilot}
+                initialShowHandoff={ranOnce}
               />
+
 
             ) : (
               <Card padded>
