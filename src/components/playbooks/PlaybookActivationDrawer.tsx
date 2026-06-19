@@ -297,45 +297,9 @@ export function PlaybookActivationDrawer({ open, scope, accounts, onClose, initi
           </>
         ) : null}
 
-        {/* ============= STEP 2 — WHAT GOCSM DOES (one-time run) =============
-            Reuses the same surface as the autopilot actions step. No inline
-            editor — message editing happens in HighLevel. */}
-        {step === "setup" && playbook ? (
-          <>
-            <Card padded>
-              <div style={{ display: "flex", flexDirection: "column", gap: "var(--s-3)" }}>
-                <div style={{ display: "flex", alignItems: "center", gap: "var(--s-2)" }}>
-                  <Icon name={playbook.icon} />
-                  <strong style={{ font: "var(--t-h4, var(--t-body))", fontWeight: 600 }}>
-                    What GoCSM does
-                  </strong>
-                </div>
+        {/* The one-time-run channel-toggle/edit screen has been removed.
+            Action configuration and message editing live in HighLevel. */}
 
-                <WhatGoCSMDoes playbook={playbook} />
-
-                <p
-                  style={{
-                    margin: 0,
-                    font: "var(--t-meta)",
-                    color: "var(--text-2, var(--text))",
-                    fontStyle: "italic",
-                  }}
-                >
-                  Nothing sends until you hit Run · undo for 5 seconds.
-                </p>
-
-                <div style={{ display: "flex", gap: "var(--s-2)", justifyContent: "space-between", alignItems: "center" }}>
-                  <Button variant="ghost" size="sm" onClick={() => setStep("pick")} icon={<Icon name="arrow-left" />}>
-                    Back
-                  </Button>
-                  <Button variant="primary" onClick={runNow} icon={<Icon name="play" />}>
-                    Run it now{batchSuffix}
-                  </Button>
-                </div>
-              </div>
-            </Card>
-          </>
-        ) : null}
 
 
         {/* ============= STEP 3 + 4 — DONE + AUTOPILOT ============= */}
