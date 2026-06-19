@@ -1446,7 +1446,7 @@ function WhenItRuns({
                 label="Stage"
                 value={stagePick}
                 options={(["onboarding", "established", "churned"] as LifecycleStage[]).map((v) => ({ v, label: STAGE_LABEL[v] }))}
-                onChange={setStagePick}
+                onChange={(v) => setStagePick(v as LifecycleStage)}
               />
             ) : null}
             {extras.includes("age") ? (
@@ -1454,7 +1454,7 @@ function WhenItRuns({
                 label="Age"
                 value={agePick}
                 options={(["under90", "90-365", "over365"] as AgeBucket[]).map((v) => ({ v, label: AGE_LABEL[v] }))}
-                onChange={setAgePick}
+                onChange={(v) => setAgePick(v as AgeBucket)}
               />
             ) : null}
             {extras.includes("tag") ? (
@@ -1470,7 +1470,7 @@ function WhenItRuns({
                 label="Signal"
                 value={signalPick}
                 options={(["a2p-lost", "domain-lost", "integration-lost"] as OtherSignal[]).map((v) => ({ v, label: SIGNAL_LABEL[v] }))}
-                onChange={setSignalPick}
+                onChange={(v) => setSignalPick(v as OtherSignal)}
               />
             ) : null}
           </div>
