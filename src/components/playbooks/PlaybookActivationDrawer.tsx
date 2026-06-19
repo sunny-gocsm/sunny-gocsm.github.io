@@ -36,7 +36,7 @@ export type DrawerScope =
 
 // Optional deep-link: jump straight into the autopilot setup at a given step.
 // Now only two steps: 1 = "When it runs", 2 = "Finish & publish".
-export type DrawerInitial = { mode: "autopilot"; step: 1 | 2 };
+export type DrawerInitial = { mode: "autopilot"; step: 1 | 2; showHandoff?: boolean };
 
 
 interface Props {
