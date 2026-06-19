@@ -9,6 +9,7 @@
 // Never shows the full play catalog by default. The quiet "Choose a different play"
 // reveals only plays valid for this signal.
 
+import * as React from "react";
 import { useEffect, useMemo, useState } from "react";
 import {
   Badge,
@@ -597,7 +598,7 @@ function AutopilotSetup({
           </div>
 
           <div style={{ display: stepIndex === 2 ? "block" : "none" }}>
-            <Step1Audience
+            <WhenItRuns
               playbook={playbook}
               onRuleChange={(sentence, count) => {
                 setRuleSentence(sentence);
@@ -662,18 +663,11 @@ function AutopilotSetup({
 }
 
 // ============================================================
-// Step 1 — "Who it runs for" with AI-assisted refiner (simulated)
+// Step 2 — "When it runs"
+//   Path A: Let GoCSM decide (recommended) — the play's smart default rule.
+//   Path B: Choose myself — a guided 4-question wizard. Tappable, skippable,
+//           one question at a time. No free-text chat (NL wiring lands later).
 // ============================================================
-
-type CondKind = "band" | "minMrr" | "noLoginDays" | "plan" | "notify" | "other";
-interface Cond {
-  id: string;
-  kind: CondKind;
-  group: "audience" | "signal" | "notify";
-  label: string;
-  // applied to the candidate pool — undefined means display-only (no filter)
-  predicate?: (a: Account) => boolean;
-}
 
 // Short, plain-English phrase for the play's fixed event.
 function eventPhrase(p: Playbook): string {
@@ -691,161 +685,469 @@ function eventPhrase(p: Playbook): string {
   return map[p.id] ?? p.problem.replace(/^The /, "").replace(/\.$/, "").toLowerCase();
 }
 
-const SUGGESTED: Omit<Cond, "id">[] = [
-  {
-    kind: "band",
-    group: "audience",
-    label: "Only at-risk",
-    predicate: (a) => a.health.band === "atrisk",
-  },
-  {
-    kind: "plan",
-    group: "audience",
-    label: "Annual plans",
-    // No billing-cycle field in fixtures — display-only chip.
-  },
-  {
-    kind: "minMrr",
-    group: "audience",
-    label: "Over $500 MRR",
-    predicate: (a) => a.revenue.mrr > 500,
-  },
-  {
-    kind: "noLoginDays",
-    group: "signal",
-    label: "No login in 30 days",
-    predicate: (a) => a.login.lastLoginDaysAgo >= 30,
-  },
-  {
-    kind: "notify",
-    group: "notify",
-    label: "Notify Sinan",
-  },
-];
+type WhoAns = "all" | "atrisk" | "pick";
+type PlanAns = "all" | "annual" | "pick";
+type SizeAns = "any" | "over500" | "custom";
+type NotifyAns = "me" | "teammate" | "slack";
 
-// Very small NL → chip parser. Real wiring lands later.
-function parsePhrase(raw: string): Omit<Cond, "id"> | null {
-  const s = raw.trim().toLowerCase();
-  if (!s) return null;
-  if (/at[- ]?risk/.test(s)) return SUGGESTED[0];
-  if (/annual/.test(s)) return SUGGESTED[1];
-  const mrr = s.match(/\$?\s*(\d{2,5})\s*(?:mrr|\/mo|\b)/);
-  if (mrr) {
-    const n = parseInt(mrr[1], 10);
-    return {
-      kind: "minMrr",
-      group: "audience",
-      label: `Over $${n} MRR`,
-      predicate: (a) => a.revenue.mrr > n,
-    };
-  }
-  const noLogin = s.match(/no login.*?(\d+)/);
-  if (noLogin) {
-    const n = parseInt(noLogin[1], 10);
-    return {
-      kind: "noLoginDays",
-      group: "signal",
-      label: `No login in ${n} days`,
-      predicate: (a) => a.login.lastLoginDaysAgo >= n,
-    };
-  }
-  const notify = s.match(/notify\s+([a-z]+)/);
-  if (notify) {
-    const name = notify[1][0].toUpperCase() + notify[1].slice(1);
-    return { kind: "notify", group: "notify", label: `Notify ${name}` };
-  }
-  return { kind: "other", group: "audience", label: raw.trim() };
-}
+const HEALTH_BANDS = ["thriving", "healthy", "steady", "atrisk"] as const;
+type Band = typeof HEALTH_BANDS[number];
 
-const GROUP_LABEL: Record<Cond["group"], string> = {
-  audience: "Audience",
-  signal: "And also…",
-  notify: "Notify",
+const BAND_LABEL: Record<Band, string> = {
+  thriving: "Thriving",
+  healthy: "Healthy",
+  steady: "Steady",
+  atrisk: "At-risk",
 };
 
-function ChipBadge({ cond, onRemove }: { cond: Cond; onRemove: () => void }) {
+const PLAN_OPTIONS = ["Starter", "Pro", "Agency", "Enterprise"];
+const TEAMMATES = ["Alex", "Sinan", "Jordan", "Priya"];
+const SLACK_CHANNELS = ["#cs-watch", "#cs-saves", "#cs-billing"];
+
+interface Answers {
+  who: WhoAns;
+  whoBands: Band[];
+  plan: PlanAns;
+  planPicks: string[];
+  size: SizeAns;
+  sizeAmt: number;
+  notify: NotifyAns;
+  notifyName: string;
+  notifyChannel: string;
+}
+
+const DEFAULT_ANSWERS: Answers = {
+  who: "all",
+  whoBands: [],
+  plan: "all",
+  planPicks: [],
+  size: "any",
+  sizeAmt: 500,
+  notify: "me",
+  notifyName: TEAMMATES[0],
+  notifyChannel: SLACK_CHANNELS[0],
+};
+
+function extrasFor(a: Answers): string[] {
+  const out: string[] = [];
+  if (a.who === "atrisk") out.push("only at-risk");
+  else if (a.who === "pick" && a.whoBands.length > 0)
+    out.push(a.whoBands.map((b) => BAND_LABEL[b].toLowerCase()).join(" / "));
+  if (a.plan === "annual") out.push("annual plans");
+  else if (a.plan === "pick" && a.planPicks.length > 0)
+    out.push(`${a.planPicks.join(", ")} plans`);
+  if (a.size === "over500") out.push("over $500 MRR");
+  else if (a.size === "custom") out.push(`over $${a.sizeAmt} MRR`);
+  return out;
+}
+
+function notifyPhrase(a: Answers): string {
+  if (a.notify === "me") return "notify me";
+  if (a.notify === "teammate") return `notify ${a.notifyName}`;
+  return `post to ${a.notifyChannel}`;
+}
+
+function applyPredicates(base: Account[], a: Answers): Account[] {
+  return base.filter((acc) => {
+    const band = acc.health.band as Band;
+    if (a.who === "atrisk" && band !== "atrisk") return false;
+    if (a.who === "pick" && a.whoBands.length > 0 && !a.whoBands.includes(band)) return false;
+    if (a.size === "over500" && !(acc.revenue.mrr > 500)) return false;
+    if (a.size === "custom" && !(acc.revenue.mrr > a.sizeAmt)) return false;
+    // Plan is display-only (no plan field on fixtures).
+    return true;
+  });
+}
+
+function buildRuleSentence(p: Playbook, a: Answers): string {
+  const extras = extrasFor(a);
+  const tail = extras.length ? ` (${extras.join(", ")})` : "";
+  return `Runs for accounts that ${eventPhrase(p)}${tail}.`;
+}
+
+// ---- Tap card primitives ----------------------------------------------------
+
+function TapCard({
+  active,
+  onClick,
+  title,
+  hint,
+  children,
+}: {
+  active?: boolean;
+  onClick: () => void;
+  title: string;
+  hint?: string;
+  children?: React.ReactNode;
+}) {
   return (
-    <Badge variant="neutral" dot={false}>
-      <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
-        {cond.label}
-        <button
-          aria-label={`Remove ${cond.label}`}
-          onClick={onRemove}
-          style={{
-            display: "inline-flex",
-            alignItems: "center",
-            justifyContent: "center",
-            background: "transparent",
-            border: 0,
-            padding: 0,
-            color: "inherit",
-            cursor: "pointer",
-          }}
-        >
-          <Icon name="x" />
-        </button>
-      </span>
-    </Badge>
+    <button
+      onClick={onClick}
+      aria-pressed={active}
+      style={{
+        cursor: "pointer",
+        textAlign: "left",
+        padding: "var(--s-3)",
+        borderRadius: "var(--r-md)",
+        border: `1px solid ${active ? "var(--info-7, var(--blue-7))" : "var(--border)"}`,
+        background: active ? "var(--surface-2)" : "var(--surface)",
+        color: "var(--text)",
+        display: "flex",
+        flexDirection: "column",
+        gap: 4,
+        font: "var(--t-body)",
+      }}
+    >
+      <span style={{ fontWeight: 600 }}>{title}</span>
+      {hint ? (
+        <span style={{ font: "var(--t-meta)", color: "var(--text-3, var(--text))" }}>{hint}</span>
+      ) : null}
+      {children}
+    </button>
   );
 }
 
-function Step1Audience({
+function MiniProgress({ step, total }: { step: number; total: number }) {
+  return (
+    <div style={{ display: "flex", alignItems: "center", gap: "var(--s-2)" }}>
+      <span style={{ font: "var(--t-meta)", color: "var(--text-3, var(--text))" }}>
+        <Mono>{step}</Mono> of <Mono>{total}</Mono>
+      </span>
+      <div style={{ display: "flex", gap: 4 }}>
+        {Array.from({ length: total }).map((_, i) => (
+          <span
+            key={i}
+            aria-hidden
+            style={{
+              width: 28,
+              height: 4,
+              borderRadius: 999,
+              background: i < step ? "var(--info-7, var(--blue-7))" : "var(--surface-2)",
+            }}
+          />
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// ---- Path B questions -------------------------------------------------------
+
+interface QProps {
+  answers: Answers;
+  set: (next: Answers) => void;
+}
+
+function Q1Who({ answers, set }: QProps) {
+  const toggleBand = (b: Band) => {
+    const has = answers.whoBands.includes(b);
+    const next = has ? answers.whoBands.filter((x) => x !== b) : [...answers.whoBands, b];
+    set({ ...answers, who: "pick", whoBands: next });
+  };
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: "var(--s-3)" }}>
+      <h4 style={{ margin: 0, font: "var(--t-h4, var(--t-body))", fontWeight: 600 }}>
+        Which accounts should this run for?
+      </h4>
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "var(--s-2)" }}>
+        <TapCard
+          active={answers.who === "all"}
+          onClick={() => set({ ...answers, who: "all", whoBands: [] })}
+          title="All accounts"
+          hint="No restriction"
+        />
+        <TapCard
+          active={answers.who === "atrisk"}
+          onClick={() => set({ ...answers, who: "atrisk", whoBands: [] })}
+          title="Only at-risk"
+          hint="Health band: At-risk"
+        />
+        <TapCard
+          active={answers.who === "pick"}
+          onClick={() => set({ ...answers, who: "pick" })}
+          title="Pick health bands"
+          hint={
+            answers.who === "pick" && answers.whoBands.length > 0
+              ? answers.whoBands.map((b) => BAND_LABEL[b]).join(", ")
+              : "Choose one or more"
+          }
+        />
+      </div>
+      {answers.who === "pick" ? (
+        <div style={{ display: "flex", flexWrap: "wrap", gap: "var(--s-2)" }}>
+          {HEALTH_BANDS.map((b) => {
+            const on = answers.whoBands.includes(b);
+            return (
+              <button
+                key={b}
+                onClick={() => toggleBand(b)}
+                aria-pressed={on}
+                style={{
+                  cursor: "pointer",
+                  padding: "6px 12px",
+                  borderRadius: 999,
+                  border: `1px solid ${on ? "var(--info-7, var(--blue-7))" : "var(--border)"}`,
+                  background: on ? "var(--surface-2)" : "transparent",
+                  color: "var(--text)",
+                  font: "var(--t-meta)",
+                  fontWeight: on ? 600 : 400,
+                }}
+              >
+                {BAND_LABEL[b]}
+              </button>
+            );
+          })}
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
+function Q2Plan({ answers, set }: QProps) {
+  const togglePlan = (name: string) => {
+    const has = answers.planPicks.includes(name);
+    const next = has ? answers.planPicks.filter((x) => x !== name) : [...answers.planPicks, name];
+    set({ ...answers, plan: "pick", planPicks: next });
+  };
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: "var(--s-3)" }}>
+      <h4 style={{ margin: 0, font: "var(--t-h4, var(--t-body))", fontWeight: 600 }}>
+        Which plans?
+      </h4>
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "var(--s-2)" }}>
+        <TapCard
+          active={answers.plan === "all"}
+          onClick={() => set({ ...answers, plan: "all", planPicks: [] })}
+          title="All plans"
+          hint="No restriction"
+        />
+        <TapCard
+          active={answers.plan === "annual"}
+          onClick={() => set({ ...answers, plan: "annual", planPicks: [] })}
+          title="Only annual"
+          hint="Annual billing cycle"
+        />
+        <TapCard
+          active={answers.plan === "pick"}
+          onClick={() => set({ ...answers, plan: "pick" })}
+          title="Pick plans"
+          hint={
+            answers.plan === "pick" && answers.planPicks.length > 0
+              ? answers.planPicks.join(", ")
+              : "Choose one or more"
+          }
+        />
+      </div>
+      {answers.plan === "pick" ? (
+        <div style={{ display: "flex", flexWrap: "wrap", gap: "var(--s-2)" }}>
+          {PLAN_OPTIONS.map((p) => {
+            const on = answers.planPicks.includes(p);
+            return (
+              <button
+                key={p}
+                onClick={() => togglePlan(p)}
+                aria-pressed={on}
+                style={{
+                  cursor: "pointer",
+                  padding: "6px 12px",
+                  borderRadius: 999,
+                  border: `1px solid ${on ? "var(--info-7, var(--blue-7))" : "var(--border)"}`,
+                  background: on ? "var(--surface-2)" : "transparent",
+                  color: "var(--text)",
+                  font: "var(--t-meta)",
+                  fontWeight: on ? 600 : 400,
+                }}
+              >
+                {p}
+              </button>
+            );
+          })}
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
+function Q3Size({ answers, set }: QProps) {
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: "var(--s-3)" }}>
+      <h4 style={{ margin: 0, font: "var(--t-h4, var(--t-body))", fontWeight: 600 }}>
+        Any minimum account size?
+      </h4>
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "var(--s-2)" }}>
+        <TapCard
+          active={answers.size === "any"}
+          onClick={() => set({ ...answers, size: "any" })}
+          title="Any size"
+          hint="No restriction"
+        />
+        <TapCard
+          active={answers.size === "over500"}
+          onClick={() => set({ ...answers, size: "over500" })}
+          title="Over $500 MRR"
+          hint="Standard threshold"
+        />
+        <TapCard
+          active={answers.size === "custom"}
+          onClick={() => set({ ...answers, size: "custom" })}
+          title="Set amount"
+          hint={answers.size === "custom" ? `Over $${answers.sizeAmt} MRR` : "Pick a number"}
+        />
+      </div>
+      {answers.size === "custom" ? (
+        <label style={{ display: "flex", alignItems: "center", gap: "var(--s-2)", font: "var(--t-body-sm)", color: "var(--text-2, var(--text))" }}>
+          Over $
+          <input
+            type="number"
+            min={0}
+            step={50}
+            value={answers.sizeAmt}
+            onChange={(e) => set({ ...answers, sizeAmt: Math.max(0, parseInt(e.target.value || "0", 10)) })}
+            style={{
+              width: 96,
+              font: "var(--t-body-sm)",
+              color: "var(--text)",
+              background: "var(--surface)",
+              border: "1px solid var(--border)",
+              borderRadius: "var(--r-sm)",
+              padding: "4px 8px",
+              textAlign: "right",
+            }}
+          />
+          MRR
+        </label>
+      ) : null}
+    </div>
+  );
+}
+
+function Q4Notify({ answers, set }: QProps) {
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: "var(--s-3)" }}>
+      <h4 style={{ margin: 0, font: "var(--t-h4, var(--t-body))", fontWeight: 600 }}>
+        Who should GoCSM notify when this runs?
+      </h4>
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "var(--s-2)" }}>
+        <TapCard
+          active={answers.notify === "me"}
+          onClick={() => set({ ...answers, notify: "me" })}
+          title="Just me"
+          hint="Notify you directly"
+        />
+        <TapCard
+          active={answers.notify === "teammate"}
+          onClick={() => set({ ...answers, notify: "teammate" })}
+          title="A teammate"
+          hint={answers.notify === "teammate" ? answers.notifyName : "Pick a teammate"}
+        />
+        <TapCard
+          active={answers.notify === "slack"}
+          onClick={() => set({ ...answers, notify: "slack" })}
+          title="A Slack channel"
+          hint={answers.notify === "slack" ? answers.notifyChannel : "Pick a channel"}
+        />
+      </div>
+      {answers.notify === "teammate" ? (
+        <div style={{ display: "flex", flexWrap: "wrap", gap: "var(--s-2)" }}>
+          {TEAMMATES.map((t) => {
+            const on = answers.notifyName === t;
+            return (
+              <button
+                key={t}
+                onClick={() => set({ ...answers, notifyName: t })}
+                aria-pressed={on}
+                style={{
+                  cursor: "pointer",
+                  padding: "6px 12px",
+                  borderRadius: 999,
+                  border: `1px solid ${on ? "var(--info-7, var(--blue-7))" : "var(--border)"}`,
+                  background: on ? "var(--surface-2)" : "transparent",
+                  color: "var(--text)",
+                  font: "var(--t-meta)",
+                  fontWeight: on ? 600 : 400,
+                }}
+              >
+                {t}
+              </button>
+            );
+          })}
+        </div>
+      ) : null}
+      {answers.notify === "slack" ? (
+        <div style={{ display: "flex", flexWrap: "wrap", gap: "var(--s-2)" }}>
+          {SLACK_CHANNELS.map((c) => {
+            const on = answers.notifyChannel === c;
+            return (
+              <button
+                key={c}
+                onClick={() => set({ ...answers, notifyChannel: c })}
+                aria-pressed={on}
+                style={{
+                  cursor: "pointer",
+                  padding: "6px 12px",
+                  borderRadius: 999,
+                  border: `1px solid ${on ? "var(--info-7, var(--blue-7))" : "var(--border)"}`,
+                  background: on ? "var(--surface-2)" : "transparent",
+                  color: "var(--text)",
+                  font: "var(--t-meta)",
+                  fontWeight: on ? 600 : 400,
+                }}
+              >
+                {c}
+              </button>
+            );
+          })}
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
+// ---- Top-level Step 2 surface ----------------------------------------------
+
+function WhenItRuns({
   playbook,
   onRuleChange,
 }: {
   playbook: Playbook;
   onRuleChange?: (sentence: string, count: number) => void;
 }) {
-  const [mode, setMode] = useState<"auto" | "review">("auto");
-  const [conds, setConds] = useState<Cond[]>([]);
-  const [draft, setDraft] = useState("");
+  const [path, setPath] = useState<"auto" | "guided">("auto");
+  const [answers, setAnswers] = useState<Answers>(DEFAULT_ANSWERS);
+  const [qIdx, setQIdx] = useState<0 | 1 | 2 | 3>(0);
   const [showPreview, setShowPreview] = useState(false);
-  const [freqDays, setFreqDays] = useState(30);
-  const [skipOpenTask, setSkipOpenTask] = useState(true);
 
   const base = useMemo(() => matchesToday(playbook), [playbook]);
-  const matches = useMemo(() => {
-    const preds = conds.filter((c) => c.predicate).map((c) => c.predicate!);
-    return base.filter((a) => preds.every((p) => p(a)));
-  }, [base, conds]);
+  const activeAnswers: Answers = path === "auto" ? DEFAULT_ANSWERS : answers;
+  const matches = useMemo(() => applyPredicates(base, activeAnswers), [base, activeAnswers]);
 
   const ruleSentence = useMemo(() => {
-    const extras = conds.filter((c) => c.predicate).map((c) => c.label.toLowerCase());
-    const extra = extras.length ? ` (${extras.join(", ")})` : "";
-    return `Runs automatically for accounts that ${eventPhrase(playbook)}${extra}.`;
-  }, [playbook, conds]);
+    const base = buildRuleSentence(playbook, activeAnswers);
+    if (path === "auto") return base;
+    return `${base.replace(/\.$/, "")} · ${notifyPhrase(activeAnswers)}.`;
+  }, [playbook, activeAnswers, path]);
 
   useEffect(() => {
     onRuleChange?.(ruleSentence, matches.length);
   }, [ruleSentence, matches.length, onRuleChange]);
 
-
-  const addCond = (c: Omit<Cond, "id">) => {
-    setConds((prev) => [...prev, { ...c, id: `c-${Date.now()}-${Math.random().toString(36).slice(2, 6)}` }]);
+  const TOTAL = 4;
+  const next = () => setQIdx((i) => (Math.min(TOTAL - 1, i + 1) as 0 | 1 | 2 | 3));
+  const back = () => setQIdx((i) => (Math.max(0, i - 1) as 0 | 1 | 2 | 3));
+  const skip = () => {
+    // Skip = reset this question's answer to its default and advance.
+    const reset = { ...answers };
+    if (qIdx === 0) { reset.who = "all"; reset.whoBands = []; }
+    if (qIdx === 1) { reset.plan = "all"; reset.planPicks = []; }
+    if (qIdx === 2) { reset.size = "any"; }
+    if (qIdx === 3) { reset.notify = "me"; }
+    setAnswers(reset);
+    if (qIdx < TOTAL - 1) next();
   };
-  const removeCond = (id: string) => setConds((prev) => prev.filter((c) => c.id !== id));
-
-  const submitDraft = () => {
-    const parsed = parsePhrase(draft);
-    if (parsed) addCond(parsed);
-    setDraft("");
-  };
-
-  const grouped = (g: Cond["group"]) => conds.filter((c) => c.group === g);
-  const expanded = mode === "review";
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "var(--s-3)" }}>
-      {/* The rule sentence + live count */}
-      <p style={{ margin: 0, font: "var(--t-body)", color: "var(--text-2, var(--text))" }}>
-        Runs automatically for accounts that {eventPhrase(playbook)} —{" "}
-        <strong style={{ color: "var(--text)", font: "var(--t-h4, var(--t-body))" }}>
-          <Mono>{matches.length}</Mono>
-        </strong>{" "}
-        right now.
-      </p>
-
-      {/* Mode toggle (segmented) */}
+      {/* Path selector */}
       <div
         role="tablist"
         style={{
@@ -858,16 +1160,16 @@ function Step1Audience({
         }}
       >
         {([
-          { v: "auto", label: "Let GoCSM set it up" },
-          { v: "review", label: "Review each piece" },
+          { v: "auto", label: "Let GoCSM decide (recommended)" },
+          { v: "guided", label: "Choose myself" },
         ] as const).map((opt) => {
-          const on = mode === opt.v;
+          const on = path === opt.v;
           return (
             <button
               key={opt.v}
               role="tab"
               aria-selected={on}
-              onClick={() => setMode(opt.v)}
+              onClick={() => setPath(opt.v)}
               style={{
                 border: 0,
                 cursor: "pointer",
@@ -886,7 +1188,7 @@ function Step1Audience({
         })}
       </div>
 
-      {/* Fixed event (read-only) */}
+      {/* Fixed event readout */}
       <div
         style={{
           display: "flex",
@@ -900,136 +1202,80 @@ function Step1Audience({
         }}
       >
         <Icon name="lock" />
-        <span>
-          Runs when an account {eventPhrase(playbook)}.
-        </span>
+        <span>Runs when an account {eventPhrase(playbook)}.</span>
       </div>
 
-      {/* Narrow it (refiner) */}
-      {expanded ? (
+      {/* PATH A — Let GoCSM decide */}
+      {path === "auto" ? (
         <div style={{ display: "flex", flexDirection: "column", gap: "var(--s-3)" }}>
-          <div style={{ display: "flex", flexDirection: "column", gap: "var(--s-2)" }}>
-            <div style={{ display: "flex", alignItems: "center", gap: "var(--s-2)" }}>
-              <Icon name="sparkles" />
-              <span style={{ font: "var(--t-meta)", fontWeight: 600, color: "var(--text)" }}>
-                Narrow it
-              </span>
-              <Badge variant="neutral" dot={false}>simulated · plain-language wiring lands later</Badge>
-            </div>
+          <p style={{ margin: 0, font: "var(--t-body)", color: "var(--text)" }}>
+            Runs for accounts that {eventPhrase(playbook)} —{" "}
+            <strong style={{ font: "var(--t-h4, var(--t-body))" }}>
+              <Mono>{matches.length}</Mono>
+            </strong>{" "}
+            right now.
+          </p>
+          <span style={{ font: "var(--t-meta)", color: "var(--text-3, var(--text))" }}>
+            Sensible defaults — switch to <em>Choose myself</em> to narrow it down.
+          </span>
+        </div>
+      ) : null}
 
-            <div style={{ display: "flex", gap: "var(--s-2)" }}>
-              <input
-                value={draft}
-                onChange={(e) => setDraft(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter") {
-                    e.preventDefault();
-                    submitDraft();
-                  }
-                }}
-                placeholder="Tell GoCSM who this should run for…"
-                style={{
-                  flex: 1,
-                  font: "var(--t-body-sm)",
-                  color: "var(--text)",
-                  background: "var(--surface)",
-                  border: "1px solid var(--border)",
-                  borderRadius: "var(--r-md)",
-                  padding: "var(--s-2) var(--s-3)",
-                }}
-              />
-              <Button variant="ghost" size="sm" onClick={submitDraft} icon={<Icon name="plus" />}>
-                Add
-              </Button>
-            </div>
-
-            <div style={{ display: "flex", flexWrap: "wrap", gap: "var(--s-2)" }}>
-              {SUGGESTED.map((s) => (
-                <button
-                  key={s.label}
-                  onClick={() => addCond(s)}
-                  style={{
-                    cursor: "pointer",
-                    border: "1px dashed var(--border)",
-                    background: "transparent",
-                    color: "var(--text-2, var(--text))",
-                    padding: "4px 10px",
-                    borderRadius: "999px",
-                    font: "var(--t-meta)",
-                  }}
-                >
-                  + {s.label}
-                </button>
-              ))}
-            </div>
+      {/* PATH B — Guided wizard */}
+      {path === "guided" ? (
+        <div style={{ display: "flex", flexDirection: "column", gap: "var(--s-3)" }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+            <MiniProgress step={qIdx + 1} total={TOTAL} />
+            <Badge variant="neutral" dot={false}>
+              simulated · plain-language wiring lands later
+            </Badge>
           </div>
 
-          {/* Grouped chips */}
-          {(["audience", "signal", "notify"] as const).map((g) => {
-            const list = grouped(g);
-            if (list.length === 0) return null;
-            return (
-              <div key={g} style={{ display: "flex", flexDirection: "column", gap: "var(--s-2)" }}>
-                <span style={{ font: "var(--t-meta)", textTransform: "uppercase", letterSpacing: "0.04em", color: "var(--text-3, var(--text))" }}>
-                  {GROUP_LABEL[g]}
-                </span>
-                <div style={{ display: "flex", flexWrap: "wrap", gap: "var(--s-2)" }}>
-                  {list.map((c) => (
-                    <ChipBadge key={c.id} cond={c} onRemove={() => removeCond(c.id)} />
-                  ))}
-                </div>
-              </div>
-            );
-          })}
+          <Card padded>
+            {qIdx === 0 ? <Q1Who answers={answers} set={setAnswers} /> : null}
+            {qIdx === 1 ? <Q2Plan answers={answers} set={setAnswers} /> : null}
+            {qIdx === 2 ? <Q3Size answers={answers} set={setAnswers} /> : null}
+            {qIdx === 3 ? <Q4Notify answers={answers} set={setAnswers} /> : null}
+          </Card>
 
-          {/* Guardrails */}
-          <div style={{ display: "flex", flexDirection: "column", gap: "var(--s-2)" }}>
-            <span style={{ font: "var(--t-meta)", textTransform: "uppercase", letterSpacing: "0.04em", color: "var(--text-3, var(--text))" }}>
-              Guardrails
-            </span>
-
-            <label style={{ display: "flex", alignItems: "center", gap: "var(--s-2)", font: "var(--t-body-sm)", color: "var(--text-2, var(--text))" }}>
-              Run at most once every
-              <input
-                type="number"
-                min={1}
-                value={freqDays}
-                onChange={(e) => setFreqDays(Math.max(1, parseInt(e.target.value || "1", 10)))}
-                style={{
-                  width: 64,
-                  font: "var(--t-body-sm)",
-                  color: "var(--text)",
-                  background: "var(--surface)",
-                  border: "1px solid var(--border)",
-                  borderRadius: "var(--r-sm)",
-                  padding: "2px 6px",
-                  textAlign: "right",
-                }}
-              />
-              days per account
-            </label>
-
-            <div style={{ display: "flex", alignItems: "center", gap: "var(--s-2)" }}>
-              <Toggle on={true} onChange={() => {}} />
-              <span style={{ font: "var(--t-body-sm)", color: "var(--text-2, var(--text))" }}>
-                Client emails always ask for your OK
-              </span>
-              <Badge variant="neutral" dot={false}>locked</Badge>
-            </div>
-
-            <div style={{ display: "flex", alignItems: "center", gap: "var(--s-2)" }}>
-              <Toggle on={skipOpenTask} onChange={setSkipOpenTask} />
-              <span style={{ font: "var(--t-body-sm)", color: "var(--text-2, var(--text))" }}>
-                Skip accounts with an open task
-              </span>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+            <Button variant="ghost" size="sm" onClick={back} disabled={qIdx === 0} icon={<Icon name="arrow-left" />}>
+              Back
+            </Button>
+            <div style={{ display: "flex", gap: "var(--s-2)" }}>
+              <Button variant="ghost" size="sm" onClick={skip}>
+                Skip
+              </Button>
+              {qIdx < TOTAL - 1 ? (
+                <Button variant="primary" size="sm" onClick={next} icon={<Icon name="arrow-right" />}>
+                  Next question
+                </Button>
+              ) : null}
             </div>
           </div>
         </div>
-      ) : (
-        <p style={{ margin: 0, font: "var(--t-meta)", color: "var(--text-3, var(--text))" }}>
-          GoCSM picked sensible defaults. Switch to <em>Review each piece</em> to narrow it down.
-        </p>
-      )}
+      ) : null}
+
+      {/* Running summary + live count */}
+      <div
+        style={{
+          display: "flex",
+          flexDirection: "column",
+          gap: 4,
+          padding: "var(--s-3)",
+          borderRadius: "var(--r-md)",
+          background: "var(--surface-2)",
+          border: "1px solid var(--border)",
+        }}
+      >
+        <span style={{ font: "var(--t-meta)", textTransform: "uppercase", letterSpacing: "0.04em", color: "var(--text-3, var(--text))" }}>
+          Your rule so far
+        </span>
+        <span style={{ font: "var(--t-body)", color: "var(--text)" }}>{ruleSentence}</span>
+        <span style={{ font: "var(--t-meta)", color: "var(--text-3, var(--text))" }}>
+          Runs for <Mono>{matches.length}</Mono> account{matches.length === 1 ? "" : "s"} right now.
+        </span>
+      </div>
 
       {/* Preview who this affects */}
       <div style={{ display: "flex", flexDirection: "column", gap: "var(--s-2)" }}>
@@ -1079,6 +1325,8 @@ function Step1Audience({
     </div>
   );
 }
+
+
 
 // ============================================================
 // Step 3 — "Publish" (summary + reassurance)
