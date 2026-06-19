@@ -759,13 +759,115 @@ function applyPredicates(base: Account[], a: Answers): Account[] {
   });
 }
 
-function buildRuleSentence(p: Playbook, a: Answers): string {
-  const extras = extrasFor(a);
-  const tail = extras.length ? ` (${extras.join(", ")})` : "";
+function buildRuleSentence(p: Playbook, a: Answers, extra: ExtraCond[] = []): string {
+  const parts = [...extrasFor(a), ...extra.map((c) => c.label.toLowerCase())];
+  const tail = parts.length ? ` (${parts.join(", ")})` : "";
   return `Runs for accounts that ${eventPhrase(p)}${tail}.`;
 }
 
+// ---- Advanced refiner (quiet, secondary) -----------------------------------
+
+export type ExtraCondId = "no-login-30" | "stage" | "age" | "tag" | "signal";
+export type LifecycleStage = "onboarding" | "established" | "churned";
+export type AgeBucket = "under90" | "90-365" | "over365";
+export type OtherSignal = "a2p-lost" | "domain-lost" | "integration-lost";
+
+export const TAGS = ["VIP", "Enterprise", "Beta", "Trial"] as const;
+
+const STAGE_LABEL: Record<LifecycleStage, string> = {
+  onboarding: "Onboarding",
+  established: "Established",
+  churned: "Churned",
+};
+const AGE_LABEL: Record<AgeBucket, string> = {
+  under90: "Under 90 days old",
+  "90-365": "90-365 days old",
+  over365: "Over 1 year old",
+};
+const SIGNAL_LABEL: Record<OtherSignal, string> = {
+  "a2p-lost": "A2P registration lost",
+  "domain-lost": "Domain disconnected",
+  "integration-lost": "Integration removed",
+};
+
+export interface ExtraCond {
+  id: ExtraCondId;
+  label: string;
+  predicate?: (a: Account) => boolean;
+}
+
+interface ExtraCondPicks {
+  stagePick: LifecycleStage;
+  agePick: AgeBucket;
+  tagPick: string;
+  signalPick: OtherSignal;
+}
+
+function buildExtraCond(id: ExtraCondId, picks: ExtraCondPicks): ExtraCond {
+  switch (id) {
+    case "no-login-30":
+      return {
+        id,
+        label: "No login in 30 days",
+        predicate: (a) => a.login.lastLoginDaysAgo >= 30,
+      };
+    case "stage":
+      return {
+        id,
+        label: `Stage: ${STAGE_LABEL[picks.stagePick]}`,
+        predicate: (a) => (a.lifecycle.stage as LifecycleStage) === picks.stagePick,
+      };
+    case "age":
+      return { id, label: `Age: ${AGE_LABEL[picks.agePick]}` };
+    case "tag":
+      return { id, label: `Tag: ${picks.tagPick}` };
+    case "signal":
+      return { id, label: SIGNAL_LABEL[picks.signalPick] };
+  }
+}
+
+
 // ---- Tap card primitives ----------------------------------------------------
+
+function PillRow<T extends string>({
+  label,
+  value,
+  options,
+  onChange,
+}: {
+  label: string;
+  value: T;
+  options: { v: T; label: string }[];
+  onChange: (v: T) => void;
+}) {
+  return (
+    <div style={{ display: "flex", alignItems: "center", gap: "var(--s-2)", flexWrap: "wrap" }}>
+      <span style={{ font: "var(--t-meta)", color: "var(--text-3, var(--text))" }}>{label}</span>
+      {options.map((o) => {
+        const on = value === o.v;
+        return (
+          <button
+            key={o.v}
+            onClick={() => onChange(o.v)}
+            aria-pressed={on}
+            style={{
+              cursor: "pointer",
+              padding: "4px 10px",
+              borderRadius: 999,
+              border: `1px solid ${on ? "var(--info-7, var(--blue-7))" : "var(--border)"}`,
+              background: on ? "var(--surface-2)" : "transparent",
+              color: "var(--text)",
+              font: "var(--t-meta)",
+              fontWeight: on ? 600 : 400,
+            }}
+          >
+            {o.label}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
 
 function TapCard({
   active,
@@ -1117,19 +1219,40 @@ function WhenItRuns({
   const [qIdx, setQIdx] = useState<0 | 1 | 2 | 3>(0);
   const [showPreview, setShowPreview] = useState(false);
 
+  // Advanced refiner — quiet, hidden until asked for.
+  const [showAdvanced, setShowAdvanced] = useState(false);
+  const [extras, setExtras] = useState<ExtraCondId[]>([]);
+  const [stagePick, setStagePick] = useState<LifecycleStage>("established");
+  const [agePick, setAgePick] = useState<AgeBucket>("under90");
+  const [tagPick, setTagPick] = useState<string>(TAGS[0]);
+  const [signalPick, setSignalPick] = useState<OtherSignal>("a2p-lost");
+
+  // Guardrails.
+  const [frequencyDays, setFrequencyDays] = useState(30);
+  const [skipOpenTask, setSkipOpenTask] = useState(true);
+
+  const extraConds = useMemo<ExtraCond[]>(
+    () => extras.map((id) => buildExtraCond(id, { stagePick, agePick, tagPick, signalPick })),
+    [extras, stagePick, agePick, tagPick, signalPick],
+  );
+
   const base = useMemo(() => matchesToday(playbook), [playbook]);
   const activeAnswers: Answers = path === "auto" ? DEFAULT_ANSWERS : answers;
-  const matches = useMemo(() => applyPredicates(base, activeAnswers), [base, activeAnswers]);
+  const matches = useMemo(() => {
+    const afterAnswers = applyPredicates(base, activeAnswers);
+    return afterAnswers.filter((a) => extraConds.every((c) => (c.predicate ? c.predicate(a) : true)));
+  }, [base, activeAnswers, extraConds]);
 
   const ruleSentence = useMemo(() => {
-    const base = buildRuleSentence(playbook, activeAnswers);
-    if (path === "auto") return base;
-    return `${base.replace(/\.$/, "")} · ${notifyPhrase(activeAnswers)}.`;
-  }, [playbook, activeAnswers, path]);
+    const baseSentence = buildRuleSentence(playbook, activeAnswers, extraConds);
+    if (path === "auto" && extraConds.length === 0) return baseSentence;
+    return `${baseSentence.replace(/\.$/, "")} · ${notifyPhrase(activeAnswers)}.`;
+  }, [playbook, activeAnswers, path, extraConds]);
 
   useEffect(() => {
     onRuleChange?.(ruleSentence, matches.length);
   }, [ruleSentence, matches.length, onRuleChange]);
+
 
   const TOTAL = 4;
   const next = () => setQIdx((i) => (Math.min(TOTAL - 1, i + 1) as 0 | 1 | 2 | 3));
@@ -1255,6 +1378,154 @@ function WhenItRuns({
           </div>
         </div>
       ) : null}
+
+      {/* Add more conditions — quiet, secondary, hidden until asked for */}
+      <div style={{ display: "flex", flexDirection: "column", gap: "var(--s-2)" }}>
+        <Button
+          variant="ghost"
+          size="sm"
+          icon={<Icon name={showAdvanced ? "chevron-up" : "plus"} />}
+          onClick={() => setShowAdvanced((s) => !s)}
+        >
+          {showAdvanced ? "Hide advanced conditions" : `Add more conditions${extras.length ? ` (${extras.length})` : ""}`}
+        </Button>
+        {showAdvanced ? (
+          <div
+            style={{
+              display: "flex",
+              flexDirection: "column",
+              gap: "var(--s-3)",
+              padding: "var(--s-3)",
+              borderRadius: "var(--r-md)",
+              border: "1px dashed var(--border)",
+              background: "var(--surface)",
+            }}
+          >
+            <span style={{ font: "var(--t-meta)", color: "var(--text-3, var(--text))" }}>
+              For power users — tap to add. Choices fold into the rule above.
+            </span>
+
+            {/* Tappable chips */}
+            <div style={{ display: "flex", flexWrap: "wrap", gap: "var(--s-2)" }}>
+              {([
+                { id: "no-login-30" as const, label: "No login in 30 days" },
+                { id: "stage" as const, label: `Lifecycle stage: ${STAGE_LABEL[stagePick]} ▾` },
+                { id: "age" as const, label: `Account age: ${AGE_LABEL[agePick]} ▾` },
+                { id: "tag" as const, label: `Tag: ${tagPick} ▾` },
+                { id: "signal" as const, label: `Other signals: ${SIGNAL_LABEL[signalPick]} ▾` },
+              ]).map((c) => {
+                const on = extras.includes(c.id);
+                return (
+                  <button
+                    key={c.id}
+                    onClick={() =>
+                      setExtras((prev) => (on ? prev.filter((x) => x !== c.id) : [...prev, c.id]))
+                    }
+                    aria-pressed={on}
+                    style={{
+                      cursor: "pointer",
+                      padding: "6px 12px",
+                      borderRadius: 999,
+                      border: `1px solid ${on ? "var(--info-7, var(--blue-7))" : "var(--border)"}`,
+                      background: on ? "var(--surface-2)" : "transparent",
+                      color: "var(--text)",
+                      font: "var(--t-meta)",
+                      fontWeight: on ? 600 : 400,
+                    }}
+                  >
+                    {on ? "✓ " : "+ "}
+                    {c.label}
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* Submenus for the active dropdown-style chips */}
+            {extras.includes("stage") ? (
+              <PillRow
+                label="Stage"
+                value={stagePick}
+                options={(["onboarding", "established", "churned"] as LifecycleStage[]).map((v) => ({ v, label: STAGE_LABEL[v] }))}
+                onChange={(v) => setStagePick(v as LifecycleStage)}
+              />
+            ) : null}
+            {extras.includes("age") ? (
+              <PillRow
+                label="Age"
+                value={agePick}
+                options={(["under90", "90-365", "over365"] as AgeBucket[]).map((v) => ({ v, label: AGE_LABEL[v] }))}
+                onChange={(v) => setAgePick(v as AgeBucket)}
+              />
+            ) : null}
+            {extras.includes("tag") ? (
+              <PillRow
+                label="Tag"
+                value={tagPick}
+                options={TAGS.map((v) => ({ v, label: v }))}
+                onChange={setTagPick}
+              />
+            ) : null}
+            {extras.includes("signal") ? (
+              <PillRow
+                label="Signal"
+                value={signalPick}
+                options={(["a2p-lost", "domain-lost", "integration-lost"] as OtherSignal[]).map((v) => ({ v, label: SIGNAL_LABEL[v] }))}
+                onChange={(v) => setSignalPick(v as OtherSignal)}
+              />
+            ) : null}
+          </div>
+        ) : null}
+      </div>
+
+      {/* Guardrails */}
+      <div
+        style={{
+          display: "flex",
+          flexDirection: "column",
+          gap: "var(--s-2)",
+          padding: "var(--s-3)",
+          borderRadius: "var(--r-md)",
+          background: "var(--surface-2)",
+        }}
+      >
+        <span style={{ font: "var(--t-meta)", textTransform: "uppercase", letterSpacing: "0.04em", color: "var(--text-3, var(--text))" }}>
+          Guardrails
+        </span>
+        <label style={{ display: "flex", alignItems: "center", gap: "var(--s-2)", font: "var(--t-body-sm)", color: "var(--text-2, var(--text))", flexWrap: "wrap" }}>
+          Run at most once every
+          <input
+            type="number"
+            min={1}
+            value={frequencyDays}
+            onChange={(e) => setFrequencyDays(Math.max(1, parseInt(e.target.value || "1", 10)))}
+            style={{
+              width: 64,
+              font: "var(--t-body-sm)",
+              color: "var(--text)",
+              background: "var(--surface)",
+              border: "1px solid var(--border)",
+              borderRadius: "var(--r-sm)",
+              padding: "2px 6px",
+              textAlign: "right",
+            }}
+          />
+          days per account
+        </label>
+        <div style={{ display: "flex", alignItems: "center", gap: "var(--s-2)" }}>
+          <Toggle on={true} locked onChange={() => {}} />
+          <span style={{ flex: 1, font: "var(--t-body-sm)", color: "var(--text-2, var(--text))" }}>
+            Client emails always ask for your OK
+          </span>
+          <Badge variant="neutral" dot={false}>locked</Badge>
+        </div>
+        <div style={{ display: "flex", alignItems: "center", gap: "var(--s-2)" }}>
+          <Toggle on={skipOpenTask} onChange={setSkipOpenTask} />
+          <span style={{ font: "var(--t-body-sm)", color: "var(--text-2, var(--text))" }}>
+            Skip accounts with an open task
+          </span>
+        </div>
+      </div>
+
 
       {/* Running summary + live count */}
       <div
