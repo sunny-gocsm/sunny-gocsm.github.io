@@ -294,7 +294,7 @@ export function PlaybookActivationDrawer({ open, scope, accounts, onClose, initi
                 </div>
                 <div style={{ display: "flex", gap: "var(--s-2)", marginTop: "var(--s-1)" }}>
                   <Button variant="primary" onClick={() => setStep("setup")} icon={<Icon name="arrow-right" />}>
-                    Review & set up
+                    Review what GoCSM does
                   </Button>
                   {scope.kind === "accounts" && alternates.length > 0 ? (
                     <Button variant="ghost" size="sm" onClick={() => setShowAlternates((s) => !s)}>
