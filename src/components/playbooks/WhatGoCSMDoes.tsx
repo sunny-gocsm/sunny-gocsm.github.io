@@ -171,7 +171,7 @@ interface Props {
   onEditedChange?: (editedIds: ChannelId[]) => void;
 }
 
-export function WhatGoCSMDoes({ playbook, onEnabledChange }: Props) {
+export function WhatGoCSMDoes({ playbook, onEnabledChange, onEditedChange }: Props) {
   const channels = useMemo(() => getChannelsForPlay(playbook), [playbook]);
   const [enabled, setEnabled] = useState<Record<ChannelId, boolean>>(() => defaultEnabledFor(playbook));
   // Channels whose message the owner has "edited in HighLevel" (simulated return).
