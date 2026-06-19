@@ -28,17 +28,15 @@ import {
 import type { Account } from "@/fixtures";
 import { autopilotStore } from "@/state/autopilot";
 import { PlayVideoButton } from "@/components/playbooks/PlayVideoButton";
-import { WhatGoCSMDoes, getChannelsForPlay } from "@/components/playbooks/WhatGoCSMDoes";
-import type { ChannelId } from "@/components/playbooks/WhatGoCSMDoes";
 
 export type DrawerScope =
   | { kind: "playbook"; playbookId: string }
   | { kind: "accounts"; accountIds: string[]; suggested?: string };
 
 // Optional deep-link: jump straight into the autopilot setup at a given step.
-// Used by the Playbooks page "Edit rule" / "Review steps" controls so the same
-// setup screens (Step 1 / Step 2) are reused for editing an existing play.
-export type DrawerInitial = { mode: "autopilot"; step: 1 | 2 | 3 };
+// Now only two steps: 1 = "When it runs", 2 = "Finish & publish".
+export type DrawerInitial = { mode: "autopilot"; step: 1 | 2 };
+
 
 interface Props {
   open: boolean;
@@ -48,7 +46,7 @@ interface Props {
   initial?: DrawerInitial;
 }
 
-type Step = "pick" | "setup" | "done";
+type Step = "pick" | "done";
 
 // Plain-English trigger phrase from the playbook's problem.
 function plainTrigger(p: Playbook): string {
@@ -63,13 +61,12 @@ export function PlaybookActivationDrawer({ open, scope, accounts, onClose, initi
   const [selectedId, setSelectedId] = useState<string>("");
   const [showAlternates, setShowAlternates] = useState(false);
   const [autopilotChoice, setAutopilotChoice] = useState<"pending" | "on" | "no">("pending");
-  // True once the play has been run one-time in this session — autopilot then
-  // skips Step 1 ("What it does", already configured) and opens at Step 2.
-  const [ranOnce, setRanOnce] = useState(false);
-  // 0 = not in setup; 1..3 = stepped autopilot setup inside the drawer
-  const [autopilotSetupStep, setAutopilotSetupStep] = useState<0 | 1 | 2 | 3>(
-    directAutopilot ? (initial!.step as 1 | 2 | 3) : 0,
+  // 0 = not in setup; 1..2 = stepped autopilot setup inside the drawer.
+  // Steps are now: 1 "When it runs", 2 "Finish & publish".
+  const [autopilotSetupStep, setAutopilotSetupStep] = useState<0 | 1 | 2>(
+    directAutopilot ? (initial!.step as 1 | 2) : 0,
   );
+
 
   // Resolve the effective playbook
   const playbookId = useMemo(() => {
@@ -118,7 +115,6 @@ export function PlaybookActivationDrawer({ open, scope, accounts, onClose, initi
     setShowAlternates(false);
     setAutopilotChoice("pending");
     setAutopilotSetupStep(0);
-    setRanOnce(false);
   };
   const close = () => {
     reset();
@@ -139,9 +135,9 @@ export function PlaybookActivationDrawer({ open, scope, accounts, onClose, initi
         onClick: () => toast("Stopped — nothing was sent."),
       },
     });
-    setRanOnce(true);
     setStep("done");
   };
+
 
 
   const turnOnAutopilot = () => {
@@ -197,7 +193,7 @@ export function PlaybookActivationDrawer({ open, scope, accounts, onClose, initi
         {/* Header */}
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
           <span style={{ font: "var(--t-meta)", color: "var(--text-3, var(--text))" }}>
-            {directAutopilot ? "Edit autopilot" : step === "done" ? "Done" : step === "setup" ? "What GoCSM does" : "GoCSM's pick"} · scoped to{" "}
+            {directAutopilot ? "Edit autopilot" : step === "done" ? "Done" : "GoCSM's pick"} · scoped to{" "}
             <Mono>{targetCount}</Mono> account{targetCount === 1 ? "" : "s"}
           </span>
           <Button variant="ghost" size="sm" onClick={close}>
@@ -245,9 +241,11 @@ export function PlaybookActivationDrawer({ open, scope, accounts, onClose, initi
                   </span>
                 </div>
                 <div style={{ display: "flex", gap: "var(--s-2)", marginTop: "var(--s-1)" }}>
-                  <Button variant="primary" onClick={() => setStep("setup")} icon={<Icon name="arrow-right" />}>
-                    Review what GoCSM does
+                  <Button variant="primary" onClick={runNow} icon={<Icon name="play" />}>
+                    Run it now{batchSuffix}
                   </Button>
+
+
                   {scope.kind === "accounts" && alternates.length > 0 ? (
                     <Button variant="ghost" size="sm" onClick={() => setShowAlternates((s) => !s)}>
                       {showAlternates ? "Hide" : "Choose a different play"}
@@ -299,45 +297,9 @@ export function PlaybookActivationDrawer({ open, scope, accounts, onClose, initi
           </>
         ) : null}
 
-        {/* ============= STEP 2 — WHAT GOCSM DOES (one-time run) =============
-            Reuses the same surface as the autopilot actions step. No inline
-            editor — message editing happens in HighLevel. */}
-        {step === "setup" && playbook ? (
-          <>
-            <Card padded>
-              <div style={{ display: "flex", flexDirection: "column", gap: "var(--s-3)" }}>
-                <div style={{ display: "flex", alignItems: "center", gap: "var(--s-2)" }}>
-                  <Icon name={playbook.icon} />
-                  <strong style={{ font: "var(--t-h4, var(--t-body))", fontWeight: 600 }}>
-                    What GoCSM does
-                  </strong>
-                </div>
+        {/* The one-time-run channel-toggle/edit screen has been removed.
+            Action configuration and message editing live in HighLevel. */}
 
-                <WhatGoCSMDoes playbook={playbook} />
-
-                <p
-                  style={{
-                    margin: 0,
-                    font: "var(--t-meta)",
-                    color: "var(--text-2, var(--text))",
-                    fontStyle: "italic",
-                  }}
-                >
-                  Nothing sends until you hit Run · undo for 5 seconds.
-                </p>
-
-                <div style={{ display: "flex", gap: "var(--s-2)", justifyContent: "space-between", alignItems: "center" }}>
-                  <Button variant="ghost" size="sm" onClick={() => setStep("pick")} icon={<Icon name="arrow-left" />}>
-                    Back
-                  </Button>
-                  <Button variant="primary" onClick={runNow} icon={<Icon name="play" />}>
-                    Run it now{batchSuffix}
-                  </Button>
-                </div>
-              </div>
-            </Card>
-          </>
-        ) : null}
 
 
         {/* ============= STEP 3 + 4 — DONE + AUTOPILOT ============= */}
@@ -376,7 +338,7 @@ export function PlaybookActivationDrawer({ open, scope, accounts, onClose, initi
                     Whenever {plainTrigger(playbook)}, GoCSM will run <strong>{playbook.title}</strong> for you — and still ask before emailing anyone.
                   </p>
                   <div style={{ display: "flex", gap: "var(--s-2)", alignItems: "center" }}>
-                    <Button variant="primary" onClick={() => setAutopilotSetupStep(ranOnce ? 2 : 1)} icon={<Icon name="zap" />}>
+                    <Button variant="primary" onClick={() => setAutopilotSetupStep(1)} icon={<Icon name="zap" />}>
                       Turn on autopilot
                     </Button>
                     <Button variant="ghost" size="sm" onClick={() => setAutopilotChoice("no")}>
@@ -391,12 +353,13 @@ export function PlaybookActivationDrawer({ open, scope, accounts, onClose, initi
             ) : autopilotChoice === "pending" && autopilotSetupStep > 0 ? (
               <AutopilotSetup
                 playbook={playbook}
-                stepIndex={autopilotSetupStep as 1 | 2 | 3}
-                onStepChange={(n) => setAutopilotSetupStep(n as 1 | 2 | 3)}
+                stepIndex={autopilotSetupStep as 1 | 2}
+                onStepChange={(n) => setAutopilotSetupStep(n as 1 | 2)}
                 targetCount={targetCount}
                 onNotNow={() => setAutopilotSetupStep(0)}
                 onPublish={turnOnAutopilot}
               />
+
             ) : (
               <Card padded>
                 <div style={{ display: "flex", alignItems: "center", gap: "var(--s-2)" }}>
@@ -432,16 +395,16 @@ export function PlaybookActivationDrawer({ open, scope, accounts, onClose, initi
 }
 
 // ============================================================
-// Autopilot setup — 3-step flow inside the same drawer.
+// Autopilot setup — 2-step flow inside the same drawer.
+// Channel/message configuration lives in HighLevel (no GoCSM editor).
 // ============================================================
 
-const AP_STEPS: { n: 1 | 2 | 3; label: string }[] = [
-  { n: 1, label: "What it does" },
-  { n: 2, label: "When it runs" },
-  { n: 3, label: "Finish & publish" },
+const AP_STEPS: { n: 1 | 2; label: string }[] = [
+  { n: 1, label: "When it runs" },
+  { n: 2, label: "Finish & publish" },
 ];
 
-function StepDots({ current }: { current: 1 | 2 | 3 }) {
+function StepDots({ current }: { current: 1 | 2 }) {
   return (
     <div style={{ display: "flex", alignItems: "center", gap: "var(--s-2)", flexWrap: "wrap" }}>
       {AP_STEPS.map((s, i) => {
@@ -495,8 +458,8 @@ function StepDots({ current }: { current: 1 | 2 | 3 }) {
 
 interface AutopilotSetupProps {
   playbook: Playbook;
-  stepIndex: 1 | 2 | 3;
-  onStepChange: (n: 1 | 2 | 3) => void;
+  stepIndex: 1 | 2;
+  onStepChange: (n: 1 | 2) => void;
   targetCount: number;
   onNotNow: () => void;
   onPublish: () => void;
@@ -506,15 +469,12 @@ function AutopilotSetup({
   playbook,
   stepIndex,
   onStepChange,
-  targetCount,
   onNotNow,
   onPublish,
 }: AutopilotSetupProps) {
-  // Lifted summary state, populated by Step1/Step2 and read by Step3.
+  // Lifted summary state populated by Step 1 (When it runs) and read by Step 2.
   const [ruleSentence, setRuleSentence] = useState<string>("");
   const [ruleCount, setRuleCount] = useState<number>(0);
-  const [enabledLabels, setEnabledLabels] = useState<string[]>([]);
-  const [editedIds, setEditedIds] = useState<ChannelId[]>([]);
   // AP7 — workflow handoff representation (non-editable preview + sticky note).
   const [showHandoff, setShowHandoff] = useState(false);
 
@@ -522,7 +482,7 @@ function AutopilotSetup({
     return (
       <WorkflowHandoff
         playbook={playbook}
-        enabledLabels={enabledLabels}
+        enabledLabels={[]}
         onBack={() => setShowHandoff(false)}
         onPublished={onPublish}
       />
@@ -552,14 +512,6 @@ function AutopilotSetup({
 
         <div style={{ display: "flex", flexDirection: "column", gap: "var(--s-3)" }}>
           <div style={{ display: stepIndex === 1 ? "block" : "none" }}>
-            <WhatGoCSMDoes
-              playbook={playbook}
-              onEnabledChange={setEnabledLabels}
-              onEditedChange={setEditedIds}
-            />
-          </div>
-
-          <div style={{ display: stepIndex === 2 ? "block" : "none" }}>
             <WhenItRuns
               playbook={playbook}
               onRuleChange={(sentence, count) => {
@@ -569,19 +521,13 @@ function AutopilotSetup({
             />
           </div>
 
-          {stepIndex === 3 ? (
+          {stepIndex === 2 ? (
             <Step3Summary
               ruleSentence={ruleSentence}
               ruleCount={ruleCount}
-              enabledLabels={enabledLabels}
-              editedLabels={useMemo(() => getChannelsForPlay(playbook).filter(c => editedIds.includes(c.id)).map(c => c.label), [playbook, editedIds])}
             />
           ) : null}
         </div>
-
-
-
-
 
         <div
           style={{
@@ -599,19 +545,19 @@ function AutopilotSetup({
               <Button
                 variant="ghost"
                 size="sm"
-                onClick={() => onStepChange((stepIndex - 1) as 1 | 2 | 3)}
+                onClick={() => onStepChange((stepIndex - 1) as 1 | 2)}
                 icon={<Icon name="arrow-left" />}
               >
                 Back
               </Button>
             ) : null}
-            {stepIndex < 3 ? (
+            {stepIndex < 2 ? (
               <Button
                 variant="primary"
-                onClick={() => onStepChange((stepIndex + 1) as 1 | 2 | 3)}
+                onClick={() => onStepChange((stepIndex + 1) as 1 | 2)}
                 icon={<Icon name="arrow-right" />}
               >
-                {stepIndex === 2 ? "Continue to publish" : "Next"}
+                Continue to publish
               </Button>
             ) : (
               <Button variant="primary" onClick={() => setShowHandoff(true)} icon={<Icon name="external-link" />}>
@@ -624,6 +570,8 @@ function AutopilotSetup({
     </Card>
   );
 }
+
+
 
 // ============================================================
 // AP7 — Workflow handoff (REPRESENTATION, not an editor)
@@ -1771,14 +1719,11 @@ function WhenItRuns({
 function Step3Summary({
   ruleSentence,
   ruleCount,
-  enabledLabels,
-  editedLabels,
 }: {
   ruleSentence: string;
   ruleCount: number;
-  enabledLabels: string[];
-  editedLabels: string[];
 }) {
+
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "var(--s-3)" }}>
       <p style={{ margin: 0, font: "var(--t-body)", color: "var(--text-2, var(--text))" }}>
@@ -1814,58 +1759,11 @@ function Step3Summary({
         </span>
       </div>
 
-      {/* WHAT GOCSM WILL DO */}
-      <div
-        style={{
-          display: "flex",
-          flexDirection: "column",
-          gap: "var(--s-2)",
-          padding: "var(--s-3)",
-          borderRadius: "var(--r-md)",
-          background: "var(--surface-2)",
-        }}
-      >
-        <span
-          style={{
-            font: "var(--t-meta)",
-            textTransform: "uppercase",
-            letterSpacing: "0.04em",
-            color: "var(--text-3, var(--text))",
-          }}
-        >
-          What GoCSM will do
-        </span>
-        {enabledLabels.length === 0 ? (
-          <span style={{ font: "var(--t-body-sm)", color: "var(--text-2, var(--text))" }}>
-            Nothing enabled yet — go back to Step 1 to switch on at least one channel.
-          </span>
-        ) : (
-          <ul style={{ listStyle: "none", padding: 0, margin: 0, display: "flex", flexDirection: "column", gap: 4 }}>
-            {enabledLabels.map((l, i) => (
-              <li
-                key={i}
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "var(--s-2)",
-                  font: "var(--t-body-sm)",
-                  color: "var(--text)",
-                }}
-              >
-                <Icon name="check" />
-                <span>{l}</span>
-                {editedLabels.includes(l) ? (
-                  <Badge variant="pos" dot={false}>
-                    <span style={{ display: "inline-flex", alignItems: "center", gap: 4 }}>
-                      <Icon name="check" /> edited in HighLevel
-                    </span>
-                  </Badge>
-                ) : null}
-              </li>
-            ))}
-          </ul>
-        )}
-      </div>
+      {/* "What GoCSM will do" channel checklist removed — action configuration
+          and message editing live in HighLevel. A summary of the published
+          workflow will be re-wired here from HighLevel later. */}
+
+
 
       {/* Reassurance */}
       <p style={{ margin: 0, font: "var(--t-meta)", color: "var(--text-2, var(--text))" }}>

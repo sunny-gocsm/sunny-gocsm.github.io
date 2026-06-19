@@ -111,6 +111,7 @@ export default function PlaybooksPage() {
     setDrawerInitial({ mode: "autopilot", step });
   };
 
+
   const enriched = useMemo(
     () =>
       playbooks.map((p) => ({
@@ -270,11 +271,10 @@ export default function PlaybooksPage() {
                 <span onClick={(e) => e.stopPropagation()}>
                   <PlaybookAutomationRow
                     playbook={p}
-                    onEditRule={() => openAutopilotEditor(p.id, 2)}
-                    onReviewSteps={() => openAutopilotEditor(p.id, 1)}
-
+                    onEditRule={() => openAutopilotEditor(p.id, 1)}
                   />
                 </span>
+
               </div>
             ))}
             {filtered.length === 0 ? (
@@ -676,12 +676,12 @@ function lastRunLabel(playbookId: string): string | null {
 function PlaybookAutomationRow({
   playbook,
   onEditRule,
-  onReviewSteps,
+
 }: {
   playbook: Playbook;
   onEditRule: () => void;
-  onReviewSteps: () => void;
 }) {
+
   const status = useAutopilotStatus(playbook.id);
   const hasRule = status !== "off";
   const lastRun = lastRunLabel(playbook.id);
@@ -759,15 +759,8 @@ function PlaybookAutomationRow({
         >
           Edit rule
         </Button>
-        <Button
-          variant="ghost"
-          size="sm"
-          icon={<Icon name="list" />}
-          onClick={onReviewSteps}
-          disabled={!hasRule}
-        >
-          Review messages
-        </Button>
+        {/* "Review messages" removed — message editing lives in HighLevel. */}
+
         <PlayVideoButton playbook={playbook} label="Watch (1 min)" />
       </div>
     </div>
