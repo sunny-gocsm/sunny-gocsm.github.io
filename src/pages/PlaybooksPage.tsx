@@ -680,8 +680,8 @@ function PlaybookAutomationRow({
 }: {
   playbook: Playbook;
   onEditRule: () => void;
-  onReviewSteps: () => void;
 }) {
+
   const status = useAutopilotStatus(playbook.id);
   const hasRule = status !== "off";
   const lastRun = lastRunLabel(playbook.id);
