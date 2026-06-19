@@ -1117,19 +1117,40 @@ function WhenItRuns({
   const [qIdx, setQIdx] = useState<0 | 1 | 2 | 3>(0);
   const [showPreview, setShowPreview] = useState(false);
 
+  // Advanced refiner — quiet, hidden until asked for.
+  const [showAdvanced, setShowAdvanced] = useState(false);
+  const [extras, setExtras] = useState<ExtraCondId[]>([]);
+  const [stagePick, setStagePick] = useState<LifecycleStage>("established");
+  const [agePick, setAgePick] = useState<AgeBucket>("under90");
+  const [tagPick, setTagPick] = useState<string>(TAGS[0]);
+  const [signalPick, setSignalPick] = useState<OtherSignal>("a2p-lost");
+
+  // Guardrails.
+  const [frequencyDays, setFrequencyDays] = useState(30);
+  const [skipOpenTask, setSkipOpenTask] = useState(true);
+
+  const extraConds = useMemo<ExtraCond[]>(
+    () => extras.map((id) => buildExtraCond(id, { stagePick, agePick, tagPick, signalPick })),
+    [extras, stagePick, agePick, tagPick, signalPick],
+  );
+
   const base = useMemo(() => matchesToday(playbook), [playbook]);
   const activeAnswers: Answers = path === "auto" ? DEFAULT_ANSWERS : answers;
-  const matches = useMemo(() => applyPredicates(base, activeAnswers), [base, activeAnswers]);
+  const matches = useMemo(() => {
+    const afterAnswers = applyPredicates(base, activeAnswers);
+    return afterAnswers.filter((a) => extraConds.every((c) => (c.predicate ? c.predicate(a) : true)));
+  }, [base, activeAnswers, extraConds]);
 
   const ruleSentence = useMemo(() => {
-    const base = buildRuleSentence(playbook, activeAnswers);
-    if (path === "auto") return base;
-    return `${base.replace(/\.$/, "")} · ${notifyPhrase(activeAnswers)}.`;
-  }, [playbook, activeAnswers, path]);
+    const baseSentence = buildRuleSentence(playbook, activeAnswers, extraConds);
+    if (path === "auto" && extraConds.length === 0) return baseSentence;
+    return `${baseSentence.replace(/\.$/, "")} · ${notifyPhrase(activeAnswers)}.`;
+  }, [playbook, activeAnswers, path, extraConds]);
 
   useEffect(() => {
     onRuleChange?.(ruleSentence, matches.length);
   }, [ruleSentence, matches.length, onRuleChange]);
+
 
   const TOTAL = 4;
   const next = () => setQIdx((i) => (Math.min(TOTAL - 1, i + 1) as 0 | 1 | 2 | 3));
