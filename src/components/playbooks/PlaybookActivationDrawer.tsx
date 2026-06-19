@@ -1325,7 +1325,7 @@ function WhenItRuns({
   );
 }
 
-}
+
 
 // ============================================================
 // Step 3 — "Publish" (summary + reassurance)
