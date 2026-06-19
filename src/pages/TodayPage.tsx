@@ -175,6 +175,7 @@ function ReassuranceLine({
   onOpenAccount: (id: string) => void;
 }) {
   const [open, setOpen] = useState(false);
+  const [emailsOpen, setEmailsOpen] = useState(false);
 
   const recent = allOutcomes.filter((o) => o.daysAgo <= 7);
   const autopilot = recent.filter((o) => o.attribution === "playbook-solo");
@@ -184,6 +185,13 @@ function ReassuranceLine({
   const protectedAmount =
     autopilot.reduce((s, o) => s + (o.amount ?? 0), 0) +
     approved.reduce((s, o) => s + (o.amount ?? 0), 0);
+
+  // Client emails sent by autopilot overnight — only for plays currently on.
+  const onIds = useAllAutopilotOn();
+  const sentEmails: AutopilotEmail[] = onIds.length
+    ? sentEmailsForOnPlaybooks(onIds)
+    : autopilotSentEmails; // for demo: show fixture sample even when nothing on
+  const sentCount = sentEmails.length;
 
   const items: RecapItem[] = [
     ...autopilot.slice(0, 3).map<RecapItem>((o) => {
@@ -249,8 +257,38 @@ function ReassuranceLine({
           <Icon name="shield-check" />
         </span>
         <span style={{ flex: 1, minWidth: 0, font: "var(--t-body)", color: "var(--text)" }}>
-          GoCSM handled <strong style={{ fontWeight: 600 }}><Mono>{totalHandled}</Mono> things</strong> overnight and protected{" "}
-          <strong style={{ fontWeight: 600 }}><Mono>{fmtMoneySmall(protectedAmount)}</Mono></strong> this week.
+          GoCSM handled <strong style={{ fontWeight: 600 }}><Mono>{totalHandled}</Mono> things</strong> overnight
+          {sentCount > 0 ? (
+            <>
+              {" "}and sent{" "}
+              <strong style={{ fontWeight: 600 }}>
+                <Mono>{sentCount}</Mono> client email{sentCount === 1 ? "" : "s"}
+              </strong>{" "}
+              —{" "}
+              <button
+                type="button"
+                onClick={() => setEmailsOpen((o) => !o)}
+                style={{
+                  background: "none",
+                  border: "none",
+                  padding: 0,
+                  color: "var(--info-7, var(--blue-7))",
+                  font: "inherit",
+                  fontWeight: 600,
+                  cursor: "pointer",
+                  textDecoration: "underline",
+                }}
+              >
+                {emailsOpen ? "hide them" : "see them"}
+              </button>
+              .
+            </>
+          ) : (
+            <>
+              {" "}and protected{" "}
+              <strong style={{ fontWeight: 600 }}><Mono>{fmtMoneySmall(protectedAmount)}</Mono></strong> this week.
+            </>
+          )}
         </span>
         <Button
           variant="ghost"
@@ -261,6 +299,56 @@ function ReassuranceLine({
           {open ? "Hide" : "See what it did"}
         </Button>
       </div>
+
+      {emailsOpen ? (
+        <div
+          style={{
+            marginTop: "var(--s-3)",
+            padding: "var(--s-3)",
+            borderRadius: "var(--r-md)",
+            background: "var(--surface-2)",
+            border: "1px solid var(--border)",
+            display: "flex",
+            flexDirection: "column",
+            gap: "var(--s-2)",
+          }}
+        >
+          <span style={{ font: "var(--t-meta)", color: "var(--text-2, var(--text))", fontWeight: 600 }}>
+            Client emails sent overnight
+          </span>
+          {sentEmails.map((e) => (
+            <div
+              key={e.id}
+              style={{
+                display: "flex",
+                gap: "var(--s-3)",
+                alignItems: "flex-start",
+                padding: "var(--s-2) var(--s-3)",
+                borderRadius: "var(--r-sm)",
+                background: "var(--surface)",
+              }}
+            >
+              <div style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", gap: 2 }}>
+                <div style={{ display: "flex", gap: "var(--s-2)", alignItems: "baseline", flexWrap: "wrap" }}>
+                  <strong style={{ color: "var(--text)", fontWeight: 600 }}>{e.accountName}</strong>
+                  <span style={{ color: "var(--text-2, var(--text))", font: "var(--t-body-sm)" }}>
+                    · {e.subject}
+                  </span>
+                  <span style={{ marginLeft: "auto", font: "var(--t-meta)", color: "var(--text-3, var(--text))" }}>
+                    {e.whenLabel}
+                  </span>
+                </div>
+                <span style={{ font: "var(--t-body-sm)", color: "var(--text-2, var(--text))" }}>
+                  {e.snippet}
+                </span>
+              </div>
+            </div>
+          ))}
+          <span style={{ font: "var(--t-meta)", color: "var(--text-3, var(--text))", fontStyle: "italic" }}>
+            These are the exact messages you approved in HighLevel at setup.
+          </span>
+        </div>
+      ) : null}
 
       {open ? (
         <div style={{ marginTop: "var(--s-4)", display: "flex", flexDirection: "column", gap: "var(--s-2)" }}>
@@ -320,6 +408,7 @@ function ReassuranceLine({
     </Card>
   );
 }
+
 
 // ----------------------------------------------------------------------------
 // Page
