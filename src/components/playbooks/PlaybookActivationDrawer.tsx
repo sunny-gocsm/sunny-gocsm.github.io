@@ -506,23 +506,23 @@ function AutopilotSetup({
       <div style={{ display: "flex", flexDirection: "column", gap: "var(--s-4)" }}>
         <StepDots current={stepIndex} />
 
-        <div style={{ display: "flex", flexDirection: "column", gap: "var(--s-2)" }}>
-          <div style={{ display: "flex", alignItems: "center", gap: "var(--s-2)" }}>
-            <span className="icon-chip info" aria-hidden>
-              <Icon name={playbook.icon} />
-            </span>
-            <strong style={{ font: "var(--t-h4, var(--t-body))", fontWeight: 600 }}>
-              {playbook.title}
-            </strong>
-          </div>
-          <p style={{ margin: 0, font: "var(--t-body)", color: "var(--text-2, var(--text))" }}>
-            {playbook.does}
-          </p>
-          <PlayVideoButton playbook={playbook} label="What this play does · Watch (1 min)" />
-        </div>
+        {stepIndex === 1 ? (
+          <>
+            <div style={{ display: "flex", flexDirection: "column", gap: "var(--s-2)" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: "var(--s-2)" }}>
+                <span className="icon-chip info" aria-hidden>
+                  <Icon name={playbook.icon} />
+                </span>
+                <strong style={{ font: "var(--t-h4, var(--t-body))", fontWeight: 600 }}>
+                  {playbook.title}
+                </strong>
+              </div>
+              <p style={{ margin: 0, font: "var(--t-body)", color: "var(--text-2, var(--text))" }}>
+                {playbook.does}
+              </p>
+              <PlayVideoButton playbook={playbook} label="What this play does · Watch (1 min)" />
+            </div>
 
-        <div style={{ display: "flex", flexDirection: "column", gap: "var(--s-3)" }}>
-          <div style={{ display: stepIndex === 1 ? "block" : "none" }}>
             <WhenItRuns
               playbook={playbook}
               onRuleChange={(sentence, count) => {
@@ -530,39 +530,18 @@ function AutopilotSetup({
                 setRuleCount(count);
               }}
             />
-          </div>
 
-          {stepIndex === 2 ? (
-            <Step3Summary
-              ruleSentence={ruleSentence}
-              ruleCount={ruleCount}
-            />
-          ) : null}
-        </div>
-
-        <div
-          style={{
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center",
-            gap: "var(--s-2)",
-          }}
-        >
-          <Button variant="ghost" size="sm" onClick={onNotNow}>
-            Not now
-          </Button>
-          <div style={{ display: "flex", gap: "var(--s-2)" }}>
-            {stepIndex > 1 ? (
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => onStepChange((stepIndex - 1) as 1 | 2)}
-                icon={<Icon name="arrow-left" />}
-              >
-                Back
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+                gap: "var(--s-2)",
+              }}
+            >
+              <Button variant="ghost" size="sm" onClick={onNotNow}>
+                Not now
               </Button>
-            ) : null}
-            {stepIndex < 2 ? (
               <Button
                 variant="primary"
                 onClick={() => onStepChange((stepIndex + 1) as 1 | 2)}
@@ -570,13 +549,17 @@ function AutopilotSetup({
               >
                 Continue to publish
               </Button>
-            ) : (
-              <Button variant="primary" onClick={() => setShowHandoff(true)} icon={<Icon name="external-link" />}>
-                Open in HighLevel & publish
-              </Button>
-            )}
-          </div>
-        </div>
+            </div>
+          </>
+        ) : (
+          <HowThisPlayWorks
+            playbook={playbook}
+            ctaLabel="Open in HighLevel & publish"
+            onCta={() => setShowHandoff(true)}
+            onBack={() => onStepChange(1)}
+            mode="autopilot"
+          />
+        )}
       </div>
     </Card>
   );
