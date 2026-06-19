@@ -398,6 +398,7 @@ export function PlaybookActivationDrawer({ open, scope, accounts, onClose, initi
                 targetCount={targetCount}
                 onNotNow={() => setAutopilotSetupStep(0)}
                 onPublish={turnOnAutopilot}
+                onOverseeChange={setPublishOversee}
                 initialShowHandoff={directAutopilot && initial?.showHandoff === true}
               />
 
