@@ -106,10 +106,11 @@ export default function PlaybooksPage() {
   // autopilot setup for already-configured plays.
   const [drawerScope, setDrawerScope] = useState<DrawerScope | null>(null);
   const [drawerInitial, setDrawerInitial] = useState<DrawerInitial | undefined>(undefined);
-  const openAutopilotEditor = (playbookId: string, step: 1 | 2) => {
+  const openAutopilotEditor = (playbookId: string, step: 1 | 2, showHandoff = false) => {
     setDrawerScope({ kind: "playbook", playbookId });
-    setDrawerInitial({ mode: "autopilot", step });
+    setDrawerInitial({ mode: "autopilot", step, showHandoff });
   };
+
 
 
   const enriched = useMemo(
@@ -272,8 +273,10 @@ export default function PlaybooksPage() {
                   <PlaybookAutomationRow
                     playbook={p}
                     onEditRule={() => openAutopilotEditor(p.id, 1)}
+                    onOpenHighLevel={() => openAutopilotEditor(p.id, 2, true)}
                   />
                 </span>
+
 
               </div>
             ))}
@@ -676,11 +679,13 @@ function lastRunLabel(playbookId: string): string | null {
 function PlaybookAutomationRow({
   playbook,
   onEditRule,
-
+  onOpenHighLevel,
 }: {
   playbook: Playbook;
   onEditRule: () => void;
+  onOpenHighLevel: () => void;
 }) {
+
 
   const status = useAutopilotStatus(playbook.id);
   const hasRule = status !== "off";
@@ -759,10 +764,21 @@ function PlaybookAutomationRow({
         >
           Edit rule
         </Button>
-        {/* "Review messages" removed — message editing lives in HighLevel. */}
+        <Button
+          variant="ghost"
+          size="sm"
+          icon={<Icon name="external-link" />}
+          onClick={onOpenHighLevel}
+          disabled={!hasRule}
+          title="Reopen the HighLevel handoff to reconfigure steps or messages natively"
+        >
+          Open in HighLevel
+        </Button>
+        {/* Step & message edits happen in HighLevel — no editor here. */}
 
         <PlayVideoButton playbook={playbook} label="Watch (1 min)" />
       </div>
+
     </div>
   );
 }

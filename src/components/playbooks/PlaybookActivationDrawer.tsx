@@ -36,7 +36,7 @@ export type DrawerScope =
 
 // Optional deep-link: jump straight into the autopilot setup at a given step.
 // Now only two steps: 1 = "When it runs", 2 = "Finish & publish".
-export type DrawerInitial = { mode: "autopilot"; step: 1 | 2 };
+export type DrawerInitial = { mode: "autopilot"; step: 1 | 2; showHandoff?: boolean };
 
 
 interface Props {
@@ -248,16 +248,17 @@ export function PlaybookActivationDrawer({ open, scope, accounts, onClose, initi
                     {playbook.does}
                   </span>
                 </div>
-                <div style={{ display: "flex", gap: "var(--s-2)", marginTop: "var(--s-1)" }}>
+                <div style={{ display: "flex", gap: "var(--s-2)", marginTop: "var(--s-1)", alignItems: "center", flexWrap: "wrap" }}>
                   <Button variant="primary" onClick={() => setStep("explain")} icon={<Icon name="play" />}>
                     Run it now{batchSuffix}
                   </Button>
-
+                  <PlayVideoButton playbook={playbook} label="Watch (1 min)" />
 
                   {scope.kind === "accounts" && alternates.length > 0 ? (
                     <Button variant="ghost" size="sm" onClick={() => setShowAlternates((s) => !s)}>
                       {showAlternates ? "Hide" : "Choose a different play"}
                     </Button>
+
                   ) : null}
                 </div>
               </div>
@@ -395,7 +396,9 @@ export function PlaybookActivationDrawer({ open, scope, accounts, onClose, initi
                 targetCount={targetCount}
                 onNotNow={() => setAutopilotSetupStep(0)}
                 onPublish={turnOnAutopilot}
+                initialShowHandoff={directAutopilot && initial?.showHandoff === true}
               />
+
 
 
 
