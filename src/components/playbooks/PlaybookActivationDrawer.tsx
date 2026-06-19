@@ -596,6 +596,7 @@ function AutopilotSetup({
             <WhatGoCSMDoes
               playbook={playbook}
               onEnabledChange={setEnabledLabels}
+              onEditedChange={setEditedIds}
             />
           </div>
 
