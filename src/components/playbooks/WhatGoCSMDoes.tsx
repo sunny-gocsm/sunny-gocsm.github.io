@@ -191,6 +191,11 @@ export function WhatGoCSMDoes({ playbook, onEnabledChange, onEditedChange }: Pro
     onEnabledChange?.(labels);
   }, [enabled, channels, onEnabledChange]);
 
+  useEffect(() => {
+    const ids = channels.filter((c) => edited[c.id]).map((c) => c.id);
+    onEditedChange?.(ids);
+  }, [edited, channels, onEditedChange]);
+
   const team = channels.filter((c) => c.group === "team");
   const client = channels.filter((c) => c.group === "client");
 
