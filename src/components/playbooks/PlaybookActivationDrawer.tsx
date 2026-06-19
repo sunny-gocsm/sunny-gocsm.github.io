@@ -245,7 +245,7 @@ export function PlaybookActivationDrawer({ open, scope, accounts, onClose, initi
         {/* Header */}
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
           <span style={{ font: "var(--t-meta)", color: "var(--text-3, var(--text))" }}>
-            {directAutopilot ? "Edit autopilot" : step === "done" ? "Done" : step === "setup" ? "Review & set up" : "GoCSM's pick"} · scoped to{" "}
+            {directAutopilot ? "Edit autopilot" : step === "done" ? "Done" : step === "setup" ? "What GoCSM does" : "GoCSM's pick"} · scoped to{" "}
             <Mono>{targetCount}</Mono> account{targetCount === 1 ? "" : "s"}
           </span>
           <Button variant="ghost" size="sm" onClick={close}>
