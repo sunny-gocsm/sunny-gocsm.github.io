@@ -172,10 +172,16 @@ interface Props {
 export function WhatGoCSMDoes({ playbook, onEnabledChange }: Props) {
   const channels = useMemo(() => getChannelsForPlay(playbook), [playbook]);
   const [enabled, setEnabled] = useState<Record<ChannelId, boolean>>(() => defaultEnabledFor(playbook));
+  // Channels whose message the owner has "edited in HighLevel" (simulated return).
+  const [edited, setEdited] = useState<Record<ChannelId, boolean>>(() => ({} as Record<ChannelId, boolean>));
+  // Which row currently has the handoff panel open (only one at a time).
+  const [handoffOpen, setHandoffOpen] = useState<ChannelId | null>(null);
 
   // Re-init defaults when the playbook changes (e.g. picking a different play).
   useEffect(() => {
     setEnabled(defaultEnabledFor(playbook));
+    setEdited({} as Record<ChannelId, boolean>);
+    setHandoffOpen(null);
   }, [playbook]);
 
   useEffect(() => {
@@ -186,15 +192,128 @@ export function WhatGoCSMDoes({ playbook, onEnabledChange }: Props) {
   const team = channels.filter((c) => c.group === "team");
   const client = channels.filter((c) => c.group === "client");
 
-  const editInHighLevel = (c: Channel) => {
-    toast(`Opens in HighLevel — ${c.label.toLowerCase()}`, {
-      description: "GoCSM hands off to HighLevel's own editor. (Simulated in this prototype.)",
+  // What HighLevel editor this channel hands off to. Email/SMS map to HL's
+  // "Send Email" / "Send SMS" workflow actions. Other channels hand off to
+  // their nearest HL equivalent.
+  const editorName = (c: Channel): string => {
+    switch (c.id) {
+      case "email": return "email";
+      case "sms": return "SMS";
+      case "slack": return "Slack message";
+      case "task": return "task template";
+      case "notify-me":
+      case "notify-teammate":
+      default: return "internal notification";
+    }
+  };
+
+  const openInHighLevel = (c: Channel) => {
+    toast(`Launching HighLevel's ${editorName(c)} editor`, {
+      description: "In production this carries your session to HighLevel. (Simulated here.)",
       duration: 2000,
     });
   };
 
+  const markEdited = (c: Channel) => {
+    setEdited((p) => ({ ...p, [c.id]: true }));
+    setHandoffOpen(null);
+    toast.success(`${c.label} — edited in HighLevel`, {
+      description: "Your edits live in HighLevel and will be used on the next run.",
+      duration: 2000,
+    });
+  };
+
+  const renderHandoff = (c: Channel) => {
+    const isClient = c.group === "client";
+    const editor = editorName(c);
+    return (
+      <div
+        role="dialog"
+        aria-label={`Open HighLevel ${editor} editor`}
+        style={{
+          display: "flex",
+          flexDirection: "column",
+          gap: "var(--s-3)",
+          padding: "var(--s-3)",
+          borderRadius: "var(--r-md)",
+          background: "var(--surface)",
+          border: "1px solid var(--info-7, var(--blue-7))",
+          boxShadow: "var(--elev-2, 0 4px 16px rgba(0,0,0,0.08))",
+        }}
+      >
+        <div style={{ display: "flex", alignItems: "center", gap: "var(--s-2)" }}>
+          <span className="icon-chip info" aria-hidden>
+            <Icon name="external-link" />
+          </span>
+          <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: 2 }}>
+            <strong style={{ font: "var(--t-body)", color: "var(--text)", fontWeight: 600 }}>
+              Opening HighLevel's {editor} editor for {playbook.title}.
+            </strong>
+            <span style={{ font: "var(--t-meta)", color: "var(--text-3, var(--text))", fontStyle: "italic" }}>
+              In production this opens HighLevel's own editor (the Send {c.id === "sms" ? "SMS" : c.id === "email" ? "Email" : editor} action) carrying your session; your edits save in HighLevel.
+            </span>
+          </div>
+          {isClient ? <Badge variant="warn" dot={false}>needs your OK</Badge> : null}
+        </div>
+
+        {/* Read-only preview of what they're about to edit */}
+        <div
+          style={{
+            display: "flex",
+            flexDirection: "column",
+            gap: "var(--s-2)",
+            padding: "var(--s-3)",
+            borderRadius: "var(--r-sm)",
+            background: "var(--surface-2)",
+            border: "1px solid var(--border)",
+          }}
+        >
+          <span style={{ font: "var(--t-meta)", textTransform: "uppercase", letterSpacing: "0.04em", color: "var(--text-3, var(--text))" }}>
+            Current message · read-only
+          </span>
+          {c.preview.subject ? (
+            <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
+              <span style={{ font: "var(--t-meta)", color: "var(--text-3, var(--text))" }}>Subject</span>
+              <span style={{ font: "var(--t-body-sm)", fontWeight: 600, color: "var(--text)" }}>
+                {c.preview.subject}
+              </span>
+            </div>
+          ) : null}
+          <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
+            <span style={{ font: "var(--t-meta)", color: "var(--text-3, var(--text))" }}>Body</span>
+            <span style={{ font: "var(--t-body-sm)", color: "var(--text-2, var(--text))", whiteSpace: "pre-wrap" }}>
+              {c.preview.body}
+            </span>
+          </div>
+        </div>
+
+        {isClient ? (
+          <p style={{ margin: 0, font: "var(--t-meta)", color: "var(--text-2, var(--text))" }}>
+            This won't send to the client until you publish / hit Run.
+          </p>
+        ) : null}
+
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: "var(--s-2)" }}>
+          <Button variant="ghost" size="sm" onClick={() => setHandoffOpen(null)}>
+            Cancel
+          </Button>
+          <div style={{ display: "flex", gap: "var(--s-2)" }}>
+            <Button variant="ghost" size="sm" onClick={() => markEdited(c)} icon={<Icon name="check" />}>
+              Mark as edited (simulated)
+            </Button>
+            <Button variant="primary" size="sm" onClick={() => openInHighLevel(c)} icon={<Icon name="external-link" />}>
+              Open the HighLevel editor
+            </Button>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
   const renderRow = (c: Channel) => {
     const on = !!enabled[c.id];
+    const wasEdited = !!edited[c.id];
+    const handoff = handoffOpen === c.id;
     return (
       <li
         key={c.id}
@@ -211,11 +330,18 @@ export function WhatGoCSMDoes({ playbook, onEnabledChange }: Props) {
           <Toggle on={on} onChange={(next) => setEnabled((p) => ({ ...p, [c.id]: next }))} />
           <Icon name={c.icon} />
           <span style={{ flex: 1, font: "var(--t-body)", color: "var(--text)" }}>{c.label}</span>
+          {wasEdited ? (
+            <Badge variant="pos" dot={false}>
+              <span style={{ display: "inline-flex", alignItems: "center", gap: 4 }}>
+                <Icon name="check" /> edited in HighLevel
+              </span>
+            </Badge>
+          ) : null}
           <Badge variant="neutral" dot={false}>{c.group === "client" ? "client" : "internal"}</Badge>
           {c.group === "client" ? <Badge variant="warn" dot={false}>needs your OK</Badge> : null}
         </div>
 
-        {on ? (
+        {on && !handoff ? (
           <div
             style={{
               display: "flex",
@@ -249,7 +375,7 @@ export function WhatGoCSMDoes({ playbook, onEnabledChange }: Props) {
               <Button
                 variant="ghost"
                 size="sm"
-                onClick={() => editInHighLevel(c)}
+                onClick={() => setHandoffOpen(c.id)}
                 icon={<Icon name="external-link" />}
               >
                 Edit in HighLevel
@@ -257,7 +383,10 @@ export function WhatGoCSMDoes({ playbook, onEnabledChange }: Props) {
             </div>
           </div>
         ) : null}
+
+        {on && handoff ? renderHandoff(c) : null}
       </li>
+
     );
   };
 
