@@ -80,6 +80,8 @@ interface CohortCardProps {
   accent: "atrisk" | "healthy" | "warn" | "pos" | "slate" | "info" | "neg" | "watch" | "thriving";
   emptyLine: string;
   playbookId?: string;
+  onEditRule?: (playbookId: string) => void;
+  onOpenHighLevel?: (playbookId: string) => void;
 }
 
 function CohortCard({
@@ -92,7 +94,10 @@ function CohortCard({
   accent,
   emptyLine,
   playbookId,
+  onEditRule,
+  onOpenHighLevel,
 }: CohortCardProps) {
+  const { toast: t } = useToast();
   const mrr = accounts.reduce((sum, a) => sum + a.revenue.mrr, 0);
   const accentClasses = `accent-t ${accent}`;
   const extraStyle: React.CSSProperties =
@@ -135,15 +140,50 @@ function CohortCard({
           </p>
         ) : null}
 
-        <div style={{ marginTop: "var(--s-1)", display: "flex", gap: "var(--s-2)", alignItems: "center" }}>
-          {onApply && !empty ? (
-            <Button variant="primary" size="sm" onClick={onApply} icon={<Icon name="play" />}>
-              {actionLabel}
-            </Button>
-          ) : null}
-          <Button variant="ghost" size="sm" onClick={onView} icon={<Icon name="arrow-right" />}>
-            View all
-          </Button>
+        <div style={{ marginTop: "var(--s-1)", display: "flex", gap: "var(--s-2)", alignItems: "center", flexWrap: "wrap" }}>
+          {onAutopilot && playbookId ? (
+            <>
+              <Button
+                variant="ghost"
+                size="sm"
+                icon={<Icon name="pause" />}
+                onClick={() => {
+                  autopilotStore.pause(playbookId);
+                  t({ title: "Autopilot paused", description: "Sends stopped — the rule is kept." });
+                }}
+              >
+                Pause
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                icon={<Icon name="sliders" />}
+                onClick={() => onEditRule?.(playbookId)}
+              >
+                Edit rule
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                icon={<Icon name="external-link" />}
+                onClick={() => onOpenHighLevel?.(playbookId)}
+                title="Reopen the HighLevel workflow to change the message"
+              >
+                Open in HighLevel
+              </Button>
+            </>
+          ) : (
+            <>
+              {onApply && !empty ? (
+                <Button variant="primary" size="sm" onClick={onApply} icon={<Icon name="play" />}>
+                  {actionLabel}
+                </Button>
+              ) : null}
+              <Button variant="ghost" size="sm" onClick={onView} icon={<Icon name="arrow-right" />}>
+                View all
+              </Button>
+            </>
+          )}
         </div>
       </div>
     </Card>
