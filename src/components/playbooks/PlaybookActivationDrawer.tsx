@@ -1390,6 +1390,8 @@ function WhenItRuns({
   // Guardrails.
   const [frequencyDays, setFrequencyDays] = useState(30);
   const [skipOpenTask, setSkipOpenTask] = useState(true);
+  type OverseeMode = "auto" | "ease" | "review";
+  const [overseeMode, setOverseeMode] = useState<OverseeMode>("auto");
 
   const extraConds = useMemo<ExtraCond[]>(
     () => extras.map((id) => buildExtraCond(id, { stagePick, agePick, tagPick, signalPick })),
