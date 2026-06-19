@@ -569,6 +569,7 @@ function AutopilotSetup({
   const [ruleSentence, setRuleSentence] = useState<string>("");
   const [ruleCount, setRuleCount] = useState<number>(0);
   const [enabledLabels, setEnabledLabels] = useState<string[]>([]);
+  const [editedIds, setEditedIds] = useState<ChannelId[]>([]);
 
   return (
     <Card padded className="accent-t info">
