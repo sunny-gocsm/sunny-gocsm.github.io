@@ -570,6 +570,20 @@ function AutopilotSetup({
   const [ruleCount, setRuleCount] = useState<number>(0);
   const [enabledLabels, setEnabledLabels] = useState<string[]>([]);
   const [editedIds, setEditedIds] = useState<ChannelId[]>([]);
+  // AP7 — workflow handoff representation (non-editable preview + sticky note).
+  const [showHandoff, setShowHandoff] = useState(false);
+
+  if (showHandoff) {
+    return (
+      <WorkflowHandoff
+        playbook={playbook}
+        enabledLabels={enabledLabels}
+        onBack={() => setShowHandoff(false)}
+        onPublished={onPublish}
+      />
+    );
+  }
+
 
   return (
     <Card padded className="accent-t info">
@@ -655,7 +669,7 @@ function AutopilotSetup({
                 {stepIndex === 2 ? "Continue to publish" : "Next"}
               </Button>
             ) : (
-              <Button variant="primary" onClick={onPublish} icon={<Icon name="external-link" />}>
+              <Button variant="primary" onClick={() => setShowHandoff(true)} icon={<Icon name="external-link" />}>
                 Open in HighLevel & publish
               </Button>
             )}
@@ -665,6 +679,214 @@ function AutopilotSetup({
     </Card>
   );
 }
+
+// ============================================================
+// AP7 — Workflow handoff (REPRESENTATION, not an editor)
+// In production this deep-links into the pre-built HighLevel workflow where the
+// messages, conditions, and sticky notes already live. Here we render a clearly
+// non-interactive preview so owners understand what they'll see.
+// ============================================================
+
+function WorkflowHandoff({
+  playbook,
+  enabledLabels,
+  onBack,
+  onPublished,
+}: {
+  playbook: Playbook;
+  enabledLabels: string[];
+  onBack: () => void;
+  onPublished: () => void;
+}) {
+  const triggerLabel = `When ${eventPhrase(playbook)}`;
+  const followUp = `If still ${eventPhrase(playbook)} after 7 days, alert me`;
+  const steps = [triggerLabel, ...enabledLabels, followUp];
+
+  const publish = () => {
+    // Parent (turnOnAutopilot) enables the store, fires the success+Undo toast,
+    // and closes the drawer. Keep this thin so we don't double-toast.
+    onPublished();
+  };
+
+
+  return (
+    <Card padded className="accent-t info">
+      <div style={{ display: "flex", flexDirection: "column", gap: "var(--s-4)" }}>
+        {/* Top */}
+        <div style={{ display: "flex", flexDirection: "column", gap: "var(--s-1)" }}>
+          <span style={{ font: "var(--t-meta)", color: "var(--text-3, var(--text))" }}>
+            Opening your automation in HighLevel
+          </span>
+          <div style={{ display: "flex", alignItems: "center", gap: "var(--s-2)" }}>
+            <span className="icon-chip info" aria-hidden>
+              <Icon name={playbook.icon} />
+            </span>
+            <strong style={{ font: "var(--t-h4, var(--t-body))", fontWeight: 600 }}>
+              {playbook.title}
+            </strong>
+          </div>
+          <p
+            style={{
+              margin: 0,
+              font: "var(--t-meta)",
+              color: "var(--text-3, var(--text))",
+              fontStyle: "italic",
+            }}
+          >
+            This is a preview — HighLevel's real workflow builder isn't recreated here. In production
+            this deep-links into the pre-built workflow where the messages, conditions, and sticky
+            notes already live; you'll edit and publish there.
+          </p>
+        </div>
+
+        {/* Non-interactive workflow preview */}
+        <div style={{ display: "flex", flexDirection: "column", gap: "var(--s-2)" }}>
+          <span
+            style={{
+              font: "var(--t-meta)",
+              textTransform: "uppercase",
+              letterSpacing: "0.04em",
+              color: "var(--text-3, var(--text))",
+            }}
+          >
+            Workflow preview
+          </span>
+          <div style={{ display: "flex", flexDirection: "column", gap: 0 }}>
+            {steps.map((label, i) => (
+              <div key={i} style={{ display: "flex", flexDirection: "column", alignItems: "stretch" }}>
+                <div
+                  aria-disabled
+                  style={{
+                    padding: "var(--s-2) var(--s-3)",
+                    borderRadius: "var(--r-md)",
+                    background: "var(--surface-2)",
+                    border: "1px dashed var(--border)",
+                    color: "var(--text-2, var(--text))",
+                    font: "var(--t-body-sm)",
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "var(--s-2)",
+                    opacity: 0.95,
+                    userSelect: "none",
+                  }}
+                >
+                  <Icon
+                    name={
+                      i === 0
+                        ? "zap"
+                        : i === steps.length - 1
+                          ? "clock"
+                          : "check"
+                    }
+                  />
+                  <span>{label}</span>
+                </div>
+                {i < steps.length - 1 ? (
+                  <div
+                    aria-hidden
+                    style={{
+                      width: 1,
+                      height: 14,
+                      background: "var(--border)",
+                      margin: "0 auto",
+                    }}
+                  />
+                ) : null}
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Education sticky note */}
+        <div
+          style={{
+            display: "flex",
+            flexDirection: "column",
+            gap: "var(--s-2)",
+            padding: "var(--s-3)",
+            borderRadius: "var(--r-md)",
+            background: "var(--warn-soft, #FEF3C7)",
+            color: "var(--text)",
+            border: "1px solid var(--border)",
+            boxShadow: "var(--shadow-sm, 0 1px 2px rgba(0,0,0,0.06))",
+          }}
+        >
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "var(--s-2)" }}>
+            <strong style={{ font: "var(--t-body)", fontWeight: 600 }}>
+              How to finish (1 min)
+            </strong>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => toast("Video coming soon.")}
+              icon={<Icon name="play" />}
+            >
+              Watch (1 min)
+            </Button>
+          </div>
+          <ul style={{ listStyle: "none", padding: 0, margin: 0, display: "flex", flexDirection: "column", gap: 4 }}>
+            {[
+              "Check the messages",
+              "Adjust the conditions if you want",
+              "Hit Publish",
+            ].map((item, i) => (
+              <li
+                key={i}
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "var(--s-2)",
+                  font: "var(--t-body-sm)",
+                }}
+              >
+                <Icon name="check-square" />
+                <span>{item}</span>
+              </li>
+            ))}
+          </ul>
+          <button
+            type="button"
+            onClick={() => toast("Setup call — booking link coming soon.")}
+            style={{
+              alignSelf: "flex-start",
+              background: "transparent",
+              border: 0,
+              padding: 0,
+              color: "var(--text-2, var(--text))",
+              font: "var(--t-meta)",
+              textDecoration: "underline",
+              cursor: "pointer",
+            }}
+          >
+            Book a setup call
+          </button>
+        </div>
+
+        <p
+          style={{
+            margin: 0,
+            font: "var(--t-meta)",
+            color: "var(--text-3, var(--text))",
+            fontStyle: "italic",
+          }}
+        >
+          In production GoCSM detects the publish and flips the state automatically.
+        </p>
+
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: "var(--s-2)" }}>
+          <Button variant="ghost" size="sm" onClick={onBack} icon={<Icon name="arrow-left" />}>
+            Back
+          </Button>
+          <Button variant="primary" onClick={publish} icon={<Icon name="check" />}>
+            I've published it
+          </Button>
+        </div>
+      </div>
+    </Card>
+  );
+}
+
+
 
 // ============================================================
 // Step 2 — "When it runs"
