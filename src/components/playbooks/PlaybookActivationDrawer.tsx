@@ -655,8 +655,8 @@ function AutopilotSetup({
                 {stepIndex === 2 ? "Continue to publish" : "Next"}
               </Button>
             ) : (
-              <Button variant="primary" onClick={onPublish} icon={<Icon name="zap" />}>
-                Publish automation
+              <Button variant="primary" onClick={onPublish} icon={<Icon name="external-link" />}>
+                Open in HighLevel & publish
               </Button>
             )}
           </div>
