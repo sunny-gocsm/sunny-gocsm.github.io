@@ -28,6 +28,7 @@ import {
 import type { Account } from "@/fixtures";
 import { autopilotStore } from "@/state/autopilot";
 import { PlayVideoButton } from "@/components/playbooks/PlayVideoButton";
+import { HowThisPlayWorks } from "@/components/playbooks/HowThisPlayWorks";
 
 export type DrawerScope =
   | { kind: "playbook"; playbookId: string }
@@ -46,7 +47,7 @@ interface Props {
   initial?: DrawerInitial;
 }
 
-type Step = "pick" | "done";
+type Step = "pick" | "explain" | "done";
 
 // Plain-English trigger phrase from the playbook's problem.
 function plainTrigger(p: Playbook): string {
@@ -241,7 +242,7 @@ export function PlaybookActivationDrawer({ open, scope, accounts, onClose, initi
                   </span>
                 </div>
                 <div style={{ display: "flex", gap: "var(--s-2)", marginTop: "var(--s-1)" }}>
-                  <Button variant="primary" onClick={runNow} icon={<Icon name="play" />}>
+                  <Button variant="primary" onClick={() => setStep("explain")} icon={<Icon name="play" />}>
                     Run it now{batchSuffix}
                   </Button>
 
@@ -297,12 +298,22 @@ export function PlaybookActivationDrawer({ open, scope, accounts, onClose, initi
           </>
         ) : null}
 
-        {/* The one-time-run channel-toggle/edit screen has been removed.
-            Action configuration and message editing live in HighLevel. */}
+        {/* ============= STEP EXPLAIN — How this play works ============= */}
+        {step === "explain" && playbook ? (
+          <Card padded className="accent-t info">
+            <HowThisPlayWorks
+              playbook={playbook}
+              ctaLabel="Set it up & run in HighLevel"
+              onCta={() => {
+                runNow();
+              }}
+              onBack={() => setStep("pick")}
+              mode="onetime"
+            />
+          </Card>
+        ) : null}
 
-
-
-        {/* ============= STEP 3 + 4 — DONE + AUTOPILOT ============= */}
+        {/* ============= STEP DONE + AUTOPILOT OFFER ============= */}
         {step === "done" && playbook ? (
           <>
             {!directAutopilot ? (
@@ -495,23 +506,23 @@ function AutopilotSetup({
       <div style={{ display: "flex", flexDirection: "column", gap: "var(--s-4)" }}>
         <StepDots current={stepIndex} />
 
-        <div style={{ display: "flex", flexDirection: "column", gap: "var(--s-2)" }}>
-          <div style={{ display: "flex", alignItems: "center", gap: "var(--s-2)" }}>
-            <span className="icon-chip info" aria-hidden>
-              <Icon name={playbook.icon} />
-            </span>
-            <strong style={{ font: "var(--t-h4, var(--t-body))", fontWeight: 600 }}>
-              {playbook.title}
-            </strong>
-          </div>
-          <p style={{ margin: 0, font: "var(--t-body)", color: "var(--text-2, var(--text))" }}>
-            {playbook.does}
-          </p>
-          <PlayVideoButton playbook={playbook} label="What this play does · Watch (1 min)" />
-        </div>
+        {stepIndex === 1 ? (
+          <>
+            <div style={{ display: "flex", flexDirection: "column", gap: "var(--s-2)" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: "var(--s-2)" }}>
+                <span className="icon-chip info" aria-hidden>
+                  <Icon name={playbook.icon} />
+                </span>
+                <strong style={{ font: "var(--t-h4, var(--t-body))", fontWeight: 600 }}>
+                  {playbook.title}
+                </strong>
+              </div>
+              <p style={{ margin: 0, font: "var(--t-body)", color: "var(--text-2, var(--text))" }}>
+                {playbook.does}
+              </p>
+              <PlayVideoButton playbook={playbook} label="What this play does · Watch (1 min)" />
+            </div>
 
-        <div style={{ display: "flex", flexDirection: "column", gap: "var(--s-3)" }}>
-          <div style={{ display: stepIndex === 1 ? "block" : "none" }}>
             <WhenItRuns
               playbook={playbook}
               onRuleChange={(sentence, count) => {
@@ -519,39 +530,18 @@ function AutopilotSetup({
                 setRuleCount(count);
               }}
             />
-          </div>
 
-          {stepIndex === 2 ? (
-            <Step3Summary
-              ruleSentence={ruleSentence}
-              ruleCount={ruleCount}
-            />
-          ) : null}
-        </div>
-
-        <div
-          style={{
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center",
-            gap: "var(--s-2)",
-          }}
-        >
-          <Button variant="ghost" size="sm" onClick={onNotNow}>
-            Not now
-          </Button>
-          <div style={{ display: "flex", gap: "var(--s-2)" }}>
-            {stepIndex > 1 ? (
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => onStepChange((stepIndex - 1) as 1 | 2)}
-                icon={<Icon name="arrow-left" />}
-              >
-                Back
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+                gap: "var(--s-2)",
+              }}
+            >
+              <Button variant="ghost" size="sm" onClick={onNotNow}>
+                Not now
               </Button>
-            ) : null}
-            {stepIndex < 2 ? (
               <Button
                 variant="primary"
                 onClick={() => onStepChange((stepIndex + 1) as 1 | 2)}
@@ -559,13 +549,17 @@ function AutopilotSetup({
               >
                 Continue to publish
               </Button>
-            ) : (
-              <Button variant="primary" onClick={() => setShowHandoff(true)} icon={<Icon name="external-link" />}>
-                Open in HighLevel & publish
-              </Button>
-            )}
-          </div>
-        </div>
+            </div>
+          </>
+        ) : (
+          <HowThisPlayWorks
+            playbook={playbook}
+            ctaLabel="Open in HighLevel & publish"
+            onCta={() => setShowHandoff(true)}
+            onBack={() => onStepChange(1)}
+            mode="autopilot"
+          />
+        )}
       </div>
     </Card>
   );
@@ -1712,73 +1706,3 @@ function WhenItRuns({
 
 
 
-// ============================================================
-// Step 3 — "Publish" (summary + reassurance)
-// ============================================================
-
-function Step3Summary({
-  ruleSentence,
-  ruleCount,
-}: {
-  ruleSentence: string;
-  ruleCount: number;
-}) {
-
-  return (
-    <div style={{ display: "flex", flexDirection: "column", gap: "var(--s-3)" }}>
-      <p style={{ margin: 0, font: "var(--t-body)", color: "var(--text-2, var(--text))" }}>
-        Quick recap before you publish.
-      </p>
-
-      {/* THE RULE */}
-      <div
-        style={{
-          display: "flex",
-          flexDirection: "column",
-          gap: 4,
-          padding: "var(--s-3)",
-          borderRadius: "var(--r-md)",
-          background: "var(--surface-2)",
-        }}
-      >
-        <span
-          style={{
-            font: "var(--t-meta)",
-            textTransform: "uppercase",
-            letterSpacing: "0.04em",
-            color: "var(--text-3, var(--text))",
-          }}
-        >
-          The rule
-        </span>
-        <span style={{ font: "var(--t-body)", color: "var(--text)" }}>
-          {ruleSentence || "Runs automatically when the play's signal appears."}
-        </span>
-        <span style={{ font: "var(--t-meta)", color: "var(--text-3, var(--text))" }}>
-          <Mono>{ruleCount}</Mono> account{ruleCount === 1 ? "" : "s"} match right now.
-        </span>
-      </div>
-
-      {/* "What GoCSM will do" channel checklist removed — action configuration
-          and message editing live in HighLevel. A summary of the published
-          workflow will be re-wired here from HighLevel later. */}
-
-
-
-      {/* Reassurance */}
-      <p style={{ margin: 0, font: "var(--t-meta)", color: "var(--text-2, var(--text))" }}>
-        Client emails still ask for your OK · reversible · change or pause anytime in Playbooks.
-      </p>
-      <p
-        style={{
-          margin: 0,
-          font: "var(--t-meta)",
-          color: "var(--text-3, var(--text))",
-          fontStyle: "italic",
-        }}
-      >
-        In production this opens your HighLevel workflow to review the flow and publish.
-      </p>
-    </div>
-  );
-}
