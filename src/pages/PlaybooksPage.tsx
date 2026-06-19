@@ -106,10 +106,11 @@ export default function PlaybooksPage() {
   // autopilot setup for already-configured plays.
   const [drawerScope, setDrawerScope] = useState<DrawerScope | null>(null);
   const [drawerInitial, setDrawerInitial] = useState<DrawerInitial | undefined>(undefined);
-  const openAutopilotEditor = (playbookId: string, step: 1 | 2) => {
+  const openAutopilotEditor = (playbookId: string, step: 1 | 2, showHandoff = false) => {
     setDrawerScope({ kind: "playbook", playbookId });
-    setDrawerInitial({ mode: "autopilot", step });
+    setDrawerInitial({ mode: "autopilot", step, showHandoff });
   };
+
 
 
   const enriched = useMemo(
