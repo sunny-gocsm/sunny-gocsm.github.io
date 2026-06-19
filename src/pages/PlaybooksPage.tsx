@@ -111,6 +111,7 @@ export default function PlaybooksPage() {
     setDrawerInitial({ mode: "autopilot", step });
   };
 
+
   const enriched = useMemo(
     () =>
       playbooks.map((p) => ({
