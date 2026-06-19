@@ -1759,58 +1759,11 @@ function Step3Summary({
         </span>
       </div>
 
-      {/* WHAT GOCSM WILL DO */}
-      <div
-        style={{
-          display: "flex",
-          flexDirection: "column",
-          gap: "var(--s-2)",
-          padding: "var(--s-3)",
-          borderRadius: "var(--r-md)",
-          background: "var(--surface-2)",
-        }}
-      >
-        <span
-          style={{
-            font: "var(--t-meta)",
-            textTransform: "uppercase",
-            letterSpacing: "0.04em",
-            color: "var(--text-3, var(--text))",
-          }}
-        >
-          What GoCSM will do
-        </span>
-        {enabledLabels.length === 0 ? (
-          <span style={{ font: "var(--t-body-sm)", color: "var(--text-2, var(--text))" }}>
-            Nothing enabled yet — go back to Step 1 to switch on at least one channel.
-          </span>
-        ) : (
-          <ul style={{ listStyle: "none", padding: 0, margin: 0, display: "flex", flexDirection: "column", gap: 4 }}>
-            {enabledLabels.map((l, i) => (
-              <li
-                key={i}
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "var(--s-2)",
-                  font: "var(--t-body-sm)",
-                  color: "var(--text)",
-                }}
-              >
-                <Icon name="check" />
-                <span>{l}</span>
-                {editedLabels.includes(l) ? (
-                  <Badge variant="pos" dot={false}>
-                    <span style={{ display: "inline-flex", alignItems: "center", gap: 4 }}>
-                      <Icon name="check" /> edited in HighLevel
-                    </span>
-                  </Badge>
-                ) : null}
-              </li>
-            ))}
-          </ul>
-        )}
-      </div>
+      {/* "What GoCSM will do" channel checklist removed — action configuration
+          and message editing live in HighLevel. A summary of the published
+          workflow will be re-wired here from HighLevel later. */}
+
+
 
       {/* Reassurance */}
       <p style={{ margin: 0, font: "var(--t-meta)", color: "var(--text-2, var(--text))" }}>
