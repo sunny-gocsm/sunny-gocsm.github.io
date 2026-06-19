@@ -167,6 +167,8 @@ interface Props {
   playbook: Playbook;
   /** Lifts the labels of currently-enabled channels (used by the autopilot summary). */
   onEnabledChange?: (labels: string[]) => void;
+  /** Lifts the ids of channels the owner edited in HighLevel (used by the summary). */
+  onEditedChange?: (editedIds: ChannelId[]) => void;
 }
 
 export function WhatGoCSMDoes({ playbook, onEnabledChange }: Props) {
