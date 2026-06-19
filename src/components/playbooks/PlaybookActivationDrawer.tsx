@@ -50,60 +50,18 @@ interface Props {
 
 type Step = "pick" | "setup" | "done";
 
-type StepKind = "client" | "internal" | "task";
-interface PlayStep {
-  id: string;
-  label: string;
-  kind: StepKind;
-  preview?: string; // for client-facing
-  needsConnect?: boolean; // for internal Slack steps
-}
-
-// Split a playbook's "does" sentence into 2-3 plain steps and classify each.
-function deriveSteps(p: Playbook): PlayStep[] {
-  const chunks = p.does
-    .split(/,| and (?=[a-z])/i)
-    .map((s) => s.trim().replace(/\.$/, ""))
-    .filter(Boolean);
-
-  return chunks.map((label, i) => {
-    const l = label.toLowerCase();
-    let kind: StepKind = "task";
-    if (/email|message|sms|note|check-?in|sequence|drip/.test(l)) kind = "client";
-    else if (/slack|alert|notif|flag|pause|surface|cs[mt]|owner/.test(l)) kind = "internal";
-    else if (/call|task|book|queue|schedule|tour/.test(l)) kind = "task";
-
-    const step: PlayStep = {
-      id: `${p.id}-step-${i}`,
-      label: label.charAt(0).toUpperCase() + label.slice(1),
-      kind,
-    };
-    if (kind === "client") {
-      step.preview = `Hi {first_name} — we noticed ${p.problem
-        .replace(/^The /, "the ")
-        .replace(/\.$/, "")}. Want to jump on a quick call this week?`;
-    }
-    if (kind === "internal" && /slack/.test(l)) {
-      step.needsConnect = true;
-    }
-    return step;
-  });
-}
-
 // Plain-English trigger phrase from the playbook's problem.
 function plainTrigger(p: Playbook): string {
   const t = p.problem.replace(/^The /, "the ").replace(/\.$/, "");
   return t;
 }
 
+
 export function PlaybookActivationDrawer({ open, scope, accounts, onClose, initial }: Props) {
   const directAutopilot = initial?.mode === "autopilot";
   const [step, setStep] = useState<Step>(directAutopilot ? "done" : "pick");
   const [selectedId, setSelectedId] = useState<string>("");
   const [showAlternates, setShowAlternates] = useState(false);
-  const [stepToggles, setStepToggles] = useState<Record<string, boolean>>({});
-  const [previewOpenFor, setPreviewOpenFor] = useState<string | null>(null);
-  const [previewDraft, setPreviewDraft] = useState<string>("");
   const [autopilotChoice, setAutopilotChoice] = useState<"pending" | "on" | "no">("pending");
   // True once the play has been run one-time in this session — autopilot then
   // skips Step 1 ("What it does", already configured) and opens at Step 2.
@@ -152,25 +110,12 @@ export function PlaybookActivationDrawer({ open, scope, accounts, onClose, initi
     return list;
   }, [scope, playbookId]);
 
-  const playSteps = useMemo(() => (playbook ? deriveSteps(playbook) : []), [playbook]);
-
-  // Default all steps ON when playbook changes
-  useEffect(() => {
-    if (!playbook) return;
-    const next: Record<string, boolean> = {};
-    playSteps.forEach((s) => (next[s.id] = true));
-    setStepToggles(next);
-  }, [playbook, playSteps]);
-
   if (!open || !scope) return null;
 
   const reset = () => {
     setStep("pick");
     setSelectedId("");
     setShowAlternates(false);
-    setStepToggles({});
-    setPreviewOpenFor(null);
-    setPreviewDraft("");
     setAutopilotChoice("pending");
     setAutopilotSetupStep(0);
     setRanOnce(false);
@@ -186,9 +131,8 @@ export function PlaybookActivationDrawer({ open, scope, accounts, onClose, initi
 
   const runNow = () => {
     if (!playbook) return;
-    const enabled = playSteps.filter((s) => stepToggles[s.id]);
     toast.success(`${playbook.title} — running${batchSuffix}`, {
-      description: `${enabled.length} step${enabled.length === 1 ? "" : "s"} queued · undo for 5 seconds.`,
+      description: "Nothing sends to clients without your OK · undo for 5 seconds.",
       duration: 5000,
       action: {
         label: "Undo",
@@ -198,6 +142,7 @@ export function PlaybookActivationDrawer({ open, scope, accounts, onClose, initi
     setRanOnce(true);
     setStep("done");
   };
+
 
   const turnOnAutopilot = () => {
     if (!playbook) return;
@@ -815,14 +760,8 @@ function WorkflowHandoff({
             <strong style={{ font: "var(--t-body)", fontWeight: 600 }}>
               How to finish (1 min)
             </strong>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => toast("Video coming soon.")}
-              icon={<Icon name="play" />}
-            >
-              Watch (1 min)
-            </Button>
+            <PlayVideoButton playbook={playbook} label="Watch (1 min)" />
+
           </div>
           <ul style={{ listStyle: "none", padding: 0, margin: 0, display: "flex", flexDirection: "column", gap: 4 }}>
             {[
