@@ -8,10 +8,17 @@ import {
   Badge,
   LiveStatus,
 } from "@/gocsm-ds";
-import { useIsAutopilot } from "@/state/autopilot";
+import { useIsAutopilot, useAllAutopilotOn, autopilotStore } from "@/state/autopilot";
 import { useToast } from "@/hooks/use-toast";
 import { ToastAction } from "@/components/ui/toast";
 import { PageRibbon } from "@/components/PageRibbon";
+import {
+  autopilotSentEmails,
+  autopilotPendingEmails,
+  sentEmailsForOnPlaybooks,
+  pendingEmailsForPlaybooks,
+  type AutopilotEmail,
+} from "@/fixtures/autopilotActivity";
 import {
   atRiskByUrgency,
   renewalsWindow,
