@@ -251,25 +251,52 @@ export function PlaybookActivationDrawer({ open, scope, accounts, onClose, initi
                   <ul style={{ listStyle: "none", padding: 0, margin: 0 }}>
                     {targets.slice(0, 5).map((a) => {
                       const renews = daysUntil(a.revenue.renewalDate);
+                      const initials = a.identity.name
+                        .split(/\s+/)
+                        .filter(Boolean)
+                        .slice(0, 2)
+                        .map((w) => w[0])
+                        .join("")
+                        .toUpperCase();
                       return (
                         <li
                           key={a.identity.id}
                           style={{
                             display: "flex",
-                            alignItems: "flex-start",
+                            alignItems: "center",
                             justifyContent: "space-between",
                             gap: "var(--s-3)",
                             padding: "var(--s-2) 0",
                             borderTop: "1px solid var(--border-soft, var(--border))",
                           }}
                         >
-                          <span style={{ display: "flex", flexDirection: "column", gap: 2, minWidth: 0 }}>
-                            <span style={{ font: "var(--t-body)", color: "var(--text)" }}>
-                              <strong style={{ fontWeight: 600 }}>{a.identity.name}</strong>
-                              <span style={{ color: "var(--text-3, var(--text))" }}> · {a.identity.plan}</span>
+                          <span style={{ display: "flex", alignItems: "center", gap: "var(--s-3)", minWidth: 0 }}>
+                            <span
+                              aria-hidden
+                              style={{
+                                width: 30,
+                                height: 30,
+                                flexShrink: 0,
+                                borderRadius: 8,
+                                background: "var(--bg-subtle)",
+                                border: "1px solid var(--border-soft, var(--border))",
+                                display: "grid",
+                                placeItems: "center",
+                                font: "var(--t-body-sm, var(--t-meta))",
+                                fontWeight: 600,
+                                color: "var(--text-2, var(--text))",
+                              }}
+                            >
+                              {initials}
                             </span>
-                            <span style={{ font: "var(--t-body-sm, var(--t-meta))", color: "var(--text-2, var(--text))" }}>
-                              {accountSignal(a)}
+                            <span style={{ display: "flex", flexDirection: "column", gap: 2, minWidth: 0 }}>
+                              <span style={{ font: "var(--t-body)", color: "var(--text)" }}>
+                                <strong style={{ fontWeight: 600 }}>{a.identity.name}</strong>
+                                <span style={{ color: "var(--text-3, var(--text))" }}> · {a.identity.plan}</span>
+                              </span>
+                              <span style={{ font: "var(--t-body-sm, var(--t-meta))", color: "var(--text-2, var(--text))" }}>
+                                {accountSignal(a)}
+                              </span>
                             </span>
                           </span>
                           <span style={{ font: "var(--t-body-sm, var(--t-meta))", color: "var(--text-3, var(--text))", whiteSpace: "nowrap", flexShrink: 0 }}>
@@ -1478,37 +1505,11 @@ function WhenItRuns({
         })}
       </div>
 
-      {/* Fixed event readout */}
-      <div
-        style={{
-          display: "flex",
-          alignItems: "center",
-          gap: "var(--s-2)",
-          padding: "var(--s-2) var(--s-3)",
-          borderRadius: "var(--r-md)",
-          background: "var(--surface-2)",
-          font: "var(--t-meta)",
-          color: "var(--text-2, var(--text))",
-        }}
-      >
-        <Icon name="lock" />
-        <span>Runs when accounts {eventPhrase(playbook)}.</span>
-      </div>
-
       {/* PATH A — Let GoCSM decide (one-tap summary) */}
       {path === "auto" ? (
-        <div style={{ display: "flex", flexDirection: "column", gap: "var(--s-3)" }}>
-          <p style={{ margin: 0, font: "var(--t-body)", color: "var(--text)" }}>
-            Runs for accounts that {eventPhrase(playbook)} —{" "}
-            <strong style={{ font: "var(--t-h4, var(--t-body))" }}>
-              <Mono>{matches.length}</Mono>
-            </strong>{" "}
-            right now.
-          </p>
-          <span style={{ font: "var(--t-meta)", color: "var(--text-3, var(--text))" }}>
-            Sensible defaults — switch to <em>Choose myself</em> to narrow it down.
-          </span>
-        </div>
+        <span style={{ font: "var(--t-meta)", color: "var(--text-3, var(--text))" }}>
+          Sensible defaults — switch to <em>Choose myself</em> to narrow it down.
+        </span>
       ) : null}
       {/* Guided wizard complete — compact recap + escape hatch back to the questions */}
       {path === "guided" && guidedDone ? (
@@ -1762,24 +1763,27 @@ function WhenItRuns({
       ) : null}
 
 
-      {/* Running summary + live count */}
+      {/* The rule — ONE plain-language statement of what will run (rule / count / helper each read differently) */}
       <div
+        className="rule-statement"
         style={{
           display: "flex",
           flexDirection: "column",
-          gap: 4,
+          gap: "var(--s-2)",
           padding: "var(--s-3)",
           borderRadius: "var(--r-md)",
           background: "var(--surface-2)",
           border: "1px solid var(--border)",
         }}
       >
-        <span style={{ font: "var(--t-meta)", textTransform: "uppercase", letterSpacing: "0.04em", color: "var(--text-3, var(--text))" }}>
-          Your rule so far
+        <span style={{ display: "inline-flex", alignItems: "center", gap: 6, font: "var(--t-meta)", textTransform: "uppercase", letterSpacing: "0.04em", color: "var(--text-3, var(--text))" }}>
+          <Icon name="lock" /> This rule
         </span>
-        <span style={{ font: "var(--t-body)", color: "var(--text)" }}>{ruleSentence}</span>
-        <span style={{ font: "var(--t-meta)", color: "var(--text-3, var(--text))" }}>
-          Runs for <Mono>{matches.length}</Mono> account{matches.length === 1 ? "" : "s"} right now.
+        <span style={{ font: "var(--t-subheading, var(--t-body))", fontWeight: 600, lineHeight: 1.4, color: "var(--text)" }}>
+          {ruleSentence}
+        </span>
+        <span style={{ display: "inline-flex", alignItems: "center", gap: 6, alignSelf: "flex-start", padding: "2px 8px", borderRadius: "var(--r-pill, 999px)", background: "var(--bg-subtle)", font: "var(--t-meta)", color: "var(--text-2, var(--text))" }}>
+          <Mono>{matches.length}</Mono> account{matches.length === 1 ? "" : "s"} match now
         </span>
       </div>
 

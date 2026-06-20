@@ -35,7 +35,10 @@ export function HowThisPlayWorks({
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "var(--s-4)" }}>
-      {/* Prominent explainer video — or a tasteful placeholder until one is recorded */}
+      {/* Explainer video — only when one is actually recorded. We deliberately
+          render nothing (not an empty "coming soon" box) when there's no video,
+          so the play title and "What GoCSM will send" lead the panel instead of
+          a placeholder eating the top third of the drawer. */}
       {playbook.videoUrl ? (
         <div
           style={{
@@ -57,25 +60,7 @@ export function HowThisPlayWorks({
             }}
           />
         </div>
-      ) : (
-        <div
-          style={{
-            aspectRatio: "16 / 9",
-            borderRadius: "var(--r-md)",
-            border: "1px solid var(--border)",
-            background: "var(--surface-2)",
-            display: "flex",
-            flexDirection: "column",
-            alignItems: "center",
-            justifyContent: "center",
-            gap: "var(--s-2)",
-            color: "var(--text-3, var(--text))",
-          }}
-        >
-          <Icon name="play-circle" />
-          <span style={{ font: "var(--t-body-sm)" }}>Walkthrough video — coming soon</span>
-        </div>
-      )}
+      ) : null}
 
       {/* Title + plain summary */}
       <div style={{ display: "flex", flexDirection: "column", gap: "var(--s-2)" }}>
