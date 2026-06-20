@@ -28,7 +28,6 @@ import {
   stalledOnboarding,
   upsellReady,
   atRiskByUrgency,
-  agencyRollup,
   allAccounts,
   type Account,
 } from "@/fixtures";
@@ -96,8 +95,13 @@ function CohortFixItCard({
 
   const text = (
     <>
-      <strong>{title}</strong> · <Mono>{count}</Mono> account{count === 1 ? "" : "s"} ·{" "}
-      <Mono>{fmtMoney(mrr)}</Mono> at risk
+      <strong>{title}</strong> · <Mono>{count}</Mono> account{count === 1 ? "" : "s"}
+      {mrr > 0 ? (
+        <>
+          {" · "}
+          <Mono>{fmtMoney(mrr)}</Mono> at risk
+        </>
+      ) : null}
     </>
   );
 
@@ -506,8 +510,6 @@ export default function TodayPage() {
     [],
   );
 
-  const rollup = useMemo(() => agencyRollup(), []);
-
   // ---- Unified "What needs you today" list -------------------------------
   // ONE row per problem (issue-grouped, so it scales to 1000 accounts). The
   // accounts that used to appear in a separate "Needs you" list now live inside
@@ -523,8 +525,6 @@ export default function TodayPage() {
       emptyLine: "Payments are flowing.",
       playbookId: "pb-payment-failed",
       urgency: 5,
-      onView: () => navigate("/accounts"),
-      onApply: () => openApply(failed, "pb-payment-failed"),
     },
     {
       icon: "alert-triangle",
@@ -535,8 +535,6 @@ export default function TodayPage() {
       emptyLine: "All setups holding steady.",
       playbookId: "pb-save-domain",
       urgency: 4,
-      onView: () => navigate("/accounts"),
-      onApply: () => openApply(lostSticky, "pb-save-domain"),
     },
     {
       icon: "calendar-clock",
@@ -547,8 +545,6 @@ export default function TodayPage() {
       emptyLine: "No renewals in danger.",
       playbookId: "pb-renewal-save",
       urgency: 4,
-      onView: () => navigate("/accounts?renewing=30"),
-      onApply: () => openApply(renewingAtRisk, "pb-renewal-save"),
     },
     {
       icon: "moon",
@@ -559,8 +555,6 @@ export default function TodayPage() {
       emptyLine: "Everyone's still showing up.",
       playbookId: "pb-no-login",
       urgency: 2,
-      onView: () => navigate("/accounts"),
-      onApply: () => openApply(goneQuiet, "pb-no-login"),
     },
     {
       icon: "rocket",
@@ -571,13 +565,29 @@ export default function TodayPage() {
       emptyLine: "New accounts are moving.",
       playbookId: "pb-onboarding-stalled",
       urgency: 2,
-      onView: () => navigate("/onboarding"),
-      onApply: () => openApply(stalled, "pb-onboarding-stalled"),
     },
   ];
   const cohortMrr = (accs: Account[]) => accs.reduce((s, a) => s + a.revenue.mrr, 0);
+
+  // Dedupe accounts so each appears under exactly ONE problem — claimed in
+  // urgency order, so an account that has two problems shows under its most
+  // urgent one (a failed payment outranks a renewal). Keeping the rows distinct
+  // makes the hero totals equal the sum of the rows, so the page never shows two
+  // "$ at risk" numbers that fail to reconcile.
+  const claimed = new Set<string>();
   const cohorts = cohortDefs
     .filter((c) => c.accounts.length > 0)
+    .sort((a, b) => b.urgency - a.urgency || cohortMrr(b.accounts) - cohortMrr(a.accounts))
+    .map((c) => {
+      const accounts = c.accounts.filter((a) => {
+        if (claimed.has(a.identity.id)) return false;
+        claimed.add(a.identity.id);
+        return true;
+      });
+      return { ...c, accounts };
+    })
+    .filter((c) => c.accounts.length > 0)
+    // Display order: the most pressing problem (urgency × $ at risk) first → hero.
     .sort((a, b) => b.urgency * cohortMrr(b.accounts) - a.urgency * cohortMrr(a.accounts));
 
   const MAX_VISIBLE = 5;
@@ -585,6 +595,9 @@ export default function TodayPage() {
   const hiddenCount = cohorts.length - visibleCohorts.length;
   const topCohort = cohorts[0];
   const accountsNeeding = cohorts.reduce((s, c) => s + c.accounts.length, 0);
+  // Hero "$ at risk" is the sum of the rows the user sees below — never a
+  // separately-computed agency rollup that wouldn't add up.
+  const mrrAtRisk = cohorts.reduce((s, c) => s + cohortMrr(c.accounts), 0);
 
   return (
     <main
@@ -605,18 +618,22 @@ export default function TodayPage() {
           sync={<LiveStatus state="fresh" label="Synced moments ago" />}
         />
         <Verdict
-          tone={rollup.mrrAtRisk > 0 ? "risk" : "watch"}
+          tone={mrrAtRisk > 0 ? "risk" : "watch"}
           attribution="GoCSM AI"
-          score={rollup.mrrAtRisk > 0 ? fmtMoney(rollup.mrrAtRisk) : null}
+          score={mrrAtRisk > 0 ? fmtMoney(mrrAtRisk) : null}
           band="atrisk"
           stamp={
-            rollup.mrrAtRisk > 0 ? (
-              <span style={{ font: "var(--t-meta)", color: "var(--text-3, var(--text))" }}>MRR at risk</span>
+            mrrAtRisk > 0 ? (
+              <span style={{ font: "var(--t-meta)", color: "var(--text-3, var(--text))" }}>at risk</span>
             ) : null
           }
           actions={
             topCohort ? (
-              <ActionButton size="sm" icon="arrow-right" onClick={topCohort.onApply}>
+              <ActionButton
+                size="sm"
+                icon="arrow-right"
+                onClick={() => openApply(topCohort.accounts, topCohort.playbookId)}
+              >
                 Start here: {topCohort.actionLabel}
               </ActionButton>
             ) : null
@@ -651,7 +668,7 @@ export default function TodayPage() {
               ) : null}
             </div>
             <p style={{ font: "var(--t-body-sm)", color: "var(--text-2, var(--text))", margin: 0 }}>
-              Fix many accounts at once.
+              Each row is one problem — fix it for all its accounts at once.
             </p>
           </div>
         </header>
@@ -674,7 +691,7 @@ export default function TodayPage() {
                 actionLabel={c.actionLabel}
                 emptyLine={c.emptyLine}
                 playbookId={c.playbookId}
-                onApply={c.onApply}
+                onApply={() => openApply(c.accounts, c.playbookId)}
                 onEditRule={(id) => openAutopilotEditor(id, 1)}
                 onOpenHighLevel={(id) => openAutopilotEditor(id, 2, true)}
               />
