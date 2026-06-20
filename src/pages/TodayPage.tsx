@@ -630,13 +630,23 @@ export default function TodayPage() {
         gap: "var(--s-10)",
       }}
     >
-      {/* 1 — Briefing: the AI verdict IS the hero (heroes $ at risk + one primary
-          action). The old "Good afternoon" greeting added no value, so it's gone;
-          only a small freshness chip remains as a quiet trust signal. */}
-      <section aria-label="Briefing" style={{ display: "flex", flexDirection: "column", gap: "var(--s-2)" }}>
-        <div style={{ display: "flex", justifyContent: "flex-end" }}>
+      {/* 1 — Page title + AI verdict. "What needs you today" is the PAGE TITLE; the
+          verdict below is GoCSM's summary ($ at risk + the first action) and the list
+          further down is the detail. */}
+      <section aria-label="What needs you today" style={{ display: "flex", flexDirection: "column", gap: "var(--s-4)" }}>
+        <header style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "var(--s-3)", flexWrap: "wrap" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: "var(--s-3)", flexWrap: "wrap" }}>
+            <h1 style={{ fontSize: "var(--t-display-lg)", lineHeight: 1.15, margin: 0, color: "var(--text)", fontWeight: 700, letterSpacing: "-0.02em" }}>
+              What needs you today
+            </h1>
+            {accountsNeeding > 0 ? (
+              <Badge variant="danger" dot={false}>
+                <Mono>{accountsNeeding}</Mono> accounts
+              </Badge>
+            ) : null}
+          </div>
           <LiveStatus state="fresh" label="Synced moments ago" />
-        </div>
+        </header>
         <Verdict
           tone={mrrAtRisk > 0 ? "risk" : "watch"}
           attribution="GoCSM AI"
@@ -660,7 +670,7 @@ export default function TodayPage() {
           }
         >
           {accountsNeeding > 0
-            ? `${accountsNeeding} ${accountsNeeding === 1 ? "account needs" : "accounts need"} you today.`
+            ? `Across ${accountsNeeding} ${accountsNeeding === 1 ? "account" : "accounts"} — start with the biggest.`
             : "You're all caught up today."}
         </Verdict>
       </section>
@@ -673,25 +683,12 @@ export default function TodayPage() {
 
       <PendingApprovalsItem />
 
-      {/* 2 — One prioritized list: what needs you today (issue-grouped, scales) */}
-      <section aria-label="What needs you today" style={{ display: "flex", flexDirection: "column", gap: "var(--s-3)" }}>
-        <header style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: "var(--s-3)" }}>
-          <div style={{ display: "flex", flexDirection: "column", gap: "var(--s-1)" }}>
-            <div style={{ display: "flex", alignItems: "center", gap: "var(--s-2)" }}>
-              <h2 style={{ font: "var(--t-heading)", margin: 0, color: "var(--text)", fontWeight: 700, letterSpacing: "-0.01em" }}>
-                What needs you today
-              </h2>
-              {accountsNeeding > 0 ? (
-                <Badge variant="danger" dot={false}>
-                  <Mono>{accountsNeeding}</Mono> accounts
-                </Badge>
-              ) : null}
-            </div>
-            <p style={{ font: "var(--t-body)", color: "var(--text-2, var(--text))", margin: 0 }}>
-              Each row is one problem — fix it for all its accounts at once.
-            </p>
-          </div>
-        </header>
+      {/* 2 — The prioritized list itself (issue-grouped, scales). The page title
+          above already names this section, so here we only set the one-line context. */}
+      <section aria-label="The problems" style={{ display: "flex", flexDirection: "column", gap: "var(--s-3)" }}>
+        <p style={{ font: "var(--t-body)", color: "var(--text-2, var(--text))", margin: 0 }}>
+          Each row is one problem — fix it for all its accounts at once.
+        </p>
 
         {cohorts.length === 0 ? (
           <Card padded>
