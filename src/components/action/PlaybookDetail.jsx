@@ -15,8 +15,10 @@ const PRIMARY = { off: "Run it", ranonce: "Keep it running", on: "On · autopilo
  * PlaybookDetail — the full view-and-customize panel for one Playbook, laid out as the
  * canonical anatomy: Situation → Trigger ("what it watches for") → Actions ("what it does",
  * each toggleable + editable) → Proof ("who it affects" — match count, drafts, Preview) →
- * Explainer (the video). Owner-facing language throughout; the AI-vs-workflow choice is
- * GoCSM's, shown only as a quiet "how it runs" line. A floating panel (--sh-sheet).
+ * Explainer (the video). The "How it works" section renders ONLY when a real `video`
+ * node is supplied — never a label-only placeholder (no fake "watch a walkthrough" bar).
+ * Owner-facing language throughout; the AI-vs-workflow choice is GoCSM's, shown only as a
+ * quiet "how it runs" line. A floating panel (--sh-sheet).
  *
  * `hideIdentity` — when the page already shows the playbook's identity as a hero
  * (icon / state / title / subtitle), pass this to suppress the duplicate header and
@@ -25,7 +27,7 @@ const PRIMARY = { off: "Run it", ranonce: "Keep it running", on: "On · autopilo
 export function PlaybookDetail({
   icon = "book-open", title, subtitle, state = "off", hideIdentity = false,
   problem, does, outcome,
-  watch, actions = [], proof, video, videoLabel, limits = [],
+  watch, actions = [], proof, video, videoLabel: _videoLabel, limits = [],
   onRun, onPreview, primaryLabel, ...rest
 }) {
   const s = STATE[state] || STATE.off;
@@ -102,10 +104,10 @@ export function PlaybookDetail({
         </div>
       ) : null}
 
-      {video || videoLabel ? (
+      {video ? (
         <div className="panel-section">
           <div className="ps-h"><span className="lbl"><Icon name="circle-play" />How it works</span></div>
-          <div className="pd-video">{video || <div className="pd-video-ph"><span className="pv-play"><Icon name="play" /></span><span>{videoLabel || "Watch a 2-min walkthrough"}</span></div>}</div>
+          <div className="pd-video">{video}</div>
         </div>
       ) : null}
 
