@@ -166,3 +166,11 @@ button {
 .action-peek summary { list-style: none; }
 .action-peek .action-peek-chev { margin-left: auto; color: var(--text-3, var(--text)); transition: transform 150ms ease; }
 .action-peek[open] .action-peek-chev { transform: rotate(180deg); }
+
+/* Playbook detail hero CTA — flush-right beside the title on desktop, but
+   left-aligned at the page margin once it wraps below the title on mobile.
+   Kept in CSS (not inline) so align-items can switch at the breakpoint. */
+.pbd-hero__cta { align-items: flex-end; text-align: right; }
+@media (max-width: 640px) {
+  .pbd-hero__cta { align-items: flex-start; text-align: left; }
+}

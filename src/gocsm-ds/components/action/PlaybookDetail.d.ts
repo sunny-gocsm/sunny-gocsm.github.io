@@ -28,13 +28,18 @@ export interface PlaybookDetailProps extends Omit<React.HTMLAttributes<HTMLDivEl
   title?: React.ReactNode;
   subtitle?: React.ReactNode;
   state?: PlaybookState;
+  /** Suppress the duplicate identity header (icon/state/title/subtitle) when the
+   *  page already shows it as a hero; renders only the anatomy below. */
+  hideIdentity?: boolean;
   problem?: React.ReactNode;
   does?: React.ReactNode;
   outcome?: React.ReactNode;
   watch?: PlaybookWatch;
   actions?: PlaybookAction[];
   proof?: PlaybookProof;
+  /** The "How it works" section renders only when this real video node is supplied. */
   video?: React.ReactNode;
+  /** @deprecated No-op — a label alone no longer renders a placeholder video bar. Pass `video` instead. */
   videoLabel?: React.ReactNode;
   limits?: (string | { name?: React.ReactNode })[];
   onRun?: () => void;

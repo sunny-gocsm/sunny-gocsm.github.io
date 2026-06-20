@@ -417,7 +417,7 @@ const seeds: Seed[] = [
     riskTags: ["renewal-urgent"],
   },
   {
-    id: "a-badasslink", name: "BadassLink", industry: "Agency", plan: "Pro",
+    id: "a-badasslink", name: "Brightlink Media", industry: "Agency", plan: "Pro",
     clientSinceDays: 380, owner: "Maya", csm: "Maya",
     stage: "lapsing", pipeline: "Save",
     score: 22, band: "atrisk", delta: -9,

@@ -11,7 +11,7 @@ import {
   ActionReceipt,
   ConfTag,
 } from "@/gocsm-ds";
-import { DraftReviewSheet, AutonomyBadge } from "@/gocsm-ds";
+import { DraftReviewSheet } from "@/gocsm-ds";
 import {
   playbookById,
   matchesToday,
@@ -120,7 +120,7 @@ export default function PlaybookDetailPage() {
   if (!playbook) {
     return (
       <main style={{ padding: "var(--s-7) var(--s-6)", maxWidth: 800, margin: "0 auto", color: "var(--text)" }}>
-        <h1 style={{ font: "var(--t-h2)", margin: 0 }}>Playbook not found</h1>
+        <h1 style={{ fontSize: "var(--t-display-lg)", fontWeight: 700, margin: 0 }}>Playbook not found</h1>
         <div style={{ marginTop: "var(--s-3)" }}>
           <Button variant="secondary" size="sm" onClick={() => navigate("/playbooks")}>
             Back to Library
@@ -229,57 +229,62 @@ export default function PlaybookDetailPage() {
         gap: "var(--s-5)",
       }}
     >
-      {/* Breadcrumb */}
-      <div
+      {/* Breadcrumb — quiet back nav only */}
+      <Link
+        to="/playbooks"
         style={{
-          display: "flex",
+          display: "inline-flex",
           alignItems: "center",
-          gap: "var(--s-1)",
-          font: "var(--t-meta)",
+          gap: 4,
+          fontSize: "var(--t-caption)",
           color: "var(--text-3, var(--text))",
+          textDecoration: "none",
+          width: "fit-content",
         }}
       >
-        <Link to="/playbooks" style={{ color: "inherit", textDecoration: "none", display: "inline-flex", alignItems: "center", gap: 4 }}>
-          <Icon name="arrow-left" /> Playbooks
-        </Link>
-        <span>·</span>
-        <span>{playbook.title}</span>
-      </div>
+        <Icon name="arrow-left" /> All playbooks
+      </Link>
 
-      {/* Header */}
+      {/* Hero — the single source of identity + the one focal action */}
       <header style={{ display: "flex", alignItems: "flex-start", gap: "var(--s-4)", flexWrap: "wrap" }}>
         <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: "var(--s-2)", minWidth: 280 }}>
-          <div style={{ display: "flex", alignItems: "center", gap: "var(--s-2)", flexWrap: "wrap" }}>
-            <h1 style={{ font: "var(--t-h2)", margin: 0 }}>{playbook.title}</h1>
-            <Badge variant={state === "on" ? "pos" : state === "ranonce" ? "warn" : "neutral"} dot>
+          <div style={{ display: "flex", alignItems: "center", gap: "var(--s-3)", flexWrap: "wrap" }}>
+            <h1 style={{ fontSize: "var(--t-display-lg)", fontWeight: 700, lineHeight: 1.15, margin: 0 }}>
+              {playbook.title}
+            </h1>
+            <Badge variant={state === "on" ? "pos" : state === "ranonce" ? "blue" : "neutral"} dot>
               {STATE_LABEL[state as PlaybookState]}
             </Badge>
-            <AutonomyBadge level={autonomyLevel(playbook)} />
           </div>
-          <p style={{ font: "var(--t-body)", color: "var(--text-3, var(--text))", margin: 0 }}>
+          <p style={{ fontSize: "var(--t-body-lg)", color: "var(--text-2, var(--text))", margin: 0 }}>
             {playbook.subtitle}
           </p>
         </div>
-        <div style={{ display: "flex", gap: "var(--s-2)", alignItems: "center" }}>
-          <span style={{ font: "var(--t-meta)", color: "var(--text-3, var(--text))" }}>
-            <Mono>{matches.length}</Mono> match{matches.length === 1 ? "" : "es"} today
-          </span>
-          <Button variant="primary" size="sm" onClick={() => setActivationOpen(true)}>
+        <div className="pbd-hero__cta" style={{ display: "flex", flexDirection: "column", gap: "var(--s-1)" }}>
+          <Button variant="primary" onClick={() => setActivationOpen(true)}>
             {state === "off" ? "Run it once" : state === "ranonce" ? "Keep it running" : "Manage"}
           </Button>
+          <span style={{ fontSize: "var(--t-caption)", color: "var(--text-3, var(--text))" }}>
+            {matches.length === 0 ? (
+              "Nothing matches today"
+            ) : (
+              <>
+                <Mono>{matches.length}</Mono> account{matches.length === 1 ? "" : "s"} match today
+              </>
+            )}
+          </span>
         </div>
       </header>
 
-      {/* The 5-part anatomy */}
+      {/* Anatomy — identity is the hero above (hideIdentity); the condition lives
+          once, in "What it watches for", derived from the play's own problem so it
+          can never drift from what the play actually matches. */}
       <PlaybookDetail
+        hideIdentity
         state={state as PlaybookState}
         icon={playbook.icon}
-        title={playbook.title}
-        subtitle={playbook.subtitle}
-        problem={playbook.problem}
-        does={playbook.does}
         outcome={playbook.outcome}
-        watch={watchLines}
+        watch={{ summary: playbook.problem, cadence: watchLines.cadence, via: watchLines.via }}
         actions={actions.map((a, i) => ({
           icon: a.icon,
           title: a.title,
@@ -289,14 +294,7 @@ export default function PlaybookDetailPage() {
           onToggle: (on: boolean) =>
             setActions((prev) => prev.map((x, idx) => (idx === i ? { ...x, on } : x))),
         }))}
-        proof={{
-          matchCount: matches.length,
-          drafts,
-        }}
         videoLabel="Watch a 2-min walkthrough"
-        primaryLabel={state === "off" ? "Run it once" : state === "ranonce" ? "Keep it running" : "Manage"}
-        onRun={() => setActivationOpen(true)}
-        onPreview={() => setActivationOpen(true)}
         limits={[
           "Client-facing messages stay supervised until you opt up.",
           "Anything sent is reversible during a 5-second grace window.",
@@ -306,12 +304,12 @@ export default function PlaybookDetailPage() {
       {/* Who matches — preview list */}
       <section style={{ display: "flex", flexDirection: "column", gap: "var(--s-2)" }}>
         <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between" }}>
-          <h3 style={{ font: "var(--t-h3)", margin: 0 }}>Who it affects · today</h3>
+          <h3 style={{ fontSize: "var(--t-heading)", fontWeight: 700, margin: 0 }}>Who it affects today</h3>
           <ConfTag basis="fact" />
         </div>
         <Card padded>
           {matches.length === 0 ? (
-            <span style={{ font: "var(--t-body)", color: "var(--pos-7)" }}>
+            <span style={{ fontSize: "var(--t-body-lg)", color: "var(--pos-7)" }}>
               ✓ Nothing matches today — this play is armed and watching.
             </span>
           ) : (
@@ -328,12 +326,12 @@ export default function PlaybookDetailPage() {
                   }}
                 >
                   <div style={{ display: "flex", alignItems: "center", gap: "var(--s-2)" }}>
-                    <span style={{ font: "var(--t-body)" }}>{a.identity.name}</span>
-                    <span style={{ font: "var(--t-meta)", color: "var(--text-3, var(--text))" }}>
+                    <span style={{ fontSize: "var(--t-body-lg)", fontWeight: 600 }}>{a.identity.name}</span>
+                    <span style={{ fontSize: "var(--t-caption)", color: "var(--text-3, var(--text))" }}>
                       · {a.identity.plan}
                     </span>
                   </div>
-                  <span style={{ font: "var(--t-meta)", color: "var(--text-3, var(--text))" }}>
+                  <span style={{ fontSize: "var(--t-caption)", color: "var(--text-3, var(--text))" }}>
                     MRR <Mono>${Math.round(a.revenue.mrr).toLocaleString()}</Mono>
                   </span>
                 </li>
@@ -343,7 +341,7 @@ export default function PlaybookDetailPage() {
                   style={{
                     padding: "var(--s-2) 0",
                     borderTop: "1px solid var(--border)",
-                    font: "var(--t-meta)",
+                    fontSize: "var(--t-caption)",
                     color: "var(--text-3, var(--text))",
                   }}
                 >
@@ -447,11 +445,6 @@ function Overlay({ children, onClose }: { children: React.ReactNode; onClose: ()
           color: "var(--text)",
         }}
       >
-        <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: "var(--s-2)" }}>
-          <Button variant="ghost" size="sm" onClick={onClose}>
-            Close <Icon name="x" />
-          </Button>
-        </div>
         {children}
       </div>
     </div>
