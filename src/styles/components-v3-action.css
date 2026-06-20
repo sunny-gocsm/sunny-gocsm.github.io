@@ -345,6 +345,11 @@
 .fixit-card.lg .fi-ico i,.fixit-card.lg .fi-ico svg{width:23px;height:23px;}
 .fixit-card.lg .fi-text{font-size:16px;}
 .fixit-card.lg .fi-right{align-self:center;}
+/* §9.2 — positive/opportunity tone (good-news surfaces): emerald rail + icon chip,
+   distinct from the neutral risk card and the pos-soft "clean/resolved" done state. */
+.fixit-card.tone-pos{border-left:3px solid var(--pos-7);}
+.fixit-card.tone-pos .fi-ico{background:var(--pos-soft);border-color:var(--pos-7);color:var(--pos-7);}
+.fixit-card.tone-pos .fi-tag{color:var(--pos-9);}
 
 /* ============================================================== *
  * 10 · ACTIVITY LOG  (Evidence · §7d)                            *

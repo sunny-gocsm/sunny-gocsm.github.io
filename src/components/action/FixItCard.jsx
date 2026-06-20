@@ -10,13 +10,15 @@ import { ConfTag } from "../agentic/ConfTag.jsx";
  *  - `size="lg"`  — hero variant for the single top-priority cohort (bigger icon + text).
  *  - `badge`      — a node (e.g. <Badge variant="pos">On · autopilot</Badge>) shown beside the tag.
  *  - `note`       — a secondary muted line under the text (e.g. "New matches handled automatically.").
+ *  - `tone="pos"` — positive/opportunity treatment (emerald rail + icon chip) for good-news
+ *                   surfaces, distinct from the neutral risk card and the `clean`/`resolved` done state.
  */
 export function FixItCard({
   icon = "alert-circle", tag = "Data hygiene", text, conf, confDetail,
   action = null, onSnooze, resolved = false, clean = false, doneLabel = "Fixed",
-  size = "md", badge = null, note = null, ...rest
+  size = "md", badge = null, note = null, tone = "default", ...rest
 }) {
-  const cls = ["fixit-card", size === "lg" && "lg", resolved && "resolved", clean && "clean"]
+  const cls = ["fixit-card", size === "lg" && "lg", tone === "pos" && "tone-pos", resolved && "resolved", clean && "clean"]
     .filter(Boolean).join(" ");
   const done = resolved || clean;
   return (
