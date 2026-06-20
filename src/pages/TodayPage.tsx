@@ -32,6 +32,7 @@ import {
   lostStickySetups,
   stalledOnboarding,
   dormantGrowth,
+  upsellReady,
   agencyRollup,
   signalsForAccount,
   daysUntil,
@@ -179,6 +180,52 @@ function CohortFixItCard({
               {actionLabel}
             </ActionButton>
           ) : null}
+          <Button variant="ghost" size="sm" icon={<Icon name="arrow-right" />} onClick={onView}>
+            View all
+          </Button>
+        </>
+      }
+    />
+  );
+}
+
+
+// ----------------------------------------------------------------------------
+// Good-news card — a positive opportunity (upsell / comeback), on the DS
+// FixItCard with the emerald tone="pos". Hidden when the cohort is empty.
+// ----------------------------------------------------------------------------
+
+interface GoodNewsCardProps {
+  icon: string;
+  title: string;
+  tag: string;
+  accounts: Account[];
+  actionLabel: string;
+  onView: () => void;
+  onAction: () => void;
+}
+
+function GoodNewsCard({ icon, title, tag, accounts, actionLabel, onView, onAction }: GoodNewsCardProps) {
+  const count = accounts.length;
+  if (count === 0) return null;
+  const mrr = accounts.reduce((sum, a) => sum + a.revenue.mrr, 0);
+  const text = (
+    <>
+      <strong>{title}</strong> · <Mono>{count}</Mono> account{count === 1 ? "" : "s"} ·{" "}
+      <Mono>{fmtMoney(mrr)}</Mono> MRR
+    </>
+  );
+  return (
+    <FixItCard
+      tone="pos"
+      icon={icon}
+      tag={tag}
+      text={text}
+      action={
+        <>
+          <ActionButton size="sm" icon="sparkles" onClick={onAction}>
+            {actionLabel}
+          </ActionButton>
           <Button variant="ghost" size="sm" icon={<Icon name="arrow-right" />} onClick={onView}>
             View all
           </Button>
@@ -499,6 +546,7 @@ export default function TodayPage() {
   const lostSticky = useMemo(() => lostStickySetups(), []);
   const stalled = useMemo(() => stalledOnboarding(), []);
   const dormantUp = useMemo(() => dormantGrowth(), []);
+  const upsell = useMemo(() => upsellReady(), []);
   const goneQuiet = useMemo(
     () =>
       atRiskByUrgency()
@@ -777,17 +825,6 @@ export default function TodayPage() {
       onView: () => navigate("/onboarding"),
       onApply: () => openApply(stalled, "pb-onboarding-stalled"),
     },
-    {
-      icon: "sparkles",
-      title: "Coming back to life",
-      tag: "Expansion",
-      accounts: dormantUp,
-      actionLabel: "Welcome them back",
-      emptyLine: "No comebacks yet — your saves are holding.",
-      playbookId: "pb-expansion-ready",
-      onView: () => navigate("/accounts"),
-      onApply: () => openApply(dormantUp, "pb-expansion-ready"),
-    },
   ].sort((a, b) => b.accounts.length - a.accounts.length);
 
   return (
@@ -952,6 +989,40 @@ export default function TodayPage() {
           ))}
         </div>
       </section>
+
+      {/* 5 — Good news: positive opportunities (upsell + comebacks), tone="pos" */}
+      {(upsell.length > 0 || dormantUp.length > 0) && (
+        <section aria-label="Good news" style={{ display: "flex", flexDirection: "column", gap: "var(--s-3)" }}>
+          <header style={{ display: "flex", flexDirection: "column", gap: 2 }}>
+            <h2 style={{ font: "var(--t-h3, var(--t-body))", margin: 0, color: "var(--text)", fontWeight: 600 }}>
+              Good news
+            </h2>
+            <p style={{ font: "var(--t-body-sm)", color: "var(--text-2, var(--text))", margin: 0 }}>
+              Momentum worth a nudge — grow the accounts that are already winning.
+            </p>
+          </header>
+          <div>
+            <GoodNewsCard
+              icon="trending-up"
+              tag="Expansion"
+              title="On the rise — worth a nudge"
+              accounts={upsell}
+              actionLabel="Suggest an upgrade"
+              onView={() => navigate("/accounts")}
+              onAction={() => openApply(upsell, "pb-expansion-ready")}
+            />
+            <GoodNewsCard
+              icon="sparkles"
+              tag="Comeback"
+              title="Coming back to life"
+              accounts={dormantUp}
+              actionLabel="Ask for a testimonial"
+              onView={() => navigate("/accounts")}
+              onAction={() => openApply(dormantUp, "pb-expansion-ready")}
+            />
+          </div>
+        </section>
+      )}
 
       <PlaybookActivationDrawer
         open={!!drawerScope}

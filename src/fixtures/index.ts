@@ -881,6 +881,20 @@ export const dormantGrowth = (): Account[] =>
       a.login.lastLoginDaysAgo <= 14,
   );
 
+/** Healthy/thriving accounts with rising usage — good upgrade/expansion candidates. */
+export const upsellReady = (): Account[] =>
+  accounts
+    .filter(
+      (a) =>
+        liveOnly(a) &&
+        (a.health.band === "thriving" || a.health.band === "healthy") &&
+        a.health.delta > 0 &&
+        a.revenue.spendTrend > 0 &&
+        a.login.lastLoginDaysAgo <= 14,
+    )
+    .slice()
+    .sort((x, y) => y.revenue.mrr - x.revenue.mrr);
+
 export interface AgencyRollup {
   totalAccounts: number;
   liveAccounts: number;
