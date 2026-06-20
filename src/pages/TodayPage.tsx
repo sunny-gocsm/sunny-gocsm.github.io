@@ -788,9 +788,9 @@ export default function TodayPage() {
       accounts: renewingAtRisk,
       actionLabel: "Protect these renewals",
       emptyLine: "No renewals in danger.",
-      playbookId: "pb-no-login",
+      playbookId: "pb-renewal-save",
       onView: () => navigate("/accounts?renewing=30"),
-      onApply: () => openApply(renewingAtRisk, "pb-no-login"),
+      onApply: () => openApply(renewingAtRisk, "pb-renewal-save"),
     },
     {
       icon: "credit-card",
@@ -827,6 +827,9 @@ export default function TodayPage() {
     },
   ].sort((a, b) => b.accounts.length - a.accounts.length);
 
+  // Single entry point: the biggest open problem is the obvious first action.
+  const topCohort = cohorts.find((c) => c.accounts.length > 0);
+
   return (
     <main
       style={{
@@ -853,6 +856,13 @@ export default function TodayPage() {
           stamp={
             rollup.mrrAtRisk > 0 ? (
               <span style={{ font: "var(--t-meta)", color: "var(--text-3, var(--text))" }}>MRR at risk</span>
+            ) : null
+          }
+          actions={
+            topCohort ? (
+              <ActionButton size="sm" icon="arrow-right" onClick={topCohort.onApply}>
+                Start here: {topCohort.actionLabel}
+              </ActionButton>
             ) : null
           }
         >

@@ -7,6 +7,7 @@ import {
   accounts,
   signals,
   daysSince,
+  daysUntil,
   failedPayments,
   stalledOnboarding,
   lostStickySetups,
@@ -67,6 +68,7 @@ const usageReverse = (a: Account, subjects: SignalSubject[], windowDays = 60): b
 // production swaps these for the real recordings keyed by play id.
 const PLAY_VIDEOS: Record<string, string> = {
   "pb-no-login": PLACEHOLDER_VIDEO,
+  "pb-renewal-save": PLACEHOLDER_VIDEO,
   "pb-payment-failed": PLACEHOLDER_VIDEO,
   "pb-plan-downgrade": PLACEHOLDER_VIDEO,
   "pb-feature-drop": PLACEHOLDER_VIDEO,
@@ -96,6 +98,21 @@ const playbookSeeds: PlaybookSeed[] = [
       a.lifecycle.stage !== "onboarding" &&
       a.lifecycle.stage !== "churned" &&
       a.login.lastLoginDaysAgo >= 21,
+  },
+  {
+    id: "pb-renewal-save",
+    title: "Renewing soon & at risk",
+    subtitle: "Protect the renewal before it lapses",
+    icon: "calendar-clock",
+    state: "off",
+    kind: "retention",
+    problem: "Renews within 30 days while showing risk signals.",
+    does: "Alerts the assigned CSM, sends a renewal check-in, and queues a value recap before the renewal date.",
+    outcome: "Lock in the renewal before it slips.",
+    match: (a) => {
+      const d = daysUntil(a.revenue.renewalDate);
+      return d >= 0 && d <= 30 && (a.health.band === "atrisk" || a.health.band === "watch");
+    },
   },
   {
     id: "pb-payment-failed",

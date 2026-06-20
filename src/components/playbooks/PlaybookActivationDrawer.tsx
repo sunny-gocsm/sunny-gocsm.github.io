@@ -756,6 +756,7 @@ function eventPhrase(p: Playbook): string {
     "pb-save-integration": "remove a key integration",
     "pb-payment-failed": "have a failed payment",
     "pb-no-login": "go quiet for 21+ days",
+    "pb-renewal-save": "are renewing soon while at risk",
     "pb-onboarding-stalled": "stall in onboarding",
     "pb-plan-downgrade": "downgrade or drop an add-on",
     "pb-feature-drop": "stop using a core feature",
