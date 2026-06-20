@@ -15,7 +15,6 @@ import {
   ActionButton,
   ActionReceipt,
   ActivityLog,
-  MetricCard,
 } from "@/gocsm-ds";
 import { useIsAutopilot, useAllAutopilotOn, autopilotStore } from "@/state/autopilot";
 import { useToast } from "@/hooks/use-toast";
@@ -31,7 +30,6 @@ import {
   failedPayments,
   lostStickySetups,
   stalledOnboarding,
-  dormantGrowth,
   upsellReady,
   agencyRollup,
   signalsForAccount,
@@ -50,10 +48,10 @@ import { outcomes as allOutcomes, outcomeAccount, outcomePlaybook } from "@/fixt
 
 const fmtMoney = (n: number) => "$" + Math.round(n).toLocaleString();
 
-const greetingFor = (name: string) => {
+const greetingFor = (name?: string) => {
   const h = new Date().getHours();
   const part = h < 12 ? "morning" : h < 18 ? "afternoon" : "evening";
-  return `Good ${part}, ${name}.`;
+  return name ? `Good ${part}, ${name}.` : `Good ${part}.`;
 };
 
 // One-sentence plain reason for an at-risk account — uses the newest signal if
@@ -190,50 +188,6 @@ function CohortFixItCard({
 }
 
 
-// ----------------------------------------------------------------------------
-// Good-news card — a positive opportunity (upsell / comeback), on the DS
-// FixItCard with the emerald tone="pos". Hidden when the cohort is empty.
-// ----------------------------------------------------------------------------
-
-interface GoodNewsCardProps {
-  icon: string;
-  title: string;
-  tag: string;
-  accounts: Account[];
-  actionLabel: string;
-  onView: () => void;
-  onAction: () => void;
-}
-
-function GoodNewsCard({ icon, title, tag, accounts, actionLabel, onView, onAction }: GoodNewsCardProps) {
-  const count = accounts.length;
-  if (count === 0) return null;
-  const mrr = accounts.reduce((sum, a) => sum + a.revenue.mrr, 0);
-  const text = (
-    <>
-      <strong>{title}</strong> · <Mono>{count}</Mono> account{count === 1 ? "" : "s"} ·{" "}
-      <Mono>{fmtMoney(mrr)}</Mono> MRR
-    </>
-  );
-  return (
-    <FixItCard
-      tone="pos"
-      icon={icon}
-      tag={tag}
-      text={text}
-      action={
-        <>
-          <ActionButton size="sm" icon="sparkles" onClick={onAction}>
-            {actionLabel}
-          </ActionButton>
-          <Button variant="ghost" size="sm" icon={<Icon name="arrow-right" />} onClick={onView}>
-            View all
-          </Button>
-        </>
-      }
-    />
-  );
-}
 
 
 // ----------------------------------------------------------------------------
@@ -254,8 +208,12 @@ interface RecapItem {
 
 function ReassuranceLine({
   onOpenAccount,
+  upsellCount = 0,
+  onActUpsell,
 }: {
   onOpenAccount: (id: string) => void;
+  upsellCount?: number;
+  onActUpsell?: () => void;
 }) {
   const [open, setOpen] = useState(false);
   const [emailsOpen, setEmailsOpen] = useState(false);
@@ -265,9 +223,6 @@ function ReassuranceLine({
   const approved = recent.filter((o) => o.attribution === "playbook-assist");
 
   const totalHandled = autopilot.length + approved.length;
-  const protectedAmount =
-    autopilot.reduce((s, o) => s + (o.amount ?? 0), 0) +
-    approved.reduce((s, o) => s + (o.amount ?? 0), 0);
 
   // The overnight recap is a fixed historical fact: what GoCSM sent overnight,
   // independent of which plays are on now — so the count never drops when you turn one on.
@@ -309,40 +264,59 @@ function ReassuranceLine({
     }),
   ];
 
+  const linkStyle: React.CSSProperties = {
+    font: "var(--t-body-sm)",
+    color: "var(--text-link, var(--accent))",
+    background: "none",
+    border: "none",
+    padding: 0,
+    cursor: "pointer",
+    fontWeight: 500,
+  };
+
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: "var(--s-3)" }}>
-      <Verdict
-        tone="pos"
-        attribution="GoCSM AI"
-        actions={
-          <>
-            {sentCount > 0 ? (
-              <Button variant="ghost" size="sm" icon={<Icon name="mail" />} onClick={() => setEmailsOpen((o) => !o)}>
-                {emailsOpen ? "Hide emails" : `See ${sentCount} email${sentCount === 1 ? "" : "s"}`}
-              </Button>
-            ) : null}
-            <Button
-              variant="ghost"
-              size="sm"
-              icon={<Icon name={open ? "chevron-up" : "arrow-right"} />}
-              onClick={() => setOpen((o) => !o)}
-            >
-              {open ? "Hide" : "See what it did"}
-            </Button>
-          </>
-        }
+    <div style={{ display: "flex", flexDirection: "column", gap: "var(--s-2)" }}>
+      {/* Quiet, single-line reassurance — what GoCSM handled while you were away.
+          Demoted from a full AI card so it no longer competes for attention. */}
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          flexWrap: "wrap",
+          gap: "var(--s-2)",
+          font: "var(--t-body-sm)",
+          color: "var(--text-2, var(--text))",
+        }}
       >
-        GoCSM handled <Mono>{totalHandled}</Mono> {totalHandled === 1 ? "thing" : "things"} overnight
+        <Icon name="check-circle" />
+        <span>
+          GoCSM handled <Mono>{totalHandled}</Mono> {totalHandled === 1 ? "thing" : "things"} overnight
+        </span>
         {sentCount > 0 ? (
-          <>
-            {" "}and sent <Mono>{sentCount}</Mono> client email{sentCount === 1 ? "" : "s"}.
-          </>
-        ) : (
-          <>
-            {" "}and protected <Mono>{fmtMoneySmall(protectedAmount)}</Mono> this week.
-          </>
-        )}
-      </Verdict>
+          <span style={{ color: "var(--text-3, var(--text))" }}>
+            · <Mono>{sentCount}</Mono> email{sentCount === 1 ? "" : "s"} sent
+          </span>
+        ) : null}
+        {upsellCount > 0 ? (
+          <span style={{ color: "var(--text-3, var(--text))" }}>
+            · <Mono>{upsellCount}</Mono> on the rise
+          </span>
+        ) : null}
+        <span style={{ flex: 1, minWidth: "var(--s-3)" }} />
+        <button type="button" style={linkStyle} onClick={() => setOpen((o) => !o)}>
+          {open ? "Hide" : "See what it did"}
+        </button>
+        {sentCount > 0 ? (
+          <button type="button" style={linkStyle} onClick={() => setEmailsOpen((o) => !o)}>
+            {emailsOpen ? "Hide emails" : "Emails"}
+          </button>
+        ) : null}
+        {upsellCount > 0 && onActUpsell ? (
+          <button type="button" style={linkStyle} onClick={onActUpsell}>
+            Suggest upgrades
+          </button>
+        ) : null}
+      </div>
 
       {emailsOpen ? (
         <div style={{ display: "flex", flexDirection: "column", gap: "var(--s-2)" }}>
@@ -545,7 +519,6 @@ export default function TodayPage() {
   const failed = useMemo(() => failedPayments(), []);
   const lostSticky = useMemo(() => lostStickySetups(), []);
   const stalled = useMemo(() => stalledOnboarding(), []);
-  const dormantUp = useMemo(() => dormantGrowth(), []);
   const upsell = useMemo(() => upsellReady(), []);
   const goneQuiet = useMemo(
     () =>
@@ -845,7 +818,7 @@ export default function TodayPage() {
       {/* 1 — Briefing: greeting + AI verdict heroing $ at risk + secondary stats */}
       <section aria-label="Briefing" style={{ display: "flex", flexDirection: "column", gap: "var(--s-3)" }}>
         <BriefingHeader
-          greeting={greetingFor("there")}
+          greeting={greetingFor()}
           sync={<LiveStatus state="fresh" label="Synced moments ago" />}
         />
         <Verdict
@@ -868,28 +841,13 @@ export default function TodayPage() {
         >
           {briefingLine}
         </Verdict>
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))",
-            gap: "var(--s-3)",
-          }}
-        >
-          <MetricCard
-            label="Needs you"
-            value={activeNeeds.length}
-            icon={<Icon name="inbox" />}
-            iconTone={activeNeeds.length > 0 ? "warn" : "info"}
-          />
-          <MetricCard
-            label="Renewals · 30d"
-            value={renewalsWindow(0, 30).length}
-            icon={<Icon name="calendar-clock" />}
-          />
-        </div>
       </section>
 
-      <ReassuranceLine onOpenAccount={(id) => navigate(`/accounts/${id}`)} />
+      <ReassuranceLine
+        onOpenAccount={(id) => navigate(`/accounts/${id}`)}
+        upsellCount={upsell.length}
+        onActUpsell={() => openApply(upsell, "pb-expansion-ready")}
+      />
 
       <PendingApprovalsItem />
 
@@ -999,40 +957,6 @@ export default function TodayPage() {
           ))}
         </div>
       </section>
-
-      {/* 5 — Good news: positive opportunities (upsell + comebacks), tone="pos" */}
-      {(upsell.length > 0 || dormantUp.length > 0) && (
-        <section aria-label="Good news" style={{ display: "flex", flexDirection: "column", gap: "var(--s-3)" }}>
-          <header style={{ display: "flex", flexDirection: "column", gap: 2 }}>
-            <h2 style={{ font: "var(--t-h3, var(--t-body))", margin: 0, color: "var(--text)", fontWeight: 600 }}>
-              Good news
-            </h2>
-            <p style={{ font: "var(--t-body-sm)", color: "var(--text-2, var(--text))", margin: 0 }}>
-              Momentum worth a nudge — grow the accounts that are already winning.
-            </p>
-          </header>
-          <div>
-            <GoodNewsCard
-              icon="trending-up"
-              tag="Expansion"
-              title="On the rise — worth a nudge"
-              accounts={upsell}
-              actionLabel="Suggest an upgrade"
-              onView={() => navigate("/accounts")}
-              onAction={() => openApply(upsell, "pb-expansion-ready")}
-            />
-            <GoodNewsCard
-              icon="sparkles"
-              tag="Comeback"
-              title="Coming back to life"
-              accounts={dormantUp}
-              actionLabel="Ask for a testimonial"
-              onView={() => navigate("/accounts")}
-              onAction={() => openApply(dormantUp, "pb-expansion-ready")}
-            />
-          </div>
-        </section>
-      )}
 
       <PlaybookActivationDrawer
         open={!!drawerScope}
