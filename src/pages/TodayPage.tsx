@@ -507,16 +507,6 @@ export default function TodayPage() {
 
   const rollup = useMemo(() => agencyRollup(), []);
 
-  const briefingLine = useMemo(() => {
-    const parts: string[] = [];
-    if (lostSticky.length)
-      parts.push(`${lostSticky.length} ${lostSticky.length === 1 ? "account" : "accounts"} just lost a sticky setup — biggest backwards move`);
-    if (failed.length) parts.push(`${failed.length} with failed payment${failed.length === 1 ? "" : "s"}`);
-    if (renewingAtRisk.length)
-      parts.push(`${renewingAtRisk.length} at-risk account${renewingAtRisk.length === 1 ? "" : "s"} renew in ≤30 days`);
-    return parts.join(" · ") || "Quiet night — nothing urgent.";
-  }, [lostSticky.length, failed.length, renewingAtRisk.length]);
-
   // ---- Unified "What needs you today" list -------------------------------
   // ONE row per problem (issue-grouped, so it scales to 1000 accounts). The
   // accounts that used to appear in a separate "Needs you" list now live inside
@@ -631,7 +621,9 @@ export default function TodayPage() {
             ) : null
           }
         >
-          {briefingLine}
+          {accountsNeeding > 0
+            ? `${accountsNeeding} ${accountsNeeding === 1 ? "account needs" : "accounts need"} you today.`
+            : "You're all caught up today."}
         </Verdict>
       </section>
 
