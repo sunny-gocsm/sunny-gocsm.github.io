@@ -341,10 +341,22 @@
 .fixit-card .fi-head .fi-tag{margin-bottom:0;}
 .fixit-card .fi-badge{flex-shrink:0;}
 .fixit-card .fi-note{margin-top:6px;font-size:13px;color:var(--text-2);}
+/* §9.1b — title/meta hierarchy (v3.3). The problem NAME is the loud thing the eye
+   lands on; the count + "$ at risk" sit quietly on a second line below it. */
+.fixit-card .fi-title{font-size:16px;line-height:1.3;font-weight:700;color:var(--text);letter-spacing:-0.01em;}
+.fixit-card .fi-meta{margin-top:4px;font-size:13.5px;line-height:1.45;color:var(--text-2);}
+.fixit-card .fi-meta .mono{font-family:var(--font-mono);font-weight:700;font-feature-settings:"tnum" 1;color:var(--text);}
+.fixit-card .fi-meta .at-risk{color:var(--neg-7);font-weight:700;}
+.fixit-card .fi-meta .at-risk .mono{color:var(--neg-7);}
+/* Whole-row tap affordance — the row reads as clickable, not inert text. */
+.fixit-card[data-clickable="true"]{cursor:pointer;transition:border-color var(--d-fast) var(--ease),box-shadow var(--d-fast) var(--ease),transform var(--d-fast) var(--ease);}
+.fixit-card[data-clickable="true"]:hover{border-color:var(--border-strong);box-shadow:var(--sh-hover);transform:translateY(-1px);}
 .fixit-card.lg{gap:18px;padding:22px 22px 22px 24px;}
 .fixit-card.lg .fi-ico{width:44px;height:44px;border-radius:11px;}
 .fixit-card.lg .fi-ico i,.fixit-card.lg .fi-ico svg{width:23px;height:23px;}
 .fixit-card.lg .fi-text{font-size:16px;}
+.fixit-card.lg .fi-title{font-size:20px;}
+.fixit-card.lg .fi-meta{font-size:14.5px;margin-top:6px;}
 .fixit-card.lg .fi-right{align-self:center;}
 /* §9.2 — positive/opportunity tone (good-news surfaces): emerald rail + icon chip,
    distinct from the neutral risk card and the pos-soft "clean/resolved" done state. */
@@ -1060,7 +1072,10 @@
 /* ── 06a-my-queue (consolidated from specimen) ── */
 /* the operator shell */
   .shell{display: flex; border: 1px solid var(--border); border-radius: var(--r-lg); overflow: hidden; box-shadow: var(--sh-rest); background: var(--surface);}
-.rail{width: 210px; background: var(--surface); border-right: 1px solid var(--border); display: flex; flex-direction: column; flex-shrink: 0;}
+/* height:auto (not the inherited 100%) so the flex container stretches the rail to
+   the full shell height — a non-auto computed height disables align-items:stretch,
+   which left the surface ending mid-column (the "white patch"). */
+.rail{width: 210px; background: var(--surface); border-right: 1px solid var(--border); display: flex; flex-direction: column; flex-shrink: 0; height: auto; align-self: stretch;}
 .rail-spacer{flex: 1;}
 .rail-me{display: flex; align-items: center; gap: 9px; padding: 12px 14px; border-top: 1px solid var(--border-soft);}
 .rail-me .me-ava{width: 28px; height: 28px; border-radius: 50%; background: var(--n-3); color: var(--n-10); display: grid; place-items: center; font-family: var(--font-mono); font-size: 10.5px; font-weight: 700; box-shadow: inset 0 0 0 1px var(--border-strong);}

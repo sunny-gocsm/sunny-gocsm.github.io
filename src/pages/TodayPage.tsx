@@ -7,7 +7,6 @@ import {
   Mono,
   Badge,
   LiveStatus,
-  BriefingHeader,
   Verdict,
   FixItCard,
   ActionButton,
@@ -93,13 +92,15 @@ function CohortFixItCard({
     return <FixItCard size={size} icon={icon} tag={null} clean doneLabel="Clear" text={emptyLine} />;
   }
 
-  const text = (
+  const meta = (
     <>
-      <strong>{title}</strong> · <Mono>{count}</Mono> account{count === 1 ? "" : "s"}
+      <Mono>{count}</Mono> account{count === 1 ? "" : "s"}
       {mrr > 0 ? (
         <>
           {" · "}
-          <Mono>{fmtMoney(mrr)}</Mono> at risk
+          <span className="at-risk">
+            <Mono>{fmtMoney(mrr)}</Mono> at risk
+          </span>
         </>
       ) : null}
     </>
@@ -112,7 +113,8 @@ function CohortFixItCard({
         size={size}
         icon={icon}
         tag={null}
-        text={text}
+        title={title}
+        meta={meta}
         badge={<Badge variant="pos" dot={false}>On · autopilot</Badge>}
         note="New matches handled automatically."
         action={
@@ -146,20 +148,25 @@ function CohortFixItCard({
     );
   }
 
-  // Calm row: no eyebrow, one quiet action (verb + chevron), whole row taps to open.
+  // Calm row: bold problem name + a quiet "N accounts · $X at risk" line, and a
+  // clear soft-blue button CTA so it's obvious there's a workflow to trigger. The
+  // whole row also taps to open. Every row gets the same accent CTA (consistently
+  // clickable); the single solid-blue focal action lives in the Verdict above.
   return (
     <FixItCard
       size={size}
       icon={icon}
       tag={null}
-      text={text}
+      title={title}
+      meta={meta}
       data-clickable="true"
       onClick={() => onApply?.()}
       action={
         <Button
           variant="ghost"
-          size="sm"
-          iconRight={<Icon name="chevron-right" />}
+          className="btn-accent"
+          size={size === "lg" ? "md" : "sm"}
+          iconRight={<Icon name="arrow-right" />}
           onClick={(e: React.MouseEvent) => {
             e.stopPropagation();
             onApply?.();
@@ -249,64 +256,70 @@ function ReassuranceLine({
     }),
   ];
 
-  const linkStyle: React.CSSProperties = {
-    font: "var(--t-body-sm)",
-    color: "var(--text-link, var(--accent))",
-    background: "none",
-    border: "none",
-    padding: 0,
-    cursor: "pointer",
-    fontWeight: 500,
-    display: "inline-flex",
-    alignItems: "center",
-    gap: 2,
-    whiteSpace: "nowrap",
-  };
-
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "var(--s-2)" }}>
-      {/* Quiet, single-line reassurance — what GoCSM handled while you were away.
-          Demoted from a full AI card so it no longer competes for attention. */}
+      {/* Quiet full-width reassurance band — what GoCSM did while you were away.
+          Secondary to the problem list, but its actions are real, clearly-clickable
+          buttons (the actionable "Suggest upgrades" carries the blue accent; the two
+          disclosures stay neutral). */}
       <div
         style={{
           display: "flex",
           alignItems: "center",
           flexWrap: "wrap",
-          gap: "var(--s-2)",
-          font: "var(--t-body-sm)",
-          color: "var(--text-2, var(--text))",
+          gap: "var(--s-3)",
+          padding: "var(--s-3) var(--s-4)",
+          borderRadius: "var(--r-md)",
+          background: "var(--bg-subtle)",
+          border: "1px solid var(--border-soft)",
         }}
       >
-        <Icon name="check-circle" />
-        <span>
-          GoCSM handled <Mono>{totalHandled}</Mono> {totalHandled === 1 ? "thing" : "things"} overnight
+        <span style={{ display: "inline-flex", color: "var(--pos-7)" }} aria-hidden>
+          <Icon name="check-circle" />
         </span>
-        {sentCount > 0 ? (
-          <span style={{ color: "var(--text-3, var(--text))" }}>
-            · <Mono>{sentCount}</Mono> email{sentCount === 1 ? "" : "s"} sent
-          </span>
-        ) : null}
-        {upsellCount > 0 ? (
-          <span style={{ color: "var(--text-3, var(--text))" }}>
-            · <Mono>{upsellCount}</Mono> on the rise
-          </span>
-        ) : null}
+        <span style={{ font: "var(--t-body)", color: "var(--text-2, var(--text))" }}>
+          GoCSM handled <Mono>{totalHandled}</Mono> {totalHandled === 1 ? "thing" : "things"} overnight
+          {sentCount > 0 ? (
+            <> · <Mono>{sentCount}</Mono> email{sentCount === 1 ? "" : "s"} sent</>
+          ) : null}
+          {upsellCount > 0 ? (
+            <> · <Mono>{upsellCount}</Mono> on the rise</>
+          ) : null}
+        </span>
         <span style={{ flex: 1, minWidth: "var(--s-3)" }} />
-        {/* Stable labels + a rotating caret signal open/closed — consistent across
-            both disclosures, so we never show two ambiguous "Hide" buttons. */}
-        <button type="button" style={linkStyle} onClick={() => setOpen((o) => !o)} aria-expanded={open}>
-          See what it did <Icon name={open ? "chevron-up" : "chevron-down"} />
-        </button>
-        {sentCount > 0 ? (
-          <button type="button" style={linkStyle} onClick={() => setEmailsOpen((o) => !o)} aria-expanded={emailsOpen}>
-            Emails <Icon name={emailsOpen ? "chevron-up" : "chevron-down"} />
-          </button>
-        ) : null}
-        {upsellCount > 0 && onActUpsell ? (
-          <button type="button" style={linkStyle} onClick={onActUpsell}>
-            Suggest upgrades <Icon name="arrow-right" />
-          </button>
-        ) : null}
+        <div style={{ display: "flex", gap: "var(--s-2)", flexWrap: "wrap" }}>
+          <Button
+            variant="secondary"
+            size="sm"
+            iconRight={<Icon name={open ? "chevron-up" : "chevron-down"} />}
+            onClick={() => setOpen((o) => !o)}
+            aria-expanded={open}
+          >
+            See what it did
+          </Button>
+          {sentCount > 0 ? (
+            <Button
+              variant="secondary"
+              size="sm"
+              iconRight={<Icon name={emailsOpen ? "chevron-up" : "chevron-down"} />}
+              onClick={() => setEmailsOpen((o) => !o)}
+              aria-expanded={emailsOpen}
+            >
+              Emails
+            </Button>
+          ) : null}
+          {upsellCount > 0 && onActUpsell ? (
+            <Button
+              variant="ghost"
+              className="btn-accent"
+              size="sm"
+              iconRight={<Icon name="arrow-right" />}
+              onClick={onActUpsell}
+            >
+              Suggest upgrades
+            </Button>
+          ) : null}
+        </div>
       </div>
 
       {emailsOpen ? (
@@ -617,12 +630,13 @@ export default function TodayPage() {
         gap: "var(--s-10)",
       }}
     >
-      {/* 1 — Briefing: greeting + AI verdict heroing $ at risk + one primary action */}
-      <section aria-label="Briefing" style={{ display: "flex", flexDirection: "column", gap: "var(--s-3)" }}>
-        <BriefingHeader
-          greeting={greetingFor()}
-          sync={<LiveStatus state="fresh" label="Synced moments ago" />}
-        />
+      {/* 1 — Briefing: the AI verdict IS the hero (heroes $ at risk + one primary
+          action). The old "Good afternoon" greeting added no value, so it's gone;
+          only a small freshness chip remains as a quiet trust signal. */}
+      <section aria-label="Briefing" style={{ display: "flex", flexDirection: "column", gap: "var(--s-2)" }}>
+        <div style={{ display: "flex", justifyContent: "flex-end" }}>
+          <LiveStatus state="fresh" label="Synced moments ago" />
+        </div>
         <Verdict
           tone={mrrAtRisk > 0 ? "risk" : "watch"}
           attribution="GoCSM AI"
@@ -662,9 +676,9 @@ export default function TodayPage() {
       {/* 2 — One prioritized list: what needs you today (issue-grouped, scales) */}
       <section aria-label="What needs you today" style={{ display: "flex", flexDirection: "column", gap: "var(--s-3)" }}>
         <header style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: "var(--s-3)" }}>
-          <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
+          <div style={{ display: "flex", flexDirection: "column", gap: "var(--s-1)" }}>
             <div style={{ display: "flex", alignItems: "center", gap: "var(--s-2)" }}>
-              <h2 style={{ font: "var(--t-h3, var(--t-body))", margin: 0, color: "var(--text)", fontWeight: 600 }}>
+              <h2 style={{ font: "var(--t-heading)", margin: 0, color: "var(--text)", fontWeight: 700, letterSpacing: "-0.01em" }}>
                 What needs you today
               </h2>
               {accountsNeeding > 0 ? (
@@ -673,7 +687,7 @@ export default function TodayPage() {
                 </Badge>
               ) : null}
             </div>
-            <p style={{ font: "var(--t-body-sm)", color: "var(--text-2, var(--text))", margin: 0 }}>
+            <p style={{ font: "var(--t-body)", color: "var(--text-2, var(--text))", margin: 0 }}>
               Each row is one problem — fix it for all its accounts at once.
             </p>
           </div>
