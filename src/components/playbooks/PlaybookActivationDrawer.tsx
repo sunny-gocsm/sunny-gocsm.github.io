@@ -393,8 +393,6 @@ export function PlaybookActivationDrawer({ open, scope, accounts, onClose, initi
             ) : autopilotChoice === "pending" && autopilotSetupStep > 0 ? (
               <AutopilotSetup
                 playbook={playbook}
-                stepIndex={autopilotSetupStep as 1 | 2}
-                onStepChange={(n) => setAutopilotSetupStep(n as 1 | 2)}
                 targetCount={targetCount}
                 onNotNow={() => setAutopilotSetupStep(0)}
                 onPublish={turnOnAutopilot}
@@ -444,68 +442,9 @@ export function PlaybookActivationDrawer({ open, scope, accounts, onClose, initi
 // Channel/message configuration lives in HighLevel (no GoCSM editor).
 // ============================================================
 
-const AP_STEPS: { n: 1 | 2; label: string }[] = [
-  { n: 1, label: "When it runs" },
-  { n: 2, label: "Finish in HighLevel" },
-];
-
-
-function StepDots({ current }: { current: 1 | 2 }) {
-  return (
-    <div style={{ display: "flex", alignItems: "center", gap: "var(--s-2)", flexWrap: "wrap" }}>
-      {AP_STEPS.map((s, i) => {
-        const done = s.n < current;
-        const active = s.n === current;
-        return (
-          <div key={s.n} style={{ display: "flex", alignItems: "center", gap: "var(--s-2)" }}>
-            <span
-              aria-current={active ? "step" : undefined}
-              style={{
-                display: "inline-flex",
-                alignItems: "center",
-                justifyContent: "center",
-                width: 22,
-                height: 22,
-                borderRadius: "999px",
-                background: done
-                  ? "var(--pos-7, var(--success-7))"
-                  : active
-                  ? "var(--info-7, var(--blue-7))"
-                  : "var(--surface-2)",
-                color: done || active ? "var(--on-accent, #fff)" : "var(--text-3, var(--text))",
-                font: "var(--t-meta)",
-                fontWeight: 600,
-                border: "1px solid var(--border)",
-              }}
-            >
-              {done ? <Icon name="check" /> : s.n}
-            </span>
-            <span
-              style={{
-                font: "var(--t-meta)",
-                color: active ? "var(--text)" : "var(--text-3, var(--text))",
-                fontWeight: active ? 600 : 400,
-              }}
-            >
-              {s.label}
-            </span>
-            {i < AP_STEPS.length - 1 ? (
-              <span
-                aria-hidden
-                style={{ width: 18, height: 1, background: "var(--border)" }}
-              />
-            ) : null}
-          </div>
-        );
-      })}
-    </div>
-  );
-}
 
 interface AutopilotSetupProps {
   playbook: Playbook;
-  stepIndex: 1 | 2;
-  onStepChange: (n: 1 | 2) => void;
   targetCount: number;
   onNotNow: () => void;
   onPublish: () => void;
@@ -515,17 +454,13 @@ interface AutopilotSetupProps {
 
 function AutopilotSetup({
   playbook,
-  stepIndex,
-  onStepChange,
   onNotNow,
   onPublish,
   onOverseeChange,
   initialShowHandoff = false,
 }: AutopilotSetupProps) {
-  // Lifted summary state populated by Step 1 (When it runs) and read by Step 2.
-  const [ruleSentence, setRuleSentence] = useState<string>("");
-  const [ruleCount, setRuleCount] = useState<number>(0);
-  // AP7 — workflow handoff representation (non-editable preview + sticky note).
+  // Workflow handoff representation — only for the "Open in HighLevel" re-entry,
+  // not the linear activation flow (the workflow is already wired during the run step).
   const [showHandoff, setShowHandoff] = useState(initialShowHandoff);
 
 
@@ -545,63 +480,42 @@ function AutopilotSetup({
   return (
     <Card padded className="accent-t info">
       <div style={{ display: "flex", flexDirection: "column", gap: "var(--s-4)" }}>
-        <StepDots current={stepIndex} />
+        <div style={{ display: "flex", flexDirection: "column", gap: "var(--s-2)" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: "var(--s-2)" }}>
+            <span className="icon-chip info" aria-hidden>
+              <Icon name={playbook.icon} />
+            </span>
+            <strong style={{ font: "var(--t-h4, var(--t-body))", fontWeight: 600 }}>
+              {playbook.title}
+            </strong>
+          </div>
+          <p style={{ margin: 0, font: "var(--t-body)", color: "var(--text-2, var(--text))" }}>
+            {playbook.does}
+          </p>
+          <PlayVideoButton playbook={playbook} label="What this play does · Watch (1 min)" />
+        </div>
 
-        {stepIndex === 1 ? (
-          <>
-            <div style={{ display: "flex", flexDirection: "column", gap: "var(--s-2)" }}>
-              <div style={{ display: "flex", alignItems: "center", gap: "var(--s-2)" }}>
-                <span className="icon-chip info" aria-hidden>
-                  <Icon name={playbook.icon} />
-                </span>
-                <strong style={{ font: "var(--t-h4, var(--t-body))", fontWeight: 600 }}>
-                  {playbook.title}
-                </strong>
-              </div>
-              <p style={{ margin: 0, font: "var(--t-body)", color: "var(--text-2, var(--text))" }}>
-                {playbook.does}
-              </p>
-              <PlayVideoButton playbook={playbook} label="What this play does · Watch (1 min)" />
-            </div>
+        <WhenItRuns
+          playbook={playbook}
+          onRuleChange={() => {}}
+          onOverseeChange={onOverseeChange}
+        />
 
-            <WhenItRuns
-              playbook={playbook}
-              onRuleChange={(sentence, count) => {
-                setRuleSentence(sentence);
-                setRuleCount(count);
-              }}
-              onOverseeChange={onOverseeChange}
-            />
-
-            <div
-              style={{
-                display: "flex",
-                justifyContent: "space-between",
-                alignItems: "center",
-                gap: "var(--s-2)",
-              }}
-            >
-              <Button variant="ghost" size="sm" onClick={onNotNow}>
-                Not now
-              </Button>
-              <Button
-                variant="primary"
-                onClick={() => onStepChange((stepIndex + 1) as 1 | 2)}
-                icon={<Icon name="arrow-right" />}
-              >
-                Continue to publish
-              </Button>
-            </div>
-          </>
-        ) : (
-          <HowThisPlayWorks
-            playbook={playbook}
-            ctaLabel="Open in HighLevel & publish"
-            onCta={() => setShowHandoff(true)}
-            onBack={() => onStepChange(1)}
-            mode="autopilot"
-          />
-        )}
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            gap: "var(--s-2)",
+          }}
+        >
+          <Button variant="ghost" size="sm" onClick={onNotNow}>
+            Not now
+          </Button>
+          <Button variant="primary" onClick={onPublish} icon={<Icon name="zap" />}>
+            Publish
+          </Button>
+        </div>
       </div>
     </Card>
   );
