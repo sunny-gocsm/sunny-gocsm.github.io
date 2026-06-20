@@ -3,4 +3,5 @@ import App from "./App.tsx";
 import "./index.css";
 import "@/gocsm-ds/styles.css";
 import "./gocsm-ds-overrides.css";
+import "./app-overrides.css";
 createRoot(document.getElementById("root")!).render(<App />);

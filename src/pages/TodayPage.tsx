@@ -7,11 +7,19 @@ import {
   Mono,
   Badge,
   LiveStatus,
+  BriefingHeader,
+  Verdict,
+  SignalCard,
+  Queue,
+  FixItCard,
+  ActionButton,
+  ActionReceipt,
+  ActivityLog,
+  MetricCard,
 } from "@/gocsm-ds";
 import { useIsAutopilot, useAllAutopilotOn, autopilotStore } from "@/state/autopilot";
 import { useToast } from "@/hooks/use-toast";
 import { ToastAction } from "@/components/ui/toast";
-import { PageRibbon } from "@/components/PageRibbon";
 import {
   autopilotSentEmails,
   sentEmailsForOnPlaybooks,
@@ -28,7 +36,6 @@ import {
   agencyRollup,
   signalsForAccount,
   daysUntil,
-  bandLabel,
   allAccounts,
   type Account,
 } from "@/fixtures";
@@ -65,133 +72,127 @@ function reasonFor(a: Account): string {
   return `Health dropped to ${a.health.score}.`;
 }
 
+function fmtMoneySmall(n: number) {
+  return "$" + Math.round(n).toLocaleString();
+}
+
 // ----------------------------------------------------------------------------
-// Cohort card
+// Cohort card — a "Fix a problem" cohort, rendered on the DS FixItCard.
+// Kept as its own component so the per-cohort autopilot hook is legal.
 // ----------------------------------------------------------------------------
 
-interface CohortCardProps {
+interface CohortFixItCardProps {
   icon: string;
   title: string;
+  tag: string;
   accounts: Account[];
   actionLabel: string;
+  emptyLine: string;
+  size?: "md" | "lg";
+  playbookId?: string;
   onView: () => void;
   onApply?: () => void;
-  accent: "atrisk" | "healthy" | "warn" | "pos" | "slate" | "info" | "neg" | "watch" | "thriving";
-  emptyLine: string;
-  playbookId?: string;
   onEditRule?: (playbookId: string) => void;
   onOpenHighLevel?: (playbookId: string) => void;
 }
 
-function CohortCard({
+function CohortFixItCard({
   icon,
   title,
+  tag,
   accounts,
   actionLabel,
+  emptyLine,
+  size = "md",
+  playbookId,
   onView,
   onApply,
-  accent,
-  emptyLine,
-  playbookId,
   onEditRule,
   onOpenHighLevel,
-}: CohortCardProps) {
+}: CohortFixItCardProps) {
   const { toast: t } = useToast();
-  const mrr = accounts.reduce((sum, a) => sum + a.revenue.mrr, 0);
-  const accentClasses = `accent-t ${accent}`;
-  const extraStyle: React.CSSProperties =
-    accent === "slate" ? { borderTopColor: "var(--n-7)" } : {};
-  const empty = accounts.length === 0;
   const onAutopilot = useIsAutopilot(playbookId ?? "");
+  const mrr = accounts.reduce((sum, a) => sum + a.revenue.mrr, 0);
+  const count = accounts.length;
+
+  if (count === 0) {
+    // All-clear: green "clean" treatment, no action.
+    return <FixItCard size={size} icon={icon} tag={tag} clean doneLabel="Clear" text={emptyLine} />;
+  }
+
+  const text = (
+    <>
+      <strong>{title}</strong> · <Mono>{count}</Mono> account{count === 1 ? "" : "s"} ·{" "}
+      <Mono>{fmtMoney(mrr)}</Mono> at risk
+    </>
+  );
+
+  if (onAutopilot && playbookId) {
+    return (
+      <FixItCard
+        size={size}
+        icon={icon}
+        tag={tag}
+        text={text}
+        badge={<Badge variant="pos" dot={false}>On · autopilot</Badge>}
+        note="New matches handled automatically."
+        action={
+          <>
+            <Button
+              variant="ghost"
+              size="sm"
+              icon={<Icon name="pause" />}
+              onClick={() => {
+                autopilotStore.pause(playbookId);
+                t({ title: "Autopilot paused", description: "Sends stopped — the rule is kept." });
+              }}
+            >
+              Pause
+            </Button>
+            <Button variant="ghost" size="sm" icon={<Icon name="sliders" />} onClick={() => onEditRule?.(playbookId)}>
+              Edit rule
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              icon={<Icon name="external-link" />}
+              onClick={() => onOpenHighLevel?.(playbookId)}
+              title="Reopen the HighLevel workflow to change the message"
+            >
+              Open in HighLevel
+            </Button>
+          </>
+        }
+      />
+    );
+  }
+
   return (
-    <Card padded className={accentClasses} style={{ ...extraStyle, opacity: empty ? 0.7 : 1 }}>
-      <div style={{ display: "flex", flexDirection: "column", gap: "var(--s-2)" }}>
-        <header style={{ display: "flex", alignItems: "center", gap: "var(--s-2)" }}>
-          <span className={`icon-chip ${accent}`} aria-hidden>
-            <Icon name={icon} />
-          </span>
-          <span style={{ font: "var(--t-body)", color: "var(--text)", fontWeight: 600, flex: 1, minWidth: 0 }}>
-            {title}
-          </span>
-          {onAutopilot ? (
-            <Badge variant="blue" dot={false}>
-              <span style={{ display: "inline-flex", alignItems: "center", gap: 4 }}>
-                <Icon name="zap" />
-                On autopilot
-              </span>
-            </Badge>
+    <FixItCard
+      size={size}
+      icon={icon}
+      tag={tag}
+      text={text}
+      action={
+        <>
+          {onApply ? (
+            <ActionButton size="sm" icon="play" onClick={onApply}>
+              {actionLabel}
+            </ActionButton>
           ) : null}
-          <span style={{ font: "var(--t-meta)", color: "var(--text-2, var(--text))", whiteSpace: "nowrap" }}>
-            <Mono>{accounts.length}</Mono>
-            {mrr > 0 ? <> · <Mono>{fmtMoney(mrr)}</Mono></> : null}
-          </span>
-        </header>
-
-        {empty ? (
-          <p style={{ font: "var(--t-body-sm)", color: "var(--text-2, var(--text))", margin: 0 }}>
-            {emptyLine}
-          </p>
-        ) : null}
-
-        {onAutopilot && !empty ? (
-          <p style={{ font: "var(--t-meta)", color: "var(--text-2, var(--text))", margin: 0 }}>
-            New matches handled automatically.
-          </p>
-        ) : null}
-
-        <div style={{ marginTop: "var(--s-1)", display: "flex", gap: "var(--s-2)", alignItems: "center", flexWrap: "wrap" }}>
-          {onAutopilot && playbookId ? (
-            <>
-              <Button
-                variant="ghost"
-                size="sm"
-                icon={<Icon name="pause" />}
-                onClick={() => {
-                  autopilotStore.pause(playbookId);
-                  t({ title: "Autopilot paused", description: "Sends stopped — the rule is kept." });
-                }}
-              >
-                Pause
-              </Button>
-              <Button
-                variant="ghost"
-                size="sm"
-                icon={<Icon name="sliders" />}
-                onClick={() => onEditRule?.(playbookId)}
-              >
-                Edit rule
-              </Button>
-              <Button
-                variant="ghost"
-                size="sm"
-                icon={<Icon name="external-link" />}
-                onClick={() => onOpenHighLevel?.(playbookId)}
-                title="Reopen the HighLevel workflow to change the message"
-              >
-                Open in HighLevel
-              </Button>
-            </>
-          ) : (
-            <>
-              {onApply && !empty ? (
-                <Button variant="primary" size="sm" onClick={onApply} icon={<Icon name="play" />}>
-                  {actionLabel}
-                </Button>
-              ) : null}
-              <Button variant="ghost" size="sm" onClick={onView} icon={<Icon name="arrow-right" />}>
-                View all
-              </Button>
-            </>
-          )}
-        </div>
-      </div>
-    </Card>
+          <Button variant="ghost" size="sm" icon={<Icon name="arrow-right" />} onClick={onView}>
+            View all
+          </Button>
+        </>
+      }
+    />
   );
 }
 
 
 // ----------------------------------------------------------------------------
-// Reassurance line (collapsed recap)
+// Reassurance line — "GoCSM handled X overnight" as a positive Verdict, with an
+// expandable ActivityLog of wins and an ActionReceipt list of emails sent.
 // ----------------------------------------------------------------------------
 
 interface RecapItem {
@@ -202,10 +203,7 @@ interface RecapItem {
   outcome: string;
   tag: "Autopilot" | "You approved";
   amount?: number;
-}
-
-function fmtMoneySmall(n: number) {
-  return "$" + Math.round(n).toLocaleString();
+  daysAgo: number;
 }
 
 function ReassuranceLine({
@@ -246,6 +244,7 @@ function ReassuranceLine({
             : `${o.lead.toLowerCase().replace(/\.$/, "")} — no touch needed`,
         tag: "Autopilot",
         amount: o.amount,
+        daysAgo: o.daysAgo,
       };
     }),
     ...approved.slice(0, 3).map<RecapItem>((o) => {
@@ -261,127 +260,57 @@ function ReassuranceLine({
             : `${o.lead.toLowerCase().replace(/\.$/, "")} — you approved the note`,
         tag: "You approved",
         amount: o.amount,
+        daysAgo: o.daysAgo,
       };
     }),
   ];
 
-  const tagStyle = (tag: RecapItem["tag"]): React.CSSProperties => {
-    const map = {
-      Autopilot: { bg: "var(--pos-soft)", fg: "var(--pos-7)" },
-      "You approved": { bg: "var(--info-soft, var(--blue-2))", fg: "var(--info-7, var(--text))" },
-    } as const;
-    const c = map[tag];
-    return {
-      font: "var(--t-meta)",
-      fontWeight: 600,
-      padding: "2px 8px",
-      borderRadius: 999,
-      background: c.bg,
-      color: c.fg,
-      whiteSpace: "nowrap",
-    };
-  };
-
   return (
-    <Card padded>
-      <div
-        style={{
-          display: "flex",
-          alignItems: "center",
-          gap: "var(--s-3)",
-          flexWrap: "wrap",
-        }}
+    <div style={{ display: "flex", flexDirection: "column", gap: "var(--s-3)" }}>
+      <Verdict
+        tone="pos"
+        attribution="GoCSM AI"
+        actions={
+          <>
+            {sentCount > 0 ? (
+              <Button variant="ghost" size="sm" icon={<Icon name="mail" />} onClick={() => setEmailsOpen((o) => !o)}>
+                {emailsOpen ? "Hide emails" : `See ${sentCount} email${sentCount === 1 ? "" : "s"}`}
+              </Button>
+            ) : null}
+            <Button
+              variant="ghost"
+              size="sm"
+              icon={<Icon name={open ? "chevron-up" : "arrow-right"} />}
+              onClick={() => setOpen((o) => !o)}
+            >
+              {open ? "Hide" : "See what it did"}
+            </Button>
+          </>
+        }
       >
-        <span className="icon-chip pos" aria-hidden>
-          <Icon name="shield-check" />
-        </span>
-        <span style={{ flex: 1, minWidth: 0, font: "var(--t-body)", color: "var(--text)" }}>
-          GoCSM handled <strong style={{ fontWeight: 600 }}><Mono>{totalHandled}</Mono> things</strong> overnight
-          {sentCount > 0 ? (
-            <>
-              {" "}and sent{" "}
-              <strong style={{ fontWeight: 600 }}>
-                <Mono>{sentCount}</Mono> client email{sentCount === 1 ? "" : "s"}
-              </strong>{" "}
-              —{" "}
-              <button
-                type="button"
-                onClick={() => setEmailsOpen((o) => !o)}
-                style={{
-                  background: "none",
-                  border: "none",
-                  padding: 0,
-                  color: "var(--info-7, var(--blue-7))",
-                  font: "inherit",
-                  fontWeight: 600,
-                  cursor: "pointer",
-                  textDecoration: "underline",
-                }}
-              >
-                {emailsOpen ? "hide them" : "see them"}
-              </button>
-              .
-            </>
-          ) : (
-            <>
-              {" "}and protected{" "}
-              <strong style={{ fontWeight: 600 }}><Mono>{fmtMoneySmall(protectedAmount)}</Mono></strong> this week.
-            </>
-          )}
-        </span>
-        <Button
-          variant="ghost"
-          size="sm"
-          icon={<Icon name={open ? "chevron-up" : "arrow-right"} />}
-          onClick={() => setOpen((o) => !o)}
-        >
-          {open ? "Hide" : "See what it did"}
-        </Button>
-      </div>
+        GoCSM handled <Mono>{totalHandled}</Mono> {totalHandled === 1 ? "thing" : "things"} overnight
+        {sentCount > 0 ? (
+          <>
+            {" "}and sent <Mono>{sentCount}</Mono> client email{sentCount === 1 ? "" : "s"}.
+          </>
+        ) : (
+          <>
+            {" "}and protected <Mono>{fmtMoneySmall(protectedAmount)}</Mono> this week.
+          </>
+        )}
+      </Verdict>
 
       {emailsOpen ? (
-        <div
-          style={{
-            marginTop: "var(--s-3)",
-            padding: "var(--s-3)",
-            borderRadius: "var(--r-md)",
-            background: "var(--surface-2)",
-            border: "1px solid var(--border)",
-            display: "flex",
-            flexDirection: "column",
-            gap: "var(--s-2)",
-          }}
-        >
-          <span style={{ font: "var(--t-meta)", color: "var(--text-2, var(--text))", fontWeight: 600 }}>
-            Client emails sent overnight
-          </span>
+        <div style={{ display: "flex", flexDirection: "column", gap: "var(--s-2)" }}>
           {sentEmails.map((e) => (
-            <div
+            <ActionReceipt
               key={e.id}
-              style={{
-                display: "flex",
-                gap: "var(--s-3)",
-                alignItems: "flex-start",
-                padding: "var(--s-2) var(--s-3)",
-                borderRadius: "var(--r-sm)",
-                background: "var(--surface)",
-              }}
-            >
-              <div style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", gap: 2 }}>
-                <div style={{ display: "flex", gap: "var(--s-2)", alignItems: "baseline", flexWrap: "wrap" }}>
-                  <strong style={{ color: "var(--text)", fontWeight: 600 }}>{e.accountName}</strong>
-                  <span style={{ color: "var(--text-2, var(--text))", font: "var(--t-body-sm)" }}>
-                    · {e.subject}
-                  </span>
-                  <span style={{ marginLeft: "auto", font: "var(--t-meta)", color: "var(--text-3, var(--text))" }}>
-                    {e.whenLabel}
-                  </span>
-                </div>
-                <span style={{ font: "var(--t-body-sm)", color: "var(--text-2, var(--text))" }}>
-                  {e.snippet}
-                </span>
-              </div>
-            </div>
+              state="sent"
+              title={`${e.accountName} · ${e.subject}`}
+              scope={e.snippet}
+              blastRadius="Sent to the account owner — not their clients."
+              reportBack={e.whenLabel}
+            />
           ))}
           <span style={{ font: "var(--t-meta)", color: "var(--text-3, var(--text))", fontStyle: "italic" }}>
             These are the exact messages you approved in HighLevel at setup.
@@ -390,61 +319,41 @@ function ReassuranceLine({
       ) : null}
 
       {open ? (
-        <div style={{ marginTop: "var(--s-4)", display: "flex", flexDirection: "column", gap: "var(--s-2)" }}>
-          {items.length === 0 ? (
+        items.length === 0 ? (
+          <Card padded>
             <p style={{ font: "var(--t-body-sm)", color: "var(--text-2, var(--text))", margin: 0 }}>
               Quiet week — nothing verified yet. We'll log wins here as downstream signals confirm them.
             </p>
-          ) : (
-            items.map((item) => (
-              <div
-                key={item.id}
-                style={{
-                  display: "flex",
-                  gap: "var(--s-3)",
-                  alignItems: "flex-start",
-                  padding: "var(--s-3)",
-                  borderRadius: "var(--r-md)",
-                  background: "var(--surface)",
-                  borderLeft:
-                    item.tag === "Autopilot"
-                      ? "3px solid var(--pos-7)"
-                      : "3px solid var(--info-7, var(--blue-7, var(--text-2)))",
-                }}
-              >
-                <div style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", gap: 2 }}>
-                  <div style={{ display: "flex", alignItems: "center", gap: "var(--s-2)", flexWrap: "wrap" }}>
-                    <strong style={{ color: "var(--text)", fontWeight: 600 }}>{item.accountName}</strong>
-                    <span style={tagStyle(item.tag)}>{item.tag}</span>
-                  </div>
-                  <span style={{ font: "var(--t-body-sm)", color: "var(--text-2, var(--text))" }}>
-                    GoCSM: {item.did} — <span style={{ color: "var(--text)" }}>{item.outcome}</span>
-                  </span>
-                </div>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  icon={<Icon name="arrow-right" />}
-                  onClick={() => onOpenAccount(item.accountId)}
-                >
-                  See log
-                </Button>
-              </div>
-            ))
-          )}
-          <p
-            style={{
-              margin: "var(--s-2) 0 0",
-              font: "var(--t-meta)",
-              color: "var(--text-2, var(--text))",
-              fontStyle: "italic",
-            }}
-          >
-            Wins are only counted when a downstream signal confirmed the change.
-          </p>
-        </div>
+          </Card>
+        ) : (
+          <ActivityLog
+            rows={items.map((item) => ({
+              time: item.daysAgo === 0 ? "today" : `${item.daysAgo}d ago`,
+              actor: "GoCSM",
+              line: (
+                <>
+                  <span
+                    role="button"
+                    tabIndex={0}
+                    onClick={() => onOpenAccount(item.accountId)}
+                    onKeyDown={(ev: React.KeyboardEvent) => {
+                      if (ev.key === "Enter" || ev.key === " ") onOpenAccount(item.accountId);
+                    }}
+                    style={{ fontWeight: 600, color: "var(--text)", cursor: "pointer" }}
+                  >
+                    {item.accountName}
+                  </span>{" "}
+                  — {item.did} · {item.outcome}
+                </>
+              ),
+              outcome: item.tag,
+              outcomeState: "ok",
+              auto: item.tag === "Autopilot",
+            }))}
+          />
+        )
       ) : null}
-    </Card>
+    </div>
   );
 }
 
@@ -452,6 +361,8 @@ function ReassuranceLine({
 // ----------------------------------------------------------------------------
 // Pending approvals — ONLY surfaces when an autopilot play is on "Ease in" or
 // "Review every send". Absent/empty when every on-play is "Send automatically".
+// (Kept on Card + Buttons: ActionReceipt's "pending" countdown copy doesn't fit
+//  the "waiting for your OK" semantics — see report.)
 // ----------------------------------------------------------------------------
 
 function PendingApprovalsItem() {
@@ -559,8 +470,6 @@ function PendingApprovalsItem() {
 // ----------------------------------------------------------------------------
 // Page
 // ----------------------------------------------------------------------------
-
-
 
 export default function TodayPage() {
   const navigate = useNavigate();
@@ -775,151 +684,114 @@ export default function TodayPage() {
   const totalNeeds = needsYouAll.length;
   const handledCount = needsYouAll.filter((n) => handled.has(n.id)).length;
 
-  const initials = (name: string) =>
-    name
-      .split(/\s+/)
-      .map((w) => w[0])
-      .filter(Boolean)
-      .slice(0, 2)
-      .join("")
-      .toUpperCase();
-
-  const bandColor = (band: Account["health"]["band"]) =>
-    band === "thriving"
-      ? "var(--health-thriving-strong)"
-      : band === "healthy"
-      ? "var(--health-healthy-strong)"
-      : band === "watch"
-      ? "var(--health-watch-strong)"
-      : "var(--health-atrisk-strong)";
-
-  const renderNeedsYouRow = (item: NeedsYouItem) => {
+  const renderNeedsYouCard = (item: NeedsYouItem) => {
     const a = item.account;
-    const onRowClick = () => navigate(`/accounts/${a.identity.id}`);
-    const stop = (e: React.MouseEvent) => e.stopPropagation();
     return (
-      <div
+      <SignalCard
         key={item.id}
-        className="queue-row"
-        role="button"
-        tabIndex={0}
-        onClick={onRowClick}
-        onKeyDown={(e) => {
-          if (e.key === "Enter" || e.key === " ") {
-            e.preventDefault();
-            onRowClick();
-          }
-        }}
-        style={{ cursor: "pointer", alignItems: "flex-start", padding: "var(--s-3) var(--s-4)" }}
-      >
-        <span
-          aria-hidden
-          style={{
-            display: "inline-flex",
-            alignItems: "center",
-            justifyContent: "center",
-            width: 32,
-            height: 32,
-            borderRadius: 999,
-            background: "var(--surface-2)",
-            color: "var(--text-2, var(--text))",
-            fontSize: 11,
-            fontWeight: 600,
-            flexShrink: 0,
-            marginTop: 2,
-          }}
-        >
-          {initials(a.identity.name)}
-        </span>
-        <span
-          aria-hidden
-          title={bandLabel(a.health.band)}
-          style={{
-            width: 8,
-            height: 8,
-            borderRadius: 999,
-            background: bandColor(a.health.band),
-            flexShrink: 0,
-            marginTop: 14,
-          }}
-        />
-        <div style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", gap: 2 }}>
-          <div style={{ display: "flex", alignItems: "baseline", gap: "var(--s-2)", flexWrap: "wrap" }}>
-            <strong style={{ color: "var(--text)", fontWeight: 600, fontSize: 14 }}>
-              {a.identity.name}
-            </strong>
-            <span style={{ color: "var(--text-2, var(--text))", fontSize: 13 }}>· {item.problem}</span>
-            {item.urgencyLabel ? (
-              <span
-                style={{
-                  fontFamily: "var(--font-mono)",
-                  fontVariantNumeric: "tabular-nums",
-                  fontSize: 11,
-                  fontWeight: 600,
-                  padding: "2px 8px",
-                  borderRadius: 999,
-                  background: item.urgencyHot ? "var(--health-atrisk-soft)" : "var(--surface-2)",
-                  color: item.urgencyHot ? "var(--health-atrisk-strong)" : "var(--text-2, var(--text))",
-                }}
-              >
-                {item.urgencyLabel}
-              </span>
-            ) : null}
-          </div>
-          <span style={{ font: "var(--t-meta)", color: "var(--text-2, var(--text))" }}>
-            {item.helper}
-          </span>
-        </div>
-        <span
-          style={{ display: "inline-flex", gap: "var(--s-2)", flexShrink: 0, alignItems: "center" }}
-          onClick={stop}
-        >
-          <Button
-            size="sm"
-            variant="primary"
-            icon={<Icon name={item.mode === "human" ? "phone" : "play"} />}
-            onClick={() => (item.mode === "play" ? runPlay(item) : logHuman(item))}
-          >
-            {item.actionLabel}
-          </Button>
-          <Button
-            size="sm"
-            variant="ghost"
-            title="Clear this row from today"
-            onClick={() => markHandled(item.id, "dismissed")}
-          >
-            Not now
-          </Button>
-        </span>
-      </div>
+        band={a.health.band}
+        account={a.identity.name}
+        mrr={a.revenue.mrr}
+        story={
+          <>
+            {item.problem} <span style={{ color: "var(--text-2, var(--text))" }}>· {item.helper}</span>
+          </>
+        }
+        onSeePlaybook={() => navigate(`/accounts/${a.identity.id}`)}
+        saveWindow={
+          item.urgencyLabel ? (
+            <Badge variant={item.urgencyHot ? "danger" : "neutral"} dot={false}>
+              {item.urgencyLabel}
+            </Badge>
+          ) : null
+        }
+        action={
+          <>
+            <ActionButton
+              size="sm"
+              icon={item.mode === "human" ? "phone" : "play"}
+              onClick={() => (item.mode === "play" ? runPlay(item) : logHuman(item))}
+            >
+              {item.actionLabel}
+            </ActionButton>
+            <Button size="sm" variant="ghost" title="Clear this row from today" onClick={() => markHandled(item.id, "dismissed")}>
+              Not now
+            </Button>
+          </>
+        }
+      />
     );
   };
 
-
-
-
-
-
-  const AiAttribution = (
-    <span
-      style={{
-        display: "inline-flex",
-        alignItems: "center",
-        gap: 4,
-        padding: "1px 6px",
-        borderRadius: 999,
-        background: "var(--ai-soft, var(--surface-2))",
-        color: "var(--ai-strong, var(--text-2, var(--text)))",
-        font: "var(--t-meta)",
-        fontWeight: 600,
-        marginRight: 6,
-        verticalAlign: "baseline",
-      }}
-    >
-      <Icon name="sparkles" />
-      GoCSM AI
-    </span>
-  );
+  // Cohorts for "Fix a problem" — sorted so the biggest is the hero (size=lg).
+  const cohorts = [
+    {
+      icon: "alert-triangle",
+      title: "Setup lost — may be leaving",
+      tag: "Retention",
+      accounts: lostSticky,
+      actionLabel: "Win them back",
+      emptyLine: "All setups holding steady.",
+      playbookId: "pb-save-domain",
+      onView: () => navigate("/accounts"),
+      onApply: () => openApply(lostSticky, "pb-save-domain"),
+    },
+    {
+      icon: "calendar-clock",
+      title: "Renewing soon & at risk",
+      tag: "Renewals",
+      accounts: renewingAtRisk,
+      actionLabel: "Protect these renewals",
+      emptyLine: "No renewals in danger.",
+      playbookId: "pb-no-login",
+      onView: () => navigate("/accounts?renewing=30"),
+      onApply: () => openApply(renewingAtRisk, "pb-no-login"),
+    },
+    {
+      icon: "credit-card",
+      title: "Payment failed",
+      tag: "Billing",
+      accounts: failed,
+      actionLabel: "Recover payments",
+      emptyLine: "Payments are flowing.",
+      playbookId: "pb-payment-failed",
+      onView: () => navigate("/accounts"),
+      onApply: () => openApply(failed, "pb-payment-failed"),
+    },
+    {
+      icon: "moon",
+      title: "Gone quiet",
+      tag: "Engagement",
+      accounts: goneQuiet,
+      actionLabel: "Send a nudge",
+      emptyLine: "Everyone's still showing up.",
+      playbookId: "pb-no-login",
+      onView: () => navigate("/accounts"),
+      onApply: () => openApply(goneQuiet, "pb-no-login"),
+    },
+    {
+      icon: "rocket",
+      title: "Onboarding stalled",
+      tag: "Onboarding",
+      accounts: stalled,
+      actionLabel: "Unblock onboarding",
+      emptyLine: "New accounts are moving.",
+      playbookId: "pb-onboarding-stalled",
+      onView: () => navigate("/onboarding"),
+      onApply: () => openApply(stalled, "pb-onboarding-stalled"),
+    },
+    {
+      icon: "sparkles",
+      title: "Coming back to life",
+      tag: "Expansion",
+      accounts: dormantUp,
+      actionLabel: "Welcome them back",
+      emptyLine: "No comebacks yet — your saves are holding.",
+      playbookId: "pb-expansion-ready",
+      onView: () => navigate("/accounts"),
+      onApply: () => openApply(dormantUp, "pb-expansion-ready"),
+    },
+  ].sort((a, b) => b.accounts.length - a.accounts.length);
 
   return (
     <main
@@ -933,41 +805,49 @@ export default function TodayPage() {
         gap: "var(--s-9, var(--s-8))",
       }}
     >
-      {/* 1 — Briefing ribbon (tinted band) */}
-      <section
-        aria-label="Briefing"
-        style={{
-          background:
-            "linear-gradient(180deg, var(--blue-2, var(--surface-2)) 0%, var(--surface) 100%)",
-          borderRadius: "var(--r-lg)",
-          padding: "var(--s-5) var(--s-5) var(--s-4)",
-          display: "flex",
-          flexDirection: "column",
-          gap: "var(--s-3)",
-        }}
-      >
-        <PageRibbon
-          title={greetingFor("there")}
-          description={
-            <span style={{ color: "var(--text-2, var(--text))" }}>
-              {AiAttribution}
-              {briefingLine}
-            </span>
-          }
-          trailing={<LiveStatus state="fresh" label="Synced moments ago" />}
-          kpis={[
-            { label: "Needs you", value: <Mono>{activeNeeds.length}</Mono> },
-            { label: "MRR at risk", value: <Mono>{fmtMoney(rollup.mrrAtRisk)}</Mono> },
-            { label: "Renewals · 30d", value: <Mono>{renewalsWindow(0, 30).length}</Mono> },
-          ]}
+      {/* 1 — Briefing: greeting + AI verdict heroing $ at risk + secondary stats */}
+      <section aria-label="Briefing" style={{ display: "flex", flexDirection: "column", gap: "var(--s-3)" }}>
+        <BriefingHeader
+          greeting={greetingFor("there")}
+          sync={<LiveStatus state="fresh" label="Synced moments ago" />}
         />
+        <Verdict
+          tone={rollup.mrrAtRisk > 0 ? "risk" : "watch"}
+          attribution="GoCSM AI"
+          score={rollup.mrrAtRisk > 0 ? fmtMoney(rollup.mrrAtRisk) : null}
+          band="atrisk"
+          stamp={
+            rollup.mrrAtRisk > 0 ? (
+              <span style={{ font: "var(--t-meta)", color: "var(--text-3, var(--text))" }}>MRR at risk</span>
+            ) : null
+          }
+        >
+          {briefingLine}
+        </Verdict>
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))",
+            gap: "var(--s-3)",
+          }}
+        >
+          <MetricCard
+            label="Needs you"
+            value={activeNeeds.length}
+            icon={<Icon name="inbox" />}
+            iconTone={activeNeeds.length > 0 ? "warn" : "info"}
+          />
+          <MetricCard
+            label="Renewals · 30d"
+            value={renewalsWindow(0, 30).length}
+            icon={<Icon name="calendar-clock" />}
+          />
+        </div>
       </section>
 
       <ReassuranceLine onOpenAccount={(id) => navigate(`/accounts/${id}`)} />
 
       <PendingApprovalsItem />
-
-
 
       {/* 3 — Needs you */}
       <section
@@ -975,38 +855,16 @@ export default function TodayPage() {
         id="urgency-queue"
         style={{ display: "flex", flexDirection: "column", gap: "var(--s-3)" }}
       >
-        <header
-          style={{
-            display: "flex",
-            flexDirection: "column",
-            gap: "var(--s-2)",
-          }}
-        >
-          <div
-            style={{
-              display: "flex",
-              alignItems: "baseline",
-              justifyContent: "space-between",
-              gap: "var(--s-3)",
-            }}
-          >
+        <header style={{ display: "flex", flexDirection: "column", gap: "var(--s-2)" }}>
+          <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: "var(--s-3)" }}>
             <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
               <div style={{ display: "flex", alignItems: "center", gap: "var(--s-2)" }}>
                 <h2 style={{ font: "var(--t-h3)", margin: 0, color: "var(--text)", fontWeight: 600 }}>
                   Needs you
                 </h2>
-                <span
-                  style={{
-                    font: "var(--t-meta)",
-                    fontWeight: 700,
-                    padding: "2px 8px",
-                    borderRadius: 999,
-                    background: "var(--health-atrisk-soft)",
-                    color: "var(--health-atrisk-strong)",
-                  }}
-                >
+                <Badge variant="danger" dot={false}>
                   <Mono>{activeNeeds.length}</Mono>
-                </span>
+                </Badge>
               </div>
               <p style={{ font: "var(--t-body-sm)", color: "var(--text-2, var(--text))", margin: 0 }}>
                 GoCSM did what it could. These need a person.
@@ -1029,193 +887,72 @@ export default function TodayPage() {
               aria-valuemin={0}
               aria-valuemax={totalNeeds}
               aria-valuenow={handledCount}
-              style={{
-                height: 6,
-                borderRadius: 999,
-                background: "var(--surface-2)",
-                overflow: "hidden",
-              }}
+              style={{ height: 6, borderRadius: 999, background: "var(--surface-2)", overflow: "hidden" }}
             >
               <div
                 style={{
                   height: "100%",
                   width: `${(handledCount / totalNeeds) * 100}%`,
-                  background:
-                    "linear-gradient(90deg, var(--pos-soft) 0%, var(--pos-7) 100%)",
+                  background: "linear-gradient(90deg, var(--pos-soft) 0%, var(--pos-7) 100%)",
                   transition: "width 360ms ease",
                 }}
               />
             </div>
           )}
         </header>
-        <Card padded={false}>
-          {visibleNeeds.length ? (
-            <>
-              <div>{visibleNeeds.map(renderNeedsYouRow)}</div>
-              {overflowCount > 0 ? (
-                <div
-                  style={{
-                    padding: "var(--s-3) var(--s-4)",
-                    borderTop: "1px solid var(--border)",
-                    display: "flex",
-                    justifyContent: "flex-end",
-                  }}
-                >
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    icon={<Icon name="arrow-right" />}
-                    onClick={() => navigate("/accounts?filter=needs-you")}
-                  >
-                    See all ({activeNeeds.length})
-                  </Button>
-                </div>
-              ) : null}
-            </>
-          ) : (
-            <div
-              style={{
-                padding: "var(--s-6)",
-                textAlign: "center",
-                display: "flex",
-                flexDirection: "column",
-                alignItems: "center",
-                gap: "var(--s-2)",
-                background:
-                  "linear-gradient(135deg, var(--pos-soft) 0%, var(--blue-2) 100%)",
-                borderRadius: 12,
-              }}
-            >
-              <div
-                style={{
-                  width: 44,
-                  height: 44,
-                  borderRadius: 999,
-                  background: "var(--surface)",
-                  color: "var(--pos-7)",
-                  display: "inline-flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                }}
+
+        <Queue
+          empty={visibleNeeds.length === 0}
+          emptyLabel={
+            handledCount > 0
+              ? "🎉 Inbox zero — nice work. GoCSM is watching the board."
+              : "Nothing needs you right now. GoCSM is watching the board."
+          }
+          footer={
+            overflowCount > 0 ? (
+              <Button
+                size="sm"
+                variant="ghost"
+                icon={<Icon name="arrow-right" />}
+                onClick={() => navigate("/accounts?filter=needs-you")}
               >
-                <Icon name="check-circle" />
-              </div>
-              <strong style={{ font: "var(--t-h4)" }}>
-                {handledCount > 0 ? "Inbox zero — nice work." : "Nothing needs you right now."}
-              </strong>
-              <span style={{ font: "var(--t-meta)", color: "var(--text-2, var(--text))" }}>
-                GoCSM is watching the board. We'll surface the next thing the moment it matters.
-              </span>
-            </div>
-          )}
-        </Card>
+                See all ({activeNeeds.length})
+              </Button>
+            ) : null
+          }
+        >
+          {visibleNeeds.map(renderNeedsYouCard)}
+        </Queue>
       </section>
 
-
-
-
-      {/* 4 — Fix a problem */}
+      {/* 4 — Fix a problem (DS FixItCard lane; biggest cohort is the hero) */}
       <section aria-label="Fix a problem" style={{ display: "flex", flexDirection: "column", gap: "var(--s-3)" }}>
         <header style={{ display: "flex", flexDirection: "column", gap: 2 }}>
-          <h2 style={{ font: "var(--t-h4, var(--t-body))", margin: 0, color: "var(--text)", fontWeight: 600 }}>
+          <h2 style={{ font: "var(--t-h3, var(--t-body))", margin: 0, color: "var(--text)", fontWeight: 600 }}>
             Fix a problem
           </h2>
           <p style={{ font: "var(--t-body-sm)", color: "var(--text-2, var(--text))", margin: 0 }}>
             Same problem across several accounts — fix them together.
           </p>
         </header>
-        <div
-          style={{
-            display: "grid",
-            gap: "var(--s-3)",
-            gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))",
-          }}
-        >
-          {[
-            {
-              icon: "alert-triangle",
-              title: "Setup lost — may be leaving",
-              accounts: lostSticky,
-              accent: "atrisk" as const,
-              actionLabel: "Win them back",
-              emptyLine: "All setups holding steady.",
-              playbookId: "pb-save-domain",
-              onView: () => navigate("/accounts"),
-              onApply: () => openApply(lostSticky, "pb-save-domain"),
-            },
-            {
-              icon: "calendar-clock",
-              title: "Renewing soon & at risk",
-              accounts: renewingAtRisk,
-              accent: "healthy" as const,
-              actionLabel: "Protect these renewals",
-              emptyLine: "No renewals in danger.",
-              playbookId: "pb-no-login",
-              onView: () => navigate("/accounts?renewing=30"),
-              onApply: () => openApply(renewingAtRisk, "pb-no-login"),
-            },
-            {
-              icon: "credit-card",
-              title: "Payment failed",
-              accounts: failed,
-              accent: "atrisk" as const,
-              actionLabel: "Recover payments",
-              emptyLine: "Payments are flowing.",
-              playbookId: "pb-payment-failed",
-              onView: () => navigate("/accounts"),
-              onApply: () => openApply(failed, "pb-payment-failed"),
-            },
-            {
-              icon: "moon",
-              title: "Gone quiet",
-              accounts: goneQuiet,
-              accent: "slate" as const,
-              actionLabel: "Send a nudge",
-              emptyLine: "Everyone's still showing up.",
-              playbookId: "pb-no-login",
-              onView: () => navigate("/accounts"),
-              onApply: () => openApply(goneQuiet, "pb-no-login"),
-            },
-            {
-              icon: "rocket",
-              title: "Onboarding stalled",
-              accounts: stalled,
-              accent: "warn" as const,
-              actionLabel: "Unblock onboarding",
-              emptyLine: "New accounts are moving.",
-              playbookId: "pb-onboarding-stalled",
-              onView: () => navigate("/onboarding"),
-              onApply: () => openApply(stalled, "pb-onboarding-stalled"),
-            },
-            {
-              icon: "sparkles",
-              title: "Coming back to life",
-              accounts: dormantUp,
-              accent: "pos" as const,
-              actionLabel: "Welcome them back",
-              emptyLine: "No comebacks yet — your saves are holding.",
-              playbookId: "pb-expansion-ready",
-              onView: () => navigate("/accounts"),
-              onApply: () => openApply(dormantUp, "pb-expansion-ready"),
-            },
-          ]
-            .sort((a, b) => b.accounts.length - a.accounts.length)
-            .map((c) => (
-              <CohortCard
-                key={c.title}
-                icon={c.icon}
-                title={c.title}
-                accounts={c.accounts}
-                accent={c.accent}
-                actionLabel={c.actionLabel}
-                emptyLine={c.emptyLine}
-                playbookId={c.playbookId}
-                onView={c.onView}
-                onApply={c.onApply}
-                onEditRule={(id) => openAutopilotEditor(id, 1)}
-                onOpenHighLevel={(id) => openAutopilotEditor(id, 2, true)}
-              />
-            ))}
+        <div>
+          {cohorts.map((c, i) => (
+            <CohortFixItCard
+              key={c.title}
+              size={i === 0 ? "lg" : "md"}
+              icon={c.icon}
+              title={c.title}
+              tag={c.tag}
+              accounts={c.accounts}
+              actionLabel={c.actionLabel}
+              emptyLine={c.emptyLine}
+              playbookId={c.playbookId}
+              onView={c.onView}
+              onApply={c.onApply}
+              onEditRule={(id) => openAutopilotEditor(id, 1)}
+              onOpenHighLevel={(id) => openAutopilotEditor(id, 2, true)}
+            />
+          ))}
         </div>
       </section>
 
