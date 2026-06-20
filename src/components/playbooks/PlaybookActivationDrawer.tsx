@@ -25,7 +25,7 @@ import {
   matchesToday,
   type Playbook,
 } from "@/fixtures/playbooks";
-import type { Account } from "@/fixtures";
+import { daysUntil, daysSince, type Account } from "@/fixtures";
 import { autopilotStore } from "@/state/autopilot";
 import { PlayVideoButton } from "@/components/playbooks/PlayVideoButton";
 import { HowThisPlayWorks } from "@/components/playbooks/HowThisPlayWorks";
@@ -55,6 +55,23 @@ function plainTrigger(p: Playbook): string {
   return t;
 }
 
+
+function fmtDays(n: number): string {
+  if (n <= 0) return "today";
+  return `${n} day${n === 1 ? "" : "s"}`;
+}
+
+// One plain-language line per account: what happened + when. Keeps the row scannable.
+function accountSignal(a: Account): string {
+  if (a.revenue.lastPaymentStatus === "failed") {
+    const failed = [...a.revenue.paymentAttempts].reverse().find((p) => p.status === "failed");
+    return failed ? `Payment failed ${fmtDays(daysSince(failed.date))} ago` : "Payment failed";
+  }
+  if (a.login.lastLoginDaysAgo >= 14) return `No login in ${a.login.lastLoginDaysAgo} days`;
+  if (a.health.riskSignals.length) return a.health.riskSignals[0];
+  if (a.health.opportunities.length) return a.health.opportunities[0];
+  return "Showing warning signs";
+}
 
 export function PlaybookActivationDrawer({ open, scope, accounts, onClose, initial }: Props) {
   const directAutopilot = initial?.mode === "autopilot";
@@ -224,6 +241,56 @@ export function PlaybookActivationDrawer({ open, scope, accounts, onClose, initi
                 </p>
               </div>
             </Card>
+
+            {targets.length > 0 ? (
+              <Card padded>
+                <div style={{ display: "flex", flexDirection: "column", gap: "var(--s-2)" }}>
+                  <span style={{ font: "var(--t-meta)", textTransform: "uppercase", letterSpacing: "0.04em", color: "var(--text-3, var(--text))" }}>
+                    Accounts this covers
+                  </span>
+                  <ul style={{ listStyle: "none", padding: 0, margin: 0 }}>
+                    {targets.slice(0, 5).map((a) => {
+                      const renews = daysUntil(a.revenue.renewalDate);
+                      return (
+                        <li
+                          key={a.identity.id}
+                          style={{
+                            display: "flex",
+                            alignItems: "flex-start",
+                            justifyContent: "space-between",
+                            gap: "var(--s-3)",
+                            padding: "var(--s-2) 0",
+                            borderTop: "1px solid var(--border-soft, var(--border))",
+                          }}
+                        >
+                          <span style={{ display: "flex", flexDirection: "column", gap: 2, minWidth: 0 }}>
+                            <span style={{ font: "var(--t-body)", color: "var(--text)" }}>
+                              <strong style={{ fontWeight: 600 }}>{a.identity.name}</strong>
+                              <span style={{ color: "var(--text-3, var(--text))" }}> · {a.identity.plan}</span>
+                            </span>
+                            <span style={{ font: "var(--t-body-sm, var(--t-meta))", color: "var(--text-2, var(--text))" }}>
+                              {accountSignal(a)}
+                            </span>
+                          </span>
+                          <span style={{ font: "var(--t-body-sm, var(--t-meta))", color: "var(--text-3, var(--text))", whiteSpace: "nowrap", flexShrink: 0 }}>
+                            {renews >= 0 ? (
+                              <>Renews in <Mono>{renews}</Mono>d</>
+                            ) : (
+                              <>Renewed <Mono>{Math.abs(renews)}</Mono>d ago</>
+                            )}
+                          </span>
+                        </li>
+                      );
+                    })}
+                  </ul>
+                  {targets.length > 5 ? (
+                    <span style={{ font: "var(--t-meta)", color: "var(--text-3, var(--text))" }}>
+                      + <Mono>{targets.length - 5}</Mono> more
+                    </span>
+                  ) : null}
+                </div>
+              </Card>
+            ) : null}
 
             <Card
               padded
