@@ -47,8 +47,8 @@ _To be written in `docs/DECISION.md` and mirrored here in one paragraph._
 |---|---|
 | 1 — Research (CDO lens) | ✅ done — 16 platforms, 3 clusters; strong convergence |
 | 2 — Decide (`docs/DECISION.md`) | ✅ done — pattern chosen + interaction model |
-| 3 — Plan (build spec) | 🟡 in progress |
-| 4 — Execute (design loop) | ⬜ not started |
+| 3 — Plan (build spec) | ✅ done — `docs/PLAN.md` (IA, data shapes, DS-vs-app, build order) |
+| 4 — Execute (design loop) | 🟡 in progress — build order step 1 (data spine) |
 
 ## Architectural spine (invariant)
 - **Health = diagnostic** (why at risk). **Attention = action** (what to do now). Link, don't duplicate.
