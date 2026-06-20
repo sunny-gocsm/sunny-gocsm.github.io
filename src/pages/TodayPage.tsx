@@ -9,8 +9,6 @@ import {
   LiveStatus,
   BriefingHeader,
   Verdict,
-  SignalCard,
-  Queue,
   FixItCard,
   ActionButton,
   ActionReceipt,
@@ -18,22 +16,19 @@ import {
 } from "@/gocsm-ds";
 import { useIsAutopilot, useAllAutopilotOn, autopilotStore } from "@/state/autopilot";
 import { useToast } from "@/hooks/use-toast";
-import { ToastAction } from "@/components/ui/toast";
 import {
   autopilotSentEmails,
   pendingEmailsForPlaybooks,
   type AutopilotEmail,
 } from "@/fixtures/autopilotActivity";
 import {
-  atRiskByUrgency,
   renewalsWindow,
   failedPayments,
   lostStickySetups,
   stalledOnboarding,
   upsellReady,
+  atRiskByUrgency,
   agencyRollup,
-  signalsForAccount,
-  daysUntil,
   allAccounts,
   type Account,
 } from "@/fixtures";
@@ -54,29 +49,14 @@ const greetingFor = (name?: string) => {
   return name ? `Good ${part}, ${name}.` : `Good ${part}.`;
 };
 
-// One-sentence plain reason for an at-risk account — uses the newest signal if
-// available, else falls back to risk signals / login.
-function reasonFor(a: Account): string {
-  const sigs = signalsForAccount(a.identity.id);
-  const sticky = sigs.find((s) => s.sticky && s.direction === "reverse");
-  if (sticky) {
-    return `${a.identity.name} ${sticky.label.toLowerCase()} — they may be moving to another platform.`;
-  }
-  const failed = sigs.find((s) => s.subject === "Payment" && s.direction === "reverse");
-  if (failed) return `Payment failed — ${failed.label.toLowerCase()}.`;
-  if (a.health.riskSignals[0]) return a.health.riskSignals[0];
-  if (a.login.lastLoginDaysAgo >= 21)
-    return `No login in ${a.login.lastLoginDaysAgo} days.`;
-  return `Health dropped to ${a.health.score}.`;
-}
-
 function fmtMoneySmall(n: number) {
   return "$" + Math.round(n).toLocaleString();
 }
 
 // ----------------------------------------------------------------------------
-// Cohort card — a "Fix a problem" cohort, rendered on the DS FixItCard.
-// Kept as its own component so the per-cohort autopilot hook is legal.
+// Cohort card — one row in the unified "What needs you today" list, rendered on
+// the DS FixItCard. Kept as its own component so the per-cohort autopilot hook
+// is legal.
 // ----------------------------------------------------------------------------
 
 interface CohortFixItCardProps {
@@ -191,7 +171,7 @@ function CohortFixItCard({
 
 
 // ----------------------------------------------------------------------------
-// Reassurance line — "GoCSM handled X overnight" as a positive Verdict, with an
+// Reassurance line — "GoCSM handled X overnight" as a quiet single line, with an
 // expandable ActivityLog of wins and an ActionReceipt list of emails sent.
 // ----------------------------------------------------------------------------
 
@@ -379,8 +359,6 @@ function ReassuranceLine({
 // ----------------------------------------------------------------------------
 // Pending approvals — ONLY surfaces when an autopilot play is on "Ease in" or
 // "Review every send". Absent/empty when every on-play is "Send automatically".
-// (Kept on Card + Buttons: ActionReceipt's "pending" countdown copy doesn't fit
-//  the "waiting for your OK" semantics — see report.)
 // ----------------------------------------------------------------------------
 
 function PendingApprovalsItem() {
@@ -491,7 +469,6 @@ function PendingApprovalsItem() {
 
 export default function TodayPage() {
   const navigate = useNavigate();
-  const { toast } = useToast();
   const [drawerScope, setDrawerScope] = useState<DrawerScope | null>(null);
   const [drawerInitial, setDrawerInitial] = useState<DrawerInitial | undefined>(undefined);
   const openApply = (accs: Account[], suggested?: string) => {
@@ -507,8 +484,6 @@ export default function TodayPage() {
     setDrawerInitial({ mode: "autopilot", step, showHandoff });
   };
 
-
-  const queue = useMemo(() => atRiskByUrgency().slice(0, 8), []);
   const renewingAtRisk = useMemo(
     () =>
       renewalsWindow(0, 30).filter(
@@ -535,214 +510,31 @@ export default function TodayPage() {
   const briefingLine = useMemo(() => {
     const parts: string[] = [];
     if (lostSticky.length)
-      parts.push(`${lostSticky.length} ${lostSticky.length === 1 ? "account" : "accounts"} just lost a sticky setup`);
+      parts.push(`${lostSticky.length} ${lostSticky.length === 1 ? "account" : "accounts"} just lost a sticky setup — biggest backwards move`);
     if (failed.length) parts.push(`${failed.length} with failed payment${failed.length === 1 ? "" : "s"}`);
     if (renewingAtRisk.length)
       parts.push(`${renewingAtRisk.length} at-risk account${renewingAtRisk.length === 1 ? "" : "s"} renew in ≤30 days`);
     return parts.join(" · ") || "Quiet night — nothing urgent.";
   }, [lostSticky.length, failed.length, renewingAtRisk.length]);
 
-  // ---- Needs you: prioritized list of human-required actions ----
-  type NeedsYouMode = "play" | "human";
-  interface NeedsYouItem {
-    id: string;
-    account: Account;
-    problem: string;
-    urgencyLabel?: string;
-    urgencyHot?: boolean;
-    helper: string;
-    mode: NeedsYouMode;
-    actionLabel: string;
-    playId?: string;
-  }
-
-  const needsYouAll: NeedsYouItem[] = useMemo(() => {
-    const failedIds = new Set(failed.map((a) => a.identity.id));
-    const lostIds = new Set(lostSticky.map((a) => a.identity.id));
-    const stalledIds = new Set(stalled.map((a) => a.identity.id));
-    const goneQuietIds = new Set(goneQuiet.map((a) => a.identity.id));
-
-    return queue.map<NeedsYouItem>((a) => {
-      const days = daysUntil(a.revenue.renewalDate);
-      const urgencyHot = days >= 0 && days <= 7;
-      const urgencyLabel =
-        days >= 0 ? `Renews in ${days} ${days === 1 ? "day" : "days"}` : `${Math.abs(days)}d overdue`;
-      const problem = reasonFor(a);
-
-      // Failed payment → exhausted automation, needs a call
-      if (failedIds.has(a.identity.id)) {
-        const attempts = a.revenue.paymentAttempts.filter((p) => p.status === "failed").length || 3;
-        return {
-          id: a.identity.id,
-          account: a,
-          problem,
-          urgencyLabel,
-          urgencyHot,
-          helper: `GoCSM tried dunning (${attempts} retries) — it needs you now.`,
-          mode: "human",
-          actionLabel: `Call ${a.identity.name}`,
-        };
-      }
-
-      // Lost sticky setup → fixable with a save play
-      if (lostIds.has(a.identity.id)) {
-        return {
-          id: a.identity.id,
-          account: a,
-          problem,
-          urgencyLabel,
-          urgencyHot,
-          helper: "GoCSM suggests: Save the setup",
-          mode: "play",
-          actionLabel: "Win them back",
-          playId: "pb-save-domain",
-        };
-      }
-
-      // Onboarding stalled → unblock
-      if (stalledIds.has(a.identity.id)) {
-        return {
-          id: a.identity.id,
-          account: a,
-          problem: `Stuck on "${a.onboarding.current_step}" for ${a.onboarding.days_on_current_step}d`,
-          urgencyLabel,
-          urgencyHot,
-          helper: "GoCSM suggests: Unblock onboarding",
-          mode: "play",
-          actionLabel: "Unblock setup",
-          playId: "pb-onboarding-stalled",
-        };
-      }
-
-      // Renewal near + at risk → call
-      if (urgencyHot && a.health.band === "atrisk") {
-        return {
-          id: a.identity.id,
-          account: a,
-          problem,
-          urgencyLabel,
-          urgencyHot,
-          helper: "GoCSM tried reminders — it needs you now.",
-          mode: "human",
-          actionLabel: `Call ${a.identity.name}`,
-        };
-      }
-
-      // Gone quiet → check-in
-      if (goneQuietIds.has(a.identity.id)) {
-        return {
-          id: a.identity.id,
-          account: a,
-          problem,
-          urgencyLabel,
-          urgencyHot,
-          helper: "GoCSM suggests: Send a check-in",
-          mode: "play",
-          actionLabel: "Send a check-in",
-          playId: "pb-no-login",
-        };
-      }
-
-      // Default: a play can still help
-      return {
-        id: a.identity.id,
-        account: a,
-        problem,
-        urgencyLabel,
-        urgencyHot,
-        helper: "GoCSM suggests: Send a check-in",
-        mode: "play",
-        actionLabel: "Send a check-in",
-        playId: "pb-no-login",
-      };
-    });
-  }, [queue, failed, lostSticky, stalled, goneQuiet]);
-
-  const [handled, setHandled] = useState<Set<string>>(new Set());
-  const markHandled = (id: string, reason: "applied" | "called" | "dismissed") => {
-    setHandled((prev) => new Set(prev).add(id));
-    const item = needsYouAll.find((n) => n.id === id);
-    const title =
-      reason === "applied"
-        ? "Play queued"
-        : reason === "called"
-        ? "Marked as handled"
-        : "Cleared from today";
-    toast({
-      title,
-      description: item ? `${item.account.identity.name} cleared from today.` : undefined,
-      action: (
-        <ToastAction
-          altText="Undo"
-          onClick={() =>
-            setHandled((prev) => {
-              const next = new Set(prev);
-              next.delete(id);
-              return next;
-            })
-          }
-        >
-          Undo
-        </ToastAction>
-      ),
-    });
-  };
-
-  const runPlay = (item: NeedsYouItem) => {
-    openApply([item.account], item.playId);
-    markHandled(item.id, "applied");
-  };
-  const logHuman = (item: NeedsYouItem) => {
-    markHandled(item.id, "called");
-  };
-
-  const activeNeeds = needsYouAll.filter((n) => !handled.has(n.id));
-  const visibleNeeds = activeNeeds.slice(0, 5);
-  const overflowCount = Math.max(0, activeNeeds.length - visibleNeeds.length);
-  const totalNeeds = needsYouAll.length;
-  const handledCount = needsYouAll.filter((n) => handled.has(n.id)).length;
-
-  const renderNeedsYouCard = (item: NeedsYouItem) => {
-    const a = item.account;
-    return (
-      <SignalCard
-        key={item.id}
-        band={a.health.band}
-        account={a.identity.name}
-        mrr={a.revenue.mrr}
-        story={
-          <>
-            {item.problem} <span style={{ color: "var(--text-2, var(--text))" }}>· {item.helper}</span>
-          </>
-        }
-        onSeePlaybook={() => navigate(`/accounts/${a.identity.id}`)}
-        saveWindow={
-          item.urgencyLabel ? (
-            <Badge variant={item.urgencyHot ? "danger" : "neutral"} dot={false}>
-              {item.urgencyLabel}
-            </Badge>
-          ) : null
-        }
-        action={
-          <>
-            <ActionButton
-              size="sm"
-              icon={item.mode === "human" ? "phone" : "play"}
-              onClick={() => (item.mode === "play" ? runPlay(item) : logHuman(item))}
-            >
-              {item.actionLabel}
-            </ActionButton>
-            <Button size="sm" variant="ghost" title="Clear this row from today" onClick={() => markHandled(item.id, "dismissed")}>
-              Not now
-            </Button>
-          </>
-        }
-      />
-    );
-  };
-
-  // Cohorts for "Fix a problem" — sorted so the biggest is the hero (size=lg).
-  const cohorts = [
+  // ---- Unified "What needs you today" list -------------------------------
+  // ONE row per problem (issue-grouped, so it scales to 1000 accounts). The
+  // accounts that used to appear in a separate "Needs you" list now live inside
+  // their matching problem here — no second framing of the same data. Sorted by
+  // urgency × $ at risk so the most important problem is first (and the hero).
+  const cohortDefs = [
+    {
+      icon: "credit-card",
+      title: "Payment failed",
+      tag: "Billing",
+      accounts: failed,
+      actionLabel: "Recover payments",
+      emptyLine: "Payments are flowing.",
+      playbookId: "pb-payment-failed",
+      urgency: 5,
+      onView: () => navigate("/accounts"),
+      onApply: () => openApply(failed, "pb-payment-failed"),
+    },
     {
       icon: "alert-triangle",
       title: "Setup lost — may be leaving",
@@ -751,6 +543,7 @@ export default function TodayPage() {
       actionLabel: "Win them back",
       emptyLine: "All setups holding steady.",
       playbookId: "pb-save-domain",
+      urgency: 4,
       onView: () => navigate("/accounts"),
       onApply: () => openApply(lostSticky, "pb-save-domain"),
     },
@@ -762,19 +555,9 @@ export default function TodayPage() {
       actionLabel: "Protect these renewals",
       emptyLine: "No renewals in danger.",
       playbookId: "pb-renewal-save",
+      urgency: 4,
       onView: () => navigate("/accounts?renewing=30"),
       onApply: () => openApply(renewingAtRisk, "pb-renewal-save"),
-    },
-    {
-      icon: "credit-card",
-      title: "Payment failed",
-      tag: "Billing",
-      accounts: failed,
-      actionLabel: "Recover payments",
-      emptyLine: "Payments are flowing.",
-      playbookId: "pb-payment-failed",
-      onView: () => navigate("/accounts"),
-      onApply: () => openApply(failed, "pb-payment-failed"),
     },
     {
       icon: "moon",
@@ -784,6 +567,7 @@ export default function TodayPage() {
       actionLabel: "Send a nudge",
       emptyLine: "Everyone's still showing up.",
       playbookId: "pb-no-login",
+      urgency: 2,
       onView: () => navigate("/accounts"),
       onApply: () => openApply(goneQuiet, "pb-no-login"),
     },
@@ -795,13 +579,21 @@ export default function TodayPage() {
       actionLabel: "Unblock onboarding",
       emptyLine: "New accounts are moving.",
       playbookId: "pb-onboarding-stalled",
+      urgency: 2,
       onView: () => navigate("/onboarding"),
       onApply: () => openApply(stalled, "pb-onboarding-stalled"),
     },
-  ].sort((a, b) => b.accounts.length - a.accounts.length);
+  ];
+  const cohortMrr = (accs: Account[]) => accs.reduce((s, a) => s + a.revenue.mrr, 0);
+  const cohorts = cohortDefs
+    .filter((c) => c.accounts.length > 0)
+    .sort((a, b) => b.urgency * cohortMrr(b.accounts) - a.urgency * cohortMrr(a.accounts));
 
-  // Single entry point: the biggest open problem is the obvious first action.
-  const topCohort = cohorts.find((c) => c.accounts.length > 0);
+  const MAX_VISIBLE = 5;
+  const visibleCohorts = cohorts.slice(0, MAX_VISIBLE);
+  const hiddenCount = cohorts.length - visibleCohorts.length;
+  const topCohort = cohorts[0];
+  const accountsNeeding = cohorts.reduce((s, c) => s + c.accounts.length, 0);
 
   return (
     <main
@@ -815,7 +607,7 @@ export default function TodayPage() {
         gap: "var(--s-9, var(--s-8))",
       }}
     >
-      {/* 1 — Briefing: greeting + AI verdict heroing $ at risk + secondary stats */}
+      {/* 1 — Briefing: greeting + AI verdict heroing $ at risk + one primary action */}
       <section aria-label="Briefing" style={{ display: "flex", flexDirection: "column", gap: "var(--s-3)" }}>
         <BriefingHeader
           greeting={greetingFor()}
@@ -851,111 +643,65 @@ export default function TodayPage() {
 
       <PendingApprovalsItem />
 
-      {/* 3 — Needs you */}
-      <section
-        aria-label="Needs you"
-        id="urgency-queue"
-        style={{ display: "flex", flexDirection: "column", gap: "var(--s-3)" }}
-      >
-        <header style={{ display: "flex", flexDirection: "column", gap: "var(--s-2)" }}>
-          <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: "var(--s-3)" }}>
-            <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
-              <div style={{ display: "flex", alignItems: "center", gap: "var(--s-2)" }}>
-                <h2 style={{ font: "var(--t-h3)", margin: 0, color: "var(--text)", fontWeight: 600 }}>
-                  Needs you
-                </h2>
+      {/* 2 — One prioritized list: what needs you today (issue-grouped, scales) */}
+      <section aria-label="What needs you today" style={{ display: "flex", flexDirection: "column", gap: "var(--s-3)" }}>
+        <header style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: "var(--s-3)" }}>
+          <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: "var(--s-2)" }}>
+              <h2 style={{ font: "var(--t-h3, var(--t-body))", margin: 0, color: "var(--text)", fontWeight: 600 }}>
+                What needs you today
+              </h2>
+              {accountsNeeding > 0 ? (
                 <Badge variant="danger" dot={false}>
-                  <Mono>{activeNeeds.length}</Mono>
+                  <Mono>{accountsNeeding}</Mono> accounts
                 </Badge>
-              </div>
-              <p style={{ font: "var(--t-body-sm)", color: "var(--text-2, var(--text))", margin: 0 }}>
-                GoCSM did what it could. These need a person.
-              </p>
+              ) : null}
             </div>
-            <span
-              style={{
-                font: "var(--t-meta)",
-                color: handledCount > 0 ? "var(--pos-7)" : "var(--text-2, var(--text))",
-                fontWeight: handledCount > 0 ? 600 : 400,
-              }}
-            >
-              {handledCount === totalNeeds && totalNeeds > 0 ? "🎉 " : ""}
-              <Mono>{handledCount}</Mono> of <Mono>{totalNeeds}</Mono> handled today
-            </span>
+            <p style={{ font: "var(--t-body-sm)", color: "var(--text-2, var(--text))", margin: 0 }}>
+              One row per problem — fix many accounts at once.
+            </p>
           </div>
-          {totalNeeds > 0 && (
-            <div
-              role="progressbar"
-              aria-valuemin={0}
-              aria-valuemax={totalNeeds}
-              aria-valuenow={handledCount}
-              style={{ height: 6, borderRadius: 999, background: "var(--surface-2)", overflow: "hidden" }}
-            >
-              <div
-                style={{
-                  height: "100%",
-                  width: `${(handledCount / totalNeeds) * 100}%`,
-                  background: "linear-gradient(90deg, var(--pos-soft) 0%, var(--pos-7) 100%)",
-                  transition: "width 360ms ease",
-                }}
+        </header>
+
+        {cohorts.length === 0 ? (
+          <Card padded>
+            <p style={{ font: "var(--t-body)", color: "var(--text-2, var(--text))", margin: 0 }}>
+              🎉 Nothing needs you today. GoCSM is watching the board.
+            </p>
+          </Card>
+        ) : (
+          <div>
+            {visibleCohorts.map((c, i) => (
+              <CohortFixItCard
+                key={c.title}
+                size={i === 0 ? "lg" : "md"}
+                icon={c.icon}
+                title={c.title}
+                tag={c.tag}
+                accounts={c.accounts}
+                actionLabel={c.actionLabel}
+                emptyLine={c.emptyLine}
+                playbookId={c.playbookId}
+                onView={c.onView}
+                onApply={c.onApply}
+                onEditRule={(id) => openAutopilotEditor(id, 1)}
+                onOpenHighLevel={(id) => openAutopilotEditor(id, 2, true)}
               />
-            </div>
-          )}
-        </header>
-
-        <Queue
-          empty={visibleNeeds.length === 0}
-          emptyLabel={
-            handledCount > 0
-              ? "🎉 Inbox zero — nice work. GoCSM is watching the board."
-              : "Nothing needs you right now. GoCSM is watching the board."
-          }
-          footer={
-            overflowCount > 0 ? (
-              <Button
-                size="sm"
-                variant="ghost"
-                icon={<Icon name="arrow-right" />}
-                onClick={() => navigate("/accounts?filter=needs-you")}
-              >
-                See all ({activeNeeds.length})
-              </Button>
-            ) : null
-          }
-        >
-          {visibleNeeds.map(renderNeedsYouCard)}
-        </Queue>
-      </section>
-
-      {/* 4 — Fix a problem (DS FixItCard lane; biggest cohort is the hero) */}
-      <section aria-label="Fix a problem" style={{ display: "flex", flexDirection: "column", gap: "var(--s-3)" }}>
-        <header style={{ display: "flex", flexDirection: "column", gap: 2 }}>
-          <h2 style={{ font: "var(--t-h3, var(--t-body))", margin: 0, color: "var(--text)", fontWeight: 600 }}>
-            Fix a problem
-          </h2>
-          <p style={{ font: "var(--t-body-sm)", color: "var(--text-2, var(--text))", margin: 0 }}>
-            Same problem across several accounts — fix them together.
-          </p>
-        </header>
-        <div>
-          {cohorts.map((c, i) => (
-            <CohortFixItCard
-              key={c.title}
-              size={i === 0 ? "lg" : "md"}
-              icon={c.icon}
-              title={c.title}
-              tag={c.tag}
-              accounts={c.accounts}
-              actionLabel={c.actionLabel}
-              emptyLine={c.emptyLine}
-              playbookId={c.playbookId}
-              onView={c.onView}
-              onApply={c.onApply}
-              onEditRule={(id) => openAutopilotEditor(id, 1)}
-              onOpenHighLevel={(id) => openAutopilotEditor(id, 2, true)}
-            />
-          ))}
-        </div>
+            ))}
+            {hiddenCount > 0 ? (
+              <div style={{ marginTop: "var(--s-3)" }}>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  icon={<Icon name="arrow-right" />}
+                  onClick={() => navigate("/accounts?filter=needs-you")}
+                >
+                  See all ({cohorts.length} problems)
+                </Button>
+              </div>
+            ) : null}
+          </div>
+        )}
       </section>
 
       <PlaybookActivationDrawer
