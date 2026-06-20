@@ -53,7 +53,7 @@ export const outcomes: Outcome[] = [
     id: "out-2",
     playbookId: "pb-payment-failed",
     kind: "recovery",
-    accountId: pick("Bright Smile Dental"),
+    accountId: pick("Northside Dental"),
     lead: "Dunning recovered a failed payment.",
     rest: " Card updated on the 2nd retry — no human touch needed.",
     stats: [
@@ -68,7 +68,7 @@ export const outcomes: Outcome[] = [
     id: "out-3",
     playbookId: "pb-no-login",
     kind: "renewal",
-    accountId: pick("Forge Fitness"),
+    accountId: pick("Mile High Fitness"),
     lead: "A warm check-in pulled a quiet account back.",
     rest: " They logged in the next day and booked a strategy call.",
     stats: [
@@ -82,7 +82,7 @@ export const outcomes: Outcome[] = [
     id: "out-4",
     playbookId: "pb-feature-drop",
     kind: "adoption",
-    accountId: pick("Stellar Studios"),
+    accountId: pick("Evergreen Studio"),
     lead: "An adoption nudge brought workflow usage back.",
     rest: " 3 workflows reactivated in the week after the how-to went out.",
     stats: [
@@ -96,7 +96,7 @@ export const outcomes: Outcome[] = [
     id: "out-5",
     playbookId: "pb-save-a2p",
     kind: "save",
-    accountId: pick("Atlas Legal"),
+    accountId: pick("Harborline Legal"),
     lead: "You reached out and protected $2,300 of MRR.",
     rest: " A2P was redeposited the same week — sticky setup restored.",
     stats: [
@@ -111,7 +111,7 @@ export const outcomes: Outcome[] = [
     id: "out-6",
     playbookId: "pb-onboarding-stalled",
     kind: "onboarding",
-    accountId: pick("Lumen Wellness"),
+    accountId: pick("This is Wellbeing"),
     lead: "An unblock call moved a stalled launch forward.",
     rest: " Funnel + workflow shipped two days later — first SMS sent.",
     stats: [
@@ -125,7 +125,7 @@ export const outcomes: Outcome[] = [
     id: "out-7",
     playbookId: "pb-expansion-ready",
     kind: "expansion",
-    accountId: pick("Northwind Realty"),
+    accountId: pick("Coastline Realty"),
     lead: "A roadmap chat opened an expansion lane.",
     rest: " They asked about adding 2 sub-accounts within the same brand.",
     stats: [

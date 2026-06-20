@@ -630,7 +630,7 @@ function WorkflowHandoff({
   // Non-interactive workflow preview. Steps are shipped pre-built; optional
   // ones are clearly marked "off" so the owner sees there is nothing to
   // configure in GoCSM — they turn on what they want inside HighLevel.
-  const triggerLabel = `When ${eventPhrase(playbook)}`;
+  const triggerLabel = `When accounts ${eventPhrase(playbook)}`;
   type PreviewStep = { label: string; optional: boolean; icon: string };
   const steps: PreviewStep[] = [
     { label: triggerLabel, optional: false, icon: "zap" },
@@ -658,7 +658,7 @@ function WorkflowHandoff({
         {/* Top */}
         <div style={{ display: "flex", flexDirection: "column", gap: "var(--s-1)" }}>
           <span style={{ font: "var(--t-meta)", color: "var(--text-3, var(--text))" }}>
-            Opening your automation in HighLevel
+            Opening your playbook in HighLevel
           </span>
           <div style={{ display: "flex", alignItems: "center", gap: "var(--s-2)" }}>
             <span className="icon-chip info" aria-hidden>
@@ -676,9 +676,8 @@ function WorkflowHandoff({
               fontStyle: "italic",
             }}
           >
-            In production this opens HighLevel's workflow builder (steps disabled, messages pre-drafted,
-            these sticky notes inside) where you configure and {mode === "autopilot" ? "publish" : "run"} natively;
-            GoCSM detects it. HighLevel's real builder isn't recreated here.
+            Opens the pre-built workflow in HighLevel — steps are off by default and the messages are
+            pre-drafted. Turn on what you want, then {mode === "autopilot" ? "publish" : "run"} it.
           </p>
         </div>
 
@@ -809,7 +808,7 @@ function WorkflowHandoff({
             fontStyle: "italic",
           }}
         >
-          In production GoCSM detects {mode === "autopilot" ? "the publish" : "the run"} and flips the state automatically.
+          GoCSM detects {mode === "autopilot" ? "the publish" : "the run"} and updates the status for you.
         </p>
 
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: "var(--s-2)" }}>
@@ -1507,7 +1506,7 @@ function WhenItRuns({
         }}
       >
         <Icon name="lock" />
-        <span>Runs when an account {eventPhrase(playbook)}.</span>
+        <span>Runs when accounts {eventPhrase(playbook)}.</span>
       </div>
 
       {/* PATH A — Let GoCSM decide */}
@@ -1531,9 +1530,6 @@ function WhenItRuns({
         <div style={{ display: "flex", flexDirection: "column", gap: "var(--s-3)" }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
             <MiniProgress step={qIdx + 1} total={TOTAL} />
-            <Badge variant="neutral" dot={false}>
-              simulated · plain-language wiring lands later
-            </Badge>
           </div>
 
           <Card padded>

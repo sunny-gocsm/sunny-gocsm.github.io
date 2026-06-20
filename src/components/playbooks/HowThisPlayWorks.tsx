@@ -57,7 +57,7 @@ export function HowThisPlayWorks({
           fontStyle: "italic",
         }}
       >
-        Placeholder video — the real recording for this play lands later.
+        Walkthrough video — coming soon.
       </p>
 
       {/* Title + plain summary */}

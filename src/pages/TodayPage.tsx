@@ -22,7 +22,6 @@ import { useToast } from "@/hooks/use-toast";
 import { ToastAction } from "@/components/ui/toast";
 import {
   autopilotSentEmails,
-  sentEmailsForOnPlaybooks,
   pendingEmailsForPlaybooks,
   type AutopilotEmail,
 } from "@/fixtures/autopilotActivity";
@@ -223,11 +222,9 @@ function ReassuranceLine({
     autopilot.reduce((s, o) => s + (o.amount ?? 0), 0) +
     approved.reduce((s, o) => s + (o.amount ?? 0), 0);
 
-  // Client emails sent by autopilot overnight — only for plays currently on.
-  const onIds = useAllAutopilotOn();
-  const sentEmails: AutopilotEmail[] = onIds.length
-    ? sentEmailsForOnPlaybooks(onIds)
-    : autopilotSentEmails; // for demo: show fixture sample even when nothing on
+  // The overnight recap is a fixed historical fact: what GoCSM sent overnight,
+  // independent of which plays are on now — so the count never drops when you turn one on.
+  const sentEmails: AutopilotEmail[] = autopilotSentEmails;
   const sentCount = sentEmails.length;
 
   const items: RecapItem[] = [

@@ -103,7 +103,7 @@ export function PlayVideoButton({ playbook, label = "Watch (1 min)", size = "sm"
                 fontStyle: "italic",
               }}
             >
-              Placeholder video — the real recording for this play lands later.
+              Walkthrough video — coming soon.
             </footer>
           </div>
         </div>
