@@ -1,20 +1,5 @@
 import React from "react";
-
-export function Mono({ children, className = "", style, ...rest }) {
-  return (
-    <span
-      className={className}
-      style={{
-        fontFamily:
-          "'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Consolas, monospace",
-        fontVariantNumeric: "tabular-nums",
-        ...style,
-      }}
-      {...rest}
-    >
-      {children}
-    </span>
-  );
+/** Mono — wraps any number/count/currency in JetBrains Mono tabular figures (.mono). */
+export function Mono({ children, className = "", ...rest }) {
+  return <span className={["mono", className].filter(Boolean).join(" ")} {...rest}>{children}</span>;
 }
-
-export default Mono;

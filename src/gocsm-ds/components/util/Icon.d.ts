@@ -1,9 +1,2 @@
 import * as React from "react";
-export interface IconProps extends React.SVGAttributes<SVGElement> {
-  name: string;
-  size?: number | string;
-  className?: string;
-  style?: React.CSSProperties;
-}
-export declare function Icon(props: IconProps): JSX.Element;
-export default Icon;
+export declare function Icon(props: { name?: string; size?: number | string; color?: string; strokeWidth?: number; [key: string]: any }): React.ReactElement | null;
