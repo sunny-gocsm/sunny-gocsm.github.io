@@ -48,7 +48,7 @@ _To be written in `docs/DECISION.md` and mirrored here in one paragraph._
 | 1 — Research (CDO lens) | ✅ done — 16 platforms, 3 clusters; strong convergence |
 | 2 — Decide (`docs/DECISION.md`) | ✅ done — pattern chosen + interaction model |
 | 3 — Plan (build spec) | ✅ done — `docs/PLAN.md` (IA, data shapes, DS-vs-app, build order) |
-| 4 — Execute (design loop) | 🟡 in progress — build order step 1 (data spine) |
+| 4 — Execute (design loop) | 🟡 in progress — steps 1–2 done (data spine ✅, MatchWall ✅); next: CriterionChip + builder |
 
 ## Architectural spine (invariant)
 - **Health = diagnostic** (why at risk). **Attention = action** (what to do now). Link, don't duplicate.
@@ -57,14 +57,29 @@ _To be written in `docs/DECISION.md` and mirrored here in one paragraph._
 - Vocabulary: **Thriving / Healthy / Watch / At-Risk** — never "Steady".
 
 ## DS-vs-app classifications
-_Per item, as they're identified: app (executive-pulse-check) · DS (gocsm-design-system) · both._
-
-(pending)
+_Per item: app (executive-pulse-check) · DS (gocsm-design-system) · both._
+- **Data spine** (criteriaCatalog/criteriaMatch/recipes/attempts) → **app** (fixtures). Done.
+- **MatchWall** → **DS-bound, prototyped in app**. Workflow: build + audit in app (fast HMR/Playwright),
+  then promote the matured primitive to the DS and sync at the macro-loop consolidation. Rationale: avoids
+  a DS build+sync round-trip on every micro-iteration. **Invariant preserved:** while it lives in the app
+  the DS is unchanged, so the two repos are trivially in sync; promotion will be one deliberate sequential
+  sync. (Reuses DS `Mono`/`Icon`/`ConfTag`; CSS in sync-proof `app-overrides.css`.)
+- **CriterionChip, InlineContactActions** → DS-bound (same prototype→promote plan). _next_
+- **Category gate, NL warm-start, recipe cards, Attention page, collapsed drawer** → **app** composition.
 
 ## Playwright pass/fail per state
-_Criteria builder · live-narrowing list + 7-day forecast · workflow builder · publish/auto-run · Attention job (a) activate · Attention job (b) tried-but-failed · link-out to Health._
+| State | Result |
+|---|---|
+| MatchWall — seeded from recipe (renewing 30d & at-risk → 6 tiles) | ✅ pass |
+| MatchWall — switch recipe (slipping adoption + quiet → 5 tiles, 100% At-Risk) | ✅ pass |
+| MatchWall — live narrowing (6 → 5 → 1) + composition re-skew | ✅ pass |
+| MatchWall — inventory-floor warning ("Only N left…") | ✅ pass (fires ≤5) |
+| MatchWall — 7-day forecast ghost tiles (~1d/2d/3d, dashed/translucent) | ✅ pass |
+| MatchWall — honest "not enough trend data" fallback | ✅ pass |
+| MatchWall — plain-English summary updates live | ✅ pass |
+| Criteria builder (chips/gate/NL) · workflow builder · publish/auto-run · Attention (a)/(b) · Health link-out | ⬜ pending (steps 3–7) |
 
-(pending)
+_Scratch audit route: `/attention-lab` (not in nav; removed before the macro loop)._
 
 ## Codebase grounding (done — informs Plan/Build)
 - **Flow to collapse** (`src/components/playbooks/PlaybookActivationDrawer.tsx`, 1786 lines): current steps `pick → explain → handoff(WorkflowHandoff) → run → done → "autopilot?" → set-trigger`. Target: `trigger-criteria → WorkflowHandoff(builder) → publish → auto-run`. DELETE `explain` (the "list of actions" screen). `WorkflowHandoff` is the keep-able Workflow-builder step. `autopilotStore.enable(id, oversee)` on publish == activation (no separate Run, no autopilot question).
@@ -82,3 +97,7 @@ _Criteria builder · live-narrowing list + 7-day forecast · workflow builder ·
 ## Changelog
 - Branch `today-attention-redesign` created off `main@ba6d16f`.
 - `docs/_handoff.md` created; job-(b) data-dependency analysis recorded in NEEDS KARTHIK.
+- `3ab6fc7` docs: Phase 1 research + Phase 2 `DECISION.md`.
+- `20e3e2f` docs: Phase 3 `PLAN.md` (IA, data shapes, DS-vs-app, build order).
+- `b9750a2` feat: data spine (criteriaCatalog/criteriaMatch/recipes/attempts) + 6 passing vitest checks.
+- `c32882b` feat: MatchWall central mechanic (live wall + composition + floor + 7-day forecast); audited at `/attention-lab`.
