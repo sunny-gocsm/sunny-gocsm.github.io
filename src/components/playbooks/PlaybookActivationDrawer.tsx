@@ -1774,25 +1774,12 @@ function WhenItRuns({
 
 
       {/* The rule — ONE plain-language statement of what will run (rule / count / helper each read differently) */}
-      <div
-        className="rule-statement"
-        style={{
-          display: "flex",
-          flexDirection: "column",
-          gap: "var(--s-2)",
-          padding: "var(--s-3)",
-          borderRadius: "var(--r-md)",
-          background: "var(--surface-2)",
-          border: "1px solid var(--border)",
-        }}
-      >
-        <span style={{ display: "inline-flex", alignItems: "center", gap: 6, font: "var(--t-meta)", textTransform: "uppercase", letterSpacing: "0.04em", color: "var(--text-3, var(--text))" }}>
+      <div className="rule-statement">
+        <span className="rule-eyebrow">
           <Icon name="lock" /> This rule
         </span>
-        <span style={{ font: "var(--t-subheading, var(--t-body))", fontWeight: 600, lineHeight: 1.4, color: "var(--text)" }}>
-          {ruleSentence}
-        </span>
-        <span style={{ display: "inline-flex", alignItems: "center", gap: 6, alignSelf: "flex-start", padding: "2px 8px", borderRadius: "var(--r-pill, 999px)", background: "var(--bg-subtle)", font: "var(--t-meta)", color: "var(--text-2, var(--text))" }}>
+        <span className="rule-line">{ruleSentence}</span>
+        <span className="rule-count">
           <Mono>{matches.length}</Mono> account{matches.length === 1 ? "" : "s"} match now
         </span>
       </div>

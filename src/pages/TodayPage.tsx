@@ -257,6 +257,10 @@ function ReassuranceLine({
     padding: 0,
     cursor: "pointer",
     fontWeight: 500,
+    display: "inline-flex",
+    alignItems: "center",
+    gap: 2,
+    whiteSpace: "nowrap",
   };
 
   return (
@@ -288,17 +292,19 @@ function ReassuranceLine({
           </span>
         ) : null}
         <span style={{ flex: 1, minWidth: "var(--s-3)" }} />
-        <button type="button" style={linkStyle} onClick={() => setOpen((o) => !o)}>
-          {open ? "Hide" : "See what it did"}
+        {/* Stable labels + a rotating caret signal open/closed — consistent across
+            both disclosures, so we never show two ambiguous "Hide" buttons. */}
+        <button type="button" style={linkStyle} onClick={() => setOpen((o) => !o)} aria-expanded={open}>
+          See what it did <Icon name={open ? "chevron-up" : "chevron-down"} />
         </button>
         {sentCount > 0 ? (
-          <button type="button" style={linkStyle} onClick={() => setEmailsOpen((o) => !o)}>
-            {emailsOpen ? "Hide emails" : "Emails"}
+          <button type="button" style={linkStyle} onClick={() => setEmailsOpen((o) => !o)} aria-expanded={emailsOpen}>
+            Emails <Icon name={emailsOpen ? "chevron-up" : "chevron-down"} />
           </button>
         ) : null}
         {upsellCount > 0 && onActUpsell ? (
           <button type="button" style={linkStyle} onClick={onActUpsell}>
-            Suggest upgrades
+            Suggest upgrades <Icon name="arrow-right" />
           </button>
         ) : null}
       </div>
