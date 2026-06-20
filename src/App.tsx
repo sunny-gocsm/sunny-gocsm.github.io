@@ -17,6 +17,7 @@ import OnboardingPage from "./pages/OnboardingPage";
 import InsightsPage from "./pages/InsightsPage";
 import ConfigurePage from "./pages/ConfigurePage";
 import SetupPage from "./pages/SetupPage";
+import AttentionLab from "./pages/AttentionLab";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -43,6 +44,7 @@ const App = () => (
               <Route path="/insights/:view" element={<InsightsPage />} />
               <Route path="/configure" element={<ConfigurePage />} />
               <Route path="/activity" element={<Activity />} />
+              <Route path="/attention-lab" element={<AttentionLab />} />
             </Route>
             <Route path="*" element={<NotFound />} />
           </Routes>

@@ -174,3 +174,18 @@ button {
 @media (max-width: 640px) {
   .pbd-hero__cta { align-items: flex-start; text-align: left; }
 }
+
+/* Attention — MatchWall (the criteria builder's live "shrinking wall").
+   The exit transition IS the teaching signal: excluded tiles fade + collapse out. */
+.mw-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: var(--s-2); }
+.mw-tile {
+  display: flex; align-items: center; justify-content: space-between; gap: var(--s-2);
+  padding: var(--s-2) var(--s-3); border-radius: var(--r-md);
+  background: var(--surface, #fff); border: 1px solid var(--border);
+  transition: opacity 320ms ease, transform 320ms ease;
+}
+.mw-tile[data-exiting="true"] { opacity: 0; transform: scale(0.92); pointer-events: none; }
+.mw-ghost { background: transparent; border-style: dashed; opacity: 0.72; }
+@media (prefers-reduced-motion: reduce) {
+  .mw-tile { transition: none; }
+}
