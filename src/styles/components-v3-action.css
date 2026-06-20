@@ -311,19 +311,20 @@
  * Data-hygiene tasks. Housekeeping, NOT intervention: neutral    *
  * tint, tool glyph, no band edge, no $MRR.                       *
  * ============================================================== */
-.fixit-card{display:flex;align-items:flex-start;gap:14px;background:var(--bg-subtle);
-  border:1px solid var(--border-strong);border-radius:var(--r-md);box-shadow:var(--sh-rest);
-  padding:16px 16px 16px 18px;position:relative;}
-.fixit-card .fi-ico{width:36px;height:36px;border-radius:9px;background:var(--surface);
-  border:1px solid var(--border-strong);display:grid;place-items:center;color:var(--text-2);flex-shrink:0;}
+.fixit-card{display:flex;align-items:flex-start;gap:14px;background:var(--surface);
+  border:1px solid var(--border-soft);border-radius:var(--r-md);box-shadow:none;
+  padding:18px 18px 18px 20px;position:relative;}
+.fixit-card .fi-ico{width:36px;height:36px;border-radius:9px;background:var(--bg-subtle);
+  border:1px solid var(--border-soft);display:grid;place-items:center;color:var(--text-2);flex-shrink:0;}
 .fixit-card + .fixit-card{margin-top:12px;}
 .fixit-card .fi-ico i{width:19px;height:19px;}
 .fixit-card .fi-main{flex:1;min-width:0;}
 .fixit-card .fi-tag{display:inline-flex;align-items:center;gap:5px;font-family:var(--font-mono);font-size:10px;
   font-weight:600;letter-spacing:0.05em;text-transform:uppercase;color:var(--text-3);margin-bottom:6px;}
 .fixit-card .fi-tag i{width:12px;height:12px;}
-.fixit-card .fi-text{font-size:14px;line-height:1.5;color:var(--text);max-width:72ch;}
-.fixit-card .fi-text .mono{font-family:var(--font-mono);font-weight:700;font-feature-settings:"tnum" 1;}
+.fixit-card .fi-text{font-size:14px;line-height:1.55;color:var(--text-2);max-width:72ch;}
+.fixit-card .fi-text strong{color:var(--text);font-weight:600;}
+.fixit-card .fi-text .mono{font-family:var(--font-mono);font-weight:700;font-feature-settings:"tnum" 1;color:var(--text);}
 .fixit-card .fi-text .warn{color:var(--warn-9);font-weight:600;}
 .fixit-card .fi-foot{margin-top:8px;}
 .fixit-card .fi-right{display:flex;align-items:center;gap:8px;flex-shrink:0;}
