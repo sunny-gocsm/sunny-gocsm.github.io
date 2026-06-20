@@ -109,9 +109,11 @@ export function PlaybookDetail({
         </div>
       ) : null}
 
-      <div className="pd-foot">
-        {onRun ? <Button variant={state === "on" ? "secondary" : "primary"} onClick={onRun}>{primaryLabel || PRIMARY[state] || "Run it"}</Button> : null}
-      </div>
+      {onRun ? (
+        <div className="pd-foot">
+          <Button variant={state === "on" ? "secondary" : "primary"} onClick={onRun}>{primaryLabel || PRIMARY[state] || "Run it"}</Button>
+        </div>
+      ) : null}
     </div>
   );
 }
