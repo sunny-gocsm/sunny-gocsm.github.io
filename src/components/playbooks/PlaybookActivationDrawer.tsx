@@ -1298,6 +1298,7 @@ function WhenItRuns({
   const [path, setPath] = useState<"auto" | "guided">("auto");
   const [answers, setAnswers] = useState<Answers>(DEFAULT_ANSWERS);
   const [qIdx, setQIdx] = useState<0 | 1 | 2 | 3>(0);
+  const [guidedDone, setGuidedDone] = useState(false);
   const [showPreview, setShowPreview] = useState(false);
 
   // Advanced refiner — quiet, hidden until asked for.
@@ -1350,6 +1351,9 @@ function WhenItRuns({
 
 
   const TOTAL = 4;
+  // The summary view (rule + advanced + preview) shows for the one-tap auto path,
+  // or once the guided wizard is complete — never while a question is on screen.
+  const onSummary = path === "auto" || guidedDone;
   const next = () => setQIdx((i) => (Math.min(TOTAL - 1, i + 1) as 0 | 1 | 2 | 3));
   const back = () => setQIdx((i) => (Math.max(0, i - 1) as 0 | 1 | 2 | 3));
   const skip = () => {
@@ -1387,7 +1391,7 @@ function WhenItRuns({
               key={opt.v}
               role="tab"
               aria-selected={on}
-              onClick={() => setPath(opt.v)}
+              onClick={() => { setPath(opt.v); if (opt.v === "guided") { setQIdx(0); setGuidedDone(false); } }}
               style={{
                 border: 0,
                 cursor: "pointer",
@@ -1423,7 +1427,7 @@ function WhenItRuns({
         <span>Runs when accounts {eventPhrase(playbook)}.</span>
       </div>
 
-      {/* PATH A — Let GoCSM decide */}
+      {/* PATH A — Let GoCSM decide (one-tap summary) */}
       {path === "auto" ? (
         <div style={{ display: "flex", flexDirection: "column", gap: "var(--s-3)" }}>
           <p style={{ margin: 0, font: "var(--t-body)", color: "var(--text)" }}>
@@ -1438,9 +1442,18 @@ function WhenItRuns({
           </span>
         </div>
       ) : null}
+      {/* Guided wizard complete — compact recap + escape hatch back to the questions */}
+      {path === "guided" && guidedDone ? (
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: "var(--s-2)" }}>
+          <span style={{ font: "var(--t-meta)", color: "var(--text-3, var(--text))" }}>Your answers are set.</span>
+          <Button variant="ghost" size="sm" icon={<Icon name="arrow-left" />} onClick={() => { setQIdx(0); setGuidedDone(false); }}>
+            Edit answers
+          </Button>
+        </div>
+      ) : null}
 
-      {/* PATH B — Guided wizard */}
-      {path === "guided" ? (
+      {/* PATH B — Guided wizard (one question owns the screen) */}
+      {path === "guided" && !guidedDone ? (
         <div style={{ display: "flex", flexDirection: "column", gap: "var(--s-3)" }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
             <MiniProgress step={qIdx + 1} total={TOTAL} />
@@ -1465,13 +1478,18 @@ function WhenItRuns({
                 <Button variant="primary" size="sm" onClick={next} icon={<Icon name="arrow-right" />}>
                   Next question
                 </Button>
-              ) : null}
+              ) : (
+                <Button variant="primary" size="sm" onClick={() => setGuidedDone(true)} icon={<Icon name="check" />}>
+                  Done
+                </Button>
+              )}
             </div>
           </div>
         </div>
       ) : null}
 
-      {/* Add more conditions — quiet, secondary, hidden until asked for */}
+      {/* Advanced settings — collapsed by default; reveals extra conditions + guardrails. Summary-only. */}
+      {onSummary ? (
       <div style={{ display: "flex", flexDirection: "column", gap: "var(--s-2)" }}>
         <Button
           variant="ghost"
@@ -1479,7 +1497,7 @@ function WhenItRuns({
           icon={<Icon name={showAdvanced ? "chevron-up" : "plus"} />}
           onClick={() => setShowAdvanced((s) => !s)}
         >
-          {showAdvanced ? "Hide advanced conditions" : `Add more conditions${extras.length ? ` (${extras.length})` : ""}`}
+          {showAdvanced ? "Hide advanced settings" : `Advanced settings${extras.length ? ` (${extras.length})` : ""}`}
         </Button>
         {showAdvanced ? (
           <div
@@ -1568,8 +1586,10 @@ function WhenItRuns({
           </div>
         ) : null}
       </div>
+      ) : null}
 
-      {/* Guardrails */}
+      {/* Guardrails — revealed only with Advanced settings, on the summary view */}
+      {onSummary && showAdvanced ? (
       <div
         style={{
           display: "flex",
@@ -1671,6 +1691,7 @@ function WhenItRuns({
           </span>
         </div>
       </div>
+      ) : null}
 
 
       {/* Running summary + live count */}
@@ -1694,7 +1715,8 @@ function WhenItRuns({
         </span>
       </div>
 
-      {/* Preview who this affects */}
+      {/* Preview who this affects — summary-only */}
+      {onSummary ? (
       <div style={{ display: "flex", flexDirection: "column", gap: "var(--s-2)" }}>
         <Button
           variant="ghost"
@@ -1739,6 +1761,7 @@ function WhenItRuns({
           </ul>
         ) : null}
       </div>
+      ) : null}
     </div>
   );
 }
