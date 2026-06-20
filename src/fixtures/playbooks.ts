@@ -18,6 +18,18 @@ import {
 export type PlaybookState = "off" | "ranonce" | "on" | "paused";
 export type PlaybookKind = "save" | "retention" | "adoption" | "billing" | "onboarding" | "expansion";
 
+/** One reviewable action inside a playbook. Pre-written; edited in HighLevel. */
+export type PlaybookActionType = "customer-email" | "internal-email" | "slack" | "task";
+export interface PlaybookAction {
+  type: PlaybookActionType;
+  /** Subject line for emails (omit for Slack / task). */
+  subject?: string;
+  /** One-line peek shown collapsed — the first line of the message / the task title. */
+  preview: string;
+  /** Optional fuller draft revealed on expand. */
+  body?: string;
+}
+
 export interface Playbook {
   id: string;
   title: string;
@@ -31,6 +43,8 @@ export interface Playbook {
   does: string;
   /** The outcome it's trying to produce. */
   outcome: string;
+  /** The pre-written actions the play runs — reviewable before handoff, edited in HighLevel. */
+  actions: PlaybookAction[];
   /** Pure predicate against the unified fixtures. */
   match: (a: Account) => boolean;
   /** Short explainer video for this play (~1 min). Placeholder until real video lands. */
@@ -79,7 +93,61 @@ const PLAY_VIDEOS: Record<string, string> = {
   "pb-expansion-ready": PLACEHOLDER_VIDEO,
 };
 
-type PlaybookSeed = Omit<Playbook, "videoUrl">;
+// Pre-written actions per play (the messages GoCSM sends). Plain language, no
+// jargon, no emoji. Reviewable in the journey; edited in HighLevel. {{name}} /
+// {{account}} are filled per account at send time.
+const PLAY_ACTIONS: Record<string, PlaybookAction[]> = {
+  "pb-no-login": [
+    { type: "slack", preview: "{{account}} hasn't logged in for a few weeks — worth a nudge." },
+    { type: "internal-email", subject: "Check in: {{account}} has gone quiet", preview: "They haven't logged in lately. A quick personal note usually brings them back." },
+    { type: "customer-email", subject: "We miss you at {{account}}", preview: "Hi {{name}}, noticed you haven't been in lately — here's what's new and how to get value fast.", body: "Hi {{name}}, noticed you haven't been in lately. Here's what's new since your last visit, plus the two-minute path to value. Want a hand getting back in? Just reply." },
+  ],
+  "pb-renewal-save": [
+    { type: "slack", preview: "{{account}} renews soon and is showing risk — worth a check-in." },
+    { type: "internal-email", subject: "Renewal at risk: {{account}}", preview: "Renews soon with warning signs. Reach out before it lapses." },
+    { type: "customer-email", subject: "A quick check-in before your renewal", preview: "Hi {{name}}, you're coming up for renewal — here's a recap of the value you've gotten.", body: "Hi {{name}}, you're coming up for renewal. Here's a quick recap of what you've gotten this year, and what's ahead. Anything you'd like to talk through before then?" },
+  ],
+  "pb-payment-failed": [
+    { type: "customer-email", subject: "Your last payment didn't go through", preview: "Hi {{name}}, your recent payment failed — update your card to avoid any interruption.", body: "Hi {{name}}, your recent payment didn't go through. Update your card in a minute to keep everything running — here's the secure link." },
+    { type: "internal-email", subject: "Payment failed: {{account}}", preview: "A payment failed and reminders are going out. Flagging in case you want to reach out." },
+    { type: "slack", preview: "Payment failed for {{account}} — reminders started." },
+  ],
+  "pb-plan-downgrade": [
+    { type: "internal-email", subject: "Downgrade: {{account}}", preview: "They just stepped down a plan. Worth a value-check call." },
+    { type: "customer-email", subject: "Let's make sure you're getting the most", preview: "Hi {{name}}, saw you changed your plan — here are three things you may not be using yet.", body: "Hi {{name}}, saw your plan changed. Before anything else, here are three things in your plan you may not be using yet — each takes a minute and adds real value." },
+    { type: "task", preview: "Book a value-check call with {{account}}." },
+  ],
+  "pb-feature-drop": [
+    { type: "customer-email", subject: "A faster way to get more done", preview: "Hi {{name}}, here's a two-minute way to get more out of the feature you've used less lately.", body: "Hi {{name}}, noticed a feature you rely on has been quiet. Here's a two-minute refresher to get more out of it — reply if you'd like a hand." },
+    { type: "internal-email", subject: "Usage dropping: {{account}}", preview: "Key feature usage fell this month. Heads up if there's no reply in a week." },
+  ],
+  "pb-onboarding-stalled": [
+    { type: "customer-email", subject: "Stuck on setup? We'll do it with you", preview: "Hi {{name}}, looks like setup paused — grab 10 minutes and we'll finish it together.", body: "Hi {{name}}, looks like setup paused on the same step. Grab 10 minutes and we'll finish it together — pick a time that works here." },
+    { type: "internal-email", subject: "Onboarding stalled: {{account}}", preview: "Stuck on the same step too long. Nudge sent; offer to do it with them." },
+    { type: "task", preview: "Book a 10-minute setup call with {{account}}." },
+  ],
+  "pb-save-domain": [
+    { type: "internal-email", subject: "Website disconnected: {{account}}", preview: "Strong leaving signal. Offer a hands-on reconnect now." },
+    { type: "customer-email", subject: "Your website got disconnected — we can help", preview: "Hi {{name}}, your site is no longer connected. Want us to reconnect it with you?", body: "Hi {{name}}, your website is no longer connected. That's usually a quick fix — want us to reconnect it with you on a short call?" },
+    { type: "slack", preview: "{{account}} disconnected their website — likely leaving. Pausing other messages." },
+  ],
+  "pb-save-integration": [
+    { type: "internal-email", subject: "Key setup removed: {{account}}", preview: "A page or automation was removed. Find the cause and offer to re-set-up." },
+    { type: "customer-email", subject: "Noticed a key setup came down", preview: "Hi {{name}}, an important setup was removed — happy to help restore it.", body: "Hi {{name}}, noticed an important setup was removed. If that wasn't intentional, we're happy to help restore it — just reply." },
+  ],
+  "pb-save-a2p": [
+    { type: "customer-email", subject: "Your texting registration lapsed", preview: "Hi {{name}}, your phone-texting registration expired — let's re-register so texts keep sending.", body: "Hi {{name}}, your phone-texting registration expired, so texts will stop until it's renewed. It's a quick re-registration — we'll walk you through it." },
+    { type: "internal-email", subject: "Texting registration lost: {{account}}", preview: "Registration lapsed; texts about to stop. Help them re-register." },
+    { type: "slack", preview: "{{account}} lost texting registration — texts paused until fixed." },
+  ],
+  "pb-expansion-ready": [
+    { type: "customer-email", subject: "You're getting great results — here's what's next", preview: "Hi {{name}}, you're thriving — here are a couple ways to get even more, plus a quick planning call.", body: "Hi {{name}}, you're getting great results. Here are a couple of ways to get even more out of it — and if you're open to it, a short planning call to map what's next." },
+    { type: "internal-email", subject: "Expansion ready: {{account}}", preview: "Healthy and trending up. Good upsell and testimonial candidate." },
+    { type: "task", preview: "Reach out about expansion, or ask for a testimonial." },
+  ],
+};
+
+type PlaybookSeed = Omit<Playbook, "videoUrl" | "actions">;
 
 const playbookSeeds: PlaybookSeed[] = [
   // ----- Retention / lifecycle -----
@@ -225,6 +293,7 @@ const playbookSeeds: PlaybookSeed[] = [
 export const playbooks: Playbook[] = playbookSeeds.map((p) => ({
   ...p,
   videoUrl: PLAY_VIDEOS[p.id] ?? PLACEHOLDER_VIDEO,
+  actions: PLAY_ACTIONS[p.id] ?? [],
 }));
 
 // ----- Selectors -----

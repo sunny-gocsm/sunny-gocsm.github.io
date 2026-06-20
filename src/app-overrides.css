@@ -159,3 +159,10 @@ button {
 @media (max-width: 560px) {
   .today-main { padding: var(--s-6) var(--s-4); gap: var(--s-8) !important; }
 }
+
+/* Action/template peek rows in the playbook journey (AJ2) — hide the native
+   <details> marker and rotate our own chevron on open. */
+.action-peek summary::-webkit-details-marker { display: none; }
+.action-peek summary { list-style: none; }
+.action-peek .action-peek-chev { margin-left: auto; color: var(--text-3, var(--text)); transition: transform 150ms ease; }
+.action-peek[open] .action-peek-chev { transform: rotate(180deg); }

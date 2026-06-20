@@ -1,6 +1,13 @@
 import { Button, Icon } from "@/gocsm-ds";
 import type { Playbook } from "@/fixtures/playbooks";
 
+const ACTION_META: Record<string, { label: string; icon: string }> = {
+  "customer-email": { label: "Customer email", icon: "mail" },
+  "internal-email": { label: "Internal team email", icon: "users" },
+  slack: { label: "Slack message", icon: "message-square" },
+  task: { label: "Task", icon: "check-square" },
+};
+
 interface Props {
   playbook: Playbook;
   ctaLabel: string;
@@ -80,6 +87,91 @@ export function HowThisPlayWorks({
         ) : null}
 
       </div>
+
+      {/* What GoCSM will send — reviewable action + template peeks */}
+      {playbook.actions.length > 0 ? (
+        <div style={{ display: "flex", flexDirection: "column", gap: "var(--s-2)" }}>
+          <span style={{ font: "var(--t-meta)", fontWeight: 600, color: "var(--text)" }}>
+            What GoCSM will send
+          </span>
+          <div style={{ display: "flex", flexDirection: "column", gap: "var(--s-2)" }}>
+            {playbook.actions.map((a, i) => {
+              const meta = ACTION_META[a.type] ?? { label: a.type, icon: "circle" };
+              const peek = a.subject ?? a.preview;
+              return (
+                <details
+                  key={i}
+                  className="action-peek"
+                  style={{
+                    border: "1px solid var(--border-soft, var(--border))",
+                    borderRadius: "var(--r-md)",
+                    background: "var(--surface)",
+                    padding: "var(--s-2) var(--s-3)",
+                  }}
+                >
+                  <summary
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "var(--s-2)",
+                      cursor: "pointer",
+                      listStyle: "none",
+                    }}
+                  >
+                    <Icon name={meta.icon} />
+                    <span style={{ font: "var(--t-body-sm)", fontWeight: 600, color: "var(--text)", flexShrink: 0 }}>
+                      {meta.label}
+                    </span>
+                    <span
+                      style={{
+                        font: "var(--t-body-sm)",
+                        color: "var(--text-2, var(--text))",
+                        flex: 1,
+                        minWidth: 0,
+                        overflow: "hidden",
+                        textOverflow: "ellipsis",
+                        whiteSpace: "nowrap",
+                      }}
+                    >
+                      {peek}
+                    </span>
+                    <Icon name="chevron-down" className="action-peek-chev" />
+                  </summary>
+                  <div
+                    style={{
+                      marginTop: "var(--s-2)",
+                      paddingTop: "var(--s-2)",
+                      borderTop: "1px solid var(--border-soft, var(--border))",
+                      display: "flex",
+                      flexDirection: "column",
+                      gap: 4,
+                    }}
+                  >
+                    {a.subject ? (
+                      <div style={{ font: "var(--t-body-sm)", color: "var(--text)" }}>
+                        <span style={{ color: "var(--text-3, var(--text))" }}>Subject: </span>
+                        {a.subject}
+                      </div>
+                    ) : null}
+                    <p style={{ margin: 0, font: "var(--t-body-sm)", color: "var(--text-2, var(--text))" }}>
+                      {a.body ?? a.preview}
+                    </p>
+                  </div>
+                </details>
+              );
+            })}
+          </div>
+          <span
+            style={{
+              font: "var(--t-meta)",
+              color: "var(--text-3, var(--text))",
+              fontStyle: "italic",
+            }}
+          >
+            Pre-written — you'll review and edit these in HighLevel.
+          </span>
+        </div>
+      ) : null}
 
       {/* 3-step checklist */}
       <div style={{ display: "flex", flexDirection: "column", gap: "var(--s-2)" }}>
