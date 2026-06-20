@@ -12,6 +12,7 @@ import { ConfTag } from "../agentic/ConfTag.jsx";
  *  - `note`       — a secondary muted line under the text (e.g. "New matches handled automatically.").
  *  - `tone="pos"` — positive/opportunity treatment (emerald rail + icon chip) for good-news
  *                   surfaces, distinct from the neutral risk card and the `clean`/`resolved` done state.
+ *  - `tag={null}` — omit the eyebrow tag entirely (calm lists where the title carries the meaning).
  */
 export function FixItCard({
   icon = "alert-circle", tag = "Data hygiene", text, conf, confDetail,
@@ -25,10 +26,12 @@ export function FixItCard({
     <div className={cls} {...rest}>
       <span className="fi-ico"><Icon name={icon} /></span>
       <div className="fi-main">
-        <div className="fi-head">
-          <div className="fi-tag"><Icon name="shield-check" />{tag}</div>
-          {badge ? <span className="fi-badge">{badge}</span> : null}
-        </div>
+        {(tag || badge) ? (
+          <div className="fi-head">
+            {tag ? <div className="fi-tag"><Icon name="shield-check" />{tag}</div> : null}
+            {badge ? <span className="fi-badge">{badge}</span> : null}
+          </div>
+        ) : null}
         <div className="fi-text">
           {text} {conf ? <ConfTag basis={conf} detail={confDetail} /> : null}
         </div>
