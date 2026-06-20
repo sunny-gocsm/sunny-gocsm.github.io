@@ -718,7 +718,7 @@ function WorkflowHandoff({
             }}
           >
             Opens the pre-built workflow in HighLevel — steps are off by default and the messages are
-            pre-drafted. Turn on what you want{mode === "autopilot" ? ", then publish it" : " and check the messages"}.
+            pre-drafted. Turn on what you want and check the messages.
           </p>
         </div>
 
@@ -849,7 +849,7 @@ function WorkflowHandoff({
             fontStyle: "italic",
           }}
         >
-          GoCSM detects {mode === "autopilot" ? "the publish" : "the run"} and updates the status for you.
+          Setup only — you'll {mode === "autopilot" ? "publish" : "run"} it back here in GoCSM next.
         </p>
 
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: "var(--s-2)" }}>
@@ -1158,18 +1158,12 @@ function Q1Who({ answers, set }: QProps) {
       <h4 style={{ margin: 0, font: "var(--t-h4, var(--t-body))", fontWeight: 600 }}>
         Which accounts should this run for?
       </h4>
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "var(--s-2)" }}>
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "var(--s-2)" }}>
         <TapCard
           active={answers.who === "all"}
           onClick={() => set({ ...answers, who: "all", whoBands: [] })}
-          title="All accounts"
-          hint="No restriction"
-        />
-        <TapCard
-          active={answers.who === "atrisk"}
-          onClick={() => set({ ...answers, who: "atrisk", whoBands: [] })}
-          title="Only at-risk"
-          hint="Health band: At-risk"
+          title="All matching accounts"
+          hint="The ones in this problem"
         />
         <TapCard
           active={answers.who === "pick"}
@@ -1423,14 +1417,13 @@ function WhenItRuns({
   onRuleChange?: (sentence: string, count: number) => void;
   onOverseeChange?: (m: "auto" | "ease" | "review") => void;
 }) {
-  const [path, setPath] = useState<"auto" | "guided">("auto");
   const [answers, setAnswers] = useState<Answers>(DEFAULT_ANSWERS);
-  const [qIdx, setQIdx] = useState<0 | 1 | 2 | 3>(0);
-  const [guidedDone, setGuidedDone] = useState(false);
   const [showPreview, setShowPreview] = useState(false);
 
-  // Advanced refiner — quiet, hidden until asked for.
-  const [showAdvanced, setShowAdvanced] = useState(false);
+  // ONE customize surface — every control editable in place, no wizard and no
+  // separate "advanced". Default is read-the-rule-and-publish; this opens only
+  // when the user wants to change something.
+  const [showCustomize, setShowCustomize] = useState(false);
   const [extras, setExtras] = useState<ExtraCondId[]>([]);
   const [stagePick, setStagePick] = useState<LifecycleStage>("established");
   const [agePick, setAgePick] = useState<AgeBucket>("under90");
@@ -1449,16 +1442,25 @@ function WhenItRuns({
   );
 
   const base = useMemo(() => matchesToday(playbook), [playbook]);
-  const activeAnswers: Answers = path === "auto" ? DEFAULT_ANSWERS : answers;
+  const activeAnswers: Answers = answers;
   const matches = useMemo(() => {
     const afterAnswers = applyPredicates(base, activeAnswers);
     return afterAnswers.filter((a) => extraConds.every((c) => (c.predicate ? c.predicate(a) : true)));
   }, [base, activeAnswers, extraConds]);
 
+  // The default rule reads clean; once the user changes scope, conditions, or
+  // who's notified, the sentence grows to spell out the difference.
+  const customized =
+    extraConds.length > 0 ||
+    activeAnswers.who !== "all" || activeAnswers.whoBands.length > 0 ||
+    activeAnswers.plan !== "all" || activeAnswers.planPicks.length > 0 ||
+    activeAnswers.size !== "any" ||
+    activeAnswers.notify !== "me";
+
   const ruleSentence = useMemo(() => {
     const baseSentence = buildRuleSentence(playbook, activeAnswers, extraConds);
     let sentence = baseSentence;
-    if (!(path === "auto" && extraConds.length === 0)) {
+    if (customized) {
       sentence = `${baseSentence.replace(/\.$/, "")} · ${notifyPhrase(activeAnswers)}.`;
     }
     if (overseeMode === "ease") {
@@ -1467,7 +1469,7 @@ function WhenItRuns({
       sentence = `${sentence.replace(/\.$/, "")} — you'll review every send.`;
     }
     return sentence;
-  }, [playbook, activeAnswers, path, extraConds, overseeMode]);
+  }, [playbook, activeAnswers, customized, extraConds, overseeMode]);
 
   useEffect(() => {
     onRuleChange?.(ruleSentence, matches.length);
@@ -1478,146 +1480,131 @@ function WhenItRuns({
   }, [overseeMode, onOverseeChange]);
 
 
-  const TOTAL = 4;
-  // The summary view (rule + advanced + preview) shows for the one-tap auto path,
-  // or once the guided wizard is complete — never while a question is on screen.
-  const onSummary = path === "auto" || guidedDone;
-  const next = () => setQIdx((i) => (Math.min(TOTAL - 1, i + 1) as 0 | 1 | 2 | 3));
-  const back = () => setQIdx((i) => (Math.max(0, i - 1) as 0 | 1 | 2 | 3));
-  const skip = () => {
-    // Skip = reset this question's answer to its default and advance.
-    const reset = { ...answers };
-    if (qIdx === 0) { reset.who = "all"; reset.whoBands = []; }
-    if (qIdx === 1) { reset.plan = "all"; reset.planPicks = []; }
-    if (qIdx === 2) { reset.size = "any"; }
-    if (qIdx === 3) { reset.notify = "me"; }
-    setAnswers(reset);
-    if (qIdx < TOTAL - 1) next();
+  const resetAll = () => {
+    setAnswers(DEFAULT_ANSWERS);
+    setExtras([]);
+    setOverseeMode("auto");
+    setFrequencyDays(30);
+    setSkipOpenTask(true);
   };
+
+  const dirty =
+    customized || overseeMode !== "auto" || frequencyDays !== 30 || !skipOpenTask;
+
+  const sectionLabel = {
+    margin: 0,
+    font: "var(--t-h4, var(--t-body))",
+    fontWeight: 600,
+  } as const;
+  const divider = (
+    <div style={{ height: 1, background: "var(--border-soft)", margin: "var(--s-1) 0" }} />
+  );
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "var(--s-3)" }}>
-      {/* Path selector */}
-      <div
-        role="tablist"
-        style={{
-          display: "inline-flex",
-          gap: 4,
-          padding: 4,
-          borderRadius: "var(--r-md)",
-          background: "var(--surface-2)",
-          alignSelf: "flex-start",
-        }}
-      >
-        {([
-          { v: "auto", label: "Let GoCSM decide (recommended)" },
-          { v: "guided", label: "Choose myself" },
-        ] as const).map((opt) => {
-          const on = path === opt.v;
-          return (
-            <button
-              key={opt.v}
-              role="tab"
-              aria-selected={on}
-              onClick={() => { setPath(opt.v); if (opt.v === "guided") { setQIdx(0); setGuidedDone(false); } }}
-              style={{
-                border: 0,
-                cursor: "pointer",
-                padding: "6px 12px",
-                borderRadius: "var(--r-sm)",
-                background: on ? "var(--surface)" : "transparent",
-                color: on ? "var(--text)" : "var(--text-3, var(--text))",
-                font: "var(--t-meta)",
-                fontWeight: on ? 600 : 400,
-                boxShadow: on ? "var(--elev-1, 0 1px 2px rgba(0,0,0,0.06))" : "none",
-              }}
-            >
-              {opt.label}
-            </button>
-          );
-        })}
+      {/* The rule — the 3-second answer. Read it, it's right, Publish. */}
+      <div className="rule-statement">
+        <span className="rule-eyebrow">
+          <Icon name="lock" /> This rule
+        </span>
+        <span className="rule-line">{ruleSentence}</span>
+        <span className="rule-count">
+          <Mono>{matches.length}</Mono> account{matches.length === 1 ? "" : "s"} match now
+        </span>
       </div>
 
-      {/* PATH A — Let GoCSM decide (one-tap summary) */}
-      {path === "auto" ? (
-        <span style={{ font: "var(--t-meta)", color: "var(--text-3, var(--text))" }}>
-          Sensible defaults — switch to <em>Choose myself</em> to narrow it down.
-        </span>
-      ) : null}
-      {/* Guided wizard complete — compact recap + escape hatch back to the questions */}
-      {path === "guided" && guidedDone ? (
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: "var(--s-2)" }}>
-          <span style={{ font: "var(--t-meta)", color: "var(--text-3, var(--text))" }}>Your answers are set.</span>
-          <Button variant="ghost" size="sm" icon={<Icon name="arrow-left" />} onClick={() => { setQIdx(0); setGuidedDone(false); }}>
-            Edit answers
-          </Button>
-        </div>
-      ) : null}
-
-      {/* PATH B — Guided wizard (one question owns the screen) */}
-      {path === "guided" && !guidedDone ? (
-        <div style={{ display: "flex", flexDirection: "column", gap: "var(--s-3)" }}>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-            <MiniProgress step={qIdx + 1} total={TOTAL} />
-          </div>
-
-          <Card padded>
-            {qIdx === 0 ? <Q1Who answers={answers} set={setAnswers} /> : null}
-            {qIdx === 1 ? <Q2Plan answers={answers} set={setAnswers} /> : null}
-            {qIdx === 2 ? <Q3Size answers={answers} set={setAnswers} /> : null}
-            {qIdx === 3 ? <Q4Notify answers={answers} set={setAnswers} /> : null}
-          </Card>
-
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-            <Button variant="ghost" size="sm" onClick={back} disabled={qIdx === 0} icon={<Icon name="arrow-left" />}>
-              Back
-            </Button>
-            <div style={{ display: "flex", gap: "var(--s-2)" }}>
-              <Button variant="ghost" size="sm" onClick={skip}>
-                Skip
-              </Button>
-              {qIdx < TOTAL - 1 ? (
-                <Button variant="primary" size="sm" onClick={next} icon={<Icon name="arrow-right" />}>
-                  Next question
-                </Button>
-              ) : (
-                <Button variant="primary" size="sm" onClick={() => setGuidedDone(true)} icon={<Icon name="check" />}>
-                  Done
-                </Button>
-              )}
-            </div>
-          </div>
-        </div>
-      ) : null}
-
-      {/* Advanced settings — collapsed by default; reveals extra conditions + guardrails. Summary-only. */}
-      {onSummary ? (
-      <div style={{ display: "flex", flexDirection: "column", gap: "var(--s-2)" }}>
+      {/* One control row — open the whole editor, or see exactly who it hits */}
+      <div style={{ display: "flex", flexWrap: "wrap", gap: "var(--s-2)", alignItems: "center" }}>
+        <Button
+          variant={showCustomize ? "secondary" : "ghost"}
+          size="sm"
+          icon={<Icon name={showCustomize ? "chevron-up" : "sliders-horizontal"} />}
+          onClick={() => setShowCustomize((s) => !s)}
+        >
+          {showCustomize ? "Done" : "Change this"}
+        </Button>
         <Button
           variant="ghost"
           size="sm"
-          icon={<Icon name={showAdvanced ? "chevron-up" : "plus"} />}
-          onClick={() => setShowAdvanced((s) => !s)}
+          icon={<Icon name={showPreview ? "chevron-up" : "eye"} />}
+          onClick={() => setShowPreview((s) => !s)}
         >
-          {showAdvanced ? "Hide advanced settings" : `Advanced settings${extras.length ? ` (${extras.length})` : ""}`}
+          {showPreview ? "Hide accounts" : `See the ${matches.length}`}
         </Button>
-        {showAdvanced ? (
-          <div
-            style={{
-              display: "flex",
-              flexDirection: "column",
-              gap: "var(--s-3)",
-              padding: "var(--s-3)",
-              borderRadius: "var(--r-md)",
-              border: "1px dashed var(--border)",
-              background: "var(--surface)",
-            }}
-          >
-            <span style={{ font: "var(--t-meta)", color: "var(--text-3, var(--text))" }}>
-              For power users — tap to add. Choices fold into the rule above.
-            </span>
+        {dirty ? (
+          <Button variant="ghost" size="sm" icon={<Icon name="rotate-ccw" />} onClick={resetAll}>
+            Reset
+          </Button>
+        ) : null}
+      </div>
 
-            {/* Tappable chips */}
+      {/* Preview who this affects */}
+      {showPreview ? (
+        <ul style={{ listStyle: "none", padding: 0, margin: 0, display: "flex", flexDirection: "column", gap: 6 }}>
+          {matches.length === 0 ? (
+            <li style={{ font: "var(--t-meta)", color: "var(--text-3, var(--text))" }}>
+              No accounts match right now.
+            </li>
+          ) : (
+            matches.slice(0, 8).map((a) => (
+              <li
+                key={a.identity.id}
+                style={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  gap: "var(--s-2)",
+                  padding: "6px 10px",
+                  borderRadius: "var(--r-sm)",
+                  background: "var(--surface-2)",
+                  font: "var(--t-body-sm)",
+                }}
+              >
+                <span style={{ color: "var(--text)" }}>{a.identity.name}</span>
+                <span style={{ color: "var(--text-3, var(--text))" }}>
+                  <Mono>${a.revenue.mrr}</Mono> · {a.health.band}
+                </span>
+              </li>
+            ))
+          )}
+          {matches.length > 8 ? (
+            <li style={{ font: "var(--t-meta)", color: "var(--text-3, var(--text))" }}>
+              +{matches.length - 8} more
+            </li>
+          ) : null}
+        </ul>
+      ) : null}
+
+      {/* Customize — ONE editor. Every control in place: no wizard steps, no
+          separate "advanced". The rule above updates live as you change things. */}
+      {showCustomize ? (
+        <div
+          style={{
+            display: "flex",
+            flexDirection: "column",
+            gap: "var(--s-4)",
+            padding: "var(--s-4)",
+            borderRadius: "var(--r-md)",
+            border: "1px solid var(--border)",
+            background: "var(--surface)",
+          }}
+        >
+          <Q1Who answers={answers} set={setAnswers} />
+          {divider}
+          <Q2Plan answers={answers} set={setAnswers} />
+          {divider}
+          <Q3Size answers={answers} set={setAnswers} />
+          {divider}
+          <Q4Notify answers={answers} set={setAnswers} />
+          {divider}
+
+          {/* Optional extra conditions — folds straight into the rule above */}
+          <div style={{ display: "flex", flexDirection: "column", gap: "var(--s-3)" }}>
+            <h4 style={sectionLabel}>
+              Only run when…{" "}
+              <span style={{ font: "var(--t-meta)", fontWeight: 400, color: "var(--text-3, var(--text))" }}>
+                optional
+              </span>
+            </h4>
             <div style={{ display: "flex", flexWrap: "wrap", gap: "var(--s-2)" }}>
               {([
                 { id: "no-login-30" as const, label: "No login in 30 days" },
@@ -1651,8 +1638,6 @@ function WhenItRuns({
                 );
               })}
             </div>
-
-            {/* Submenus for the active dropdown-style chips */}
             {extras.includes("stage") ? (
               <PillRow
                 label="Stage"
@@ -1686,173 +1671,98 @@ function WhenItRuns({
               />
             ) : null}
           </div>
-        ) : null}
-      </div>
-      ) : null}
+          {divider}
 
-      {/* Guardrails — revealed only with Advanced settings, on the summary view */}
-      {onSummary && showAdvanced ? (
-      <div
-        style={{
-          display: "flex",
-          flexDirection: "column",
-          gap: "var(--s-3)",
-          padding: "var(--s-3)",
-          borderRadius: "var(--r-md)",
-          background: "var(--surface-2)",
-        }}
-      >
-        <span style={{ font: "var(--t-meta)", textTransform: "uppercase", letterSpacing: "0.04em", color: "var(--text-3, var(--text))" }}>
-          Guardrails
-        </span>
-        <label style={{ display: "flex", alignItems: "center", gap: "var(--s-2)", font: "var(--t-body-sm)", color: "var(--text-2, var(--text))", flexWrap: "wrap" }}>
-          Run at most once every
-          <input
-            type="number"
-            min={1}
-            value={frequencyDays}
-            onChange={(e) => setFrequencyDays(Math.max(1, parseInt(e.target.value || "1", 10)))}
-            style={{
-              width: 64,
-              font: "var(--t-body-sm)",
-              color: "var(--text)",
-              background: "var(--surface)",
-              border: "1px solid var(--border)",
-              borderRadius: "var(--r-sm)",
-              padding: "2px 6px",
-              textAlign: "right",
-            }}
-          />
-          days per account
-        </label>
+          {/* How client emails go out */}
+          <div style={{ display: "flex", flexDirection: "column", gap: "var(--s-3)" }}>
+            <h4 style={sectionLabel}>How client emails go out</h4>
+            <span style={{ font: "var(--t-body-sm)", color: "var(--text-3, var(--text))" }}>
+              GoCSM only sends the exact message you approved in HighLevel — it never writes its own.
+            </span>
+            <div
+              role="tablist"
+              style={{
+                display: "flex",
+                flexDirection: "column",
+                gap: 4,
+                padding: 4,
+                borderRadius: "var(--r-md)",
+                background: "var(--surface-2)",
+              }}
+            >
+              {([
+                { v: "auto" as const, label: "Send automatically", hint: "Sends the message you approved to matching accounts, hands-off.", tag: "(recommended)" },
+                { v: "ease" as const, label: "Ease in", hint: "Asks you to approve the first 3 sends, then sends automatically.", tag: undefined },
+                { v: "review" as const, label: "Review every send", hint: "Holds each client email for your OK first. Best for a few accounts — not hands-off.", tag: undefined },
+              ]).map((opt) => {
+                const on = overseeMode === opt.v;
+                return (
+                  <button
+                    key={opt.v}
+                    role="tab"
+                    aria-selected={on}
+                    onClick={() => setOverseeMode(opt.v)}
+                    style={{
+                      border: 0,
+                      cursor: "pointer",
+                      padding: "var(--s-2) var(--s-3)",
+                      borderRadius: "var(--r-sm)",
+                      background: on ? "var(--surface)" : "transparent",
+                      color: on ? "var(--text)" : "var(--text-3, var(--text))",
+                      font: "var(--t-meta)",
+                      fontWeight: on ? 600 : 400,
+                      boxShadow: on ? "var(--elev-1, 0 1px 2px rgba(0,0,0,0.06))" : "none",
+                      textAlign: "left",
+                      display: "flex",
+                      flexDirection: "column",
+                      gap: 2,
+                    }}
+                  >
+                    <span style={{ display: "flex", alignItems: "center", gap: 4, flexWrap: "wrap" }}>
+                      {opt.label}
+                      {opt.tag ? <Badge variant="blue" dot={false}>{opt.tag}</Badge> : null}
+                    </span>
+                    <span style={{ font: "var(--t-meta)", fontWeight: 400, color: "var(--text-3, var(--text))" }}>
+                      {opt.hint}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+          {divider}
 
-        <div style={{ display: "flex", flexDirection: "column", gap: "var(--s-2)" }}>
-          <span style={{ font: "var(--t-body-sm)", color: "var(--text-3, var(--text))" }}>
-            GoCSM only sends the exact message you approved in HighLevel — it never writes its own.
-          </span>
-          <span style={{ font: "var(--t-meta)", color: "var(--text-3, var(--text))" }}>
-            Client email oversight
-          </span>
-          <div
-            role="tablist"
-            style={{
-              display: "inline-flex",
-              gap: 4,
-              padding: 4,
-              borderRadius: "var(--r-md)",
-              background: "var(--surface)",
-              alignSelf: "stretch",
-            }}
-          >
-            {([
-              { v: "auto" as const, label: "Send automatically", hint: "Sends the message you approved to matching accounts, hands-off.", tag: "(recommended)" },
-              { v: "ease" as const, label: "Ease in", hint: "Asks you to approve the first 3 sends, then sends automatically.", tag: undefined },
-              { v: "review" as const, label: "Review every send", hint: "Holds each client email for your OK first. Best for a few accounts — not hands-off.", tag: undefined },
-            ]).map((opt) => {
-              const on = overseeMode === opt.v;
-              return (
-                <button
-                  key={opt.v}
-                  role="tab"
-                  aria-selected={on}
-                  onClick={() => setOverseeMode(opt.v)}
-                  style={{
-                    flex: 1,
-                    border: 0,
-                    cursor: "pointer",
-                    padding: "var(--s-2) var(--s-3)",
-                    borderRadius: "var(--r-sm)",
-                    background: on ? "var(--surface-2)" : "transparent",
-                    color: on ? "var(--text)" : "var(--text-3, var(--text))",
-                    font: "var(--t-meta)",
-                    fontWeight: on ? 600 : 400,
-                    boxShadow: on ? "var(--elev-1, 0 1px 2px rgba(0,0,0,0.06))" : "none",
-                    textAlign: "left",
-                    display: "flex",
-                    flexDirection: "column",
-                    gap: 2,
-                  }}
-                >
-                  <span style={{ display: "flex", alignItems: "center", gap: 4, flexWrap: "wrap" }}>
-                    {opt.label}
-                    {opt.tag ? <Badge variant="blue" dot={false}>{opt.tag}</Badge> : null}
-                  </span>
-                  <span style={{ font: "var(--t-meta)", fontWeight: 400, color: "var(--text-3, var(--text))" }}>
-                    {opt.hint}
-                  </span>
-                </button>
-              );
-            })}
+          {/* Safety limits */}
+          <div style={{ display: "flex", flexDirection: "column", gap: "var(--s-3)" }}>
+            <h4 style={sectionLabel}>Safety limits</h4>
+            <label style={{ display: "flex", alignItems: "center", gap: "var(--s-2)", font: "var(--t-body-sm)", color: "var(--text-2, var(--text))", flexWrap: "wrap" }}>
+              Run at most once every
+              <input
+                type="number"
+                min={1}
+                value={frequencyDays}
+                onChange={(e) => setFrequencyDays(Math.max(1, parseInt(e.target.value || "1", 10)))}
+                style={{
+                  width: 64,
+                  font: "var(--t-body-sm)",
+                  color: "var(--text)",
+                  background: "var(--surface)",
+                  border: "1px solid var(--border)",
+                  borderRadius: "var(--r-sm)",
+                  padding: "2px 6px",
+                  textAlign: "right",
+                }}
+              />
+              days per account
+            </label>
+            <div style={{ display: "flex", alignItems: "center", gap: "var(--s-2)" }}>
+              <Toggle on={skipOpenTask} onChange={setSkipOpenTask} />
+              <span style={{ font: "var(--t-body-sm)", color: "var(--text-2, var(--text))" }}>
+                Skip accounts with an open task
+              </span>
+            </div>
           </div>
         </div>
-
-        <div style={{ display: "flex", alignItems: "center", gap: "var(--s-2)" }}>
-          <Toggle on={skipOpenTask} onChange={setSkipOpenTask} />
-          <span style={{ font: "var(--t-body-sm)", color: "var(--text-2, var(--text))" }}>
-            Skip accounts with an open task
-          </span>
-        </div>
-      </div>
-      ) : null}
-
-
-      {/* The rule — ONE plain-language statement of what will run (rule / count / helper each read differently) */}
-      <div className="rule-statement">
-        <span className="rule-eyebrow">
-          <Icon name="lock" /> This rule
-        </span>
-        <span className="rule-line">{ruleSentence}</span>
-        <span className="rule-count">
-          <Mono>{matches.length}</Mono> account{matches.length === 1 ? "" : "s"} match now
-        </span>
-      </div>
-
-      {/* Preview who this affects — summary-only */}
-      {onSummary ? (
-      <div style={{ display: "flex", flexDirection: "column", gap: "var(--s-2)" }}>
-        <Button
-          variant="ghost"
-          size="sm"
-          icon={<Icon name={showPreview ? "chevron-up" : "eye"} />}
-          onClick={() => setShowPreview((s) => !s)}
-        >
-          {showPreview ? "Hide preview" : `Preview who this affects (${matches.length})`}
-        </Button>
-        {showPreview ? (
-          <ul style={{ listStyle: "none", padding: 0, margin: 0, display: "flex", flexDirection: "column", gap: 6 }}>
-            {matches.length === 0 ? (
-              <li style={{ font: "var(--t-meta)", color: "var(--text-3, var(--text))" }}>
-                No accounts match right now.
-              </li>
-            ) : (
-              matches.slice(0, 8).map((a) => (
-                <li
-                  key={a.identity.id}
-                  style={{
-                    display: "flex",
-                    justifyContent: "space-between",
-                    gap: "var(--s-2)",
-                    padding: "6px 10px",
-                    borderRadius: "var(--r-sm)",
-                    background: "var(--surface-2)",
-                    font: "var(--t-body-sm)",
-                  }}
-                >
-                  <span style={{ color: "var(--text)" }}>{a.identity.name}</span>
-                  <span style={{ color: "var(--text-3, var(--text))" }}>
-                    <Mono>${a.revenue.mrr}</Mono> · {a.health.band}
-                  </span>
-                </li>
-              ))
-            )}
-            {matches.length > 8 ? (
-              <li style={{ font: "var(--t-meta)", color: "var(--text-3, var(--text))" }}>
-                +{matches.length - 8} more
-              </li>
-            ) : null}
-          </ul>
-        ) : null}
-      </div>
       ) : null}
     </div>
   );

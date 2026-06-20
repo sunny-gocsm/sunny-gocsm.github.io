@@ -27,10 +27,12 @@ export function HowThisPlayWorks({
   scopeLabel,
 }: Props) {
 
+  // HighLevel is setup-only. The user turns on the steps and checks the
+  // messages here; the run (one-time) or publish (autopilot) happens back in
+  // GoCSM after they confirm setup — so it is NOT a HighLevel step.
   const steps = [
     "Turn on the steps you want",
     "Check the messages",
-    mode === "onetime" ? "Run it" : "Publish",
   ];
 
   return (
@@ -168,7 +170,7 @@ export function HowThisPlayWorks({
         </div>
       ) : null}
 
-      {/* 3-step checklist */}
+      {/* Setup checklist (HighLevel = setup only; the run happens in GoCSM next) */}
       <div style={{ display: "flex", flexDirection: "column", gap: "var(--s-2)" }}>
         <span style={{ font: "var(--t-meta)", fontWeight: 600, color: "var(--text)" }}>
           Next, in HighLevel
