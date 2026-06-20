@@ -152,3 +152,10 @@ button {
     transform: none;
   }
 }
+
+/* Today page container padding — responsive (M1).
+   Kept in CSS (not inline) so it can adapt at mobile widths. */
+.today-main { padding: var(--s-10) var(--s-6); }
+@media (max-width: 560px) {
+  .today-main { padding: var(--s-6) var(--s-4); gap: var(--s-8) !important; }
+}

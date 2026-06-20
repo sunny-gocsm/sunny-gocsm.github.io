@@ -503,6 +503,28 @@
 .app-rail .rail-item.active{background:var(--blue-2);color:var(--blue-9);font-weight:600;}
 .app-shell .app-main{flex:1;min-width:0;}
 
+/* ── Mobile (M1): off-canvas rail behind a top bar + reflowed cards ───────── */
+.app-mobilebar{display:none;}
+.app-backdrop{display:none;border:none;background:transparent;padding:0;}
+.app-menu-btn{display:inline-flex;align-items:center;justify-content:center;width:44px;height:44px;border-radius:var(--r-sm);border:1px solid var(--border-soft);background:var(--surface);color:var(--text-2);cursor:pointer;flex-shrink:0;}
+.app-menu-btn svg{width:20px;height:20px;}
+.app-mobilebar-logo{display:inline-flex;align-items:center;min-width:0;}
+@media (max-width:768px){
+  .app-shell{display:block;border:none;border-radius:0;box-shadow:none;overflow:visible;background:var(--bg);}
+  .app-mobilebar{display:flex;align-items:center;gap:12px;padding:8px 14px;min-height:56px;background:var(--surface);border-bottom:1px solid var(--border);position:sticky;top:0;z-index:40;}
+  .app-shell .rail{position:fixed;top:0;left:0;bottom:0;width:248px;max-width:84vw;z-index:60;transform:translateX(-100%);transition:transform 220ms ease;overflow-y:auto;box-shadow:var(--sh-hover);}
+  .app-shell[data-nav-open="true"] .rail{transform:translateX(0);}
+  .app-shell .rail .rail-item{padding:12px 14px;}
+  .app-shell .app-backdrop{display:block;position:fixed;inset:0;z-index:50;background:rgba(6,35,61,0.45);opacity:0;pointer-events:none;transition:opacity 220ms ease;}
+  .app-shell[data-nav-open="true"] .app-backdrop{opacity:1;pointer-events:auto;}
+  .app-shell .main{width:100%;}
+}
+@media (max-width:560px){
+  .fixit-card{flex-wrap:wrap;}
+  .fixit-card .fi-right{flex-basis:100%;width:100%;margin-top:14px;justify-content:flex-start;}
+  .fixit-card.lg{padding:18px;}
+}
+
 /* ============================================================== *
  * 14 · ICON SIZING — Lucide renders <i data-lucide> → <svg> at   *
  * 24px; size on `svg` (CSS beats the width/height attribute).    *

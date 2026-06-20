@@ -65,6 +65,7 @@ export default function AppLayout() {
 
   return (
     <AppShell
+      logo={Logo}
       rail={
         <Rail
           groups={GROUPS}

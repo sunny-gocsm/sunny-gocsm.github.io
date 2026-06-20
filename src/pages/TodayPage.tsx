@@ -588,8 +588,8 @@ export default function TodayPage() {
 
   return (
     <main
+      className="today-main"
       style={{
-        padding: "var(--s-10) var(--s-6)",
         maxWidth: 1080,
         margin: "0 auto",
         color: "var(--text)",
