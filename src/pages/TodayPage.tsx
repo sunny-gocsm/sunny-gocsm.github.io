@@ -589,13 +589,13 @@ export default function TodayPage() {
   return (
     <main
       style={{
-        padding: "var(--s-8) var(--s-6)",
-        maxWidth: 1280,
+        padding: "var(--s-10) var(--s-6)",
+        maxWidth: 1080,
         margin: "0 auto",
         color: "var(--text)",
         display: "flex",
         flexDirection: "column",
-        gap: "var(--s-9, var(--s-8))",
+        gap: "var(--s-10)",
       }}
     >
       {/* 1 — Briefing: greeting + AI verdict heroing $ at risk + one primary action */}
