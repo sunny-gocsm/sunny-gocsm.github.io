@@ -28,6 +28,9 @@ export interface PlaybookDetailProps extends Omit<React.HTMLAttributes<HTMLDivEl
   title?: React.ReactNode;
   subtitle?: React.ReactNode;
   state?: PlaybookState;
+  /** Suppress the duplicate identity header (icon/state/title/subtitle) when the
+   *  page already shows it as a hero; renders only the anatomy below. */
+  hideIdentity?: boolean;
   problem?: React.ReactNode;
   does?: React.ReactNode;
   outcome?: React.ReactNode;

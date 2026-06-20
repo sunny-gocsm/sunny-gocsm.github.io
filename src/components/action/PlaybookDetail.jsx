@@ -17,9 +17,13 @@ const PRIMARY = { off: "Run it", ranonce: "Keep it running", on: "On · autopilo
  * each toggleable + editable) → Proof ("who it affects" — match count, drafts, Preview) →
  * Explainer (the video). Owner-facing language throughout; the AI-vs-workflow choice is
  * GoCSM's, shown only as a quiet "how it runs" line. A floating panel (--sh-sheet).
+ *
+ * `hideIdentity` — when the page already shows the playbook's identity as a hero
+ * (icon / state / title / subtitle), pass this to suppress the duplicate header and
+ * render only the anatomy (problem · outcome → watches for → does → who → how).
  */
 export function PlaybookDetail({
-  icon = "book-open", title, subtitle, state = "off",
+  icon = "book-open", title, subtitle, state = "off", hideIdentity = false,
   problem, does, outcome,
   watch, actions = [], proof, video, videoLabel, limits = [],
   onRun, onPreview, primaryLabel, ...rest
@@ -28,12 +32,16 @@ export function PlaybookDetail({
   return (
     <div className="panel" {...rest}>
       <div className="pd-head">
-        <div className="pd-toprow">
-          <span className="pd-ico"><Icon name={icon} /></span>
-          <span className={["pd-state", s.cls].join(" ")}>{s.dot ? <span className="rdot" /> : <Icon name={s.icon} />}{s.label}</span>
-        </div>
-        <div className="pd-title">{title}</div>
-        {subtitle ? <div className="pd-subtitle">{subtitle}</div> : null}
+        {hideIdentity ? null : (
+          <>
+            <div className="pd-toprow">
+              <span className="pd-ico"><Icon name={icon} /></span>
+              <span className={["pd-state", s.cls].join(" ")}>{s.dot ? <span className="rdot" /> : <Icon name={s.icon} />}{s.label}</span>
+            </div>
+            <div className="pd-title">{title}</div>
+            {subtitle ? <div className="pd-subtitle">{subtitle}</div> : null}
+          </>
+        )}
         {problem ? <div className="pd-block"><div className="blk-h">The problem it solves</div><p>{problem}</p></div> : null}
         {does ? <div className="pd-block"><div className="blk-h">What it does</div><p>{does}</p></div> : null}
         {outcome ? <div className="pd-outcome"><Icon name="target" />{outcome}</div> : null}
