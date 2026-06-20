@@ -13,9 +13,15 @@ import { ConfTag } from "../agentic/ConfTag.jsx";
  *  - `tone="pos"` — positive/opportunity treatment (emerald rail + icon chip) for good-news
  *                   surfaces, distinct from the neutral risk card and the `clean`/`resolved` done state.
  *  - `tag={null}` — omit the eyebrow tag entirely (calm lists where the title carries the meaning).
+ *
+ * Hierarchy props (v3.3 — intervention rows that must be scannable at a glance):
+ *  - `title` — the prominent problem name (bold, large). The eye lands here first.
+ *  - `meta`  — the secondary line under the title (e.g. count + "$ at risk"). Quieter
+ *              than the title so the row reads as name → stakes → action, not one blob.
+ *  When `title` is set it replaces the legacy `text` blob; pass one or the other.
  */
 export function FixItCard({
-  icon = "alert-circle", tag = "Data hygiene", text, conf, confDetail,
+  icon = "alert-circle", tag = "Data hygiene", text, title = null, meta = null, conf, confDetail,
   action = null, onSnooze, resolved = false, clean = false, doneLabel = "Fixed",
   size = "md", badge = null, note = null, tone = "default", ...rest
 }) {
@@ -32,9 +38,21 @@ export function FixItCard({
             {badge ? <span className="fi-badge">{badge}</span> : null}
           </div>
         ) : null}
-        <div className="fi-text">
-          {text} {conf ? <ConfTag basis={conf} detail={confDetail} /> : null}
-        </div>
+        {title ? (
+          <>
+            <div className="fi-title">{title}</div>
+            {(meta || conf) ? (
+              <div className="fi-meta">
+                {meta}
+                {conf ? <> <ConfTag basis={conf} detail={confDetail} /></> : null}
+              </div>
+            ) : null}
+          </>
+        ) : (
+          <div className="fi-text">
+            {text} {conf ? <ConfTag basis={conf} detail={confDetail} /> : null}
+          </div>
+        )}
         {note ? <div className="fi-note">{note}</div> : null}
       </div>
       <div className="fi-right">
