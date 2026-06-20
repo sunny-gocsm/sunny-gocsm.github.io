@@ -230,8 +230,17 @@ export function PlaybookActivationDrawer({ open, scope, accounts, onClose, initi
         {/* Header */}
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
           <span style={{ font: "var(--t-meta)", color: "var(--text-3, var(--text))" }}>
-            {directAutopilot ? "Edit autopilot" : step === "done" ? "Done" : "GoCSM's pick"} · scoped to{" "}
-            <Mono>{targetCount}</Mono> account{targetCount === 1 ? "" : "s"}
+            {/* While configuring autopilot we're defining a forward-looking rule,
+                not acting on today's batch — so drop the "scoped to N" count here.
+                It would clash with the rule's own live "N match now". */}
+            {autopilotChoice === "pending" && step === "done" && autopilotSetupStep > 0 ? (
+              "Autopilot setup"
+            ) : (
+              <>
+                {directAutopilot ? "Edit autopilot" : step === "done" ? "Done" : "GoCSM's pick"} · scoped to{" "}
+                <Mono>{targetCount}</Mono> account{targetCount === 1 ? "" : "s"}
+              </>
+            )}
           </span>
           <Button variant="ghost" size="sm" aria-label="Close" onClick={close}>
             <Icon name="x" />
@@ -543,11 +552,16 @@ export function PlaybookActivationDrawer({ open, scope, accounts, onClose, initi
               </Card>
             )}
 
-            <div style={{ display: "flex", justifyContent: "flex-end" }}>
-              <Button variant="ghost" onClick={close}>
-                Close
-              </Button>
-            </div>
+            {/* While the autopilot editor is open it owns the footer (Not now /
+                Publish), and the top-right ✕ still closes the drawer — so this
+                extra Close would only stack a third exit. Hide it there. */}
+            {!(autopilotChoice === "pending" && autopilotSetupStep > 0) ? (
+              <div style={{ display: "flex", justifyContent: "flex-end" }}>
+                <Button variant="ghost" onClick={close}>
+                  Close
+                </Button>
+              </div>
+            ) : null}
           </>
         ) : null}
 
