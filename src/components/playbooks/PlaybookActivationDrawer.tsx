@@ -62,7 +62,13 @@ function fmtDays(n: number): string {
 }
 
 // One plain-language line per account: what happened + when. Keeps the row scannable.
-function accountSignal(a: Account): string {
+// `positive` flips the framing for good-news plays (expansion) so a healthy
+// account never reads "Showing warning signs" under a "Doing great" header.
+function accountSignal(a: Account, positive = false): string {
+  if (positive) {
+    if (a.health.opportunities.length) return a.health.opportunities[0];
+    return "Healthy & trending up";
+  }
   if (a.revenue.lastPaymentStatus === "failed") {
     const failed = [...a.revenue.paymentAttempts].reverse().find((p) => p.status === "failed");
     return failed ? `Payment failed ${fmtDays(daysSince(failed.date))} ago` : "Payment failed";
@@ -103,6 +109,10 @@ export function PlaybookActivationDrawer({ open, scope, accounts, onClose, initi
     () => playbooks.find((p) => p.id === playbookId),
     [playbookId],
   );
+
+  // Good-news plays (expansion) get opportunity framing instead of problem framing
+  // throughout the drawer — the same component serves both at-risk and upsell cohorts.
+  const isPositive = playbook?.kind === "expansion";
 
   // Resolve targeted accounts
   const targets = useMemo<Account[]>(() => {
@@ -234,7 +244,7 @@ export function PlaybookActivationDrawer({ open, scope, accounts, onClose, initi
             <Card padded>
               <div style={{ display: "flex", flexDirection: "column", gap: "var(--s-2)" }}>
                 <span style={{ font: "var(--t-meta)", textTransform: "uppercase", letterSpacing: "0.04em", color: "var(--text-3, var(--text))" }}>
-                  The problem
+                  {isPositive ? "The opportunity" : "The problem"}
                 </span>
                 <p style={{ font: "var(--t-body)", margin: 0, color: "var(--text)" }}>
                   {playbook.problem}
@@ -295,7 +305,7 @@ export function PlaybookActivationDrawer({ open, scope, accounts, onClose, initi
                                 <span style={{ color: "var(--text-3, var(--text))" }}> · {a.identity.plan}</span>
                               </span>
                               <span style={{ font: "var(--t-body-sm, var(--t-meta))", color: "var(--text-2, var(--text))" }}>
-                                {accountSignal(a)}
+                                {accountSignal(a, isPositive)}
                               </span>
                             </span>
                           </span>
