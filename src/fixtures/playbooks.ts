@@ -47,14 +47,17 @@ export interface Playbook {
   actions: PlaybookAction[];
   /** Pure predicate against the unified fixtures. */
   match: (a: Account) => boolean;
-  /** Short explainer video for this play (~1 min). Placeholder until real video lands. */
+  /** Short explainer video for this play (~1 min). Empty string until a real
+   *  recording lands — the UI shows a "coming soon" placeholder, never a stand-in clip. */
   videoUrl: string;
   /** Optional poster image shown before the video plays. */
   videoPoster?: string;
 }
 
-// Single placeholder while real per-play recordings are produced.
-const PLACEHOLDER_VIDEO = "https://www.w3schools.com/html/mov_bbb.mp4";
+// No real per-play recordings yet — empty means "show a tasteful coming-soon
+// placeholder," never a generic stand-in clip. Fill PLAY_VIDEOS per play as
+// real walkthroughs are produced.
+const PLACEHOLDER_VIDEO = "";
 
 const STICKY_REVERSE_DAYS = 30;
 const stickyReverseSubjects = (a: Account, subjects: SignalSubject[]): boolean =>

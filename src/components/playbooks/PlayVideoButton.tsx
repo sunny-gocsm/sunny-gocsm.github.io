@@ -16,6 +16,9 @@ interface Props {
 export function PlayVideoButton({ playbook, label = "Watch (1 min)", size = "sm" }: Props) {
   const [open, setOpen] = useState(false);
 
+  // No real recording yet → no "Watch" affordance (never promise a stand-in clip).
+  if (!playbook.videoUrl) return null;
+
   return (
     <>
       <Button

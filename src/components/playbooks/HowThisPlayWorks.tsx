@@ -35,37 +35,47 @@ export function HowThisPlayWorks({
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "var(--s-4)" }}>
-      {/* Prominent explainer video */}
-      <div
-        style={{
-          borderRadius: "var(--r-md)",
-          overflow: "hidden",
-          background: "#000",
-        }}
-      >
-        <video
-          src={playbook.videoUrl}
-          poster={playbook.videoPoster}
-          controls
-          playsInline
-          preload="metadata"
+      {/* Prominent explainer video — or a tasteful placeholder until one is recorded */}
+      {playbook.videoUrl ? (
+        <div
           style={{
-            width: "100%",
-            display: "block",
-            aspectRatio: "16 / 9",
+            borderRadius: "var(--r-md)",
+            overflow: "hidden",
+            background: "#000",
           }}
-        />
-      </div>
-      <p
-        style={{
-          margin: 0,
-          font: "var(--t-meta)",
-          color: "var(--text-3, var(--text))",
-          fontStyle: "italic",
-        }}
-      >
-        Walkthrough video — coming soon.
-      </p>
+        >
+          <video
+            src={playbook.videoUrl}
+            poster={playbook.videoPoster}
+            controls
+            playsInline
+            preload="metadata"
+            style={{
+              width: "100%",
+              display: "block",
+              aspectRatio: "16 / 9",
+            }}
+          />
+        </div>
+      ) : (
+        <div
+          style={{
+            aspectRatio: "16 / 9",
+            borderRadius: "var(--r-md)",
+            border: "1px solid var(--border)",
+            background: "var(--surface-2)",
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            justifyContent: "center",
+            gap: "var(--s-2)",
+            color: "var(--text-3, var(--text))",
+          }}
+        >
+          <Icon name="play-circle" />
+          <span style={{ font: "var(--t-body-sm)" }}>Walkthrough video — coming soon</span>
+        </div>
+      )}
 
       {/* Title + plain summary */}
       <div style={{ display: "flex", flexDirection: "column", gap: "var(--s-2)" }}>
