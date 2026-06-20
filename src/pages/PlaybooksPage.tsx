@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import {
   Badge,
   Card,
-  PlaybookCard,
+  FixItCard,
   Tabs,
   ConfTag,
   Icon,
@@ -18,7 +18,6 @@ import {
 import { PageRibbon } from "@/components/PageRibbon";
 import {
   playbooks,
-  matchCount,
   matchesToday,
   type Playbook,
   type PlaybookState,
@@ -36,12 +35,6 @@ import {
   TRIGGER_CLASS_LABEL,
   type TriggerClass,
 } from "@/fixtures/triggers";
-import { useIsAutopilot, useAutopilotStatus, autopilotStore, type AutopilotStatus } from "@/state/autopilot";
-import { toast } from "sonner";
-import { PlayVideoButton } from "@/components/playbooks/PlayVideoButton";
-import { PlaybookActivationDrawer, type DrawerScope, type DrawerInitial } from "@/components/playbooks/PlaybookActivationDrawer";
-import { outcomesFor } from "@/fixtures/outcomes";
-import { allAccounts } from "@/fixtures";
 
 
 
@@ -64,85 +57,45 @@ const FILTERS: { id: Filter; label: string }[] = [
   { id: "expansion", label: "Expansion" },
 ];
 
-const STATE_LABEL: Record<PlaybookState, string> = {
-  off: "Off",
-  ranonce: "✓ Ran once",
-  on: "● On · autopilot",
-  paused: "Paused",
+// State chip shown on a library row — only when the play is actually doing
+// something (Ran once / On / Paused). "Off" shows no chip, to keep the list calm.
+const STATE_CHIP: Record<PlaybookState, { variant: "pos" | "warn" | "blue"; icon: string; label: string } | null> = {
+  off: null,
+  ranonce: { variant: "blue", icon: "check", label: "Ran once" },
+  on: { variant: "pos", icon: "zap", label: "On · autopilot" },
+  paused: { variant: "warn", icon: "pause", label: "Paused" },
 };
 
-const STATE_VARIANT: Record<PlaybookState, "neutral" | "warn" | "pos" | "blue"> = {
-  off: "neutral",
-  ranonce: "blue",
-  on: "pos",
-  paused: "warn",
-};
+// Which kinds frame their dollars as risk vs upside on the stakes line.
+const RISK_KINDS = new Set<Playbook["kind"]>(["save", "billing", "retention", "onboarding"]);
+const UPSIDE_KINDS = new Set<Playbook["kind"]>(["expansion"]);
 
-const ZERO_LINE: Record<Playbook["kind"], string> = {
-  billing: "Nothing to do — payments are clean. Armed and watching.",
-  retention: "All renewals look calm. Armed and watching.",
-  save: "No one needs saving right now. Armed and watching.",
-  adoption: "Adoption is steady. Armed and watching.",
-  onboarding: "Setups are on track. Armed and watching.",
-  expansion: "No expansion signals today. Armed and watching.",
-};
-
-function activateLabel(state: PlaybookState): string {
-  switch (state) {
-    case "off": return "Run it once";
-    case "ranonce": return "Keep it running";
-    case "on": return "Manage";
-    case "paused": return "Resume";
-  }
-}
+type EnrichedRow = Playbook & { count: number; mrr: number };
 
 export default function PlaybooksPage() {
   const [tab, setTab] = useState<TabId>("library");
   const [filter, setFilter] = useState<Filter>("all");
   const navigate = useNavigate();
-  const [overrides, setOverrides] = useState<Record<string, PlaybookState>>({});
 
-  // Drawer wiring — reuses Step 1 (Edit rule) and Step 2 (Review steps) of the
-  // autopilot setup for already-configured plays.
-  const [drawerScope, setDrawerScope] = useState<DrawerScope | null>(null);
-  const [drawerInitial, setDrawerInitial] = useState<DrawerInitial | undefined>(undefined);
-  const openAutopilotEditor = (playbookId: string, step: 1 | 2, showHandoff = false) => {
-    setDrawerScope({ kind: "playbook", playbookId });
-    setDrawerInitial({ mode: "autopilot", step, showHandoff });
-  };
-
-
-
-  const enriched = useMemo(
+  const enriched = useMemo<EnrichedRow[]>(
     () =>
-      playbooks.map((p) => ({
-        ...p,
-        state: overrides[p.id] ?? p.state,
-        count: matchCount(p),
-      })),
-    [overrides],
+      playbooks.map((p) => {
+        const accts = matchesToday(p);
+        return {
+          ...p,
+          count: accts.length,
+          mrr: accts.reduce((s, a) => s + (a.revenue?.mrr ?? 0), 0),
+        };
+      }),
+    [],
   );
 
-  const filtered = enriched
-    .filter((p) => filter === "all" || p.kind === filter)
-    .sort((a, b) => {
-      const am = a.count > 0 ? 0 : 1;
-      const bm = b.count > 0 ? 0 : 1;
-      if (am !== bm) return am - bm;
-      return b.count - a.count;
-    });
+  const filtered = enriched.filter((p) => filter === "all" || p.kind === filter);
+  const needsYou = filtered.filter((p) => p.count > 0).sort((a, b) => b.count - a.count);
+  const watching = filtered.filter((p) => p.count === 0);
 
-  const totalMatches = enriched.reduce((s, p) => s + p.count, 0);
   const onCount = enriched.filter((p) => p.state === "on").length;
-  const saveCount = enriched.filter((p) => p.kind === "save").length;
-
-  const advance = (p: Playbook & { state: PlaybookState }) => {
-    setOverrides((o) => {
-      const next: PlaybookState =
-        p.state === "off" ? "ranonce" : p.state === "ranonce" ? "on" : p.state === "paused" ? "on" : "paused";
-      return { ...o, [p.id]: next };
-    });
-  };
+  const needsYouCount = enriched.filter((p) => p.count > 0).length;
 
   return (
     <main
@@ -158,22 +111,21 @@ export default function PlaybooksPage() {
     >
       <PageRibbon
         title="Playbooks"
-        description="One situation, one playbook. Every play is grounded in a live signal."
+        description="Ready-made fixes for the moments that cost you customers. Open one to run it."
         kpis={[
-          { label: "Plays", value: <Mono>{enriched.length}</Mono> },
+          { label: "Playbooks", value: <Mono>{enriched.length}</Mono> },
+          { label: "Need you today", value: <Mono>{needsYouCount}</Mono> },
           { label: "On autopilot", value: <Mono>{onCount}</Mono> },
-          { label: "Save plays", value: <Mono>{saveCount}</Mono> },
-          { label: "Matches today", value: <Mono>{totalMatches}</Mono> },
         ]}
       />
 
       <Tabs tabs={TABS} active={tab} onChange={(id) => setTab(id as TabId)} />
 
       {tab === "library" ? (
-        <>
+        <div style={{ maxWidth: 920, width: "100%", display: "flex", flexDirection: "column", gap: "var(--s-5)" }}>
           {/* Filter chips */}
           <div style={{ display: "flex", flexWrap: "wrap", gap: "var(--s-2)", alignItems: "center" }}>
-            <span style={{ font: "var(--t-meta)", color: "var(--text-3, var(--text))" }}>Filter</span>
+            <span style={{ fontSize: "var(--t-caption)", color: "var(--text-3, var(--text))" }}>Filter</span>
             {FILTERS.map((f) => (
               <Badge
                 key={f.id}
@@ -185,127 +137,121 @@ export default function PlaybooksPage() {
                 {f.label}
               </Badge>
             ))}
-            <span style={{ marginLeft: "auto" }}>
-              <ConfTag basis="projection" detail="seed catalog — pending workflow snapshot" />
-            </span>
           </div>
 
-          {/* Grid */}
-          <div
-            style={{
-              display: "grid",
-              gridTemplateColumns: "repeat(auto-fill, minmax(320px, 1fr))",
-              gap: "var(--s-4)",
-            }}
-          >
-            {filtered.map((p) => (
-              <div
-                key={p.id}
-                style={{ display: "flex", flexDirection: "column", gap: "var(--s-2)", cursor: "pointer" }}
-                onClick={() => navigate(`/playbooks/${p.id}`)}
-                role="button"
-                tabIndex={0}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter" || e.key === " ") navigate(`/playbooks/${p.id}`);
+          {needsYou.length === 0 && watching.length === 0 ? (
+            <Card padded>
+              <span style={{ fontSize: "var(--t-body)", color: "var(--text-2, var(--text))" }}>
+                Nothing in this filter — try a different category, or clear it to see your full library.
+              </span>
+            </Card>
+          ) : null}
+
+          {needsYou.length ? (
+            <section style={{ display: "flex", flexDirection: "column", gap: "var(--s-3)" }}>
+              <h2 style={{ fontSize: "var(--t-heading)", fontWeight: 700, margin: 0 }}>Need you today</h2>
+              <div style={{ display: "flex", flexDirection: "column", gap: "var(--s-2)" }}>
+                {needsYou.map((p) => (
+                  <PlaybookRow key={p.id} p={p} onOpen={() => navigate(`/playbooks/${p.id}`)} />
+                ))}
+              </div>
+            </section>
+          ) : null}
+
+          {watching.length ? (
+            <section style={{ display: "flex", flexDirection: "column", gap: "var(--s-3)" }}>
+              <h2
+                style={{
+                  fontSize: "var(--t-heading)",
+                  fontWeight: 700,
+                  margin: 0,
+                  color: "var(--text-2, var(--text))",
                 }}
               >
-                <PlaybookCard
-                  state={p.state}
-                  icon={p.icon}
-                  title={p.title}
-                  subtitle={p.subtitle}
-                  matchCount={p.count}
-                  problem={p.problem}
-                  does={p.does}
-                  outcome={p.outcome}
-                  activateLabel={activateLabel(p.state)}
-                  onActivate={() => advance(p)}
-                  data-kind={p.kind}
-                />
-                <div
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "space-between",
-                    gap: "var(--s-2)",
-                    paddingInline: "var(--s-2)",
-                  }}
-                >
-                  <Badge variant={STATE_VARIANT[p.state]} dot={p.state === "off"}>
-                    {STATE_LABEL[p.state]}
-                  </Badge>
-                  {p.count > 0 ? (
-                    <span style={{ font: "var(--t-meta)", color: "var(--text-3, var(--text))" }}>
-                      <Mono
-                        style={{
-                          color:
-                            p.kind === "billing" || p.kind === "save"
-                              ? "var(--health-atrisk-strong)"
-                              : p.kind === "expansion"
-                              ? "var(--pos-7)"
-                              : "var(--warn-7)",
-                          fontWeight: 700,
-                          fontSize: 14,
-                        }}
-                      >
-                        {p.count}
-                      </Mono>{" "}
-                      account{p.count === 1 ? "" : "s"} match today
-                    </span>
-                  ) : (
-                    <span
-                      style={{
-                        font: "var(--t-meta)",
-                        color: "var(--pos-7)",
-                        display: "inline-flex",
-                        alignItems: "center",
-                        gap: 4,
-                      }}
-                    >
-                      <Icon name="shield-check" /> {ZERO_LINE[p.kind]}
-                    </span>
-                  )}
-                </div>
-
-                {/* Automation state row — calm and scannable.
-                    Conditions live behind Edit rule, not on this page. */}
-                <span onClick={(e) => e.stopPropagation()}>
-                  <PlaybookAutomationRow
-                    playbook={p}
-                    onEditRule={() => openAutopilotEditor(p.id, 1)}
-                    onOpenHighLevel={() => openAutopilotEditor(p.id, 2, true)}
-                  />
-                </span>
-
-
+                Armed &amp; watching
+              </h2>
+              <div style={{ display: "flex", flexDirection: "column", gap: "var(--s-2)" }}>
+                {watching.map((p) => (
+                  <PlaybookRow key={p.id} p={p} onOpen={() => navigate(`/playbooks/${p.id}`)} />
+                ))}
               </div>
-            ))}
-            {filtered.length === 0 ? (
-              <Card padded>
-                <span style={{ font: "var(--t-body)", color: "var(--text-2, var(--text))" }}>
-                  Nothing in this filter — try a different category, or clear filters to see your full library.
-                </span>
-              </Card>
-            ) : null}
-          </div>
-        </>
+            </section>
+          ) : null}
+        </div>
       ) : tab === "triggers" ? (
         <TriggersTab />
       ) : (
         <OutcomesTab />
       )}
-
-      <PlaybookActivationDrawer
-        open={!!drawerScope}
-        scope={drawerScope}
-        accounts={allAccounts()}
-        initial={drawerInitial}
-        onClose={() => {
-          setDrawerScope(null);
-          setDrawerInitial(undefined);
-        }}
-      />
     </main>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// PlaybookRow — one calm, scannable library row: state eyebrow → bold name →
+// who it affects right now (with $ at risk / upside) → drill-in chevron. The
+// whole row is the tap target; running and rule-management live on the detail
+// page, so the library stays a quiet catalog you scan, not a control panel.
+// ---------------------------------------------------------------------------
+
+function StakesMeta({ p }: { p: EnrichedRow }) {
+  const count = (
+    <>
+      <strong style={{ fontWeight: 700, color: "var(--text)" }}>{p.count}</strong>{" "}
+      account{p.count === 1 ? "" : "s"} match today
+    </>
+  );
+  if (p.mrr > 0 && UPSIDE_KINDS.has(p.kind)) {
+    return (
+      <>
+        {count} · <span style={{ color: "var(--pos-7)", fontWeight: 600 }}>${p.mrr.toLocaleString()} upside</span>
+      </>
+    );
+  }
+  if (p.mrr > 0 && RISK_KINDS.has(p.kind)) {
+    return (
+      <>
+        {count} · <span className="at-risk">${p.mrr.toLocaleString()} at risk</span>
+      </>
+    );
+  }
+  return count;
+}
+
+function PlaybookRow({ p, onOpen }: { p: EnrichedRow; onOpen: () => void }) {
+  const chip = STATE_CHIP[p.state];
+  return (
+    <FixItCard
+      icon={p.icon}
+      tag={null}
+      title={p.title}
+      meta={
+        p.count > 0 ? (
+          <StakesMeta p={p} />
+        ) : (
+          <span style={{ color: "var(--text-3, var(--text))" }}>{p.subtitle}</span>
+        )
+      }
+      action={
+        <span style={{ display: "inline-flex", alignItems: "center", gap: "var(--s-3)" }}>
+          {chip ? (
+            <Badge variant={chip.variant} dot={false}>
+              <span style={{ display: "inline-flex", alignItems: "center", gap: 4 }}>
+                <Icon name={chip.icon} /> {chip.label}
+              </span>
+            </Badge>
+          ) : null}
+          <Icon name="chevron-right" />
+        </span>
+      }
+      data-clickable="true"
+      role="button"
+      tabIndex={0}
+      onClick={onOpen}
+      onKeyDown={(e) => {
+        if (e.key === "Enter" || e.key === " ") onOpen();
+      }}
+    />
   );
 }
 
@@ -638,148 +584,3 @@ function TriggersTab() {
     </div>
   );
 }
-
-// ---------------------------------------------------------------------------
-// PlaybookAutomationRow — per-row automation state and controls.
-//
-// Shows: On autopilot / Paused / Off, a one-line rule summary when the rule
-// exists, last run (if any), and the Pause/Resume, Edit rule, Review steps,
-// Watch (1 min) controls. Conditions live behind "Edit rule" — never on this
-// page directly.
-// ---------------------------------------------------------------------------
-
-const AUTOPILOT_STATUS_LABEL: Record<AutopilotStatus, string> = {
-  on: "On autopilot",
-  paused: "Paused",
-  off: "Off",
-};
-
-const AUTOPILOT_STATUS_VARIANT: Record<AutopilotStatus, "blue" | "warn" | "neutral"> = {
-  on: "blue",
-  paused: "warn",
-  off: "neutral",
-};
-
-// Plain-English rule summary built from the playbook's own problem sentence.
-// Kept here (and intentionally short) so the page reads calmly without
-// exposing any condition syntax.
-function ruleSummary(p: Playbook): string {
-  const tail = p.problem.replace(/^The /, "").replace(/\.$/, "").toLowerCase();
-  return `Runs for accounts where ${tail}`;
-}
-
-function lastRunLabel(playbookId: string): string | null {
-  const recent = outcomesFor(playbookId).sort((a, b) => a.daysAgo - b.daysAgo)[0];
-  if (!recent) return null;
-  if (recent.daysAgo === 0) return "Last run: today";
-  if (recent.daysAgo === 1) return "Last run: yesterday";
-  return `Last run: ${recent.daysAgo}d ago`;
-}
-
-function PlaybookAutomationRow({
-  playbook,
-  onEditRule,
-  onOpenHighLevel,
-}: {
-  playbook: Playbook;
-  onEditRule: () => void;
-  onOpenHighLevel: () => void;
-}) {
-
-
-  const status = useAutopilotStatus(playbook.id);
-  const hasRule = status !== "off";
-  const lastRun = lastRunLabel(playbook.id);
-
-  return (
-    <div
-      style={{
-        display: "flex",
-        flexDirection: "column",
-        gap: "var(--s-2)",
-        padding: "var(--s-3)",
-        marginInline: "var(--s-2)",
-        borderRadius: "var(--r-md)",
-        background: "var(--surface-2)",
-        border: "1px solid var(--border)",
-      }}
-    >
-      {/* Status + rule summary */}
-      <div style={{ display: "flex", alignItems: "center", gap: "var(--s-2)", flexWrap: "wrap" }}>
-        <Badge variant={AUTOPILOT_STATUS_VARIANT[status]} dot={status === "off"}>
-          <span style={{ display: "inline-flex", alignItems: "center", gap: 4 }}>
-            {status === "on" ? <Icon name="zap" /> : status === "paused" ? <Icon name="pause" /> : null}
-            {AUTOPILOT_STATUS_LABEL[status]}
-          </span>
-        </Badge>
-        {hasRule ? (
-          <span style={{ font: "var(--t-body-sm)", color: "var(--text-2, var(--text))" }}>
-            {ruleSummary(playbook)}
-          </span>
-        ) : (
-          <span style={{ font: "var(--t-body-sm)", color: "var(--text-3, var(--text))" }}>
-            No autopilot rule yet — run it once to set one up.
-          </span>
-        )}
-        {lastRun ? (
-          <span style={{ marginLeft: "auto", font: "var(--t-meta)", color: "var(--text-3, var(--text))" }}>
-            {lastRun}
-          </span>
-        ) : null}
-      </div>
-
-      {/* Controls — Pause/Resume, Edit rule, Review steps, Watch */}
-      <div style={{ display: "flex", alignItems: "center", gap: "var(--s-2)", flexWrap: "wrap" }}>
-        {status === "on" ? (
-          <Button
-            variant="ghost"
-            size="sm"
-            icon={<Icon name="pause" />}
-            onClick={() => {
-              autopilotStore.pause(playbook.id);
-              toast("Autopilot paused — the rule is kept.");
-            }}
-          >
-            Pause
-          </Button>
-        ) : status === "paused" ? (
-          <Button
-            variant="ghost"
-            size="sm"
-            icon={<Icon name="play" />}
-            onClick={() => {
-              autopilotStore.resume(playbook.id);
-              toast.success("Autopilot resumed.");
-            }}
-          >
-            Resume
-          </Button>
-        ) : null}
-        <Button
-          variant="ghost"
-          size="sm"
-          icon={<Icon name="sliders" />}
-          onClick={onEditRule}
-          disabled={!hasRule}
-        >
-          Edit rule
-        </Button>
-        <Button
-          variant="ghost"
-          size="sm"
-          icon={<Icon name="external-link" />}
-          onClick={onOpenHighLevel}
-          disabled={!hasRule}
-          title="Reopen the HighLevel handoff to reconfigure steps or messages natively"
-        >
-          Open in HighLevel
-        </Button>
-        {/* Step & message edits happen in HighLevel — no editor here. */}
-
-        <PlayVideoButton playbook={playbook} label="Watch (1 min)" />
-      </div>
-
-    </div>
-  );
-}
-
