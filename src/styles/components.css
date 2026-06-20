@@ -245,6 +245,13 @@ html,body{font-family:var(--font-ui);font-size:14px;line-height:1.5;color:var(--
 .verdict.tone-pos{box-shadow:inset 4px 0 0 var(--pos-7);}
 .verdict.tone-watch{box-shadow:inset 4px 0 0 var(--warn-7);}
 .verdict.tone-risk{box-shadow:inset 4px 0 0 var(--neg-7);}
+/* Mobile (M1): tighten the hero so it never crushes on a phone */
+@media (max-width:560px){
+  .verdict{padding:var(--s-5) var(--s-5);gap:12px;}
+  .verdict-line{font-size:18px;line-height:1.35;}
+  .verdict-score{font-size:26px;}
+  .verdict-actions{margin-left:0;}
+}
 
 /* ─── TIER 1 · THE WHY — Risk / Opportunity split with driver lists ─── */
 /* Plain-language drivers. Header rule carries the semantic color (top border),
