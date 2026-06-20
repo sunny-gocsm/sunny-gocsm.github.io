@@ -1,5 +1,6 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
-
+/* Inter is loaded by the design system (gocsm-ds/styles.css) as a variable
+   optical-sizing font + JetBrains Mono. No separate static Inter import here —
+   it duplicated the request and only the DS axes (400–700) are actually used. */
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
