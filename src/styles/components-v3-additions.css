@@ -121,3 +121,13 @@
 .accent-t.watch,.accent-t.warn{border-top-color:var(--warn-7);}
 .accent-t.thriving,.accent-t.pos{border-top-color:var(--pos-7);}
 .accent-t.ai{border-top-color:var(--ai-7);}
+
+/* Rule statement — ONE plain-language automation rule with deliberate hierarchy:
+   eyebrow (muted) → rule line (prominent) → live match count (distinct chip).
+   Use so automation/trigger surfaces never hand-roll the rule display. */
+.rule-statement{display:flex;flex-direction:column;gap:8px;padding:14px;border-radius:var(--r-md);background:var(--bg-subtle);border:1px solid var(--border);}
+.rule-statement .rule-eyebrow{display:inline-flex;align-items:center;gap:6px;font-size:var(--t-label);font-weight:var(--fw-semibold);text-transform:uppercase;letter-spacing:0.04em;color:var(--text-3);}
+.rule-statement .rule-eyebrow svg,.rule-statement .rule-eyebrow i{width:13px;height:13px;}
+.rule-statement .rule-line{font-size:var(--t-subheading);font-weight:var(--fw-semibold);line-height:1.4;color:var(--text);}
+.rule-statement .rule-count{display:inline-flex;align-items:center;gap:6px;align-self:flex-start;padding:2px 8px;border-radius:var(--r-pill);background:var(--surface);border:1px solid var(--border-soft);font-size:var(--t-caption);color:var(--text-2);}
+.rule-statement .rule-count .mono{font-family:var(--font-mono);font-weight:700;}
