@@ -651,7 +651,7 @@ export default function TodayPage() {
               ) : null}
             </div>
             <p style={{ font: "var(--t-body-sm)", color: "var(--text-2, var(--text))", margin: 0 }}>
-              One row per problem — fix many accounts at once.
+              Fix many accounts at once.
             </p>
           </div>
         </header>
@@ -659,7 +659,7 @@ export default function TodayPage() {
         {cohorts.length === 0 ? (
           <Card padded>
             <p style={{ font: "var(--t-body)", color: "var(--text-2, var(--text))", margin: 0 }}>
-              🎉 Nothing needs you today. GoCSM is watching the board.
+              Nothing needs you today — GoCSM is watching your accounts.
             </p>
           </Card>
         ) : (

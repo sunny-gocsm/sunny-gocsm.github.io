@@ -22,8 +22,8 @@ export const autopilotSentEmails: AutopilotEmail[] = [
     accountId: "acc-bright-dental",
     accountName: "Bright Dental",
     playbookId: "pb-save-domain",
-    subject: "Quick fix for your domain",
-    snippet: "Hi Sara — looks like your domain disconnected last night. Here's the 2-minute fix…",
+    subject: "Quick fix for your website",
+    snippet: "Hi Sara — looks like your website disconnected last night. Here's the 2-minute fix…",
     whenLabel: "2:14 AM",
   },
   {
@@ -81,8 +81,8 @@ export const autopilotPendingEmails: AutopilotEmail[] = [
     accountId: "acc-orchid-spa",
     accountName: "Orchid Spa",
     playbookId: "pb-save-domain",
-    subject: "Quick fix for your domain",
-    snippet: "Hi — looks like your domain disconnected. Here's the 2-minute fix…",
+    subject: "Quick fix for your website",
+    snippet: "Hi — looks like your website disconnected. Here's the 2-minute fix…",
     whenLabel: "Queued · 6:14 AM",
   },
 ];

@@ -751,8 +751,8 @@ function WorkflowHandoff({
 // Short, plain-English phrase for the play's fixed event.
 function eventPhrase(p: Playbook): string {
   const map: Record<string, string> = {
-    "pb-save-a2p": "lose A2P registration",
-    "pb-save-domain": "disconnect their custom domain",
+    "pb-save-a2p": "lose their phone-texting registration",
+    "pb-save-domain": "disconnect their website",
     "pb-save-integration": "remove a key integration",
     "pb-payment-failed": "have a failed payment",
     "pb-no-login": "go quiet for 21+ days",
@@ -865,8 +865,8 @@ const AGE_LABEL: Record<AgeBucket, string> = {
   over365: "Over 1 year old",
 };
 const SIGNAL_LABEL: Record<OtherSignal, string> = {
-  "a2p-lost": "A2P registration lost",
-  "domain-lost": "Domain disconnected",
+  "a2p-lost": "Texting registration lost",
+  "domain-lost": "Website disconnected",
   "integration-lost": "Integration removed",
 };
 
