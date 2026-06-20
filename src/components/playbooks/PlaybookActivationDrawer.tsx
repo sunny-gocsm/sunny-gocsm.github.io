@@ -47,7 +47,7 @@ interface Props {
   initial?: DrawerInitial;
 }
 
-type Step = "pick" | "explain" | "handoff" | "done";
+type Step = "pick" | "explain" | "handoff" | "run" | "done";
 
 // Plain-English trigger phrase from the playbook's problem.
 function plainTrigger(p: Playbook): string {
@@ -233,8 +233,8 @@ export function PlaybookActivationDrawer({ open, scope, accounts, onClose, initi
             {directAutopilot ? "Edit autopilot" : step === "done" ? "Done" : "GoCSM's pick"} · scoped to{" "}
             <Mono>{targetCount}</Mono> account{targetCount === 1 ? "" : "s"}
           </span>
-          <Button variant="ghost" size="sm" onClick={close}>
-            Close <Icon name="x" />
+          <Button variant="ghost" size="sm" aria-label="Close" onClick={close}>
+            <Icon name="x" />
           </Button>
         </div>
 
@@ -417,7 +417,7 @@ export function PlaybookActivationDrawer({ open, scope, accounts, onClose, initi
           <Card padded className="accent-t info">
             <HowThisPlayWorks
               playbook={playbook}
-              ctaLabel="Set it up & run in HighLevel"
+              ctaLabel="Set it up in HighLevel"
               onCta={() => setStep("handoff")}
               onBack={() => setStep("pick")}
               mode="onetime"
@@ -432,18 +432,41 @@ export function PlaybookActivationDrawer({ open, scope, accounts, onClose, initi
             playbook={playbook}
             mode="onetime"
             onBack={() => setStep("explain")}
-            onComplete={() => {
-              runNow();
-            }}
+            onComplete={() => setStep("run")}
           />
         ) : null}
 
-
+        {/* ============= STEP RUN — explicit run, in GoCSM, after HighLevel setup ============= */}
+        {step === "run" && playbook ? (
+          <Card padded className="accent-t info">
+            <div style={{ display: "flex", flexDirection: "column", gap: "var(--s-3)" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: "var(--s-2)" }}>
+                <span className="icon-chip pos" aria-hidden>
+                  <Icon name="check" />
+                </span>
+                <strong style={{ font: "var(--t-h4, var(--t-body))", fontWeight: 600 }}>
+                  Set up in HighLevel.
+                </strong>
+              </div>
+              <p style={{ margin: 0, font: "var(--t-body)", color: "var(--text-2, var(--text))" }}>
+                Now run it {isBatch ? <>for these <Mono>{targetCount}</Mono> accounts</> : "for this account"} — GoCSM kicks it off and clears them from Today.
+              </p>
+              <div style={{ display: "flex", gap: "var(--s-2)", alignItems: "center" }}>
+                <Button variant="primary" icon={<Icon name="play" />} onClick={runNow}>
+                  Run it{batchSuffix}
+                </Button>
+                <Button variant="ghost" size="sm" onClick={() => setStep("handoff")}>
+                  Back
+                </Button>
+              </div>
+            </div>
+          </Card>
+        ) : null}
 
         {/* ============= STEP DONE + AUTOPILOT OFFER ============= */}
         {step === "done" && playbook ? (
           <>
-            {!directAutopilot ? (
+            {!directAutopilot && autopilotSetupStep === 0 ? (
               <Card padded className="accent-t pos">
                 <div style={{ display: "flex", flexDirection: "column", gap: "var(--s-2)" }}>
                   <div style={{ display: "flex", alignItems: "center", gap: "var(--s-2)" }}>
@@ -695,7 +718,7 @@ function WorkflowHandoff({
             }}
           >
             Opens the pre-built workflow in HighLevel — steps are off by default and the messages are
-            pre-drafted. Turn on what you want, then {mode === "autopilot" ? "publish" : "run"} it.
+            pre-drafted. Turn on what you want{mode === "autopilot" ? ", then publish it" : " and check the messages"}.
           </p>
         </div>
 
@@ -784,7 +807,7 @@ function WorkflowHandoff({
             {[
               "Turn on the steps you want",
               "Check the messages",
-              mode === "autopilot" ? "Publish" : "Run it",
+              ...(mode === "autopilot" ? ["Publish"] : []),
             ].map((item, i) => (
               <li
                 key={i}
