@@ -9,7 +9,7 @@
    .metric-card, .delta, .toggle/.input/.select, .pillar-*.
 
    TOKENS ONLY — no raw hex, on-scale spacing/radii/shadows. Where a needed
-   semantic token is missing it is flagged /* TOKEN-GAP: … */ against the
+   semantic token is missing it is flagged (TOKEN-GAP: …) against the
    closest existing scale (the human resolves it in the token layer; these
    were proposed but never landed — see action-layer/01b-token-confirmation).
 
@@ -335,6 +335,16 @@
 .fixit-card.resolved,.fixit-card.clean{background:var(--pos-soft);border-color:var(--pos-7);}
 .fixit-card.resolved .fi-ico,.fixit-card.clean .fi-ico{background:var(--surface);border-color:var(--pos-7);color:var(--pos-7);}
 .fixit-card.resolved .fi-tag,.fixit-card.clean .fi-tag{color:var(--pos-9);}
+/* §9.1 — fi-head (tag + optional status badge), note line, and lg/hero variant (v3.2) */
+.fixit-card .fi-head{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:6px;}
+.fixit-card .fi-head .fi-tag{margin-bottom:0;}
+.fixit-card .fi-badge{flex-shrink:0;}
+.fixit-card .fi-note{margin-top:6px;font-size:13px;color:var(--text-2);}
+.fixit-card.lg{gap:18px;padding:22px 22px 22px 24px;}
+.fixit-card.lg .fi-ico{width:44px;height:44px;border-radius:11px;}
+.fixit-card.lg .fi-ico i,.fixit-card.lg .fi-ico svg{width:23px;height:23px;}
+.fixit-card.lg .fi-text{font-size:16px;}
+.fixit-card.lg .fi-right{align-self:center;}
 
 /* ============================================================== *
  * 10 · ACTIVITY LOG  (Evidence · §7d)                            *
