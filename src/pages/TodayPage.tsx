@@ -62,13 +62,11 @@ function fmtMoneySmall(n: number) {
 interface CohortFixItCardProps {
   icon: string;
   title: string;
-  tag: string;
   accounts: Account[];
   actionLabel: string;
   emptyLine: string;
   size?: "md" | "lg";
   playbookId?: string;
-  onView: () => void;
   onApply?: () => void;
   onEditRule?: (playbookId: string) => void;
   onOpenHighLevel?: (playbookId: string) => void;
@@ -77,13 +75,11 @@ interface CohortFixItCardProps {
 function CohortFixItCard({
   icon,
   title,
-  tag,
   accounts,
   actionLabel,
   emptyLine,
   size = "md",
   playbookId,
-  onView,
   onApply,
   onEditRule,
   onOpenHighLevel,
@@ -94,8 +90,8 @@ function CohortFixItCard({
   const count = accounts.length;
 
   if (count === 0) {
-    // All-clear: green "clean" treatment, no action.
-    return <FixItCard size={size} icon={icon} tag={tag} clean doneLabel="Clear" text={emptyLine} />;
+    // All-clear: green "clean" treatment, no eyebrow, no action.
+    return <FixItCard size={size} icon={icon} tag={null} clean doneLabel="Clear" text={emptyLine} />;
   }
 
   const text = (
@@ -106,11 +102,12 @@ function CohortFixItCard({
   );
 
   if (onAutopilot && playbookId) {
+    // On autopilot — explicit quiet controls; not a whole-row tap target.
     return (
       <FixItCard
         size={size}
         icon={icon}
-        tag={tag}
+        tag={null}
         text={text}
         badge={<Badge variant="pos" dot={false}>On · autopilot</Badge>}
         note="New matches handled automatically."
@@ -145,23 +142,27 @@ function CohortFixItCard({
     );
   }
 
+  // Calm row: no eyebrow, one quiet action (verb + chevron), whole row taps to open.
   return (
     <FixItCard
       size={size}
       icon={icon}
-      tag={tag}
+      tag={null}
       text={text}
+      data-clickable="true"
+      onClick={() => onApply?.()}
       action={
-        <>
-          {onApply ? (
-            <ActionButton size="sm" icon="play" onClick={onApply}>
-              {actionLabel}
-            </ActionButton>
-          ) : null}
-          <Button variant="ghost" size="sm" icon={<Icon name="arrow-right" />} onClick={onView}>
-            View all
-          </Button>
-        </>
+        <Button
+          variant="ghost"
+          size="sm"
+          iconRight={<Icon name="chevron-right" />}
+          onClick={(e: React.MouseEvent) => {
+            e.stopPropagation();
+            onApply?.();
+          }}
+        >
+          {actionLabel}
+        </Button>
       }
     />
   );
@@ -669,12 +670,10 @@ export default function TodayPage() {
                 size={i === 0 ? "lg" : "md"}
                 icon={c.icon}
                 title={c.title}
-                tag={c.tag}
                 accounts={c.accounts}
                 actionLabel={c.actionLabel}
                 emptyLine={c.emptyLine}
                 playbookId={c.playbookId}
-                onView={c.onView}
                 onApply={c.onApply}
                 onEditRule={(id) => openAutopilotEditor(id, 1)}
                 onOpenHighLevel={(id) => openAutopilotEditor(id, 2, true)}

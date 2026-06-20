@@ -71,18 +71,24 @@ button {
    or .card:has(> button[onclick]). Lift on hover, depress on press. */
 .card[role="button"],
 .card[data-clickable="true"],
+.fixit-card[data-clickable="true"],
 .playbook-card,
 .queue-row {
   cursor: pointer;
 }
+.fixit-card[data-clickable="true"] {
+  transition: box-shadow 180ms ease, transform 180ms ease, border-color 180ms ease;
+}
 .card[role="button"]:hover,
 .card[data-clickable="true"]:hover,
+.fixit-card[data-clickable="true"]:hover,
 .playbook-card:hover {
   box-shadow: var(--sh-hover);
   transform: translateY(-1px);
 }
 .card[role="button"]:active,
 .card[data-clickable="true"]:active,
+.fixit-card[data-clickable="true"]:active,
 .playbook-card:active {
   box-shadow: var(--sh-press);
   transform: translateY(0);
