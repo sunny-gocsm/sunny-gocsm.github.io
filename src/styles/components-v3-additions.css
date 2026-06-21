@@ -133,9 +133,11 @@
 .rule-statement .rule-count .mono{font-family:var(--font-mono);font-weight:700;}
 
 /* ─── FilterChip — criteria/filter pill shell (consumers compose editors as children) ─── */
-.filter-chip{display:inline-flex;align-items:center;flex-wrap:wrap;gap:6px;padding:6px 8px 6px 12px;border:1px solid var(--border);border-radius:var(--r-md);background:var(--surface-2,#f4f6fa);font-size:var(--t-body-sm);color:var(--text);}
+/* Remove is pinned top-right (out of flow) so it never orphans onto its own line
+   when the field label + editors wrap; content wraps in the reserved right space. */
+.filter-chip{position:relative;display:flex;align-items:center;flex-wrap:wrap;gap:6px;padding:6px 30px 6px 12px;border:1px solid var(--border);border-radius:var(--r-md);background:var(--surface-2,#f4f6fa);font-size:var(--t-body-sm);color:var(--text);}
 .filter-chip .fc-label{font-weight:600;color:var(--text);}
-.filter-chip .fc-remove{display:inline-flex;align-items:center;margin-left:2px;border:0;background:transparent;color:var(--text-3,var(--text));cursor:pointer;padding:2px;border-radius:var(--r-sm,6px);}
+.filter-chip .fc-remove{position:absolute;top:50%;right:6px;transform:translateY(-50%);display:inline-flex;align-items:center;border:0;background:transparent;color:var(--text-3,var(--text));cursor:pointer;padding:2px;border-radius:var(--r-sm,6px);}
 .filter-chip .fc-remove:hover{background:var(--surface,#fff);color:var(--neg-7,#c0392b);}
 
 /* ─── PromptField — the AI / NL prompt input (inviting, never a faint white box) ─── */
