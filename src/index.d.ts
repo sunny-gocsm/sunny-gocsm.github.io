@@ -60,3 +60,4 @@ export * from "./components/action/StatusChips";
 export * from "./components/action/TeamPulseStrip";
 export * from "./components/action/WeeklyDigest";
 export * from "./components/action/FilterChip";
+export * from "./components/action/PromptField";
