@@ -10,8 +10,6 @@ import {
   Mono,
   Button,
   Toggle,
-  ReceiptStrip,
-  WeeklyDigest,
   AssignmentRuleEditor,
   SkillScheduleCard,
 } from "@/gocsm-ds";
@@ -23,12 +21,6 @@ import {
   type PlaybookState,
 } from "@/fixtures/playbooks";
 import {
-  outcomes,
-  weeklyTotals,
-  outcomeAccount,
-  outcomePlaybook,
-} from "@/fixtures/outcomes";
-import {
   triggers,
   populationFor,
   playbookOf,
@@ -38,12 +30,11 @@ import {
 
 
 
-type TabId = "library" | "triggers" | "outcomes";
+type TabId = "library" | "triggers";
 
 const TABS = [
   { id: "library", label: "Library" },
   { id: "triggers", label: "Triggers" },
-  { id: "outcomes", label: "Outcomes" },
 ];
 
 type Filter = "all" | "save" | "retention" | "billing" | "adoption" | "onboarding" | "expansion";
@@ -178,10 +169,8 @@ export default function PlaybooksPage() {
             </section>
           ) : null}
         </div>
-      ) : tab === "triggers" ? (
-        <TriggersTab />
       ) : (
-        <OutcomesTab />
+        <TriggersTab />
       )}
     </main>
   );
@@ -252,146 +241,6 @@ function PlaybookRow({ p, onOpen }: { p: EnrichedRow; onOpen: () => void }) {
         if (e.key === "Enter" || e.key === " ") onOpen();
       }}
     />
-  );
-}
-
-// ============================================================================
-// Outcomes tab — the story loop
-// ============================================================================
-
-function OutcomesTab() {
-  const totals = weeklyTotals();
-  const navigate = useNavigate();
-  const sorted = [...outcomes].sort((a, b) => a.daysAgo - b.daysAgo);
-
-  return (
-    <div style={{ display: "flex", flexDirection: "column", gap: "var(--s-6)" }}>
-      {/* Win-loop hero band */}
-      <section
-        style={{
-          borderRadius: "var(--r-lg, 14px)",
-          padding: "var(--s-5) var(--s-5)",
-          background:
-            "linear-gradient(135deg, var(--pos-soft) 0%, var(--blue-2) 60%, var(--surface) 100%)",
-          border: "1px solid var(--border)",
-          display: "flex",
-          flexDirection: "column",
-          gap: "var(--s-3)",
-        }}
-      >
-        <div style={{ display: "flex", alignItems: "center", gap: "var(--s-2)" }}>
-          <span
-            aria-hidden
-            style={{
-              width: 36, height: 36, borderRadius: 11,
-              display: "grid", placeItems: "center",
-              background: "var(--pos-soft)", color: "var(--pos-7)",
-            }}
-          >
-            <Icon name="trophy" />
-          </span>
-          <h2 style={{ font: "var(--t-h2)", margin: 0 }}>This week, in plain words</h2>
-          <span style={{ marginLeft: "auto" }}>
-            <ConfTag basis="fact" detail="verified via signal change after a play ran" />
-          </span>
-        </div>
-        <Card padded>
-          <WeeklyDigest
-            greeting="Here's what your Playbooks did this week."
-            stats={{
-              sent: totals.sent,
-              recovered: `$${totals.recovered.toLocaleString()}`,
-              protected: `$${totals.protected.toLocaleString()}`,
-            }}
-            actions={[
-              { icon: "mail", n: totals.sent, label: "outreach messages sent (you approved)" },
-              { icon: "shield", n: outcomes.filter((o) => o.kind === "save").length, label: "saves verified" },
-              { icon: "credit-card", n: outcomes.filter((o) => o.kind === "recovery").length, label: "payments recovered" },
-            ]}
-            autopilot={{ on: 3, of: 9 }}
-            sync="Wins are reported only when a downstream signal confirmed the change."
-          />
-        </Card>
-      </section>
-
-      {/* The story feed */}
-      <section style={{ display: "flex", flexDirection: "column", gap: "var(--s-3)" }}>
-        <div style={{ display: "flex", alignItems: "center", gap: "var(--s-2)" }}>
-          <span
-            aria-hidden
-            style={{
-              width: 30, height: 30, borderRadius: 9,
-              display: "grid", placeItems: "center",
-              background: "var(--info-soft)", color: "var(--info-7)",
-            }}
-          >
-            <Icon name="check-circle" />
-          </span>
-          <h3 style={{ font: "var(--t-h2)", margin: 0 }}>Verified wins</h3>
-          <span style={{ font: "var(--t-meta)", color: "var(--text-3, var(--text))", marginLeft: "auto" }}>
-            <Mono>{sorted.length}</Mono> this week
-          </span>
-        </div>
-        <div style={{ display: "flex", flexDirection: "column", gap: "var(--s-3)" }}>
-          {sorted.map((o) => {
-            const pb = outcomePlaybook(o);
-            const acct = outcomeAccount(o);
-            return (
-              <Card key={o.id} padded className={o.daysAgo === 0 ? "celebrate-pop" : undefined}>
-                <div style={{ display: "flex", flexDirection: "column", gap: "var(--s-3)" }}>
-                  <ReceiptStrip
-                    lead={o.lead}
-                    stats={o.stats}
-                    onSeeLog={pb ? () => navigate(`/playbooks/${pb.id}`) : undefined}
-                  >
-                    {" "}
-                    {o.rest}
-                  </ReceiptStrip>
-                  <div
-                    style={{
-                      display: "flex",
-                      flexWrap: "wrap",
-                      gap: "var(--s-2)",
-                      alignItems: "center",
-                      font: "var(--t-meta)",
-                      color: "var(--text-3, var(--text))",
-                    }}
-                  >
-                    {acct ? (
-                      <Badge
-                        variant="neutral"
-                        dot={false}
-                        onClick={() => navigate(`/accounts/${acct.identity.id}`)}
-                        style={{ cursor: "pointer" }}
-                      >
-                        {acct.identity.name}
-                      </Badge>
-                    ) : null}
-                    {pb ? (
-                      <Badge
-                        variant="blue"
-                        dot={false}
-                        onClick={() => navigate(`/playbooks/${pb.id}`)}
-                        style={{ cursor: "pointer" }}
-                      >
-                        <Icon name={pb.icon} /> {pb.title}
-                      </Badge>
-                    ) : null}
-                    <span>·</span>
-                    <span>
-                      {o.attribution === "playbook-solo" ? "Solo (autopilot)" : "Assist (you approved)"}
-                    </span>
-                    <span style={{ marginLeft: "auto" }}>
-                      verified {o.daysAgo}d ago
-                    </span>
-                  </div>
-                </div>
-              </Card>
-            );
-          })}
-        </div>
-      </section>
-    </div>
   );
 }
 

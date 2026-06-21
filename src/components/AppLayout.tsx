@@ -9,6 +9,7 @@ const GROUPS = [
       { id: "playbooks", label: "Playbooks", icon: "book-open" },
       { id: "onboarding", label: "Onboarding", icon: "rocket" },
       { id: "money", label: "Money", icon: "wallet" },
+      { id: "outcomes", label: "Outcomes", icon: "award" },
     ],
   },
   {
@@ -29,6 +30,7 @@ const PATH_FOR: Record<string, string> = {
   playbooks: "/playbooks",
   onboarding: "/onboarding",
   money: "/money",
+  outcomes: "/outcomes",
   insights: "/insights",
   configure: "/configure",
 };
@@ -40,6 +42,7 @@ function activeId(pathname: string): string {
   if (pathname.startsWith("/playbooks")) return "playbooks";
   if (pathname.startsWith("/onboarding")) return "onboarding";
   if (pathname.startsWith("/money")) return "money";
+  if (pathname.startsWith("/outcomes")) return "outcomes";
   if (pathname.startsWith("/insights")) return "insights";
   if (pathname.startsWith("/configure")) return "configure";
   return "today";
