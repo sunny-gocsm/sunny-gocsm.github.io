@@ -1,5 +1,5 @@
-import TodayPage from "./TodayPage";
+import AttentionPage from "./AttentionPage";
 
-const Index = () => <TodayPage />;
+const Index = () => <AttentionPage />;
 
 export default Index;

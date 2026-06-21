@@ -4,7 +4,7 @@ import { AppShell, Rail } from "@/gocsm-ds";
 const GROUPS = [
   {
     items: [
-      { id: "today", label: "Today", icon: "inbox" },
+      { id: "today", label: "Attention", icon: "bell" },
       { id: "accounts", label: "Accounts", icon: "users" },
       { id: "playbooks", label: "Playbooks", icon: "book-open" },
       { id: "onboarding", label: "Onboarding", icon: "rocket" },
