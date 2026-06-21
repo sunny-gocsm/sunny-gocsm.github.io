@@ -27,7 +27,7 @@ import {
   type LifecycleStage,
   type ActivityStatus,
 } from "@/fixtures";
-import { PlaybookActivationDrawer, type DrawerScope } from "@/components/playbooks/PlaybookActivationDrawer";
+import { AttentionActivation } from "@/components/attention/AttentionActivation";
 import { PageRibbon } from "@/components/PageRibbon";
 
 const accounts = allAccounts();
@@ -396,7 +396,7 @@ export default function AccountsPage() {
   const [setupLostOnly, setSetupLostOnly] = useState(false);
 
   const [selectedIds, setSelectedIds] = useState<(string | number)[]>([]);
-  const [drawerScope, setDrawerScope] = useState<DrawerScope | null>(null);
+  const [setupAccounts, setSetupAccounts] = useState<Account[] | null>(null);
   const [hiddenColumns, setHiddenColumns] = useState<string[]>([
     "adoption",
     "feedback",
@@ -680,15 +680,13 @@ export default function AccountsPage() {
       <Button
         variant="primary"
         size="sm"
-        icon={<Icon name="book-open" />}
-        onClick={() =>
-          setDrawerScope({
-            kind: "accounts",
-            accountIds: selectedIds.map(String),
-          })
-        }
+        icon={<Icon name="zap" />}
+        onClick={() => {
+          const ids = new Set(selectedIds.map(String));
+          setSetupAccounts(accounts.filter((a) => ids.has(a.identity.id)));
+        }}
       >
-        Apply a Playbook
+        Set up a workflow
       </Button>
       <Button variant="ghost" size="sm" onClick={() => setSelectedIds([])}>
         Clear
@@ -947,7 +945,7 @@ export default function AccountsPage() {
       <div style={{ marginBottom: "var(--s-6)", display: "flex", flexDirection: "column", gap: "var(--s-5)" }}>
         <PageRibbon
           title="Accounts"
-          description="Every sub-account in your book. Pick a View, multi-select, and apply a Playbook."
+          description="Every sub-account in your book. Pick a View, multi-select, and set up a workflow."
           kpis={[
             { label: "Customers", value: <Mono>{baseRows.length}</Mono> },
             { label: "Showing", value: <Mono>{rows.length}</Mono> },
@@ -975,12 +973,13 @@ export default function AccountsPage() {
         onHiddenColumnsChange={setHiddenColumns}
       />
 
-      <PlaybookActivationDrawer
-        open={!!drawerScope}
-        scope={drawerScope}
-        accounts={accounts}
-        onClose={() => setDrawerScope(null)}
-      />
+      {setupAccounts ? (
+        <AttentionActivation
+          fixedAccounts={setupAccounts}
+          backLabel="Accounts"
+          onClose={() => setSetupAccounts(null)}
+        />
+      ) : null}
     </main>
   );
 }

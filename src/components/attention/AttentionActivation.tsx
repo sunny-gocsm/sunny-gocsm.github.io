@@ -1,11 +1,12 @@
 import { useEffect, useState } from "react";
-import { Button, Icon, Mono, Stepper, Toggle, Checkbox, Badge, VideoCard } from "@/gocsm-ds";
+import { Button, Icon, Mono, Stepper, Toggle, Checkbox, Badge, VideoCard, AccountRow } from "@/gocsm-ds";
 import { CriteriaBuilder } from "./CriteriaBuilder";
 import { autopilotStore } from "@/state/autopilot";
 import { saveDraft, loadDraft, clearDraft } from "@/state/workflowDrafts";
 import { toast } from "sonner";
 import { matchCount, describeSet, type CriteriaSet } from "@/fixtures/criteriaMatch";
 import type { Recipe } from "@/fixtures/recipes";
+import type { Account } from "@/fixtures";
 
 // AttentionActivation — the FULL-PAGE workflow builder. Three clear steps:
 //   ① Who it runs on (criteria + live preview) → ② Set up the workflow (watch the
@@ -27,12 +28,12 @@ const ACTION_STEPS = [
 ];
 
 function WorkflowStep({
-  set,
+  contextLabel,
   n,
   workflowReady,
   setWorkflowReady,
 }: {
-  set: CriteriaSet;
+  contextLabel: string;
   n: number;
   workflowReady: boolean;
   setWorkflowReady: (v: boolean) => void;
@@ -41,7 +42,7 @@ function WorkflowStep({
   return (
     <div className="aa-step2">
       <div className="aa-pinned-chip">
-        <Icon name="users" /> Running on <Mono>{n}</Mono> account{n === 1 ? "" : "s"} · {describeSet(set)}
+        <Icon name="users" /> Running on <Mono>{n}</Mono> account{n === 1 ? "" : "s"} · {contextLabel}
       </div>
 
       <div className="aa-setup-head">
@@ -82,17 +83,19 @@ function WorkflowStep({
 }
 
 function ReviewStep({
-  set,
+  contextLabel,
   n,
   autopilot,
   setAutopilot,
+  showAutopilot,
   onEditWho,
   onEditWhat,
 }: {
-  set: CriteriaSet;
+  contextLabel: string;
   n: number;
   autopilot: boolean;
   setAutopilot: (v: boolean) => void;
+  showAutopilot: boolean;
   onEditWho: () => void;
   onEditWhat: () => void;
 }) {
@@ -110,7 +113,7 @@ function ReviewStep({
           <span><Icon name="users" /> Who it runs on</span>
           <button type="button" className="aa-sc-edit" onClick={onEditWho}>Edit</button>
         </div>
-        <p className="aa-sc-body"><Mono>{n}</Mono> account{n === 1 ? "" : "s"} · {describeSet(set)}</p>
+        <p className="aa-sc-body"><Mono>{n}</Mono> account{n === 1 ? "" : "s"} · {contextLabel}</p>
       </div>
 
       <div className="aa-summary-card">
@@ -121,17 +124,45 @@ function ReviewStep({
         <p className="aa-sc-body">Published in HighLevel · alert you, drafted note (your OK first), escalate after 7 days.</p>
       </div>
 
-      <div className="aa-summary-card">
-        <div className="aa-sc-head"><span><Icon name="zap" /> Autopilot</span></div>
-        <div className="aa-autopilot-row">
-          <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
-            <strong style={{ fontSize: "var(--t-body-sm)", fontWeight: 600 }}>Keep running on new matches</strong>
-            <span style={{ fontSize: "var(--t-caption)", color: "var(--text-3, var(--text))" }}>
-              New accounts that qualify are handled automatically — no setup each time.
-            </span>
+      {showAutopilot ? (
+        <div className="aa-summary-card">
+          <div className="aa-sc-head"><span><Icon name="zap" /> Autopilot</span></div>
+          <div className="aa-autopilot-row">
+            <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
+              <strong style={{ fontSize: "var(--t-body-sm)", fontWeight: 600 }}>Keep running on new matches</strong>
+              <span style={{ fontSize: "var(--t-caption)", color: "var(--text-3, var(--text))" }}>
+                New accounts that qualify are handled automatically — no setup each time.
+              </span>
+            </div>
+            <Toggle on={autopilot} onChange={setAutopilot} />
           </div>
-          <Toggle on={autopilot} onChange={setAutopilot} />
         </div>
+      ) : null}
+    </div>
+  );
+}
+
+// Step 1 when the user pre-selected specific accounts (e.g. from the Accounts table):
+// a fixed list instead of the criteria builder — the workflow runs once on these.
+function FixedSelectionStep({ accounts }: { accounts: Account[] }) {
+  const sorted = [...accounts].sort((a, b) => b.revenue.mrr - a.revenue.mrr);
+  return (
+    <div style={{ maxWidth: 680, margin: "0 auto", display: "flex", flexDirection: "column", gap: "var(--s-4)" }}>
+      <div style={{ display: "flex", flexDirection: "column", gap: "var(--s-1)" }}>
+        <h2 style={{ fontSize: "var(--t-heading)", fontWeight: 700, margin: 0 }}>Who it runs on</h2>
+        <p style={{ margin: 0, fontSize: "var(--t-body-sm)", color: "var(--text-3, var(--text))" }}>
+          The {accounts.length} account{accounts.length === 1 ? "" : "s"} you selected — the workflow runs once on these.
+        </p>
+      </div>
+      <div className="mw-rows">
+        {sorted.map((a) => (
+          <AccountRow
+            key={a.identity.id}
+            name={a.identity.name}
+            band={a.health.band}
+            value={`$${Math.round(a.revenue.mrr).toLocaleString()}`}
+          />
+        ))}
       </div>
     </div>
   );
@@ -139,10 +170,12 @@ function ReviewStep({
 
 export function AttentionActivation({
   recipe,
+  fixedAccounts,
   onClose,
   backLabel = "Attention",
 }: {
   recipe?: Recipe;
+  fixedAccounts?: Account[];
   onClose: () => void;
   backLabel?: string;
 }) {
@@ -159,9 +192,11 @@ export function AttentionActivation({
   const [autopilot, setAutopilot] = useState(true);
   const [live, setLive] = useState(false);
 
-  const n = matchCount(set);
+  const fixed = !!fixedAccounts && fixedAccounts.length > 0;
+  const n = fixed ? fixedAccounts!.length : matchCount(set);
   const playbookId = recipe?.playbookId ?? "pb-no-login";
-  const problemName = recipe?.label ?? "New workflow";
+  const problemName = recipe?.label ?? (fixed ? "Selected accounts" : "New workflow");
+  const contextLabel = fixed ? "hand-picked from Accounts" : describeSet(set);
 
   // Tell the user we restored their draft (only when reopening with saved progress).
   useEffect(() => {
@@ -178,9 +213,11 @@ export function AttentionActivation({
   }, [recipeId, set, step, workflowReady, live]);
 
   const goLive = () => {
-    autopilotStore.enable(playbookId, "review");
+    if (!fixed) autopilotStore.enable(playbookId, "review");
     if (recipeId) clearDraft(recipeId);
-    toast.success("Workflow is live", { description: `Auto-running on ${n} account${n === 1 ? "" : "s"} now.` });
+    toast.success(fixed ? "Workflow started" : "Workflow is live", {
+      description: `Running on ${n} account${n === 1 ? "" : "s"} now.`,
+    });
     setLive(true);
   };
 
@@ -213,21 +250,25 @@ export function AttentionActivation({
               <span className="aa-done-ico" aria-hidden><Icon name="check-circle" /></span>
               <h2 style={{ fontSize: "var(--t-display-lg)", fontWeight: 700, margin: 0 }}>It's live</h2>
               <p style={{ margin: 0, fontSize: "var(--t-body)", color: "var(--text-2, var(--text))", textAlign: "center", maxWidth: 460 }}>
-                Auto-running on <Mono>{n}</Mono> account{n === 1 ? "" : "s"} now — and on new matches the moment they qualify.
-                We'll surface anyone it doesn't move on the Attention page.
+                {fixed ? (
+                  <>Running on your <Mono>{n}</Mono> selected account{n === 1 ? "" : "s"} now. We'll surface anyone it doesn't move on the Attention page.</>
+                ) : (
+                  <>Auto-running on <Mono>{n}</Mono> account{n === 1 ? "" : "s"} now — and on new matches the moment they qualify. We'll surface anyone it doesn't move on the Attention page.</>
+                )}
               </p>
               <Button variant="primary" onClick={onClose}>Back to {backLabel}</Button>
             </div>
           ) : step === "criteria" ? (
-            <CriteriaBuilder set={set} onChange={setSet} />
+            fixed ? <FixedSelectionStep accounts={fixedAccounts!} /> : <CriteriaBuilder set={set} onChange={setSet} />
           ) : step === "workflow" ? (
-            <WorkflowStep set={set} n={n} workflowReady={workflowReady} setWorkflowReady={setWorkflowReady} />
+            <WorkflowStep contextLabel={contextLabel} n={n} workflowReady={workflowReady} setWorkflowReady={setWorkflowReady} />
           ) : (
             <ReviewStep
-              set={set}
+              contextLabel={contextLabel}
               n={n}
               autopilot={autopilot}
               setAutopilot={setAutopilot}
+              showAutopilot={!fixed}
               onEditWho={() => setStep("criteria")}
               onEditWhat={() => setStep("workflow")}
             />
@@ -241,7 +282,13 @@ export function AttentionActivation({
           {step === "criteria" ? (
             <>
               <span className="aa-foot-note">
-                {n === 0 ? "Add a condition to see who matches" : <><Mono>{n}</Mono> account{n === 1 ? "" : "s"} match</>}
+                {fixed ? (
+                  <><Mono>{n}</Mono> account{n === 1 ? "" : "s"} selected</>
+                ) : n === 0 ? (
+                  "Add a condition to see who matches"
+                ) : (
+                  <><Mono>{n}</Mono> account{n === 1 ? "" : "s"} match</>
+                )}
               </span>
               <Button variant="primary" iconRight={<Icon name="arrow-right" />} disabled={n === 0} onClick={() => setStep("workflow")}>
                 Continue to setup
