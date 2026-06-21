@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { Mono, Icon, ConfTag } from "@/gocsm-ds";
+import { Mono, Icon, ConfTag, StackedBar } from "@/gocsm-ds";
 import type { Account } from "@/fixtures";
 import {
   matchAccounts,
@@ -96,12 +96,6 @@ function AccountTile({ a, exiting }: WallTile) {
 function CompositionStrip({ accounts }: { accounts: Account[] }) {
   const bars = composition(accounts);
   if (bars.length === 0) return null;
-  const toneColor: Record<string, string> = {
-    neg: "var(--neg-6, #e07a6a)",
-    warn: "var(--warn-6, #e0c067)",
-    pos: "var(--pos-6, #6cc090)",
-    neutral: "var(--blue-4, #9db8e0)",
-  };
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "var(--s-2)" }}>
       {bars.map((bar) => (
@@ -109,14 +103,8 @@ function CompositionStrip({ accounts }: { accounts: Account[] }) {
           <span style={{ fontSize: "var(--t-caption)", color: "var(--text-3, var(--text))", width: 52, flex: "0 0 auto" }}>
             {bar.dim}
           </span>
-          <div style={{ display: "flex", flex: 1, height: 8, borderRadius: 999, overflow: "hidden", background: "var(--surface-2, #eef1f6)" }}>
-            {bar.parts.map((p, i) => (
-              <div
-                key={i}
-                title={`${p.label} · ${p.pct}%`}
-                style={{ width: `${p.pct}%`, background: toneColor[p.tone], transition: "width 360ms cubic-bezier(0.2,0.7,0.2,1)" }}
-              />
-            ))}
+          <div style={{ flex: 1 }}>
+            <StackedBar segments={bar.parts.map((p) => ({ pct: p.pct, tone: p.tone, label: p.label }))} />
           </div>
           <span style={{ fontSize: "var(--t-caption)", color: "var(--text-3, var(--text))", minWidth: 0 }}>
             {bar.parts[0] ? `${bar.parts[0].pct}% ${bar.parts[0].label}` : ""}

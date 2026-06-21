@@ -1,4 +1,4 @@
-import { Icon } from "@/gocsm-ds";
+import { FilterChip } from "@/gocsm-ds";
 import {
   fieldById,
   opsFor,
@@ -76,9 +76,7 @@ export function CriterionChip({
   };
 
   return (
-    <div className="crit-chip">
-      <span className="crit-field">{f.label}</span>
-
+    <FilterChip label={f.label} onRemove={onRemove} removeLabel={`Remove ${f.label}`}>
       {/* operator */}
       {ops.length > 1 ? (
         <select className="crit-select" value={criterion.op} onChange={(e) => setOp(e.target.value as Operator)} aria-label="operator">
@@ -138,10 +136,6 @@ export function CriterionChip({
           {f.unit === "$" ? <span className="crit-unit">$</span> : f.unit === "days" ? <span className="crit-unit">d</span> : f.unit === "%" ? <span className="crit-unit">%</span> : null}
         </span>
       )}
-
-      <button type="button" className="crit-remove" onClick={onRemove} aria-label={`Remove ${f.label}`}>
-        <Icon name="x" />
-      </button>
-    </div>
+    </FilterChip>
   );
 }
