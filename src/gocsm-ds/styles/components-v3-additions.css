@@ -200,3 +200,55 @@ button.account-row:hover{border-color:var(--blue-5,#6f97e0);background:var(--blu
 .stepper .step-line{width:44px;height:2px;background:var(--border);margin:0 12px;flex:0 0 auto;}
 .stepper .step.done .step-line{background:var(--pos-7,#1e874b);}
 @media (max-width:640px){.stepper .step-line{width:20px;margin:0 6px;}.stepper .step.upcoming .step-label{display:none;}}
+
+/* ── StatCard ─────────────────────────────────────────────────────────
+   Dual-axis value card: small uppercase label, big number, footer with a
+   secondary metric + a colored delta arrow vs the prior period. Optionally
+   clickable (drills the audit log below). size-hero is the headline $ total. */
+.stat-card{display:flex;flex-direction:column;gap:6px;padding:var(--s-4);border:1px solid var(--border,#e3e8f0);border-radius:var(--r-lg,14px);background:var(--surface,#fff);text-align:left;width:100%;font:inherit;}
+.stat-card.clickable{cursor:pointer;transition:border-color 120ms ease,box-shadow 120ms ease,transform 120ms ease;}
+.stat-card.clickable:hover{border-color:var(--blue-5,#7aa0e6);box-shadow:var(--sh-hover,0 4px 14px rgba(8,14,28,0.10));transform:translateY(-1px);}
+.stat-card.clickable:active{transform:translateY(0);}
+.stat-card .sc-label{display:inline-flex;align-items:center;gap:6px;font-size:var(--t-caption,12px);font-weight:600;text-transform:uppercase;letter-spacing:0.04em;color:var(--text-3,#6a7689);}
+.stat-card .sc-label svg{width:14px;height:14px;}
+.stat-card .sc-value{font-size:var(--t-display-lg,26px);font-weight:750;line-height:1.04;color:var(--text,#0f1b2d);letter-spacing:-0.012em;font-variant-numeric:tabular-nums;}
+.stat-card .sc-foot{display:flex;align-items:baseline;gap:var(--s-2,8px);flex-wrap:wrap;min-height:18px;}
+.stat-card .sc-secondary{font-size:var(--t-body-sm,13px);color:var(--text-3,#6a7689);}
+.stat-card .sc-delta{display:inline-flex;align-items:center;gap:2px;font-size:var(--t-caption,12px);font-weight:700;font-variant-numeric:tabular-nums;}
+.stat-card .sc-delta svg{width:12px;height:12px;}
+.stat-card .sc-delta.up{color:var(--pos-7,#1e874b);}
+.stat-card .sc-delta.down{color:var(--neg-7,#c0392b);}
+.stat-card .sc-delta.flat{color:var(--text-3,#6a7689);}
+.stat-card.size-hero{gap:8px;padding:var(--s-5,20px) var(--s-6,24px);}
+.stat-card.size-hero .sc-value{font-size:44px;line-height:1;letter-spacing:-0.02em;}
+.stat-card.tone-pos .sc-value{color:var(--pos-7,#1e874b);}
+.stat-card.tone-neg .sc-value{color:var(--neg-7,#c0392b);}
+.stat-card.tone-warn .sc-value{color:var(--warn-8,#9a6b08);}
+.stat-card.tone-brand .sc-value{color:var(--blue-8,#0c5aae);}
+
+/* ── SegmentedControl ─────────────────────────────────────────────────
+   Pill toggle for mutually-exclusive views (7 days / 30 days / Lifetime). */
+.segmented{display:inline-flex;padding:3px;gap:2px;background:var(--surface-2,#eef1f6);border-radius:var(--r-pill,999px);border:1px solid var(--border-soft,rgba(15,27,45,0.05));}
+.segmented .seg-opt{border:0;background:transparent;border-radius:var(--r-pill,999px);padding:5px 14px;font-size:var(--t-body-sm,13px);font-weight:600;color:var(--text-2,#46536b);cursor:pointer;white-space:nowrap;transition:background 120ms ease,color 120ms ease,box-shadow 120ms ease;}
+.segmented .seg-opt:hover{color:var(--text,#0f1b2d);}
+.segmented .seg-opt.on{background:var(--surface,#fff);color:var(--text,#0f1b2d);box-shadow:0 1px 3px rgba(8,14,28,0.12);}
+
+/* ── EventRow ─────────────────────────────────────────────────────────
+   One dense, scannable line of the audit log: time · account · action icon ·
+   summary · outcome chip · $ value. Whole row drills into the action detail. */
+.event-row{display:flex;align-items:center;gap:var(--s-3,12px);width:100%;text-align:left;padding:8px 12px;border:0;border-bottom:1px solid var(--border-soft,rgba(15,27,45,0.06));background:transparent;font:inherit;color:inherit;}
+.event-row.clickable{cursor:pointer;transition:background 120ms ease;}
+.event-row.clickable:hover{background:var(--blue-1,#f3f7ff);}
+.event-row .er-time{flex:0 0 auto;width:54px;font-size:var(--t-caption,12px);color:var(--text-3,#6a7689);font-variant-numeric:tabular-nums;text-align:right;}
+.event-row .er-action{display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:var(--r-sm,7px);background:var(--surface-2,#f4f6fa);color:var(--text-2,#46536b);flex:0 0 auto;}
+.event-row .er-action svg{width:13px;height:13px;}
+.event-row .er-body{flex:1;min-width:0;display:flex;align-items:center;gap:8px;}
+.event-row .er-name{font-size:var(--t-body-sm,13px);font-weight:650;color:var(--text,#0f1b2d);white-space:nowrap;flex:0 0 auto;}
+.event-row .er-summary{font-size:var(--t-body-sm,13px);color:var(--text-2,#46536b);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex:1;min-width:0;}
+.event-row .er-status{flex:0 0 auto;font-size:var(--t-caption,12px);font-weight:600;padding:2px 9px;border-radius:var(--r-pill,999px);white-space:nowrap;}
+.event-row .er-status.tone-pos{background:var(--pos-soft,#d6efe0);color:var(--pos-8,#176b3c);}
+.event-row .er-status.tone-neg{background:var(--neg-soft,#f6dcd6);color:var(--neg-8,#a8321f);}
+.event-row .er-status.tone-warn{background:var(--warn-soft,#f6ebcb);color:var(--warn-8,#9a6b08);}
+.event-row .er-status.tone-neutral{background:var(--surface-2,#eef1f6);color:var(--text-3,#6a7689);}
+.event-row .er-value{flex:0 0 auto;width:74px;text-align:right;font-size:var(--t-body-sm,13px);font-weight:700;color:var(--text,#0f1b2d);font-variant-numeric:tabular-nums;}
+@media (max-width:640px){.event-row .er-name{max-width:108px;overflow:hidden;text-overflow:ellipsis;}.event-row .er-time{width:46px;}.event-row .er-value{width:60px;}}
