@@ -61,6 +61,7 @@ export * from "./components/action/WeeklyDigest.jsx";
 export * from "./components/action/FilterChip.jsx";
 export * from "./components/action/PromptField.jsx";
 export * from "./components/action/AccountRow.jsx";
+export * from "./components/action/VideoCard.jsx";
 export * from "./components/insight/StackedBar.jsx";
 export * from "./components/core/Monogram.jsx";
 export * from "./components/core/Stepper.jsx";

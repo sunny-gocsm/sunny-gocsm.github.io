@@ -269,7 +269,13 @@ button {
 .aa-foot { display: flex; align-items: center; justify-content: space-between; gap: var(--s-3); padding: var(--s-3) var(--s-6); background: var(--surface, #fff); border-top: 1px solid var(--border); }
 .aa-foot-note { font-size: var(--t-body-sm); color: var(--text-3, var(--text)); }
 /* step 2 — action editor */
-.aa-step2 { display: flex; flex-direction: column; gap: var(--s-4); max-width: 720px; margin: 0 auto; }
+.aa-step2 { display: flex; flex-direction: column; gap: var(--s-4); max-width: 680px; margin: 0 auto; }
+.aa-setup-head { display: flex; flex-direction: column; align-items: flex-start; gap: var(--s-2); }
+.aa-snapshot { display: flex; flex-direction: column; gap: var(--s-2); }
+.aa-snapshot-label { font-size: var(--t-caption); text-transform: uppercase; letter-spacing: 0.04em; color: var(--text-3, var(--text)); }
+.aa-setup-actions { display: flex; flex-direction: column; gap: var(--s-3); padding: var(--s-4); border: 1px solid var(--blue-3, #cfe5fd); border-radius: var(--r-md); background: var(--blue-1, #f2f8ff); }
+.aa-setup-actions .btn { align-self: flex-start; }
+.aa-publish-confirm { display: inline-flex; align-items: center; gap: var(--s-2); cursor: pointer; font-size: var(--t-body-sm); color: var(--text); }
 .aa-pinned-chip { align-self: flex-start; display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; border-radius: var(--r-pill, 999px); background: var(--blue-1, #f2f8ff); border: 1px solid var(--blue-3, #cfe5fd); color: var(--blue-8, #0c5aae); font-size: var(--t-body-sm); }
 .aa-pinned-chip svg { width: 14px; height: 14px; }
 .aa-steplist { display: flex; flex-direction: column; gap: var(--s-2); }

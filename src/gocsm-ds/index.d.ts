@@ -64,3 +64,4 @@ export * from "./components/action/WeeklyDigest";
 export * from "./components/action/FilterChip";
 export * from "./components/action/PromptField";
 export * from "./components/action/AccountRow";
+export * from "./components/action/VideoCard";
