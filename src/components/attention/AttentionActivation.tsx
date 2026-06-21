@@ -137,7 +137,15 @@ function ReviewStep({
   );
 }
 
-export function AttentionActivation({ recipe, onClose }: { recipe?: Recipe; onClose: () => void }) {
+export function AttentionActivation({
+  recipe,
+  onClose,
+  backLabel = "Attention",
+}: {
+  recipe?: Recipe;
+  onClose: () => void;
+  backLabel?: string;
+}) {
   const recipeId = recipe?.id;
   const [step, setStep] = useState<Step>(() => {
     const d = recipeId ? loadDraft(recipeId) : undefined;
@@ -181,7 +189,7 @@ export function AttentionActivation({ recipe, onClose }: { recipe?: Recipe; onCl
       {/* Persistent problem-context header */}
       <header className="aa-top">
         <button type="button" className="aa-back" onClick={onClose}>
-          <Icon name="arrow-left" /> Attention
+          <Icon name="arrow-left" /> {backLabel}
         </button>
         <div className="aa-top-title">
           <span className="aa-eyebrow">Set up a workflow</span>
@@ -208,7 +216,7 @@ export function AttentionActivation({ recipe, onClose }: { recipe?: Recipe; onCl
                 Auto-running on <Mono>{n}</Mono> account{n === 1 ? "" : "s"} now — and on new matches the moment they qualify.
                 We'll surface anyone it doesn't move on the Attention page.
               </p>
-              <Button variant="primary" onClick={onClose}>Back to Attention</Button>
+              <Button variant="primary" onClick={onClose}>Back to {backLabel}</Button>
             </div>
           ) : step === "criteria" ? (
             <CriteriaBuilder set={set} onChange={setSet} />

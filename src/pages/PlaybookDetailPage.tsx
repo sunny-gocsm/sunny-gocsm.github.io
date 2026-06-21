@@ -7,19 +7,18 @@ import {
   Icon,
   Mono,
   PlaybookDetail,
-  PlaybookActivation,
-  ActionReceipt,
   ConfTag,
+  AccountRow,
 } from "@/gocsm-ds";
-import { DraftReviewSheet } from "@/gocsm-ds";
+import { AttentionActivation } from "@/components/attention/AttentionActivation";
+import { recipeForPlaybook, type Recipe } from "@/fixtures/recipes";
+import { useAutopilotStatus } from "@/state/autopilot";
 import {
   playbookById,
   matchesToday,
   type Playbook,
   type PlaybookState,
 } from "@/fixtures/playbooks";
-
-type LadderState = "off" | "ranonce" | "on";
 
 interface SeedAction {
   icon: string;
@@ -70,52 +69,14 @@ function actionsFor(p: Playbook): SeedAction[] {
   }
 }
 
-function draftsFor(p: Playbook) {
-  const a = actionsFor(p).filter((x) => x.supervised && /mail|note|invite|outreach|drafted/i.test(x.title + " " + x.desc));
-  const previews: Record<string, string> = {
-    save:
-      "We noticed your domain came off — wanted to make sure that was on purpose. If not, we'd love to help reconnect it.",
-    billing:
-      "Quick heads-up — your last invoice didn't go through. Want to update the card so nothing pauses?",
-    adoption:
-      "Here's a 2-minute look at a workflow that's saving folks a lot of time lately — thought you might find it useful.",
-    onboarding:
-      "Want a quick hand getting past this step? Grab any time on my calendar this week.",
-    expansion:
-      "You're getting a lot of value here — would a quick roadmap chat be useful? No pressure.",
-    retention:
-      "Haven't seen you in a bit — anything I can help with? Happy to jump on if it's easier.",
-  };
-  return a.map((x) => ({ channel: "Email", icon: "mail", preview: previews[p.kind] }));
-}
-
-function autonomyLevel(p: Playbook): "advise" | "agree" | "auto" {
-  if (p.kind === "save" || p.kind === "expansion") return "advise"; // most supervised
-  if (p.kind === "billing" || p.kind === "onboarding") return "agree";
-  return "auto";
-}
-
-const STATE_LABEL: Record<PlaybookState, string> = {
-  off: "Off",
-  ranonce: "Ran once",
-  on: "On · autopilot",
-  paused: "Paused",
-};
-
 export default function PlaybookDetailPage() {
   const { id = "" } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const playbook = useMemo(() => playbookById(id), [id]);
 
-  const [state, setState] = useState<LadderState>(
-    playbook?.state === "on" ? "on" : playbook?.state === "ranonce" ? "ranonce" : "off",
-  );
+  const status = useAutopilotStatus(playbook?.id ?? "");
   const [actions, setActions] = useState<SeedAction[]>(() => (playbook ? actionsFor(playbook) : []));
-  const [activationOpen, setActivationOpen] = useState(false);
-  const [busy, setBusy] = useState(false);
-  const [ranCount, setRanCount] = useState(0);
-  const [receipt, setReceipt] = useState<{ state: "pending" | "sent" | "stopped"; ranOn: number } | null>(null);
-  const [draftOpen, setDraftOpen] = useState(false);
+  const [setupOpen, setSetupOpen] = useState(false);
 
   if (!playbook) {
     return (
@@ -131,8 +92,17 @@ export default function PlaybookDetailPage() {
   }
 
   const matches = matchesToday(playbook);
-  const drafts = draftsFor(playbook);
-  const isSave = playbook.kind === "save";
+  const isOn = status === "on";
+  const playbookState: PlaybookState = isOn ? "on" : "off";
+  const baseRecipe = recipeForPlaybook(playbook.id);
+  const recipe: Recipe = {
+    id: playbook.id,
+    icon: playbook.icon,
+    label: playbook.title,
+    blurb: playbook.subtitle,
+    set: baseRecipe?.set ?? { match: "all", criteria: [] },
+    playbookId: playbook.id,
+  };
 
   const watchLines = {
     save: {
@@ -166,56 +136,6 @@ export default function PlaybookDetailPage() {
       via: "Runs as a workflow watch.",
     },
   }[playbook.kind];
-
-  const blastRadius =
-    "Nothing is sent to the account's own clients. Drafts to the customer always need your OK first.";
-
-  const runOnce = () => {
-    if (matches.length === 0) {
-      setActivationOpen(false);
-      return;
-    }
-    if (isSave) {
-      // Save plays: first action is internal alert + drafted supervised outreach
-      setDraftOpen(true);
-      return;
-    }
-    setBusy(true);
-    setReceipt({ state: "pending", ranOn: matches.length });
-    // simulate grace period
-    window.setTimeout(() => {
-      setReceipt((r) => (r ? { ...r, state: "sent" } : r));
-      setRanCount(matches.length);
-      setState("ranonce");
-      setBusy(false);
-    }, 800);
-  };
-
-  const goAutopilot = () => {
-    setState("on");
-  };
-
-  const turnOff = () => {
-    setState("off");
-    setReceipt(null);
-    setRanCount(0);
-  };
-
-  const undoReceipt = () => {
-    setReceipt((r) => (r ? { ...r, state: "stopped" } : r));
-  };
-
-  const approveDraft = () => {
-    setDraftOpen(false);
-    setBusy(true);
-    setReceipt({ state: "pending", ranOn: matches.length });
-    window.setTimeout(() => {
-      setReceipt((r) => (r ? { ...r, state: "sent" } : r));
-      setRanCount(matches.length);
-      setState("ranonce");
-      setBusy(false);
-    }, 800);
-  };
 
   return (
     <main
@@ -252,8 +172,8 @@ export default function PlaybookDetailPage() {
             <h1 style={{ fontSize: "var(--t-display-lg)", fontWeight: 700, lineHeight: 1.15, margin: 0 }}>
               {playbook.title}
             </h1>
-            <Badge variant={state === "on" ? "pos" : state === "ranonce" ? "blue" : "neutral"} dot>
-              {STATE_LABEL[state as PlaybookState]}
+            <Badge variant={isOn ? "pos" : "neutral"} dot>
+              {isOn ? "On · autopilot" : "Off"}
             </Badge>
           </div>
           <p style={{ fontSize: "var(--t-body-lg)", color: "var(--text-2, var(--text))", margin: 0 }}>
@@ -261,8 +181,8 @@ export default function PlaybookDetailPage() {
           </p>
         </div>
         <div className="pbd-hero__cta" style={{ display: "flex", flexDirection: "column", gap: "var(--s-1)" }}>
-          <Button variant="primary" onClick={() => setActivationOpen(true)}>
-            {state === "off" ? "Run it once" : state === "ranonce" ? "Keep it running" : "Manage"}
+          <Button variant="primary" onClick={() => setSetupOpen(true)}>
+            {isOn ? "Manage workflow" : "Set up workflow"}
           </Button>
           <span style={{ fontSize: "var(--t-caption)", color: "var(--text-3, var(--text))" }}>
             {matches.length === 0 ? (
@@ -281,7 +201,7 @@ export default function PlaybookDetailPage() {
           can never drift from what the play actually matches. */}
       <PlaybookDetail
         hideIdentity
-        state={state as PlaybookState}
+        state={playbookState}
         icon={playbook.icon}
         outcome={playbook.outcome}
         watch={{ summary: playbook.problem, cadence: watchLines.cadence, via: watchLines.via }}
@@ -307,146 +227,34 @@ export default function PlaybookDetailPage() {
           <h3 style={{ fontSize: "var(--t-heading)", fontWeight: 700, margin: 0 }}>Who it affects today</h3>
           <ConfTag basis="fact" />
         </div>
-        <Card padded>
-          {matches.length === 0 ? (
+        {matches.length === 0 ? (
+          <Card padded>
             <span style={{ fontSize: "var(--t-body-lg)", color: "var(--pos-7)" }}>
               ✓ Nothing matches today — this play is armed and watching.
             </span>
-          ) : (
-            <ul style={{ listStyle: "none", padding: 0, margin: 0, display: "flex", flexDirection: "column" }}>
-              {matches.slice(0, 8).map((a) => (
-                <li
-                  key={a.identity.id}
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "space-between",
-                    padding: "var(--s-2) 0",
-                    borderTop: "1px solid var(--border)",
-                  }}
-                >
-                  <div style={{ display: "flex", alignItems: "center", gap: "var(--s-2)" }}>
-                    <span style={{ fontSize: "var(--t-body-lg)", fontWeight: 600 }}>{a.identity.name}</span>
-                    <span style={{ fontSize: "var(--t-caption)", color: "var(--text-3, var(--text))" }}>
-                      · {a.identity.plan}
-                    </span>
-                  </div>
-                  <span style={{ fontSize: "var(--t-caption)", color: "var(--text-3, var(--text))" }}>
-                    MRR <Mono>${Math.round(a.revenue.mrr).toLocaleString()}</Mono>
-                  </span>
-                </li>
-              ))}
-              {matches.length > 8 ? (
-                <li
-                  style={{
-                    padding: "var(--s-2) 0",
-                    borderTop: "1px solid var(--border)",
-                    fontSize: "var(--t-caption)",
-                    color: "var(--text-3, var(--text))",
-                  }}
-                >
-                  + <Mono>{matches.length - 8}</Mono> more
-                </li>
-              ) : null}
-            </ul>
-          )}
-        </Card>
+          </Card>
+        ) : (
+          <div className="mw-rows">
+            {matches.slice(0, 8).map((a) => (
+              <AccountRow
+                key={a.identity.id}
+                name={a.identity.name}
+                band={a.health.band}
+                value={`$${Math.round(a.revenue.mrr).toLocaleString()}`}
+              />
+            ))}
+            {matches.length > 8 ? (
+              <span style={{ fontSize: "var(--t-caption)", color: "var(--text-3, var(--text))" }}>
+                + <Mono>{matches.length - 8}</Mono> more
+              </span>
+            ) : null}
+          </div>
+        )}
       </section>
 
-      {/* Live receipt (in-place, never a toast) */}
-      {receipt ? (
-        <ActionReceipt
-          state={receipt.state}
-          title={`${playbook.title} — running on ${receipt.ranOn} account${receipt.ranOn === 1 ? "" : "s"}`}
-          scope={`${actions.filter((a) => a.on).length} action(s) will run per matching account.`}
-          blastRadius={blastRadius}
-          graceSeconds={5}
-          reportBack="We'll report back with what changed within 24h."
-          onUndo={undoReceipt}
-        />
-      ) : null}
-
-      {/* Activation drawer */}
-      {activationOpen ? (
-        <Overlay onClose={() => setActivationOpen(false)}>
-          <PlaybookActivation
-            icon={playbook.icon}
-            title={playbook.title}
-            situation={
-              isSave
-                ? `A reversal was detected — ${playbook.problem.toLowerCase()}`
-                : playbook.problem
-            }
-            state={state}
-            proof={{ matchCount: matches.length, drafts }}
-            ranCount={ranCount}
-            busy={busy}
-            onRunOnce={runOnce}
-            onAutopilot={goAutopilot}
-            onTurnOff={turnOff}
-            onPreview={() => setDraftOpen(true)}
-            onClose={() => setActivationOpen(false)}
-          />
-        </Overlay>
-      ) : null}
-
-      {/* Draft review sheet — required for Save plays' first send */}
-      {draftOpen && matches[0] ? (
-        <Overlay onClose={() => setDraftOpen(false)}>
-          <DraftReviewSheet
-            account={matches[0].identity.name}
-            mrr={`$${Math.round(matches[0].revenue.mrr).toLocaleString()}`}
-            play={playbook.title}
-            band={matches[0].health.band}
-            why={
-              isSave
-                ? "Sticky setup was reversed — warm, blame-free outreach before they fully drift."
-                : "Match for this play today."
-            }
-            voice="warm, plain, blame-free"
-            channel="Email"
-            subject={isSave ? "Quick check on your setup" : "A quick note"}
-            draft={drafts[0]?.preview ?? ""}
-            onApprove={approveDraft}
-            onEdit={() => setDraftOpen(false)}
-            onSkip={() => setDraftOpen(false)}
-          />
-        </Overlay>
-      ) : null}
+      {/* The workflow builder — the same full-page flow used on the Attention page,
+          pre-seeded from this playbook (consistent activation everywhere). */}
+      {setupOpen ? <AttentionActivation recipe={recipe} backLabel="Playbooks" onClose={() => setSetupOpen(false)} /> : null}
     </main>
-  );
-}
-
-// Lightweight modal overlay — DS doesn't ship a Sheet primitive.
-function Overlay({ children, onClose }: { children: React.ReactNode; onClose: () => void }) {
-  return (
-    <div
-      role="dialog"
-      aria-modal
-      onClick={onClose}
-      style={{
-        position: "fixed",
-        inset: 0,
-        background: "rgba(8, 14, 28, 0.55)",
-        display: "flex",
-        alignItems: "stretch",
-        justifyContent: "flex-end",
-        zIndex: 50,
-      }}
-    >
-      <div
-        onClick={(e) => e.stopPropagation()}
-        style={{
-          width: "min(560px, 100%)",
-          background: "var(--surface)",
-          borderLeft: "1px solid var(--border)",
-          overflowY: "auto",
-          padding: "var(--s-5)",
-          color: "var(--text)",
-        }}
-      >
-        {children}
-      </div>
-    </div>
   );
 }
