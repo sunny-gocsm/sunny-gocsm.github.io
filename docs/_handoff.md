@@ -22,6 +22,11 @@ cueing the next chip, a "matches now vs likely in 7 days" split, and an honest, 
 
 ## ⛳ NEEDS KARTHIK
 
+> **✅ All three items below were approved by Karthik and are now DONE this session** —
+> (1) job-(b) honest approach kept as built; (2) `FilterChip` + `StackedBar` promoted to the DS
+> and adopted in the app; (3) `ScoreRing` `size="sm"` bug fixed (Health link-out now 0 console errors).
+> Both repos pushed and in sync (DS `e39b8d2` = app `.ds-version`). Kept here for the record.
+
 ### 1. Job (b) "tried-but-failed" — the closed-loop signal is NOT substantiatable from current data
 The brief is right to flag this. What we have vs. need:
 - **Have:** `health.trend90d` (90-pt health history) + `health.delta` (recent direction) per account; `outcomes.ts` (but it records only **positive wins**, and is explicitly *"observational (never causal)"*); `autopilotStore` (knows which playbooks are ON, not which accounts a workflow actually executed against, nor when).
@@ -133,6 +138,10 @@ _Scratch dev route `/attention-lab` (criteria builder in isolation) is KEPT for 
 - `c32882b` feat: MatchWall central mechanic (live wall + composition + floor + 7-day forecast); audited at `/attention-lab`.
 - `2174a4d` feat: criteria builder — category gate, editable chips, recipes, NL warm-start + refuse-and-clarify.
 - `d20a026` feat: collapsed flow (criteria→workflow→publish==activate) + two-job Attention page; nav relabelled "Attention".
+
+- `e39b8d2` **(DS repo)** feat: `FilterChip` + `StackedBar` primitives; fix `ScoreRing` NaN. Pushed to DS `main`.
+- `4f3d7bb` refactor: app adopts DS `FilterChip`/`StackedBar`; vendored DS `@e39b8d2`; ScoreRing fix flows to Health.
+- Branch `today-attention-redesign` **pushed** to `origin` (no PR, no merge). DS `main` pushed. Repos in sync.
 
 ## Macro loop (final pass) — conclusion
 Re-traversed every reachable state (criteria empty/seeded, category gate, chip edit, NL compile,
