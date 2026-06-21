@@ -20,6 +20,14 @@ describe("outcome log", () => {
     expect(reportCard("lifetime").totalValue).toBeGreaterThan(0);
   });
 
+  it("counts each $ once — at most one worked event per account+category, and only worked carries value", () => {
+    const worked = outcomeEvents.filter((e) => e.result === "worked");
+    const keys = worked.map((e) => `${e.accountId}|${e.category}`);
+    expect(new Set(keys).size).toBe(keys.length); // no duplicate worked episode for an account+category
+    // every $-bearing event is a worked event (cascade steps before the resolution are $0)
+    expect(outcomeEvents.filter((e) => e.amount > 0).every((e) => e.result === "worked")).toBe(true);
+  });
+
   it("filters compose (customer · action · result · search)", () => {
     const some = loggedAccounts()[0];
     expect(filterEvents({ window: "lifetime", accountId: some.id }).every((e) => e.accountId === some.id)).toBe(true);

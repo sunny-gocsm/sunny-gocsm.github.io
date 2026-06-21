@@ -61,10 +61,21 @@ type Tmpl = {
   playbookId: string;
   playbookTitle: string;
   actions: ActionKind[];
-  // a small action "chain" fired for one episode, with the closing result
-  verb: (name: string, action: ActionKind, result: EventResult) => string;
+  // a small action "chain" fired for one episode, with the closing result. Name-free —
+  // the account is shown beside it in the row, so the phrase never repeats the name.
+  verb: (action: ActionKind, result: EventResult) => string;
   // $ value when it works (function of the account's MRR)
   value: (mrr: number) => number;
+};
+
+// "after an email" / "after a call" — the article + noun for each channel.
+const ACTION_PHRASE: Record<ActionKind, string> = {
+  email: "an email",
+  sms: "a text",
+  call: "a call",
+  alert: "an alert",
+  dunning: "a dunning retry",
+  task: "a task",
 };
 
 const TEMPLATES: Tmpl[] = [
@@ -73,12 +84,12 @@ const TEMPLATES: Tmpl[] = [
     playbookId: "pb-no-login",
     playbookTitle: "Gone quiet",
     actions: ["email", "sms", "call"],
-    verb: (n, a, r) =>
+    verb: (a, r) =>
       r === "worked"
-        ? `${n} logged back in after a ${ACTION_META[a].label.toLowerCase()}`
+        ? `Logged back in after ${ACTION_PHRASE[a]}`
         : r === "failed"
-          ? `${n} still hasn't returned after a ${ACTION_META[a].label.toLowerCase()}`
-          : `Sent ${n} a warm check-in`,
+          ? `Still away after ${ACTION_PHRASE[a]}`
+          : `Warm check-in sent`,
     value: (mrr) => mrr,
   },
   {
@@ -86,12 +97,12 @@ const TEMPLATES: Tmpl[] = [
     playbookId: "pb-payment-failed",
     playbookTitle: "Payment failed",
     actions: ["dunning", "email"],
-    verb: (n, a, r) =>
+    verb: (_a, r) =>
       r === "worked"
-        ? `Recovered a failed payment from ${n}`
+        ? `Recovered a failed payment`
         : r === "failed"
-          ? `${n}'s payment is still failing after dunning`
-          : `Ran a dunning retry for ${n}`,
+          ? `Payment still failing after dunning`
+          : `Dunning retry running`,
     value: (mrr) => mrr,
   },
   {
@@ -99,12 +110,12 @@ const TEMPLATES: Tmpl[] = [
     playbookId: "pb-renewal-save",
     playbookTitle: "Renewing & at-risk",
     actions: ["alert", "email", "call"],
-    verb: (n, a, r) =>
+    verb: (_a, r) =>
       r === "worked"
-        ? `Protected ${n}'s renewal`
+        ? `Renewal protected`
         : r === "failed"
-          ? `${n}'s renewal still at risk`
-          : `Flagged ${n}'s renewal for a save`,
+          ? `Renewal still at risk`
+          : `Renewal flagged for a save`,
     value: (mrr) => mrr,
   },
   {
@@ -112,12 +123,12 @@ const TEMPLATES: Tmpl[] = [
     playbookId: "pb-feature-drop",
     playbookTitle: "Adoption slipping",
     actions: ["email"],
-    verb: (n, a, r) =>
+    verb: (_a, r) =>
       r === "worked"
-        ? `${n} picked usage back up after a how-to`
+        ? `Picked usage back up after a how-to`
         : r === "failed"
-          ? `${n}'s usage kept sliding after a how-to`
-          : `Sent ${n} a targeted how-to`,
+          ? `Usage kept sliding after a how-to`
+          : `Targeted how-to sent`,
     value: (mrr) => Math.round(mrr * 0.5),
   },
   {
@@ -125,10 +136,10 @@ const TEMPLATES: Tmpl[] = [
     playbookId: "pb-expansion-ready",
     playbookTitle: "Expansion ready",
     actions: ["email", "call"],
-    verb: (n, a, r) =>
+    verb: (_a, r) =>
       r === "worked"
-        ? `${n} expanded after a roadmap chat`
-        : `Surfaced an upsell briefing for ${n}`,
+        ? `Expanded after a roadmap chat`
+        : `Upsell briefing surfaced`,
     value: (mrr) => Math.round(mrr * 0.35),
   },
 ];
@@ -151,49 +162,76 @@ const frac = (s: string) => {
   return (h % 1000) / 1000;
 };
 
+// An intermediate cascade step (the workflow tried something, no result yet).
+const STEP_SENT: Record<ActionKind, string> = {
+  email: "Sent an email — no reply yet",
+  sms: "Sent a text — no reply yet",
+  call: "Left a voicemail — no answer yet",
+  dunning: "Retried the card — still declined",
+  alert: "Raised an alert for the team",
+  task: "Opened a follow-up task",
+};
+
+// One "episode" = a workflow firing on one account for one situation. It plays out as a
+// CASCADE of individual actions (email → text → call); the resolving step carries the
+// outcome and the $ value, the earlier steps are no-change attempts worth $0. This is what
+// makes the log an audit trail — every action is its own row, but each $ is counted once.
 function buildEvents(): OutcomeEvent[] {
   const live = allAccounts().filter((a) => a.status.enabled === "Enabled" && a.lifecycle.stage !== "churned");
   const events: OutcomeEvent[] = [];
   let seq = 0;
 
-  live.forEach((a, ai) => {
-    const cats = categoriesFor(a);
-    // 2–4 episodes per account, spread across ~300 days
-    const episodes = 2 + Math.round(frac(a.identity.id + "ep") * 2);
-    for (let e = 0; e < episodes; e++) {
-      const cat = cats[(ai + e) % cats.length];
+  live.forEach((a) => {
+    const cats = Array.from(new Set(categoriesFor(a))); // distinct situations — no duplicate episodes
+    cats.forEach((cat, ci) => {
       const tmpl = TEMPLATES.find((t) => t.category === cat)!;
-      const action = tmpl.actions[(ai + e) % tmpl.actions.length];
-      // spread daysAgo: recent episodes for some, older for others
-      const r = frac(a.identity.id + ":" + e);
-      const daysAgo = Math.max(0, Math.round(r * 300) + (e === 0 ? 0 : 0) - (ai % 3 === 0 && e === 0 ? 0 : 0));
-      // bias the first episode of at-risk accounts to be recent so 7d/30d windows have life
-      const recentBias = e === 0 && (a.health.band === "atrisk" || a.health.band === "watch") ? Math.round(r * 25) : daysAgo;
-      const d = e === 0 ? recentBias : daysAgo;
-      // result distribution: mostly worked, some no_change/failed, a few pending (only recent)
-      const rr = frac(a.identity.id + "r" + e);
-      const result: EventResult =
-        d <= 2 && rr > 0.7 ? "pending" : rr > 0.78 ? "failed" : rr > 0.62 ? "no_change" : "worked";
-      const amount = result === "worked" ? tmpl.value(a.revenue.mrr) : 0;
-      const attribution: OutcomeEvent["attribution"] = action === "email" || action === "sms" ? "you approved" : "autopilot";
-      events.push({
-        id: `ev-${++seq}`,
-        daysAgo: d,
-        accountId: a.identity.id,
-        accountName: a.identity.name,
-        plan: a.identity.plan,
-        band: a.health.band,
-        playbookId: tmpl.playbookId,
-        playbookTitle: tmpl.playbookTitle,
-        category: cat,
-        action,
-        channel: ACTION_META[action].channel,
-        result,
-        amount,
-        attribution,
-        summary: tmpl.verb(a.identity.name, action, result),
-      });
-    }
+
+      // When did this episode happen? Spread across ~300 days; at-risk situations bias recent
+      // so the 7-day / 30-day windows have life.
+      const recent = ci === 0 && (a.health.band === "atrisk" || a.health.band === "watch");
+      const startDaysAgo = recent
+        ? Math.round(frac(a.identity.id + cat + "recent") * 24) + 1
+        : Math.round(frac(a.identity.id + cat) * 286) + 8;
+
+      // Episode outcome (the result of the LAST step in the cascade).
+      const rr = frac(a.identity.id + cat + "res");
+      const outcome: EventResult =
+        startDaysAgo <= 4 && rr > 0.72 ? "pending" : rr > 0.82 ? "failed" : rr > 0.64 ? "no_change" : "worked";
+
+      // How many actions the workflow fired before it resolved.
+      const maxSteps = tmpl.actions.length;
+      const steps =
+        outcome === "worked" || outcome === "pending"
+          ? 1 + Math.round(frac(a.identity.id + cat + "steps") * (maxSteps - 1))
+          : maxSteps;
+
+      for (let s = 0; s < steps; s++) {
+        const isLast = s === steps - 1;
+        const action = tmpl.actions[s % tmpl.actions.length];
+        const result: EventResult = isLast ? outcome : "no_change";
+        // steps walk forward in time toward the resolution at startDaysAgo
+        const d = Math.max(0, startDaysAgo + (steps - 1 - s) * 2);
+        const amount = isLast && outcome === "worked" ? tmpl.value(a.revenue.mrr) : 0;
+        const attribution: OutcomeEvent["attribution"] = action === "email" || action === "sms" ? "you approved" : "autopilot";
+        events.push({
+          id: `ev-${++seq}`,
+          daysAgo: d,
+          accountId: a.identity.id,
+          accountName: a.identity.name,
+          plan: a.identity.plan,
+          band: a.health.band,
+          playbookId: tmpl.playbookId,
+          playbookTitle: tmpl.playbookTitle,
+          category: cat,
+          action,
+          channel: ACTION_META[action].channel,
+          result,
+          amount,
+          attribution,
+          summary: isLast ? tmpl.verb(action, result) : STEP_SENT[action],
+        });
+      }
+    });
   });
 
   return events.sort((x, y) => x.daysAgo - y.daysAgo);

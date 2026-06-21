@@ -13,6 +13,7 @@ import AccountDetailPage from "./pages/AccountDetailPage";
 import PlaybooksPage from "./pages/PlaybooksPage";
 import PlaybookDetailPage from "./pages/PlaybookDetailPage";
 import MoneyPage from "./pages/MoneyPage";
+import OutcomesPage from "./pages/OutcomesPage";
 import OnboardingPage from "./pages/OnboardingPage";
 import InsightsPage from "./pages/InsightsPage";
 import ConfigurePage from "./pages/ConfigurePage";
@@ -40,6 +41,7 @@ const App = () => (
               <Route path="/playbooks/:id" element={<PlaybookDetailPage />} />
               <Route path="/onboarding" element={<OnboardingPage />} />
               <Route path="/money" element={<MoneyPage />} />
+              <Route path="/outcomes" element={<OutcomesPage />} />
               <Route path="/insights" element={<InsightsPage />} />
               <Route path="/insights/:view" element={<InsightsPage />} />
               <Route path="/configure" element={<ConfigurePage />} />
