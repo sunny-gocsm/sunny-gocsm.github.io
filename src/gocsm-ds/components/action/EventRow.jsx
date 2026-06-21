@@ -18,6 +18,7 @@ export function EventRow({
   status,
   statusTone = "neutral",
   value,
+  hideName = false,
   onClick,
   className = "",
   ...rest
@@ -31,9 +32,9 @@ export function EventRow({
       {...rest}
     >
       <span className="er-time">{time}</span>
-      <Monogram name={name} size={26} />
+      {hideName ? null : <Monogram name={name} size={26} />}
       <span className="er-body">
-        <span className="er-name">{name}</span>
+        {hideName ? null : <span className="er-name">{name}</span>}
         {actionIcon ? (
           <span className="er-action" title={typeof actionLabel === "string" ? actionLabel : undefined} aria-hidden>
             <Icon name={actionIcon} />
