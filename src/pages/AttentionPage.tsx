@@ -2,6 +2,7 @@ import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Card, Button, Icon, Mono, Badge, FixItCard, ConfTag } from "@/gocsm-ds";
 import { useIsAutopilot } from "@/state/autopilot";
+import { hasDraft } from "@/state/workflowDrafts";
 import { AttentionActivation } from "@/components/attention/AttentionActivation";
 import { RECIPES, type Recipe } from "@/fixtures/recipes";
 import { matchAccounts } from "@/fixtures/criteriaMatch";
@@ -32,17 +33,19 @@ function JobARow({ recipe, accounts, onSetup }: { recipe: Recipe; accounts: Acco
         badge={<Badge variant="pos" dot={false}>On · autopilot</Badge>} note="New matches handled automatically." />
     );
   }
+  const draft = hasDraft(recipe.id);
   return (
     <FixItCard
       icon={recipe.icon}
       tag={null}
       title={recipe.label}
       meta={meta}
+      badge={draft ? <Badge variant="warn" dot={false}>Draft</Badge> : undefined}
       data-clickable="true"
       onClick={onSetup}
       action={
         <Button variant="ghost" className="btn-accent" size="sm" iconRight={<Icon name="arrow-right" />} onClick={(e: React.MouseEvent) => { e.stopPropagation(); onSetup(); }}>
-          Set up workflow
+          {draft ? "Resume setup" : "Set up workflow"}
         </Button>
       }
     />

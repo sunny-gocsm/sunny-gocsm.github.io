@@ -1,22 +1,23 @@
-import { useState } from "react";
-import { Button, Icon, Mono, Stepper, Toggle } from "@/gocsm-ds";
+import { useEffect, useState } from "react";
+import { Button, Icon, Mono, Stepper, Toggle, Checkbox, Badge, VideoCard } from "@/gocsm-ds";
 import { CriteriaBuilder } from "./CriteriaBuilder";
 import { autopilotStore } from "@/state/autopilot";
+import { saveDraft, loadDraft, clearDraft } from "@/state/workflowDrafts";
 import { toast } from "sonner";
 import { matchCount, describeSet, type CriteriaSet } from "@/fixtures/criteriaMatch";
 import type { Recipe } from "@/fixtures/recipes";
 
-// AttentionActivation — the FULL-PAGE workflow builder (replaces the cramped modal).
-// A focused, full-viewport takeover with three clear steps:
-//   ① Who it runs on (criteria + live preview) → ② What happens (the workflow) →
-//   ③ Go live (review + autopilot → Start the run).
-// The persistent header (problem name) + the stepper + the sticky footer answer
-// "why / where am I / what's next" from every step — the ADHD orientation contract.
+// AttentionActivation — the FULL-PAGE workflow builder. Three clear steps:
+//   ① Who it runs on (criteria + live preview) → ② Set up the workflow (watch the
+//   walkthrough, customize our snapshot in HighLevel, publish it) → ③ Go live (run it).
+// The build autosaves as a draft, so a user who leaves returns with their criteria
+// prefilled — straight to the workflow step. The persistent header + stepper + footer
+// answer "why / where am I / what's next" from every step (the ADHD orientation contract).
 
 type Step = "criteria" | "workflow" | "review";
 const STEP_INDEX: Record<Step, number> = { criteria: 0, workflow: 1, review: 2 };
 const STEP_BY_INDEX: Step[] = ["criteria", "workflow", "review"];
-const STEPS = [{ label: "Who it runs on" }, { label: "What happens" }, { label: "Go live" }];
+const STEPS = [{ label: "Who it runs on" }, { label: "Set up the workflow" }, { label: "Go live" }];
 
 const ACTION_STEPS = [
   { icon: "zap", label: "When an account matches", optional: false },
@@ -25,26 +26,56 @@ const ACTION_STEPS = [
   { icon: "clock", label: "If still unresolved after 7 days, escalate", optional: true },
 ];
 
-function WorkflowStep({ set, n }: { set: CriteriaSet; n: number }) {
+function WorkflowStep({
+  set,
+  n,
+  workflowReady,
+  setWorkflowReady,
+}: {
+  set: CriteriaSet;
+  n: number;
+  workflowReady: boolean;
+  setWorkflowReady: (v: boolean) => void;
+}) {
+  const openHighLevel = () => window.open("https://app.gohighlevel.com/", "_blank", "noopener,noreferrer");
   return (
     <div className="aa-step2">
       <div className="aa-pinned-chip">
         <Icon name="users" /> Running on <Mono>{n}</Mono> account{n === 1 ? "" : "s"} · {describeSet(set)}
       </div>
-      <div style={{ display: "flex", flexDirection: "column", gap: "var(--s-1)" }}>
-        <h2 style={{ fontSize: "var(--t-heading)", fontWeight: 700, margin: 0 }}>What happens when an account matches</h2>
-        <p style={{ margin: 0, fontSize: "var(--t-body-sm)", color: "var(--text-3, var(--text))" }}>
-          Pre-built and ready. Optional steps are off until you turn them on.
+
+      <div className="aa-setup-head">
+        <Badge variant={workflowReady ? "pos" : "warn"} dot>{workflowReady ? "Published" : "Not set up yet"}</Badge>
+        <h2 style={{ fontSize: "var(--t-heading)", fontWeight: 700, margin: 0 }}>Set up your workflow</h2>
+        <p style={{ margin: 0, fontSize: "var(--t-body)", color: "var(--text-2, var(--text))" }}>
+          We've built a starter workflow for this playbook. Watch the 2-minute walkthrough, then open it in
+          HighLevel to tweak the steps and messages for your agency — and publish it. It's not live until you do.
         </p>
       </div>
-      <div className="aa-steplist">
-        {ACTION_STEPS.map((s, i) => (
-          <div key={i} className="aa-stepline">
-            <Icon name={s.icon} />
-            <span style={{ flex: 1 }}>{s.label}</span>
-            {s.optional ? <span className="aa-opt">optional</span> : null}
-          </div>
-        ))}
+
+      <VideoCard title="How this workflow works" duration="2 min" />
+
+      <div className="aa-snapshot">
+        <span className="aa-snapshot-label">What's in the starter workflow</span>
+        <div className="aa-steplist">
+          {ACTION_STEPS.map((s, i) => (
+            <div key={i} className="aa-stepline">
+              <Icon name={s.icon} />
+              <span style={{ flex: 1 }}>{s.label}</span>
+              {s.optional ? <span className="aa-opt">optional</span> : null}
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <div className="aa-setup-actions">
+        <Button variant="primary" iconRight={<Icon name="external-link" />} onClick={openHighLevel}>
+          Open workflow in HighLevel
+        </Button>
+        <label className="aa-publish-confirm">
+          <Checkbox checked={workflowReady} onChange={(e: React.ChangeEvent<HTMLInputElement>) => setWorkflowReady(e.target.checked)} />
+          <span>I've customized and published it in HighLevel</span>
+        </label>
       </div>
     </div>
   );
@@ -84,10 +115,10 @@ function ReviewStep({
 
       <div className="aa-summary-card">
         <div className="aa-sc-head">
-          <span><Icon name="list-checks" /> What happens</span>
+          <span><Icon name="list-checks" /> Workflow</span>
           <button type="button" className="aa-sc-edit" onClick={onEditWhat}>Edit</button>
         </div>
-        <p className="aa-sc-body">Alert you · send a drafted note (your OK first) · escalate if unresolved after 7 days.</p>
+        <p className="aa-sc-body">Published in HighLevel · alert you, drafted note (your OK first), escalate after 7 days.</p>
       </div>
 
       <div className="aa-summary-card">
@@ -107,18 +138,42 @@ function ReviewStep({
 }
 
 export function AttentionActivation({ recipe, onClose }: { recipe?: Recipe; onClose: () => void }) {
-  const [step, setStep] = useState<Step>("criteria");
-  const [set, setSet] = useState<CriteriaSet>(recipe ? recipe.set : { match: "all", criteria: [] });
+  const recipeId = recipe?.id;
+  const [step, setStep] = useState<Step>(() => {
+    const d = recipeId ? loadDraft(recipeId) : undefined;
+    return d?.step ?? "criteria";
+  });
+  const [set, setSet] = useState<CriteriaSet>(() => {
+    const d = recipeId ? loadDraft(recipeId) : undefined;
+    return d ? { match: d.match, criteria: d.criteria } : recipe ? recipe.set : { match: "all", criteria: [] };
+  });
+  const [workflowReady, setWorkflowReady] = useState<boolean>(() => (recipeId ? loadDraft(recipeId)?.workflowReady ?? false : false));
   const [autopilot, setAutopilot] = useState(true);
-  const [published, setPublished] = useState(false);
+  const [live, setLive] = useState(false);
+
   const n = matchCount(set);
   const playbookId = recipe?.playbookId ?? "pb-no-login";
   const problemName = recipe?.label ?? "New workflow";
 
-  const publish = () => {
+  // Tell the user we restored their draft (only when reopening with saved progress).
+  useEffect(() => {
+    if (recipeId && loadDraft(recipeId)) {
+      toast("Picked up where you left off", { description: "Your criteria are restored." });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Autosave the draft as the build progresses.
+  useEffect(() => {
+    if (!recipeId || live) return;
+    saveDraft({ recipeId, match: set.match, criteria: set.criteria, step, workflowReady, savedAt: Date.now() });
+  }, [recipeId, set, step, workflowReady, live]);
+
+  const goLive = () => {
     autopilotStore.enable(playbookId, "review");
+    if (recipeId) clearDraft(recipeId);
     toast.success("Workflow is live", { description: `Auto-running on ${n} account${n === 1 ? "" : "s"} now.` });
-    setPublished(true);
+    setLive(true);
   };
 
   return (
@@ -136,7 +191,7 @@ export function AttentionActivation({ recipe, onClose }: { recipe?: Recipe; onCl
       </header>
 
       {/* Stepper */}
-      {!published ? (
+      {!live ? (
         <div className="aa-stepper-band">
           <Stepper steps={STEPS} current={STEP_INDEX[step]} onStepClick={(i) => setStep(STEP_BY_INDEX[i])} />
         </div>
@@ -145,7 +200,7 @@ export function AttentionActivation({ recipe, onClose }: { recipe?: Recipe; onCl
       {/* Body */}
       <div className="aa-body">
         <div className="aa-body-inner">
-          {published ? (
+          {live ? (
             <div className="aa-done">
               <span className="aa-done-ico" aria-hidden><Icon name="check-circle" /></span>
               <h2 style={{ fontSize: "var(--t-display-lg)", fontWeight: 700, margin: 0 }}>It's live</h2>
@@ -158,7 +213,7 @@ export function AttentionActivation({ recipe, onClose }: { recipe?: Recipe; onCl
           ) : step === "criteria" ? (
             <CriteriaBuilder set={set} onChange={setSet} />
           ) : step === "workflow" ? (
-            <WorkflowStep set={set} n={n} />
+            <WorkflowStep set={set} n={n} workflowReady={workflowReady} setWorkflowReady={setWorkflowReady} />
           ) : (
             <ReviewStep
               set={set}
@@ -173,7 +228,7 @@ export function AttentionActivation({ recipe, onClose }: { recipe?: Recipe; onCl
       </div>
 
       {/* Sticky footer nav */}
-      {!published ? (
+      {!live ? (
         <footer className="aa-foot">
           {step === "criteria" ? (
             <>
@@ -181,7 +236,7 @@ export function AttentionActivation({ recipe, onClose }: { recipe?: Recipe; onCl
                 {n === 0 ? "Add a condition to see who matches" : <><Mono>{n}</Mono> account{n === 1 ? "" : "s"} match</>}
               </span>
               <Button variant="primary" iconRight={<Icon name="arrow-right" />} disabled={n === 0} onClick={() => setStep("workflow")}>
-                Continue to actions
+                Continue to setup
               </Button>
             </>
           ) : step === "workflow" ? (
@@ -189,16 +244,19 @@ export function AttentionActivation({ recipe, onClose }: { recipe?: Recipe; onCl
               <Button variant="ghost" className="btn-accent" icon={<Icon name="arrow-left" />} onClick={() => setStep("criteria")}>
                 Back
               </Button>
-              <Button variant="primary" iconRight={<Icon name="arrow-right" />} onClick={() => setStep("review")}>
-                Continue to go-live
-              </Button>
+              <div style={{ display: "flex", alignItems: "center", gap: "var(--s-3)" }}>
+                {!workflowReady ? <span className="aa-foot-note">Publish it in HighLevel to continue</span> : null}
+                <Button variant="primary" iconRight={<Icon name="arrow-right" />} disabled={!workflowReady} onClick={() => setStep("review")}>
+                  Continue to go-live
+                </Button>
+              </div>
             </>
           ) : (
             <>
               <Button variant="ghost" className="btn-accent" icon={<Icon name="arrow-left" />} onClick={() => setStep("workflow")}>
                 Back
               </Button>
-              <Button variant="primary" icon={<Icon name="zap" />} onClick={publish}>
+              <Button variant="primary" icon={<Icon name="zap" />} onClick={goLive}>
                 Start the run
               </Button>
             </>
