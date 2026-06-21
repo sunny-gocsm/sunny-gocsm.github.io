@@ -678,7 +678,7 @@ export default function MoneyPage() {
   return (
     <main
       style={{
-        padding: "var(--s-7) var(--s-6)",
+        padding: "var(--s-8) var(--s-6)",
         maxWidth: 1320,
         margin: "0 auto",
         color: "var(--text)",

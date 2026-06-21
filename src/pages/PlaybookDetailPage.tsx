@@ -119,7 +119,7 @@ export default function PlaybookDetailPage() {
 
   if (!playbook) {
     return (
-      <main style={{ padding: "var(--s-7) var(--s-6)", maxWidth: 800, margin: "0 auto", color: "var(--text)" }}>
+      <main style={{ padding: "var(--s-8) var(--s-6)", maxWidth: 800, margin: "0 auto", color: "var(--text)" }}>
         <h1 style={{ fontSize: "var(--t-display-lg)", fontWeight: 700, margin: 0 }}>Playbook not found</h1>
         <div style={{ marginTop: "var(--s-3)" }}>
           <Button variant="secondary" size="sm" onClick={() => navigate("/playbooks")}>
@@ -220,7 +220,7 @@ export default function PlaybookDetailPage() {
   return (
     <main
       style={{
-        padding: "var(--s-7) var(--s-6)",
+        padding: "var(--s-8) var(--s-6)",
         maxWidth: 1180,
         margin: "0 auto",
         color: "var(--text)",

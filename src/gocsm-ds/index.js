@@ -59,4 +59,5 @@ export * from "./components/action/StatusChips.jsx";
 export * from "./components/action/TeamPulseStrip.jsx";
 export * from "./components/action/WeeklyDigest.jsx";
 export * from "./components/action/FilterChip.jsx";
+export * from "./components/action/PromptField.jsx";
 export * from "./components/insight/StackedBar.jsx";

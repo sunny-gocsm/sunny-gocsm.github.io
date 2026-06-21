@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Button, Icon, Card } from "@/gocsm-ds";
+import { Button, Icon, Card, PromptField } from "@/gocsm-ds";
 import { MatchWall } from "./MatchWall";
 import { CriterionChip, makeCriterion } from "./CriterionChip";
 import { RECIPES, type Recipe } from "@/fixtures/recipes";
@@ -79,20 +79,14 @@ export function CriteriaBuilder({
           </p>
         </div>
 
-        {/* NL warm-start */}
-        <div className="cb-nl">
-          <Icon name="sparkles" />
-          <input
-            className="cb-nl-input"
-            placeholder="Describe the accounts… e.g. “big accounts going quiet”"
-            value={nl}
-            onChange={(e) => setNl(e.target.value)}
-            onKeyDown={(e) => e.key === "Enter" && runNL()}
-          />
-          <Button variant="ghost" className="btn-accent" size="sm" onClick={runNL}>
-            Build
-          </Button>
-        </div>
+        {/* NL warm-start — the DS PromptField (an inviting AI input, not a faint box) */}
+        <PromptField
+          value={nl}
+          onValueChange={setNl}
+          onSubmit={runNL}
+          placeholder="Describe the accounts… e.g. “big accounts going quiet”"
+          submitLabel="Build"
+        />
         <span className="cb-nl-note">Prototype — compiles your words into editable rules below. Always check them.</span>
 
         {clarify ? (
