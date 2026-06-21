@@ -9,6 +9,7 @@ export declare function EventRow(props: {
   status?: React.ReactNode;
   statusTone?: "pos" | "neg" | "warn" | "neutral";
   value?: React.ReactNode;
+  hideName?: boolean;
   onClick?: () => void;
   className?: string;
   [key: string]: any;
