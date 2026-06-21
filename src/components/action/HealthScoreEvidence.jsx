@@ -11,7 +11,7 @@ export function HealthScoreEvidence({ score, band = "atrisk", tag = "Triage inst
     <div {...rest}>
       <div className="panel panel-pad">
         <div className="instrument">
-          <ScoreRing score={score} band={band} size="sm" />
+          <ScoreRing score={score} band={band} size={88} />
           <div className="ins-body">
             <span className="ins-tag">{tag}</span>
             <div className="ins-band"><HealthBadge band={band} />{trend ? <Delta value={trend} direction="bad-up" /> : null}</div>
