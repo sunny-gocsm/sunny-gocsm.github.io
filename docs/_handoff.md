@@ -30,6 +30,18 @@ The brief is right to flag this. What we have vs. need:
 - **Decision taken (flag for your approval):** I will introduce an explicit `attempts` fixture that models this signal honestly and drives the UI, so the "it didn't work" claim is always backed by an inspectable record. **In production this needs a real run-ledger + reliable per-account health deltas** (you noted known per-account aggregation issues).
 - **Honest fallback when the signal is low-confidence/missing:** the card does NOT claim failure. It degrades to *"Workflow ran {N}d ago · outcome not yet confirmed"* with the same call/email/SMS actions, gated behind a confidence flag. We never render "we tried, it failed" we can't back. **→ Confirm you're OK with the explicit-attempts-fixture approach + the honest fallback copy.**
 
+### 2. DS maturation — promote `FilterChip` + `StackedBar`? (your call)
+The Attention UI is correctly app-level (data-coupled). The two reusable *presentational* patterns it
+introduced — a filter chip and a stacked distribution bar — are genuine DS-primitive gaps. I did **not**
+rush them into the DS at session end (a deliberate promotion is safer). **Want me to promote them next** as
+data-agnostic DS primitives (DS commit → `sync-ds.sh` → app commit, strictly sequential)?
+
+### 3. Pre-existing bug on the Health link-out target (not mine, but it's on the spine path)
+Clicking job-(b) "Why" → `/accounts/:id` (Health tab) works, but that page logs `ScoreRing` SVG-geometry
+errors (`HealthScoreEvidence` passes `size="sm"` → NaN `cx/cy/r`). **Pre-existing** (none of those files
+were touched on this branch); the page still renders visually. Out of the Attention surface scope, but since
+the spine routes users there, flagging it. **Want me to fix it** (likely a 1-line `size` prop fix)?
+
 ### Process note
 Phase-1 web research was gathered by read-only research agents (no repo access, cannot push). All build / git / DS-sync steps are strictly single-threaded and sequential, per your instruction.
 
@@ -48,7 +60,7 @@ _To be written in `docs/DECISION.md` and mirrored here in one paragraph._
 | 1 — Research (CDO lens) | ✅ done — 16 platforms, 3 clusters; strong convergence |
 | 2 — Decide (`docs/DECISION.md`) | ✅ done — pattern chosen + interaction model |
 | 3 — Plan (build spec) | ✅ done — `docs/PLAN.md` (IA, data shapes, DS-vs-app, build order) |
-| 4 — Execute (design loop) | 🟡 in progress — steps 1–2 done (data spine ✅, MatchWall ✅); next: CriterionChip + builder |
+| 4 — Execute (design loop) | ✅ steps 1–6 built + audited; macro loop done. DS: see reclassification below. |
 
 ## Architectural spine (invariant)
 - **Health = diagnostic** (why at risk). **Attention = action** (what to do now). Link, don't duplicate.
@@ -56,16 +68,20 @@ _To be written in `docs/DECISION.md` and mirrored here in one paragraph._
 - Attention cards = action-relevant minimum (account · one-line reason · the action) → link into Account Detail → Health / AI Insights for full diagnosis.
 - Vocabulary: **Thriving / Healthy / Watch / At-Risk** — never "Steady".
 
-## DS-vs-app classifications
+## DS-vs-app classifications (revised at build time — honest root-cause call)
 _Per item: app (executive-pulse-check) · DS (gocsm-design-system) · both._
-- **Data spine** (criteriaCatalog/criteriaMatch/recipes/attempts) → **app** (fixtures). Done.
-- **MatchWall** → **DS-bound, prototyped in app**. Workflow: build + audit in app (fast HMR/Playwright),
-  then promote the matured primitive to the DS and sync at the macro-loop consolidation. Rationale: avoids
-  a DS build+sync round-trip on every micro-iteration. **Invariant preserved:** while it lives in the app
-  the DS is unchanged, so the two repos are trivially in sync; promotion will be one deliberate sequential
-  sync. (Reuses DS `Mono`/`Icon`/`ConfTag`; CSS in sync-proof `app-overrides.css`.)
-- **CriterionChip, InlineContactActions** → DS-bound (same prototype→promote plan). _next_
-- **Category gate, NL warm-start, recipe cards, Attention page, collapsed drawer** → **app** composition.
+- **Everything built for Attention → app.** Reason discovered during the build: MatchWall, CriteriaBuilder
+  and CriterionChip are **tightly coupled to the app data layer** (`criteriaMatch`/`criteriaCatalog`/`Account`).
+  The DS is a pure presentational library and must not depend on app fixtures, so these smart, data-bound
+  containers correctly live in the app. They **reuse** DS primitives throughout (`Mono`, `Icon`, `ConfTag`,
+  `Card`, `Button`, `Badge`, `FixItCard`); all CSS is in sync-proof `app-overrides.css`.
+- **Two-repo invariant: HELD.** The DS was not changed by the Attention build → the repos remain in sync
+  (last DS change was the synced `69416c6` video-placeholder fix). No rushed end-of-session DS extraction.
+- **Genuine DS follow-up candidates (recommended, NOT done — deliberate, not rushed):** a generic
+  presentational **`FilterChip`** (field·operator·value shell — the DS has no chip primitive today) and a
+  **`StackedBar`** (the composition/distribution bar — `PillarBar` is pillar-specific). Promoting these as
+  data-agnostic primitives (props in, no fixtures) is the right DS maturation, best done as a focused pass.
+  → **Want me to do that promotion next?** (see NEEDS KARTHIK).
 
 ## Playwright pass/fail per state
 | State | Result |
@@ -77,9 +93,23 @@ _Per item: app (executive-pulse-check) · DS (gocsm-design-system) · both._
 | MatchWall — 7-day forecast ghost tiles (~1d/2d/3d, dashed/translucent) | ✅ pass |
 | MatchWall — honest "not enough trend data" fallback | ✅ pass |
 | MatchWall — plain-English summary updates live | ✅ pass |
-| Criteria builder (chips/gate/NL) · workflow builder · publish/auto-run · Attention (a)/(b) · Health link-out | ⬜ pending (steps 3–7) |
+| Criteria builder — empty state (recipe on-ramp + NL box) | ✅ pass |
+| Criteria builder — recipe seeds editable chips | ✅ pass |
+| Criteria builder — category gate (3 sets) → scoped fields (progressive disclosure) | ✅ pass |
+| Criteria builder — add field → editable chip → wall/summary update live | ✅ pass |
+| Criteria builder — NL warm-start compiles phrase → editable chips | ✅ pass |
+| Criteria builder — refuse-and-clarify on ambiguous input | ✅ pass |
+| Criteria builder — desktop + 390px mobile | ✅ pass |
+| Collapsed flow — criteria (pre-seeded) → workflow → publish → Live | ✅ pass |
+| Collapsed flow — publish == activation (row flips to On·autopilot live) | ✅ pass (no explain/run/autopilot-question) |
+| Attention page — job (a) "Needs a workflow" rows, honest deduped count | ✅ pass |
+| Attention page — job (b) high-confidence "tried but didn't move" (names the pillar) | ✅ pass |
+| Attention page — job (b) low-confidence honest fallback ("outcome not yet confirmed") | ✅ pass (no failure claim) |
+| Attention page — inline Call/Email/SMS + "Why" → Account Health (spine link-out) | ✅ pass |
+| Attention page — desktop + 390px mobile | ✅ pass |
+| Vocabulary check — no "Steady" on the Attention surface | ✅ pass |
 
-_Scratch audit route: `/attention-lab` (not in nav; removed before the macro loop)._
+_Scratch dev route `/attention-lab` (criteria builder in isolation) is KEPT for your review (not in nav). Say the word and I'll delete it._
 
 ## Codebase grounding (done — informs Plan/Build)
 - **Flow to collapse** (`src/components/playbooks/PlaybookActivationDrawer.tsx`, 1786 lines): current steps `pick → explain → handoff(WorkflowHandoff) → run → done → "autopilot?" → set-trigger`. Target: `trigger-criteria → WorkflowHandoff(builder) → publish → auto-run`. DELETE `explain` (the "list of actions" screen). `WorkflowHandoff` is the keep-able Workflow-builder step. `autopilotStore.enable(id, oversee)` on publish == activation (no separate Run, no autopilot question).
@@ -101,3 +131,13 @@ _Scratch audit route: `/attention-lab` (not in nav; removed before the macro loo
 - `20e3e2f` docs: Phase 3 `PLAN.md` (IA, data shapes, DS-vs-app, build order).
 - `b9750a2` feat: data spine (criteriaCatalog/criteriaMatch/recipes/attempts) + 6 passing vitest checks.
 - `c32882b` feat: MatchWall central mechanic (live wall + composition + floor + 7-day forecast); audited at `/attention-lab`.
+- `2174a4d` feat: criteria builder — category gate, editable chips, recipes, NL warm-start + refuse-and-clarify.
+- `d20a026` feat: collapsed flow (criteria→workflow→publish==activate) + two-job Attention page; nav relabelled "Attention".
+
+## Macro loop (final pass) — conclusion
+Re-traversed every reachable state (criteria empty/seeded, category gate, chip edit, NL compile,
+refuse-and-clarify, live narrowing + floor + forecast, collapsed flow criteria→workflow→publish→live,
+job (a), job (b) high/low confidence, Health link-out) at 1440 + 390. All clear the Standard; 0 console
+errors on the Attention surface itself. **No new material action items on the Attention surface.** One
+pre-existing console bug on the Health link-out target (NEEDS KARTHIK #3). DS follow-up candidates noted
+(NEEDS KARTHIK #2). Branch left for review — no PR, no merge.
