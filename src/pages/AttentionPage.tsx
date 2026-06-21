@@ -117,25 +117,30 @@ export default function AttentionPage() {
   const openAccount = (id: string) => navigate(`/accounts/${id}`);
 
   return (
-    <main className="today-main" style={{ maxWidth: 1080, margin: "0 auto", color: "var(--text)", display: "flex", flexDirection: "column", gap: "var(--s-9)" }}>
-      {/* Hero */}
-      <header style={{ display: "flex", flexDirection: "column", gap: "var(--s-2)" }}>
+    <main className="today-main" style={{ maxWidth: 1080, margin: "0 auto", color: "var(--text)", display: "flex", flexDirection: "column" }}>
+      {/* Hero — the page's thesis */}
+      <header style={{ display: "flex", flexDirection: "column", gap: "var(--s-3)" }}>
         <div style={{ display: "flex", alignItems: "center", gap: "var(--s-3)", flexWrap: "wrap" }}>
-          <h1 style={{ fontSize: "var(--t-display-lg)", fontWeight: 700, letterSpacing: "-0.02em", lineHeight: 1.1, margin: 0 }}>Attention</h1>
+          <h1 style={{ fontSize: "var(--t-display-xl)", fontWeight: 700, letterSpacing: "-0.02em", lineHeight: 1.05, margin: 0 }}>Attention</h1>
           {totalNeeding > 0 ? <Badge variant="danger" dot={false}><Mono>{totalNeeding}</Mono> need a workflow</Badge> : null}
         </div>
-        <p style={{ margin: 0, fontSize: "var(--t-body-lg)", color: "var(--text-2, var(--text))" }}>
+        <p style={{ margin: 0, fontSize: "var(--t-body-lg)", color: "var(--text-2, var(--text))", maxWidth: 640 }}>
           Start a workflow for the accounts that need one — and reach the ones a workflow ran on but didn't move.
         </p>
       </header>
 
       {/* Job (a) — needs a workflow */}
-      <section style={{ display: "flex", flexDirection: "column", gap: "var(--s-3)" }}>
-        <h2 style={{ fontSize: "var(--t-heading)", fontWeight: 700, margin: 0 }}>Needs a workflow</h2>
+      <section style={{ marginTop: "var(--s-10)", display: "flex", flexDirection: "column", gap: "var(--s-4)" }}>
+        <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
+          <h2 style={{ fontSize: "var(--t-heading)", fontWeight: 700, margin: 0 }}>Needs a workflow</h2>
+          <p style={{ margin: 0, fontSize: "var(--t-body-sm)", color: "var(--text-3, var(--text))" }}>
+            Pick a problem — one workflow handles every matching account.
+          </p>
+        </div>
         {jobA.length === 0 ? (
           <Card padded><p style={{ margin: 0, fontSize: "var(--t-body)", color: "var(--text-2, var(--text))" }}>Nothing needs a new workflow — GoCSM is watching.</p></Card>
         ) : (
-          <div>
+          <div style={{ display: "flex", flexDirection: "column", gap: "var(--s-2)" }}>
             {jobA.map(({ recipe, accounts }) => (
               <JobARow key={recipe.id} recipe={recipe} accounts={accounts} onSetup={() => setActivation(recipe)} />
             ))}
@@ -144,7 +149,7 @@ export default function AttentionPage() {
       </section>
 
       {/* Job (b) — tried, didn't move */}
-      <section style={{ display: "flex", flexDirection: "column", gap: "var(--s-3)" }}>
+      <section style={{ marginTop: "var(--s-12)", display: "flex", flexDirection: "column", gap: "var(--s-4)" }}>
         <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
           <h2 style={{ fontSize: "var(--t-heading)", fontWeight: 700, margin: 0 }}>We tried — health hasn't moved</h2>
           <p style={{ margin: 0, fontSize: "var(--t-body-sm)", color: "var(--text-3, var(--text))" }}>
