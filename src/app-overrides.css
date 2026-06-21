@@ -285,11 +285,12 @@ button {
 .aa-sc-body { margin: 0; font-size: var(--t-body-sm); color: var(--text); }
 .aa-autopilot-row { display: flex; align-items: center; justify-content: space-between; gap: var(--s-3); }
 /* success */
-.aa-done { display: flex; flex-direction: column; align-items: center; gap: var(--s-3); padding: var(--s-12) var(--s-4); }
+.aa-done { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: var(--s-3); padding: var(--s-12) var(--s-4); min-height: 52vh; }
 .aa-done-ico { display: inline-flex; color: var(--pos-7, #1e874b); transform: scale(1.6); }
 @media (max-width: 640px) {
-  .aa-top { grid-template-columns: auto 1fr auto; padding: var(--s-3) var(--s-4); }
+  .aa-top { grid-template-columns: auto 1fr; padding: var(--s-3) var(--s-4); }
   .aa-top-title { justify-self: start; text-align: left; }
+  .aa-saved { display: none; } /* free space for the problem title on narrow screens */
   .aa-body { padding: var(--s-5) var(--s-4); }
   .aa-foot, .aa-stepper-band, .aa-top { padding-left: var(--s-4); padding-right: var(--s-4); }
 }
