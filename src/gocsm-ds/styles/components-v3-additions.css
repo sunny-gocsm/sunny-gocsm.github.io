@@ -145,6 +145,9 @@
 .prompt-field:focus-within{border-color:var(--blue-6);box-shadow:var(--ring-focus);}
 .prompt-field .pf-ico{display:inline-flex;color:var(--blue-7);flex:0 0 auto;}
 .prompt-field .pf-input{flex:1;min-width:0;border:0;outline:0;background:transparent;font-size:var(--t-body);color:var(--text);height:28px;}
+/* The container shows focus via :focus-within — suppress the inner input's own ring
+   so an app-level global :focus-visible rule can't draw a second (double) highlight. */
+.prompt-field .pf-input:focus,.prompt-field .pf-input:focus-visible{box-shadow:none;outline:none;}
 .prompt-field .pf-input::placeholder{color:var(--text-2);}
 .prompt-field .pf-submit{flex:0 0 auto;border:0;border-radius:var(--r-sm);background:var(--blue-7);color:#fff;font-size:var(--t-body-sm);font-weight:600;padding:7px 14px;cursor:pointer;transition:background 140ms ease;}
 .prompt-field .pf-submit:hover{background:var(--blue-8);}
@@ -156,3 +159,32 @@
 .stacked-bar .sbar-seg.tone-warn{background:var(--warn-6,#e0c067);}
 .stacked-bar .sbar-seg.tone-pos{background:var(--pos-6,#6cc090);}
 .stacked-bar .sbar-seg.tone-neutral{background:var(--blue-4,#9db8e0);}
+
+/* ─── Monogram — deterministic initials avatar (identity only, never health) ─── */
+.monogram{display:inline-flex;align-items:center;justify-content:center;border-radius:999px;color:#fff;font-weight:700;line-height:1;letter-spacing:0.02em;flex:0 0 auto;}
+
+/* ─── AccountRow — one account in a scannable list (name gets full width, no truncation) ─── */
+.account-row{display:flex;align-items:center;gap:10px;width:100%;text-align:left;padding:8px 12px;border:1px solid var(--border);border-radius:var(--r-md);background:var(--surface,#fff);}
+.account-row .ar-name{font-size:var(--t-body-sm);font-weight:600;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex:1 1 auto;min-width:0;}
+.account-row .ar-meta{font-size:var(--t-caption);color:var(--text-3,var(--text));flex:0 0 auto;white-space:nowrap;}
+.account-row .ar-trailing{flex:0 0 auto;display:inline-flex;align-items:center;}
+.account-row .ar-value{font-size:var(--t-body-sm);font-weight:600;color:var(--text);font-variant-numeric:tabular-nums;flex:0 0 auto;text-align:right;}
+.account-row.muted{opacity:.62;border-style:dashed;background:transparent;}
+button.account-row{cursor:pointer;transition:border-color 120ms ease,background 120ms ease,box-shadow 120ms ease;}
+button.account-row:hover{border-color:var(--blue-5,#6f97e0);background:var(--blue-1,#f3f7ff);}
+
+/* ─── Stepper — discrete labeled progress for fixed 3–4 step flows ─── */
+.stepper{display:flex;align-items:center;list-style:none;margin:0;padding:0;}
+.stepper .step{display:flex;align-items:center;}
+.stepper .step-btn{display:inline-flex;align-items:center;gap:8px;border:0;background:transparent;padding:4px 0;color:var(--text-3,var(--text));cursor:default;}
+.stepper .step.done .step-btn{cursor:pointer;color:var(--text);}
+.stepper .step-marker{display:inline-flex;align-items:center;justify-content:center;width:26px;height:26px;border-radius:999px;font-size:var(--t-body-sm);font-weight:700;flex:0 0 auto;}
+.stepper .step.upcoming .step-marker{border:1.5px solid var(--border-strong,rgba(15,27,45,0.14));color:var(--text-3,var(--text));background:transparent;}
+.stepper .step.current .step-marker{background:var(--blue-7);color:#fff;box-shadow:0 0 0 4px var(--blue-1);}
+.stepper .step.done .step-marker{background:var(--pos-7,#1e874b);color:#fff;}
+.stepper .step.done .step-marker svg{width:14px;height:14px;}
+.stepper .step-label{font-size:var(--t-body-sm);font-weight:600;white-space:nowrap;}
+.stepper .step.current .step-label{color:var(--blue-8);}
+.stepper .step-line{width:44px;height:2px;background:var(--border);margin:0 12px;flex:0 0 auto;}
+.stepper .step.done .step-line{background:var(--pos-7,#1e874b);}
+@media (max-width:640px){.stepper .step-line{width:20px;margin:0 6px;}.stepper .step.upcoming .step-label{display:none;}}
