@@ -100,7 +100,7 @@ export default function PlaybooksPage() {
   return (
     <main
       style={{
-        padding: "var(--s-7) var(--s-6)",
+        padding: "var(--s-8) var(--s-6)",
         maxWidth: 1280,
         margin: "0 auto",
         color: "var(--text)",
