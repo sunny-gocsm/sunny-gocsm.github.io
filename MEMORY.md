@@ -17,6 +17,10 @@ Durable, human- and agent-readable log of significant decisions and changes.
   `vite_react_shadcn_ts` → `@gocsm/prototype`.
 - Pushed to `https://github.com/sunny-gocsm/go-csm-playbooks` (private).
 - Prototype dev server (:8080) kept always-on via launchd agent `com.gocsm.dev`.
+  Agent definition version-controlled at `ops/com.gocsm.dev.plist`. NOTE: the coding
+  sandbox cannot write to `~/Library/LaunchAgents`, so the one-time install must be run
+  by a human (command in `CLAUDE.md` → Always-on dev server). For this session the dev
+  server was started as a background process and verified serving HTTP 200 on :8080.
 - Verify gate: `bun run build` from root (DS → prototype → web) — green.
 
 ### Standing rationale

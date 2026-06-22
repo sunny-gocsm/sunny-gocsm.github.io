@@ -23,11 +23,14 @@ no sync step** (this replaced the old Lovable `sync-ds.sh` workflow).
 
 ## Always-on dev server
 `bun run dev` (prototype, :8080) is kept running **at all times** by a launchd agent
-(`~/Library/LaunchAgents/com.gocsm.dev.plist`; `RunAtLoad` + `KeepAlive`). You never
-have to start it — open http://localhost:8080 anytime. Builds do **not** interfere
-(separate process). Logs: `.dev-server.log` (gitignored).
-- Stop:  `launchctl bootout gui/$(id -u)/com.gocsm.dev`
-- Start: `launchctl bootstrap gui/$(id -u) ~/Library/LaunchAgents/com.gocsm.dev.plist`
+(`RunAtLoad` + `KeepAlive`). You never have to start it — open http://localhost:8080
+anytime. Builds do **not** interfere (separate process). Logs: `.dev-server.log` (gitignored).
+
+The agent definition is version-controlled at `ops/com.gocsm.dev.plist`.
+- Install once (run yourself — sandboxed agents can't write to `~/Library`):
+  `cp ops/com.gocsm.dev.plist ~/Library/LaunchAgents/ && launchctl bootstrap gui/$(id -u) ~/Library/LaunchAgents/com.gocsm.dev.plist`
+- Stop:    `launchctl bootout gui/$(id -u)/com.gocsm.dev`
+- Restart: `launchctl kickstart -k gui/$(id -u)/com.gocsm.dev`
 
 ## Working discipline — KEEP CONTEXT CURRENT (non-negotiable)
 On **every commit / check-in**, as part of the same change:
