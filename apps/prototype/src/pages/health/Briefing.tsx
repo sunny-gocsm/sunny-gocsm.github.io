@@ -1,0 +1,659 @@
+import { useState } from "react";
+import { Link, useSearchParams, useNavigate } from "react-router-dom";
+import {
+  BriefingHeader,
+  Button,
+  Card,
+  DigestTristat,
+  LiveStatus,
+  Icon,
+  SignalCard,
+  Queue,
+  ActionButton,
+  SaveWindow,
+  Mono,
+  MetricCard,
+  Delta,
+  QuickWinsChecklist,
+  EvidenceBoundary,
+  HealthScoreEvidence,
+  HealthTile,
+  PillarBar,
+  WhyCard,
+  TeamPulseStrip,
+  
+  FixItCard,
+  ExecChip,
+  Tabs,
+  DraftReviewSheet,
+} from "@/gocsm-ds";
+import {
+  ResponsiveContainer,
+  AreaChart,
+  Area,
+  CartesianGrid,
+  XAxis,
+  YAxis,
+  Tooltip,
+} from "recharts";
+import {
+  header,
+  digest,
+  signals,
+  type BriefingSignal,
+  vitals,
+  isNewAgency,
+  coldStart,
+  evidence,
+  
+  teamPulse,
+  cohorts,
+  playbooks,
+  drafts,
+} from "./briefing.fixtures";
+
+function greetingFor(name: string) {
+  const h = new Date().getHours();
+  const part = h < 12 ? "morning" : h < 18 ? "afternoon" : "evening";
+  return `Good ${part}, ${name}.`;
+}
+
+// ─── Layer 1: Verdict ─────────────────────────────────────────────────────────
+function VerdictLayer() {
+  const navigate = useNavigate();
+  const [draftIndex, setDraftIndex] = useState<number | null>(null);
+
+  const scrollToQueue = () => {
+    const el = document.getElementById("briefing-queue");
+    if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
+  };
+
+  const handleTristatClick: React.MouseEventHandler<HTMLDivElement> = (e) => {
+    const target = e.target as HTMLElement;
+    if (target.closest(".digest-tile.sent")) navigate("/activity");
+    else if (target.closest(".digest-tile.alerted")) scrollToQueue();
+  };
+
+  const advance = () =>
+    setDraftIndex((i) =>
+      i === null || i >= drafts.length - 1 ? null : i + 1,
+    );
+  const current = draftIndex !== null ? drafts[draftIndex] : null;
+
+  return (
+    <section aria-label="Verdict" className="flex flex-col gap-4">
+      <BriefingHeader
+        greeting={`${greetingFor(header.ownerName)} Here's what GoCSM did overnight, and what needs you today.`}
+        sync={<LiveStatus state="fresh" label={`Synced ${header.lastSync}`} />}
+      />
+      <div
+        onClick={handleTristatClick}
+        style={{ cursor: "pointer" }}
+      >
+        <DigestTristat
+          sent={digest.sent}
+          alerted={digest.alerted}
+          waiting={digest.waiting}
+          line={digest.line}
+          onWaiting={() => setDraftIndex(0)}
+        />
+      </div>
+      <div>
+        <Link
+          to="/activity"
+          style={{
+            display: "inline-flex",
+            alignItems: "center",
+            gap: "var(--s-1)",
+            color: "var(--text-3, var(--text))",
+            fontSize: 13,
+            textDecoration: "none",
+          }}
+        >
+          See activity log <Icon name="arrow-right" />
+        </Link>
+      </div>
+
+      {current ? (
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-label={`Draft for ${current.account}`}
+          onClick={() => setDraftIndex(null)}
+          style={{
+            position: "fixed",
+            inset: 0,
+            background: "rgba(0,0,0,0.4)",
+            zIndex: 70,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            padding: "var(--s-5)",
+          }}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            style={{ width: "min(560px, 100%)" }}
+          >
+            <DraftReviewSheet
+              account={current.account}
+              mrr={current.mrr}
+              play={current.type}
+              band="watch"
+              why={`${draftIndex! + 1} of ${drafts.length} waiting on you.`}
+              voice="your"
+              channel={current.channel || "Email"}
+              subject={current.type}
+              draft={current.body}
+              onApprove={advance}
+              onEdit={() => {}}
+              onSkip={advance}
+              dimmed={false}
+            />
+          </div>
+        </div>
+      ) : null}
+    </section>
+  );
+}
+
+// ─── Layer 2: Action / Queue ──────────────────────────────────────────────────
+function FactorPeek({ signal }: { signal: BriefingSignal }) {
+  return (
+    <details
+      style={{
+        display: "inline-block",
+        fontSize: 12,
+        color: "var(--text-3, var(--text))",
+      }}
+    >
+      <summary
+        style={{
+          cursor: "pointer",
+          listStyle: "none",
+          display: "inline-flex",
+          alignItems: "center",
+          gap: "var(--s-1)",
+        }}
+      >
+        Evidence <Icon name="chevron-down" />
+      </summary>
+      <ul
+        style={{
+          margin: "var(--s-2) 0 0",
+          paddingLeft: "var(--s-4)",
+          display: "flex",
+          flexDirection: "column",
+          gap: "var(--s-1)",
+        }}
+      >
+        {signal.factors.map((f, i) => (
+          <li key={i}>{f.text}</li>
+        ))}
+      </ul>
+    </details>
+  );
+}
+
+function VitalsStrip() {
+  if (!vitals.length) return null;
+  return (
+    <section aria-label="Your agency this week" className="flex flex-col gap-3">
+      <h3 className="text-sm" style={{ color: "var(--text-3)", margin: 0 }}>
+        Your agency this week
+      </h3>
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        {vitals.map((v) => (
+          <MetricCard
+            key={v.label}
+            label={v.label}
+            value={v.value}
+            context={v.context}
+            accent={v.tone || null}
+            delta={
+              v.delta ? (
+                <Delta value={v.delta.value} direction={v.delta.direction} />
+              ) : null
+            }
+          />
+        ))}
+      </div>
+    </section>
+  );
+}
+
+function CohortLane() {
+  if (!cohorts.length) return null;
+  return (
+    <section aria-label="Act by problem" className="flex flex-col gap-3">
+      <header className="flex flex-col gap-1">
+        <h3 className="text-base" style={{ color: "var(--text)", margin: 0 }}>
+          Act by problem
+        </h3>
+        <p className="text-sm" style={{ color: "var(--text-3, var(--text))", margin: 0 }}>
+          GoCSM grouped these accounts because they share the same problem. Fix them as one group.
+        </p>
+      </header>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+        {cohorts.map((c) => (
+          <FixItCard
+            key={c.id}
+            icon="users"
+            tag="Group"
+            text={
+              <span>
+                {c.problem} · <Mono>{c.count}</Mono> accounts ·{" "}
+                <Mono>{c.mrrAtRisk}</Mono> at risk
+              </span>
+            }
+            conf={c.conf}
+            confDetail={c.confDetail}
+            action={<ActionButton>{c.actionLabel}</ActionButton>}
+          />
+        ))}
+      </div>
+    </section>
+  );
+}
+
+function ActionLayer({ mode }: { mode: "solo" | "team" }) {
+  if (isNewAgency) {
+    return (
+      <section aria-label="Action">
+        <QuickWinsChecklist
+          eyebrow="New agency"
+          promise={coldStart.banner}
+          plays={coldStart.plays.map((p) => ({ ...p, on: false, onToggle: () => {} }))}
+          onActivateAll={() => {}}
+        />
+      </section>
+    );
+  }
+
+  const isTeam = mode === "team";
+  const isEmpty = signals.length === 0;
+  const emptyLabel = "All caught up — no one needs you right now.";
+  const [openPlaybook, setOpenPlaybook] = useState<string | null>(null);
+
+  const queueCards = (
+    <>
+      {signals.map((s) => (
+        <SignalCard
+          key={s.id}
+          band={s.band}
+          account={s.account}
+          mrr={s.mrr}
+          story={s.story}
+          conf={s.conf}
+          confDetail={s.confDetail}
+          exec={
+            isTeam && s.assignee
+              ? s.assignee === "Auto"
+                ? <ExecChip auto />
+                : <ExecChip member={s.assignee} reassignable />
+              : null
+          }
+          saveWindow={s.saveWindow ? <SaveWindow>{s.saveWindow}</SaveWindow> : null}
+          provenance={<FactorPeek signal={s} />}
+          onSeePlaybook={() => setOpenPlaybook(s.id)}
+          action={<ActionButton>{s.actionLabel}</ActionButton>}
+        />
+      ))}
+    </>
+  );
+
+  return (
+    <section
+      id="briefing-queue"
+      aria-label="Action"
+      className="flex flex-col gap-6"
+    >
+      {isTeam ? (
+        <div className="flex flex-col gap-2">
+          <p
+            className="text-sm"
+            style={{ color: "var(--text-3, var(--text))", margin: 0 }}
+          >
+            Team: <Mono>{teamPulse.load.open}</Mono> on track ·{" "}
+            <Mono>{teamPulse.load.due}</Mono> due ·{" "}
+            <Mono>{teamPulse.load.breach}</Mono> breaching
+          </p>
+          <details>
+            <summary
+              style={{
+                cursor: "pointer",
+                color: "var(--blue-7)",
+                fontSize: 14,
+                width: "fit-content",
+              }}
+            >
+              View team detail
+            </summary>
+            <div className="mt-3">
+              <TeamPulseStrip
+                title={teamPulse.title}
+                sub={teamPulse.sub}
+                load={teamPulse.load}
+                members={teamPulse.members}
+                escalations={teamPulse.escalations}
+              />
+            </div>
+          </details>
+        </div>
+      ) : null}
+
+      <div className="flex flex-col gap-3">
+        <header className="flex flex-col gap-1">
+          <h2 className="text-lg" style={{ color: "var(--text)", margin: 0 }}>
+            {isEmpty ? (
+              "You're all caught up today."
+            ) : (
+              <>
+                <Mono>{signals.length}</Mono> of <Mono>{digest.alerted}</Mono> need you today — these need a human.
+              </>
+            )}
+          </h2>
+          <p
+            className="text-sm"
+            style={{ color: "var(--text-3, var(--text))", margin: 0 }}
+          >
+            {isEmpty
+              ? "GoCSM handled everything overnight. Check back later, or look at the evidence below."
+              : "GoCSM handled the other 3 overnight. These need a human."}
+          </p>
+        </header>
+        <Queue empty={isEmpty} emptyLabel={emptyLabel}>
+          {queueCards}
+        </Queue>
+      </div>
+
+      {isTeam ? <CohortLane /> : null}
+
+      <VitalsStrip />
+
+      <PlaybookDrawer
+        signalId={openPlaybook}
+        onClose={() => setOpenPlaybook(null)}
+      />
+    </section>
+  );
+}
+
+function PlaybookDrawer({
+  signalId,
+  onClose,
+}: {
+  signalId: string | null;
+  onClose: () => void;
+}) {
+  if (!signalId) return null;
+  const pb = playbooks[signalId];
+  if (!pb) return null;
+
+  return (
+    <div
+      role="dialog"
+      aria-modal="true"
+      aria-label={pb.name}
+      onClick={onClose}
+      style={{
+        position: "fixed",
+        inset: 0,
+        background: "rgba(0,0,0,0.4)",
+        zIndex: 60,
+        display: "flex",
+        justifyContent: "flex-end",
+      }}
+    >
+      <div
+        onClick={(e) => e.stopPropagation()}
+        style={{
+          width: "min(440px, 100%)",
+          height: "100%",
+          background: "var(--surface)",
+          borderLeft: "1px solid var(--border)",
+          boxShadow: "var(--sh-sheet)",
+          display: "flex",
+          flexDirection: "column",
+        }}
+      >
+        <div
+          className="flex items-start justify-between gap-3"
+          style={{
+            padding: "var(--s-5)",
+            borderBottom: "1px solid var(--border)",
+          }}
+        >
+          <div className="flex flex-col gap-1">
+            <span
+              className="text-xs uppercase"
+              style={{ color: "var(--text-3, var(--text))", letterSpacing: "0.04em" }}
+            >
+              Playbook
+            </span>
+            <h3
+              className="text-base"
+              style={{ color: "var(--text)", margin: 0 }}
+            >
+              {pb.name}
+            </h3>
+          </div>
+          <Button variant="ghost" size="sm" onClick={onClose}>
+            Close
+          </Button>
+        </div>
+
+        <div
+          style={{
+            padding: "var(--s-5)",
+            overflowY: "auto",
+            flex: 1,
+            display: "flex",
+            flexDirection: "column",
+            gap: "var(--s-5)",
+          }}
+        >
+          <p
+            className="text-sm"
+            style={{ color: "var(--text-2, var(--text))", margin: 0 }}
+          >
+            {pb.does}
+          </p>
+
+          <Card padded>
+            <div className="flex flex-col gap-3">
+              <span
+                className="text-xs uppercase"
+                style={{ color: "var(--text-3, var(--text))", letterSpacing: "0.04em" }}
+              >
+                Steps
+              </span>
+              <ol
+                className="flex flex-col gap-3"
+                style={{
+                  listStyle: "none",
+                  padding: 0,
+                  margin: 0,
+                  color: "var(--text)",
+                }}
+              >
+                {pb.steps.map((step, i) => (
+                  <li key={i} className="flex gap-3 text-sm">
+                    <Mono>{String(i + 1).padStart(2, "0")}</Mono>
+                    <span>{step}</span>
+                  </li>
+                ))}
+              </ol>
+            </div>
+          </Card>
+        </div>
+
+        <div
+          style={{
+            padding: "var(--s-4) var(--s-5)",
+            borderTop: "1px solid var(--border)",
+            color: "var(--text-3, var(--text))",
+            fontSize: 12,
+          }}
+        >
+          Full playbook library coming soon.
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── Layer 3: Evidence ────────────────────────────────────────────────────────
+function AgencyTrendChart() {
+  return (
+    <div style={{ width: "100%", height: 200 }}>
+      <ResponsiveContainer width="100%" height="100%">
+        <AreaChart data={evidence.trend} margin={{ top: 8, right: 16, bottom: 8, left: 0 }}>
+          <defs>
+            <linearGradient id="trendFill" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor="var(--viz-area-fill, var(--blue-7))" stopOpacity={0.5} />
+              <stop offset="100%" stopColor="var(--viz-area-fill, var(--blue-7))" stopOpacity={0} />
+            </linearGradient>
+          </defs>
+          <CartesianGrid stroke="var(--viz-grid)" strokeDasharray="2 4" vertical={false} />
+          <XAxis
+            dataKey="day"
+            stroke="var(--viz-axis)"
+            tick={{ fill: "var(--viz-axis)", fontFamily: "JetBrains Mono, monospace", fontSize: 11 }}
+            tickFormatter={(d) => `d${d}`}
+          />
+          <YAxis
+            domain={[0, 100]}
+            stroke="var(--viz-axis)"
+            tick={{ fill: "var(--viz-axis)", fontFamily: "JetBrains Mono, monospace", fontSize: 11 }}
+            width={32}
+          />
+          <Tooltip
+            contentStyle={{
+              background: "var(--surface)",
+              border: "1px solid var(--border)",
+              fontFamily: "JetBrains Mono, monospace",
+              fontSize: 12,
+              color: "var(--text)",
+            }}
+            labelFormatter={(d) => `Day ${d}`}
+          />
+          <Area type="monotone" dataKey="score" stroke="var(--blue-7)" strokeWidth={2} fill="url(#trendFill)" />
+        </AreaChart>
+      </ResponsiveContainer>
+    </div>
+  );
+}
+
+function EvidenceLayer() {
+  const summary = (
+    <div className="flex flex-col gap-1">
+      <div className="text-sm" style={{ color: "var(--text-3, var(--text))" }}>
+        What's behind today's verdict
+      </div>
+      <div style={{ color: "var(--text)" }}>
+        The score, where your accounts sit, the trend over time, and how GoCSM calculates it.
+      </div>
+    </div>
+  );
+
+  return (
+    <section aria-label="Evidence" className="flex flex-col gap-4">
+      <EvidenceBoundary summary={summary} label="Explore the data">
+        <div className="flex flex-col gap-6" style={{ paddingTop: "var(--s-3)" }}>
+          <HealthScoreEvidence
+            score={evidence.agencyScore}
+            band={evidence.agencyBand}
+            tag="Agency health — for context, not action"
+            onHowScored={() => {
+              const el = document.getElementById("briefing-methodology");
+              if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
+            }}
+          />
+
+
+          <div className="flex flex-col gap-2">
+            <h4 className="text-sm" style={{ color: "var(--text-3)", margin: 0 }}>
+              Where your <Mono>2,162</Mono> sub-accounts sit today
+            </h4>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+              {evidence.distribution.map((d) => (
+                <HealthTile key={d.band} band={d.band} count={d.n} pct={`${d.pct}%`} />
+              ))}
+            </div>
+          </div>
+
+          <div className="flex flex-col gap-2">
+            <h4 className="text-sm" style={{ color: "var(--text-3)", margin: 0 }}>
+              Your agency score over the last 60 days
+            </h4>
+            <AgencyTrendChart />
+          </div>
+
+          <div className="flex flex-col gap-2">
+            <p style={{ color: "var(--text)", margin: 0 }}>
+              Health is a weighted read across four pillars. Today it's dragged down most by Product Adoption; Revenue is steady.
+            </p>
+            <PillarBar weights={evidence.pillarWeights} legend />
+          </div>
+
+          <WhyCard
+            title="What's dragging the score"
+            kind="risk"
+            aiTagged
+            drivers={[
+              { title: "Product Adoption is below its band (−18, the biggest drag)", desc: "Biggest negative factor today.", severity: "high" },
+              { title: "Logins down 22% over 30 days", desc: "Fewer owners and users signing in.", severity: "high" },
+              { title: "Revenue is steady", desc: "No billing issues or payment failures.", severity: "pos" },
+              { title: "Feedback is fine", desc: "NPS and support sentiment stable.", severity: "pos" },
+            ]}
+          />
+
+          <div>
+            <Link
+              to="/sub-accounts"
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                gap: "var(--s-1)",
+                color: "var(--text-3, var(--text))",
+                fontSize: 13,
+                textDecoration: "none",
+              }}
+            >
+              See all sub-accounts <Icon name="arrow-right" />
+            </Link>
+          </div>
+        </div>
+      </EvidenceBoundary>
+    </section>
+  );
+}
+
+export default function Briefing() {
+  const [params, setParams] = useSearchParams();
+  const mode: "solo" | "team" = params.get("mode") === "team" ? "team" : "solo";
+
+  return (
+    <div className="flex flex-col gap-8">
+      <div className="flex justify-end">
+        <Tabs
+          tabs={[
+            { id: "solo", label: "Just me" },
+            { id: "team", label: "My team" },
+          ]}
+          active={mode}
+          onChange={(id: string) => {
+            const next = new URLSearchParams(params);
+            if (id === "team") next.set("mode", "team");
+            else next.delete("mode");
+            setParams(next, { replace: true });
+          }}
+        />
+      </div>
+      <VerdictLayer />
+      <ActionLayer mode={mode} />
+      <EvidenceLayer />
+    </div>
+  );
+}

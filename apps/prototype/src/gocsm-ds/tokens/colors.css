@@ -1,0 +1,173 @@
+/* =================================================================
+   GoCSM Design System v3 — Color tokens
+   Cool-slate neutrals, brand blue, a LOCKED four-band health spectrum
+   (Thriving green / Healthy blue / Watch amber / At-Risk red),
+   a colorblind-safe data-viz palette, role-separated reds & greens,
+   and a reserved indigo AI identity. Light-first; dark mode overrides
+   semantic + soft aliases only. NO hex values in generated product code —
+   reach for these tokens (semantic aliases first).
+   ================================================================= */
+
+:root{
+  /* ─── Neutrals: cool slate, 12 steps ─── */
+  --n-0:  #ffffff;
+  --n-1:  #f7f9fb;   /* app bg */
+  --n-2:  #eef1f5;   /* subtle bg */
+  --n-3:  #e4e8ee;   /* ui element bg */
+  --n-4:  #dde3ea;   /* ui hover */
+  --n-5:  #cfd6e0;   /* ui active */
+  --n-6:  #c4cdd8;   /* subtle border */
+  --n-7:  #a3aebd;   /* ui border */
+  --n-8:  #8a94a3;   /* muted text / disabled (AA-large) */
+  --n-9:  #5b6878;   /* secondary text (AA) */
+  --n-10: #3d4756;   /* strong text */
+  --n-11: #0f1b2d;   /* primary text (AAA) */
+  --n-12: #06233d;   /* Brand Navy — ink, inverse surface */
+
+  /* ─── Brand Blue — interactive workhorse ─── */
+  --blue-1:#f2f8ff; --blue-2:#e5f1fe; --blue-3:#cfe5fd; --blue-4:#a8d2fc;
+  --blue-5:#6cb4fb; --blue-6:#2897fc; /* brand accent fill */
+  --blue-7:#0f6fd6; /* primary CTA / link / focus (AA on white) */
+  --blue-8:#0c5aae; --blue-9:#0a4684; --blue-10:#08355f; --blue-11:#06233d; --blue-12:#041829;
+
+  /* =================================================================
+     HEALTH SPECTRUM — LOCKED. The product's defining signal.
+     Live mapping: Thriving=green · Healthy=blue · Watch=amber · At-Risk=red.
+     'Steady' is deprecated. Each band: -fill (vivid), -strong (AA text/border),
+     -soft (pastel card/row tint — matches the live distribution cards).
+     DEFAULT rendering = soft bg + strong/ink text (AA/AAA verified).
+     ================================================================= */
+
+  /* Thriving — green */
+  --th-soft:#e8f8e3;  --th-fill:#4ace29;  --th-strong:#2f9e1b;  --th-ink:#1f6e12;
+  /* Healthy — blue (distinct from brand blue: cooler, slightly indigo) */
+  --he-soft:#e7eefe;  --he-fill:#4f8df9;  --he-strong:#2563eb;  --he-ink:#1e3a8a;
+  /* Watch — amber */
+  --wa-soft:#fef0d6;  --wa-fill:#f5a623;  --wa-strong:#b45309;  --wa-ink:#7c3a00;
+  /* At-Risk — red */
+  --ar-soft:#fde9e5;  --ar-fill:#e84e38;  --ar-strong:#c73a26;  --ar-ink:#8f2719;
+
+  /* Semantic health aliases — use these in components */
+  --health-thriving:var(--th-fill); --health-thriving-strong:var(--th-strong); --health-thriving-soft:var(--th-soft); --health-thriving-ink:var(--th-ink);
+  --health-healthy:var(--he-fill);  --health-healthy-strong:var(--he-strong);  --health-healthy-soft:var(--he-soft);  --health-healthy-ink:var(--he-ink);
+  --health-watch:var(--wa-fill);    --health-watch-strong:var(--wa-strong);    --health-watch-soft:var(--wa-soft);    --health-watch-ink:var(--wa-ink);
+  --health-atrisk:var(--ar-fill);   --health-atrisk-strong:var(--ar-strong);   --health-atrisk-soft:var(--ar-soft);   --health-atrisk-ink:var(--ar-ink);
+
+  /* =================================================================
+     ROLE-SEPARATED STATUS — reds and greens are OVERLOADED in the live
+     product. Each role gets its own token even when hues overlap.
+     ================================================================= */
+  /* Positive / success (saved, synced, awarded) — NOT the Healthy band */
+  --pos-soft:#e8f8e3; --pos-7:#2f9e1b; --pos-9:#1f6e12;
+  /* Negative delta (a metric got worse) — used on trend chips, NOT destructive */
+  --neg-soft:#fde9e5; --neg-7:#c73a26; --neg-9:#8f2719;
+  /* Destructive (delete, stop tracking, cancel) — same hue, distinct role */
+  --danger-7:#c73a26; --danger-8:#a32f1f; --danger-soft:#fde9e5;
+  /* Warning / pending (medium-confidence) — amber, NOT the Watch band */
+  --warn-soft:#fef0d6; --warn-7:#b45309; --warn-9:#7c3a00;
+  /* Info */
+  --info-soft:#e5f1fe; --info-7:#0f6fd6; --info-9:#0a4684;
+
+  /* =================================================================
+     DATA-VIZ — collision-free by construction.
+     FIVE categorical colors, hard cap. Green/blue/amber/red are RESERVED
+     by the health bands, so the categorical space deliberately excludes
+     them — a chart series can never read as a health signal.
+     >5 series → sequential ramp or split the chart.
+     ================================================================= */
+  --viz-1:#7e66c9;  /* violet */
+  --viz-2:#2e9b8c;  /* teal   */
+  --viz-3:#c76b96;  /* rose   */
+  --viz-4:#c28a4e;  /* clay   */
+  --viz-5:#71809b;  /* slate  */
+  /* Sequential ramp (single-series area/heatmap) — brand-blue based */
+  --viz-seq-1:#eef5ff; --viz-seq-2:#cfe5fd; --viz-seq-3:#8fc0fb;
+  --viz-seq-4:#4f97f4; --viz-seq-5:#1f6fd6; --viz-seq-6:#0a4684;
+  /* Diverging ramp (margin, +/- deltas) — red ↔ neutral ↔ green */
+  --viz-div-neg:#c73a26; --viz-div-mid:#e4e8ee; --viz-div-pos:#2f9e1b;
+  /* Chart chrome */
+  --viz-grid:rgba(15,27,45,0.06);
+  --viz-axis:var(--n-8);
+  --viz-area-fill:rgba(31,111,214,0.10); /* v3: blue wash — green was a health-reservation collision */
+
+  /* ─── Brand gradients — BRAND MOMENTS ONLY (logo, marketing, empty-state) ─── */
+  --grad-cyan-lime:linear-gradient(90deg,#0097b2 0%,#7ed957 100%);      /* @kind color */
+  --grad-yellow-orange:linear-gradient(90deg,#ffde59 0%,#ff914d 100%);  /* @kind color */
+  --grad-aqua-royal:linear-gradient(90deg,#5de0e6 0%,#004aad 100%);     /* @kind color */
+  --brand-stripe:linear-gradient(90deg,var(--blue-12) 0%,var(--blue-10) 35%,var(--blue-7) 80%,var(--blue-6) 100%); /* @kind color */
+  --brand-glyph-bg:linear-gradient(135deg,var(--blue-6) 0%,var(--blue-8) 100%); /* @kind color */
+
+  /* ─── AI / Ask AI — reserved indigo-violet, distinct from all status/health ─── */
+  --ai-1:#f6f6fe; --ai-2:#eeeefc; --ai-3:#dcdcf8; --ai-4:#c3c2f1;
+  --ai-6:#6f68d6; --ai-7:#5249c1; --ai-9:#322d77; --ai-10:#221f55;
+  --ai-grad:linear-gradient(135deg,#eeeefc 0%,#f6f6fe 35%,#f0eefb 65%,#e7e6fb 100%); /* @kind color */
+  --ai-border-grad:linear-gradient(135deg,#6f68d6 0%,#5249c1 50%,#6f68d6 100%);      /* @kind color */
+
+  /* ─── Semantic color aliases ─── */
+  --bg:#eff3f8; --bg-subtle:var(--n-2); --bg-element:var(--n-3); /* v3.1: canvas deepened a step below n-1 so surfaces lift off it */
+  --bg-hover:var(--n-2); --bg-active:var(--n-4);
+  --surface:var(--n-0); --surface-inverse:var(--n-12);
+  --border:rgba(15,27,45,0.08); --border-soft:rgba(15,27,45,0.05); --border-strong:rgba(15,27,45,0.14);
+  --border-focus:var(--blue-7);
+  --text:var(--n-11); --text-2:var(--n-9); --text-3:var(--n-8);
+  --text-ink:var(--blue-11); --text-inverse:var(--n-0); --text-link:var(--blue-7);
+  /* Ink ON inverse / navy surfaces (--surface-inverse / --n-12) — light mode had
+     no token for this; reference these instead of hand-picking tints. */
+  --text-inverse-2:var(--blue-3);       /* #cfe5fd — secondary ink on navy */
+  --text-inverse-3:#9aabbe;             /* tertiary / muted ink on navy */
+  --text-inverse-accent:var(--blue-4);  /* #a8d2fc — accent ink on navy (eyebrows, links) */
+  --ai-on-inverse:var(--ai-3);          /* AI-authored words on navy */
+  --accent:var(--blue-7); --accent-hover:var(--blue-8); --accent-muted:var(--blue-2);
+
+  /* ─── Pillars — weights are AGENCY-CONFIGURABLE; never hardcode ─── */
+  /* Pillar viz colors are distinct from health bands. */
+  --pillar-pas:var(--viz-1); --pillar-revenue:var(--viz-2);
+  --pillar-login:var(--viz-5); --pillar-feedback:var(--viz-3);
+
+  /* ─── Track progress bar segments ─── */
+  --track-current:var(--ar-fill); --track-incremental:var(--th-fill); --track-untracked:var(--n-6);
+
+  /* ─── Agentic primitive colors — Confidence · Liveness ─── */
+  --conf-fact:var(--pos-7);        --conf-fact-soft:var(--pos-soft);
+  --conf-projection:var(--warn-7); --conf-projection-soft:var(--warn-soft);
+  --conf-guess:var(--neg-7);       --conf-guess-soft:var(--neg-soft);
+  --live-fresh:var(--pos-7); --live-recent:var(--n-7); --live-stale:var(--warn-7); --live-error:var(--neg-7);
+
+  /* ─── Lifecycle stages — STRUCTURAL cool-slate axis (deepen forward, fade on
+     decline). NEVER the health bands; Health stays the only vivid signal. The
+     ramp lives in StageProgress; StageBadge keeps labels in legible ink. ─── */
+  --stage-onboarding:#aab4c5;   /* starting */
+  --stage-activated:#6b7d99;    /* first value */
+  --stage-established:#33425d;  /* habitual — peak (deepest) */
+  --stage-lapsing:#8c95a4;      /* slipping */
+  --stage-dormant:#b9c0cb;      /* quiet (fading) */
+  --stage-churned:#ccd1d9;      /* gone (faintest) */
+  --stage-soft:var(--n-2);      /* chip background */
+  --stage-track:var(--n-4);     /* progress connector / node ring */
+  --stage-ink:var(--n-11);      /* label ink — active stages */
+  --stage-ink-muted:var(--n-8); /* label ink — dormant / churned */
+  --stage-reactivated:var(--pos-7); /* transient win affix ONLY — never a persistent stage color */
+}
+
+/* ─── DARK MODE (v2.3 — real, not a stub). Semantic + soft aliases only. ─── */
+[data-theme="dark"]{
+  --bg:#0a1c2e; --bg-subtle:#0d2236; --bg-element:#12293f; --bg-hover:#12293f; --bg-active:#1a3450;
+  --surface:#0f2438; --surface-inverse:#06233d;
+  --border:rgba(255,255,255,0.08); --border-soft:rgba(255,255,255,0.05); --border-strong:rgba(255,255,255,0.16);
+  --text:#eef1f5; --text-2:#a3aebd; --text-3:#8a94a3; --text-ink:#cfe5fd; --text-inverse:#06233d;
+  --health-thriving-soft:rgba(74,206,41,0.14);  --health-thriving-ink:#9fe88a;
+  --health-healthy-soft:rgba(79,141,249,0.16);  --health-healthy-ink:#a8c8fb;
+  --health-watch-soft:rgba(245,166,35,0.15);    --health-watch-ink:#f7cd8a;
+  --health-atrisk-soft:rgba(232,78,56,0.15);    --health-atrisk-ink:#f4a698;
+  --pos-soft:rgba(47,158,27,0.16); --neg-soft:rgba(199,58,38,0.16);
+  --warn-soft:rgba(180,83,9,0.18); --info-soft:rgba(15,111,214,0.18); --danger-soft:rgba(199,58,38,0.16);
+  --conf-fact-soft:var(--pos-soft); --conf-projection-soft:var(--warn-soft); --conf-guess-soft:var(--neg-soft);
+  --ai-grad:linear-gradient(135deg,#1c1a3a 0%,#161430 35%,#1a1838 65%,#201d44 100%); /* @kind color */
+  --viz-grid:rgba(255,255,255,0.07); --viz-area-fill:rgba(31,111,214,0.16);
+  --sh-rest:inset 0 0 0 1px rgba(255,255,255,0.05),0 1px 1px rgba(0,0,0,0.3); /* @kind shadow */
+  /* Lifecycle stages — dark: brighten forward (peak brightest), dim decline. */
+  --stage-onboarding:#8a94a6; --stage-activated:#aab6c8; --stage-established:#cdd7e4;
+  --stage-lapsing:#7e8797; --stage-dormant:#646d7c; --stage-churned:#525a68;
+  --stage-soft:rgba(255,255,255,0.06); --stage-track:rgba(255,255,255,0.12);
+  --stage-ink:#eef1f5; --stage-ink-muted:#8a94a3;
+}

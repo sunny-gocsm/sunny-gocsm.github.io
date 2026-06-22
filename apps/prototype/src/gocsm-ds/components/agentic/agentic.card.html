@@ -1,0 +1,81 @@
+<!-- @dsCard group="Components" viewport="700x630" name="Agentic primitives" subtitle="Confidence · Liveness · Reversible Action · Provenance" -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<link rel="stylesheet" href="../../styles.css" />
+<style>
+  body { margin: 0; background: var(--surface); color: var(--text); font-family: var(--font-ui); }
+  .wrap { padding: 24px; display: flex; flex-direction: column; gap: 20px; }
+  .row { display: flex; flex-wrap: wrap; align-items: center; gap: 14px; }
+  .col { display: flex; flex-direction: column; gap: 10px; }
+  .two { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; align-items: start; }
+  .gl { font-size: 11px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--text-3); }
+  .prov-row span { white-space: nowrap; }
+  .prov-box { background: var(--bg); box-shadow: inset 0 0 0 1px var(--border); }
+  .prov-foot { color: var(--text-2); }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="col">
+    <span class="gl">Confidence — every AI claim declares its basis</span>
+    <div class="row">
+      <span class="conf-tag fact"><i data-lucide="circle-check" style="width:12px;height:12px;"></i>Confirmed</span>
+      <span class="conf-tag projection"><i data-lucide="chart-spline" style="width:12px;height:12px;"></i>Projection · 6 days of data</span>
+      <span class="conf-tag guess"><i data-lucide="help-circle" style="width:12px;height:12px;"></i>Early signal · confirm before acting</span>
+    </div>
+  </div>
+
+  <div class="col">
+    <span class="gl">Liveness — fresh / recent / stale / error</span>
+    <div class="row" style="gap:24px;">
+      <span class="live-status"><span class="live-dot fresh"></span>live · checked 40s ago · watching 2,162 accounts</span>
+      <span class="live-status"><span class="live-dot recent"></span>checked 3h ago</span>
+    </div>
+    <div class="row" style="gap:24px;">
+      <span class="live-status"><span class="live-dot stale"></span>last checked Jun 3 — may be behind</span>
+      <span class="live-status error"><span class="live-dot error"></span>sync paused — reconnect HighLevel →</span>
+    </div>
+  </div>
+
+  <div class="col">
+    <span class="gl">Reversible Action — in place, blastRadius required</span>
+    <div class="two">
+      <div class="action-receipt">
+        <div class="ar-title"><i data-lucide="loader" style="width:15px;height:15px;"></i>Setup workflow triggered for Tailored Wellbeing</div>
+        <div class="ar-scope">Sends the setup guide to taylor@… and books a check-in.</div>
+        <div class="ar-blast">Nothing is sent to the account's own clients.</div>
+        <div class="ar-foot"><span class="ar-countdown">Sending in 5s</span><button class="btn btn-secondary btn-sm">Undo</button></div>
+      </div>
+      <div class="action-receipt committed">
+        <div class="ar-title"><i data-lucide="circle-check" style="width:15px;height:15px;"></i>Re-engagement workflow sent</div>
+        <div class="ar-scope">Delivered to 1 contact at Northside Dental.</div>
+        <div class="ar-blast">Only the account owner was contacted.</div>
+        <div class="ar-foot"><span class="ar-countdown sent">Sent · GoCSM will report when they re-engage</span></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="col">
+    <span class="gl">Provenance — crack any claim open one level</span>
+    <div class="prov-box" style="max-width:440px;">
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:12px;">
+        <span style="font-size:13px;font-weight:600;color:var(--text);">Why &ldquo;appointments dropped to zero&rdquo;</span>
+        <span class="conf-tag projection"><i data-lucide="chart-spline" style="width:11px;height:11px;"></i>Projection</span>
+      </div>
+      <div class="prov-row" style="align-items:baseline;padding:6px 0;border-top:1px solid var(--border-soft);">
+        <span style="font-size:13px;color:var(--text);font-weight:500;">Appointments · last 7 days</span>
+        <span class="v neg" style="font-size:20px;font-weight:600;line-height:1;">0</span>
+      </div>
+      <div class="prov-row" style="padding:5px 0;"><span>Prior weekly average</span><span class="v">14</span></div>
+      <div class="prov-row" style="padding:5px 0;"><span>Last login</span><span class="v">14 days ago</span></div>
+      <div class="prov-foot" style="margin-top:8px;padding-top:8px;border-top:1px solid var(--border-soft);">Source: HighLevel · synced 40s ago — I'm inferring the cause; confirm before acting.</div>
+    </div>
+  </div>
+</div>
+<script src="https://unpkg.com/lucide@0.460.0/dist/umd/lucide.min.js"></script>
+<script>window.lucide && lucide.createIcons();</script>
+</body>
+</html>
