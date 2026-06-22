@@ -5,6 +5,32 @@ Durable, human- and agent-readable log of significant decisions and changes.
 
 ---
 
+## 2026-06-22 — Created GoCSM signal knowledge base + playbook marketplace vision
+- Built `apps/prototype/docs/design/gocsm-signal-knowledge-base.md` — the complete
+  internal reference: MongoDB `prod_v2` collections, ClickHouse `prod` tables (both
+  real-time MVs and nightly `*_v2_daily` scoring family), health scoring architecture
+  (4 pillars → composite 0–100 + band), PAS sub-pillar internals, all 15 GHL feature
+  types, both trigger systems (System A = live; System B = partly stubbed), the
+  user-facing/internal boundary, MCP tool → signal map, and ~45 playbook scenarios
+  across 8 categories.
+- **Playbook marketplace vision:** the Playbooks tab redesign target is a marketplace-
+  style catalog of pre-built trigger+action templates, tracked by popularity / trending /
+  new / recommended across agencies. A Playbook = trigger criteria (the title) + action
+  template (email/message, agency customizes to brand). Auto-memory updated with this
+  vision.
+- This is the durable knowledge base — do not re-derive these signals from the backend.
+
+## 2026-06-22 — Renamed project to gocsm-playbooks
+- Local folder: `~/dev/gocsm-monorepo` → `~/dev/gocsm-playbooks`.
+- GitHub: `sunny-gocsm/go-csm-playbooks` → `sunny-gocsm/gocsm-playbooks` (old URL
+  auto-redirects; local remote updated).
+- In-repo: `package.json` name, this file, `CLAUDE.md` title + remote,
+  `ops/com.gocsm.dev.plist` working-dir + log paths.
+- Committed as `8d1d287 chore: rename project to gocsm-playbooks`, pushed to `main`.
+- **Dev server action required (user must run):** the installed launchd plist still
+  points at the old path. Run:
+  `cp ~/dev/gocsm-playbooks/ops/com.gocsm.dev.plist ~/Library/LaunchAgents/ && launchctl bootout gui/$(id -u)/com.gocsm.dev 2>/dev/null; launchctl bootstrap gui/$(id -u) ~/Library/LaunchAgents/com.gocsm.dev.plist`
+
 ## 2026-06-22 — Redesigned the trigger criteria builder (step 1 "Who it runs on")
 - Rebuilt the Attention activation wizard's step-1 criteria surface
   (`components/attention/CriteriaBuilder.tsx`) into a real rule engine, via the full
