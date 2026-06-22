@@ -29,8 +29,19 @@ function JobARow({ recipe, accounts, onSetup }: { recipe: Recipe; accounts: Acco
 
   if (on) {
     return (
-      <FixItCard icon={recipe.icon} tag={null} title={recipe.label} meta={meta}
-        badge={<Badge variant="pos" dot={false}>On · autopilot</Badge>} note="New matches handled automatically." />
+      <FixItCard
+        icon={recipe.icon}
+        tag={null}
+        title={recipe.label}
+        meta={meta}
+        badge={<Badge variant="pos" dot={false}>On · autopilot</Badge>}
+        note="Next run tonight · new matches handled automatically."
+        action={
+          <Button variant="ghost" className="btn-accent" size="sm" icon={<Icon name="pencil" />} onClick={(e: React.MouseEvent) => { e.stopPropagation(); onSetup(); }}>
+            Edit
+          </Button>
+        }
+      />
     );
   }
   const draft = hasDraft(recipe.id);
@@ -45,7 +56,7 @@ function JobARow({ recipe, accounts, onSetup }: { recipe: Recipe; accounts: Acco
       onClick={onSetup}
       action={
         <Button variant="ghost" className="btn-accent" size="sm" iconRight={<Icon name="arrow-right" />} onClick={(e: React.MouseEvent) => { e.stopPropagation(); onSetup(); }}>
-          {draft ? "Resume setup" : "Set up workflow"}
+          {draft ? "Resume setup" : "Set up playbook"}
         </Button>
       }
     />
@@ -124,47 +135,48 @@ export default function AttentionPage() {
       {/* Hero — the page's thesis */}
       <header style={{ display: "flex", flexDirection: "column", gap: "var(--s-3)" }}>
         <div style={{ display: "flex", alignItems: "center", gap: "var(--s-3)", flexWrap: "wrap" }}>
-          <h1 style={{ fontSize: "var(--t-display-xl)", fontWeight: 700, letterSpacing: "-0.02em", lineHeight: 1.05, margin: 0 }}>Attention</h1>
-          {totalNeeding > 0 ? <Badge variant="danger" dot={false}><Mono>{totalNeeding}</Mono> need a workflow</Badge> : null}
+          <h1 style={{ fontSize: "var(--t-display-xl)", fontWeight: 700, letterSpacing: "-0.02em", lineHeight: 1.05, margin: 0 }}>Needs attention</h1>
+          {totalNeeding > 0 ? <Badge variant="danger" dot={false}><Mono>{totalNeeding}</Mono> need a playbook</Badge> : null}
         </div>
         <p style={{ margin: 0, fontSize: "var(--t-body-lg)", color: "var(--text-2, var(--text))", maxWidth: 640 }}>
-          Start a workflow for the accounts that need one — and reach the ones a workflow ran on but didn't move.
+          Start a playbook for the accounts that need one — and reach the ones a playbook ran on but didn't move.
         </p>
       </header>
 
-      {/* Job (a) — needs a workflow */}
+      {/* Job (b) — a playbook ran but didn't move; a human must step in. Shown FIRST
+          (top of page) so this time-sensitive, easy-to-miss work is never buried —
+          but only when it exists, so a brand-new user (no runs yet) lands straight
+          on the activation job below. */}
+      {jobB.length > 0 ? (
+        <section style={{ marginTop: "var(--s-10)", display: "flex", flexDirection: "column", gap: "var(--s-4)" }}>
+          <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
+            <h2 style={{ fontSize: "var(--t-heading)", fontWeight: 700, margin: 0 }}>Step in — automation couldn't fix this</h2>
+            <p style={{ margin: 0, fontSize: "var(--t-body-sm)", color: "var(--text-3, var(--text))" }}>
+              A playbook ran but the account still needs you. Reach them directly.
+            </p>
+          </div>
+          <div style={{ display: "flex", flexDirection: "column", gap: "var(--s-2)" }}>
+            {jobB.map((a) => (
+              <JobBCard key={a.id} attempt={a} onOpen={openAccount} />
+            ))}
+          </div>
+        </section>
+      ) : null}
+
+      {/* Job (a) — needs a playbook */}
       <section style={{ marginTop: "var(--s-10)", display: "flex", flexDirection: "column", gap: "var(--s-4)" }}>
         <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
-          <h2 style={{ fontSize: "var(--t-heading)", fontWeight: 700, margin: 0 }}>Needs a workflow</h2>
+          <h2 style={{ fontSize: "var(--t-heading)", fontWeight: 700, margin: 0 }}>Needs a playbook</h2>
           <p style={{ margin: 0, fontSize: "var(--t-body-sm)", color: "var(--text-3, var(--text))" }}>
-            Pick a problem — one workflow handles every matching account.
+            Pick a problem — one playbook handles every matching account.
           </p>
         </div>
         {jobA.length === 0 ? (
-          <Card padded><p style={{ margin: 0, fontSize: "var(--t-body)", color: "var(--text-2, var(--text))" }}>Nothing needs a new workflow — GoCSM is watching.</p></Card>
+          <Card padded><p style={{ margin: 0, fontSize: "var(--t-body)", color: "var(--text-2, var(--text))" }}>Nothing needs a new playbook — GoCSM is watching.</p></Card>
         ) : (
           <div style={{ display: "flex", flexDirection: "column", gap: "var(--s-2)" }}>
             {jobA.map(({ recipe, accounts }) => (
               <JobARow key={recipe.id} recipe={recipe} accounts={accounts} onSetup={() => setActivation(recipe)} />
-            ))}
-          </div>
-        )}
-      </section>
-
-      {/* Job (b) — tried, didn't move */}
-      <section style={{ marginTop: "var(--s-12)", display: "flex", flexDirection: "column", gap: "var(--s-4)" }}>
-        <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
-          <h2 style={{ fontSize: "var(--t-heading)", fontWeight: 700, margin: 0 }}>We tried — health hasn't moved</h2>
-          <p style={{ margin: 0, fontSize: "var(--t-body-sm)", color: "var(--text-3, var(--text))" }}>
-            A workflow ran but the account still needs you. Reach them directly.
-          </p>
-        </div>
-        {jobB.length === 0 ? (
-          <Card padded><p style={{ margin: 0, fontSize: "var(--t-body)", color: "var(--text-2, var(--text))" }}>Everything we tried is moving in the right direction.</p></Card>
-        ) : (
-          <div style={{ display: "flex", flexDirection: "column", gap: "var(--s-2)" }}>
-            {jobB.map((a) => (
-              <JobBCard key={a.id} attempt={a} onOpen={openAccount} />
             ))}
           </div>
         )}

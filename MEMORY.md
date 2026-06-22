@@ -5,6 +5,62 @@ Durable, human- and agent-readable log of significant decisions and changes.
 
 ---
 
+## 2026-06-23 — Attention page + playbook setup flow: naming, audit, bug fixes
+Two rounds of feedback on `/today` (the attention page) and the playbook setup wizard
+(`AttentionActivation`). Research-backed (3 parallel agents: naming/titles, wizard
+patterns, attention-page structure) via the design-loop; every change verified live.
+
+- **Naming decision — "Playbook" is the user-facing noun (two-layer model).** Karthik
+  chose: GoCSM calls the thing a **Playbook** everywhere; "workflow" appears only where
+  it refers to the actual HighLevel object you open ("powered by a HighLevel workflow").
+  Rationale (against Tim's "Workflows" suggestion): the setup literally opens a HighLevel
+  **Workflow**, so naming our own thing "Workflow" collides for an owner who lives in
+  HighLevel. Card CTA = "Set up playbook"; nav stays "Playbooks".
+- **Attention page (`AttentionPage.tsx`):** title "Attention" → **"Needs attention"**;
+  the "a playbook ran but didn't move" section retitled **"Step in — automation couldn't
+  fix this"** and moved to the **top** (research: tabs hide the 2nd category — Baymard
+  18–21% miss; Linear/ChurnZero use one page). It only renders when non-empty, so a
+  brand-new user (no runs yet) lands straight on "Needs a playbook" — activation intact.
+  Autopilot-on cards now show a next-run line ("Next run tonight · …") + an **Edit** action.
+- **Wizard step labels (plain language):** "Who it runs on → **What it does** → Go live"
+  (was "Set up the workflow" — reused the product noun). Header eyebrow "Set up a playbook".
+- **Trigger context in later steps (#4):** a one-line, tap-to-edit **scope band** on step 2
+  ("Runs on N accounts · <criteria> · Edit") that truncates instead of wrapping. It lives in
+  the **fixed header stack** (NOT `position:sticky` — sticky overlapped the scrolling video
+  and read as broken); content scrolls cleanly beneath it.
+- **Publish gate redesign (#3):** replaced the fine-print "I've published it" checkbox with
+  **two numbered steps** — ① Open in HighLevel, ② a real "I've published it in HighLevel"
+  button that flips to a green "✓ Published in HighLevel" state (+ "Not yet" undo).
+- **Steps 2 & 3 refactor (parallel session, `cpdo-brief-activation-steps-2-3.md`):** step 2
+  keeps the **prominent walkthrough video** as a focal `VideoCard` (NOT a buried "watch" link
+  — explicit Karthik call) above the "what's in the starter playbook" rows; step 3 "Go live"
+  shows the **real accounts** the run touches (top-5 + "+N more") under a big audience count,
+  autopilot defaults ON with a one-line pause.
+- **Go-live confirmation (#8):** the bare "It's live" page → first a top-right toast, then the
+  steps-2/3 refactor promoted it to a calm in-flow **success beat** ("Your playbook is live" —
+  *Done* fires the toast + returns; *Pause for now* keeps the playbook but stops auto-runs).
+  `sonner` is top-right. NB: this re-adds a full-screen confirmation, partially reversing the
+  original #8 "remove the 4th page" ask — **flagged for Karthik to confirm the direction.**
+- **"Draft saved" (#5):** header autosave chip says "Draft saved" (muted), not "Saved" —
+  everything in the wizard is a draft until go-live.
+- **Bug fixes (all root-caused):**
+  - *Footer disappears with tall content (Advanced rule).* Root cause: the scrolling
+    `.aa-body` lacked `min-height: 0`, so tall content refused to shrink and pushed the
+    sticky footer below the fixed viewport. Fixed: `.aa-body{flex:1 1 auto;min-height:0}`,
+    `.aa-fullpage` uses `100dvh`, footer `flex:0 0 auto` + safe-area bottom padding.
+    (Stale-CSS HMR made this *look* unfixed in a long-open tab — restart dev server / hard
+    refresh to pick up CSS-only changes.)
+  - *"Saved" chip cropped to "SAV".* Root cause: header grid `1fr auto 1fr` let a long
+    title squeeze the side columns. Fixed to `auto minmax(0,1fr) auto` — title truncates.
+  - *"+" and "Add condition" read as two controls.* Root cause: DS `.rg-add` was scoped to
+    `.rule-group`, so the standalone launcher fell back to a bare borderless block. Fixed in
+    the DS (`components-v3-additions.css`): `.rg-add` styled unscoped → one cohesive pill.
+- **Files:** `apps/prototype/src/pages/AttentionPage.tsx`, `.../PlaybookDetailPage.tsx`
+  (CTA align), `.../components/attention/AttentionActivation.tsx`, `.../components/ui/sonner.tsx`,
+  `.../app-overrides.css`, `packages/design-system/src/styles/components-v3-additions.css`,
+  + new brief `apps/prototype/docs/design/cpdo-brief-activation-steps-2-3.md`.
+  `bun run build` green (DS → prototype → web).
+
 ## 2026-06-23 — Fixed health-badge wrap + widened criteria preview pane
 - **Symptom (trigger setup, step 1 "Who it runs on"):** in the right live-preview
   pane, the `At-Risk` health pill wrapped to two lines ("At-/Risk") and squeezed the

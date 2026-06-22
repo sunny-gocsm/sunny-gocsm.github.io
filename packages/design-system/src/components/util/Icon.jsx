@@ -9,6 +9,7 @@ const ALIAS = {
   "alert-triangle": "triangle-alert",
   "alert-circle": "circle-alert",
   "help-circle": "circle-question-mark",
+  "check-circle": "circle-check",
   "more-horizontal": "ellipsis",
 };
 

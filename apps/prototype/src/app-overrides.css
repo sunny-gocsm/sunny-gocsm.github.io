@@ -258,6 +258,9 @@ button {
 
 /* simple + advanced layout */
 .cb-simple, .cb-advanced { display: flex; flex-direction: column; gap: var(--s-3); }
+/* Simple-mode "Add condition" — one obvious full-width affordance beneath the
+   conditions (the DS .rg-add pill, widened) so it never reads as a stray "+". */
+.cb-simple > .rg-add { width: 100%; justify-content: flex-start; padding-top: 8px; padding-bottom: 8px; }
 .cb-match { display: flex; align-items: center; flex-wrap: wrap; gap: var(--s-2); font-size: var(--t-body-sm); color: var(--text-2, var(--text)); }
 .cb-chips { display: flex; flex-direction: column; gap: var(--s-2); }
 .cb-adv-nodes { display: flex; flex-direction: column; gap: var(--s-3); }
@@ -305,39 +308,85 @@ button {
 .cb-field:hover { border-color: var(--blue-5, #6f97e0); background: var(--blue-1, #f3f7ff); }
 
 /* ===== Attention — FULL-PAGE workflow builder (AttentionActivation) ===== */
-.aa-fullpage { position: fixed; inset: 0; z-index: 60; display: flex; flex-direction: column; background: var(--bg, #eff3f8); }
-/* problem-context header */
-.aa-top { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: var(--s-3); padding: var(--s-3) var(--s-6); background: var(--surface, #fff); border-bottom: 1px solid var(--border); }
-.aa-back { justify-self: start; display: inline-flex; align-items: center; gap: 4px; border: 0; background: transparent; color: var(--text-2, var(--text)); font-size: var(--t-body-sm); font-weight: 600; cursor: pointer; padding: 6px 8px; border-radius: var(--r-sm, 6px); }
+/* Use the DYNAMIC viewport height so the sticky footer can never be pushed under a
+   browser bottom-bar / dynamic toolbar (the "footer cropped" report). */
+.aa-fullpage { position: fixed; top: 0; left: 0; right: 0; height: 100vh; height: 100dvh; z-index: 60; display: flex; flex-direction: column; background: var(--bg, #eff3f8); }
+/* problem-context header — side columns size to content so the centred title can
+   never squeeze the "Saved" chip off-screen (it truncates instead). */
+.aa-top { flex: 0 0 auto; display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: var(--s-3); padding: var(--s-3) var(--s-6); background: var(--surface, #fff); border-bottom: 1px solid var(--border); }
+.aa-back { justify-self: start; display: inline-flex; align-items: center; gap: 4px; border: 0; background: transparent; color: var(--text-2, var(--text)); font-size: var(--t-body-sm); font-weight: 600; cursor: pointer; padding: 6px 8px; border-radius: var(--r-sm, 6px); white-space: nowrap; }
 .aa-back:hover { background: var(--surface-2, #f4f6fa); color: var(--text); }
 .aa-top-title { justify-self: center; text-align: center; display: flex; flex-direction: column; gap: 1px; min-width: 0; }
 .aa-top-title .aa-eyebrow { font-size: var(--t-caption); text-transform: uppercase; letter-spacing: 0.04em; color: var(--text-3, var(--text)); }
 .aa-top-title h1 { font-size: var(--t-subheading); font-weight: 700; margin: 0; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.aa-saved { justify-self: end; display: inline-flex; align-items: center; gap: 5px; font-size: var(--t-caption); color: var(--pos-7, #1e874b); }
+/* "Draft saved" — muted (not green/done): it's an autosaved draft, not published. */
+.aa-saved { justify-self: end; display: inline-flex; align-items: center; gap: 5px; font-size: var(--t-caption); color: var(--text-3, var(--text)); white-space: nowrap; }
 .aa-saved svg { width: 13px; height: 13px; }
 /* stepper band */
-.aa-stepper-band { display: flex; justify-content: center; padding: var(--s-3) var(--s-6); background: var(--surface, #fff); border-bottom: 1px solid var(--border); }
+.aa-stepper-band { flex: 0 0 auto; display: flex; justify-content: center; padding: var(--s-3) var(--s-6); background: var(--surface, #fff); border-bottom: 1px solid var(--border); }
 /* body */
-.aa-body { flex: 1; overflow-y: auto; padding: var(--s-8) var(--s-6); }
+.aa-body { flex: 1 1 auto; min-height: 0; overflow-y: auto; padding: var(--s-8) var(--s-6); }
 .aa-body-inner { max-width: 1320px; margin: 0 auto; }
-/* sticky footer */
-.aa-foot { display: flex; align-items: center; justify-content: space-between; gap: var(--s-3); padding: var(--s-3) var(--s-6); background: var(--surface, #fff); border-top: 1px solid var(--border); }
+/* sticky footer — extra bottom clearance (+ safe-area) so the action never sits flush
+   against the screen edge / under OS chrome. flex-shrink:0 keeps it from being squeezed. */
+.aa-foot { flex: 0 0 auto; display: flex; align-items: center; justify-content: space-between; gap: var(--s-3); padding: var(--s-3) var(--s-6); padding-bottom: max(var(--s-4), env(safe-area-inset-bottom)); background: var(--surface, #fff); border-top: 1px solid var(--border); }
 .aa-foot-note { font-size: var(--t-body-sm); color: var(--text-3, var(--text)); }
 /* step 2 — action editor */
 .aa-step2 { display: flex; flex-direction: column; gap: var(--s-4); max-width: 680px; margin: 0 auto; }
 .aa-setup-head { display: flex; flex-direction: column; align-items: flex-start; gap: var(--s-2); }
+.aa-setup-lede { margin: 0; font-size: var(--t-body); color: var(--text-2, var(--text)); }
 .aa-snapshot { display: flex; flex-direction: column; gap: var(--s-2); }
+/* snapshot header row: section label on the left, the quiet "watch" link on the right —
+   the walkthrough is an optional aside, never the focal element of this step. */
+.aa-snapshot-head { display: flex; align-items: baseline; justify-content: space-between; gap: var(--s-3); flex-wrap: wrap; }
 .aa-snapshot-label { font-size: var(--t-caption); text-transform: uppercase; letter-spacing: 0.04em; color: var(--text-3, var(--text)); }
-.aa-setup-actions { display: flex; flex-direction: column; gap: var(--s-3); padding: var(--s-4); border: 1px solid var(--blue-3, #cfe5fd); border-radius: var(--r-md); background: var(--blue-1, #f2f8ff); }
-.aa-setup-actions .btn { align-self: flex-start; }
-.aa-publish-confirm { display: inline-flex; align-items: center; gap: var(--s-2); cursor: pointer; font-size: var(--t-body-sm); color: var(--text); }
-.aa-pinned-chip { align-self: flex-start; display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; border-radius: var(--r-pill, 999px); background: var(--blue-1, #f2f8ff); border: 1px solid var(--blue-3, #cfe5fd); color: var(--blue-8, #0c5aae); font-size: var(--t-body-sm); }
-.aa-pinned-chip svg { width: 14px; height: 14px; }
+.aa-watch { display: inline-flex; align-items: center; gap: 5px; border: 0; background: transparent; padding: 0; color: var(--blue-7, #0f6fd6); font-size: var(--t-body-sm); font-weight: 600; cursor: pointer; }
+.aa-watch svg { width: 14px; height: 14px; }
+.aa-watch:hover { color: var(--blue-8, #0c5aae); text-decoration: underline; }
+/* Publish gate — two numbered steps inside the blue card: open & publish in HighLevel,
+   then confirm. The confirm is a real button + a confirmed state (not a fine-print
+   checkbox), so the mandatory step reads as a deliberate action. */
+.aa-setup-actions { display: flex; flex-direction: column; gap: var(--s-4); padding: var(--s-4); border: 1px solid var(--blue-3, #cfe5fd); border-radius: var(--r-md); background: var(--blue-1, #f2f8ff); }
+.aa-setup-step { display: flex; align-items: flex-start; gap: var(--s-3); }
+.aa-setup-step-body { display: flex; flex-direction: column; align-items: flex-start; gap: 6px; min-width: 0; }
+.aa-setup-num { margin-top: 1px; display: inline-flex; align-items: center; justify-content: center; width: 24px; height: 24px; border-radius: 999px; background: var(--blue-7, #2c5cc5); color: #fff; font-size: var(--t-caption); font-weight: 700; flex: 0 0 auto; }
+.aa-setup-num.done { background: var(--pos-7, #1e874b); }
+.aa-setup-num svg { width: 14px; height: 14px; }
+.aa-setup-hint { font-size: var(--t-caption); color: var(--text-3, var(--text)); }
+.aa-confirm-btn { display: inline-flex; align-items: center; gap: 6px; padding: 9px 16px; border-radius: var(--r-md, 10px); border: 1.5px solid var(--blue-5, #6f97e0); background: var(--surface, #fff); color: var(--blue-8, #0c5aae); font-size: var(--t-body-sm); font-weight: 600; cursor: pointer; transition: background 120ms ease, border-color 120ms ease; }
+.aa-confirm-btn:hover { background: var(--blue-1, #f3f7ff); border-color: var(--blue-7, #2c5cc5); }
+.aa-published { display: inline-flex; align-items: center; gap: var(--s-3); flex-wrap: wrap; }
+.aa-published-badge { display: inline-flex; align-items: center; gap: 6px; font-size: var(--t-body-sm); font-weight: 700; color: var(--pos-7, #1e874b); }
+.aa-published-badge svg { width: 16px; height: 16px; }
+.aa-published-undo { border: 0; background: transparent; color: var(--text-3, var(--text)); font-size: var(--t-caption); font-weight: 600; cursor: pointer; text-decoration: underline; padding: 2px 4px; }
+.aa-published-undo:hover { color: var(--text); }
+/* Scope bar — full-width, sticky to the top of the scroll area, holds the one-line
+   tap-to-edit "who it runs on" chip. The criteria text truncates with an ellipsis
+   rather than wrapping to a second line, so the pill always stays one line and can
+   use the full page width. */
+/* Pull the sticky bar up over the body's top padding (margin-top = -padding) with a matching
+   padding-top, so its opaque background covers the full scroll seam — no sliver of the
+   content behind ever shows above it. The negative margin matches .aa-body's top padding
+   per breakpoint (s-8 desktop, s-5 mobile — overridden below). */
+/* Scope band — lives in the fixed header stack (a flex child of .aa-fullpage, between
+   the stepper band and the scrolling body), so it's always visible and content scrolls
+   cleanly beneath it. NOT position:sticky — that overlapped the scrolling content. */
+.aa-scopeband { flex: 0 0 auto; display: flex; justify-content: center; padding: var(--s-4) var(--s-6) var(--s-3); background: var(--bg, #eff3f8); }
+.aa-pinned-chip { max-width: 100%; display: inline-flex; align-items: center; gap: 6px; padding: 7px 14px; border-radius: var(--r-pill, 999px); background: var(--blue-1, #f2f8ff); border: 1px solid var(--blue-3, #cfe5fd); color: var(--blue-8, #0c5aae); font-size: var(--t-body-sm); cursor: pointer; transition: border-color 120ms ease, background 120ms ease; }
+.aa-pinned-chip:hover { border-color: var(--blue-5, #6f97e0); background: var(--blue-2, #e4ecfb); }
+.aa-pinned-chip svg { width: 14px; height: 14px; flex: 0 0 auto; }
+.aa-scope-text { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.aa-pinned-edit { flex: 0 0 auto; display: inline-flex; align-items: center; gap: 3px; margin-left: 2px; padding-left: 8px; border-left: 1px solid var(--blue-3, #cfe5fd); font-weight: 600; }
+.aa-pinned-edit svg { width: 12px; height: 12px; }
 .aa-steplist { display: flex; flex-direction: column; gap: var(--s-2); }
-.aa-stepline { display: flex; align-items: center; gap: var(--s-2); padding: var(--s-3); border: 1px dashed var(--border); border-radius: var(--r-md); background: var(--surface-2, #f4f6fa); font-size: var(--t-body-sm); color: var(--text-2, var(--text)); }
-.aa-opt { font-size: var(--t-caption); text-transform: uppercase; letter-spacing: 0.04em; color: var(--text-3, var(--text)); }
+/* Solid, real rows — these are the actual actions the playbook takes ("here's what we
+   built for you"). A dashed/ghosted treatment read as placeholder/unreal and undersold it. */
+.aa-stepline { display: flex; align-items: center; gap: var(--s-3); padding: var(--s-3); border: 1px solid var(--border); border-radius: var(--r-md); background: var(--surface, #fff); font-size: var(--t-body-sm); font-weight: 500; color: var(--text); }
+.aa-stepline-ico { display: inline-flex; align-items: center; justify-content: center; width: 28px; height: 28px; border-radius: 8px; background: var(--blue-1, #f2f8ff); color: var(--blue-7, #2c5cc5); flex: 0 0 auto; }
+.aa-stepline-ico svg { width: 15px; height: 15px; }
+.aa-opt { font-size: var(--t-caption); text-transform: uppercase; letter-spacing: 0.04em; color: var(--text-3, var(--text)); flex: 0 0 auto; }
 /* step 3 — review */
-.aa-review { display: flex; flex-direction: column; gap: var(--s-4); max-width: 640px; margin: 0 auto; }
+.aa-review { display: flex; flex-direction: column; gap: var(--s-4); max-width: 680px; margin: 0 auto; } /* match .aa-step2 width — one steady centered spine across steps 2 & 3 */
 .aa-summary-card { display: flex; flex-direction: column; gap: var(--s-2); padding: var(--s-4); border: 1px solid var(--border); border-radius: var(--r-md); background: var(--surface, #fff); }
 .aa-sc-head { display: flex; align-items: center; justify-content: space-between; font-size: var(--t-caption); text-transform: uppercase; letter-spacing: 0.04em; color: var(--text-3, var(--text)); }
 .aa-sc-head span { display: inline-flex; align-items: center; gap: 6px; }
@@ -345,14 +394,38 @@ button {
 .aa-sc-edit { border: 0; background: transparent; color: var(--blue-7, #0f6fd6); font-size: var(--t-caption); font-weight: 600; cursor: pointer; padding: 0; }
 .aa-sc-body { margin: 0; font-size: var(--t-body-sm); color: var(--text); }
 .aa-autopilot-row { display: flex; align-items: center; justify-content: space-between; gap: var(--s-3); }
-/* success */
-.aa-done { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: var(--s-3); padding: var(--s-12) var(--s-4); min-height: 52vh; }
-.aa-done-ico { display: inline-flex; color: var(--pos-7, #1e874b); transform: scale(1.6); }
+/* Go-live: anchor the content in the optical centre (margin:auto is scroll-safe — it never
+   clips the top the way justify-content:center can) so it never floats in a void. */
+.aa-body--center { display: flex; }
+.aa-body--center .aa-body-inner { margin: auto; width: 100%; }
+/* Hero audience count — the one number the persona reads ("who does this hit?"); the "now"
+   half of the now-vs-future split. */
+.aa-golive-hero { display: flex; flex-direction: column; align-items: center; text-align: center; gap: 2px; padding-bottom: var(--s-2); }
+.aa-golive-count { font-size: var(--t-display-xl); font-weight: 700; letter-spacing: -0.02em; line-height: 1.05; color: var(--text); }
+.aa-golive-count-label { font-size: var(--t-body-lg); color: var(--text-2, var(--text)); }
+.aa-golive-more { font-size: var(--t-caption); color: var(--text-3, var(--text)); }
+.aa-golive-sub { margin: 0; font-size: var(--t-caption); color: var(--text-3, var(--text)); }
+/* Footer commit group — reassurance stacked tight above the focal action (anxiety met at
+   the point of commit): time buffer + reversibility + we'll-tell-you-when-it-acts. */
+.aa-foot-commit { display: flex; flex-direction: column; align-items: flex-end; gap: 5px; }
+.aa-foot-commit .aa-foot-note { text-align: right; }
+/* Go-live success — a calm, right-sized milestone beat (not a corner toast). No confetti. */
+.aa-fullpage--done { align-items: center; justify-content: center; padding: var(--s-6); }
+.aa-live { display: flex; flex-direction: column; align-items: center; text-align: center; gap: var(--s-3); max-width: 420px; margin: auto; }
+.aa-live-check { display: inline-flex; color: var(--pos-7, #1e874b); }
+.aa-live-check svg { width: 56px; height: 56px; }
+.aa-live-title { margin: 0; font-size: var(--t-display-lg); font-weight: 700; letter-spacing: -0.02em; color: var(--text); }
+.aa-live-body { margin: 0; font-size: var(--t-body-lg); color: var(--text); }
+.aa-live-next { margin: 0; font-size: var(--t-body-sm); color: var(--text-3, var(--text)); }
+.aa-live-actions { display: flex; flex-direction: column; align-items: center; gap: var(--s-2); margin-top: var(--s-2); }
+.aa-live-pause { border: 0; background: transparent; color: var(--text-3, var(--text)); font-size: var(--t-body-sm); font-weight: 600; cursor: pointer; text-decoration: underline; padding: 4px 8px; }
+.aa-live-pause:hover { color: var(--text); }
 @media (max-width: 640px) {
   .aa-top { grid-template-columns: auto 1fr; padding: var(--s-3) var(--s-4); }
   .aa-top-title { justify-self: start; text-align: left; }
   .aa-saved { display: none; } /* free space for the problem title on narrow screens */
   .aa-body { padding: var(--s-5) var(--s-4); }
+  .aa-scopeband { padding-left: var(--s-4); padding-right: var(--s-4); }
   .aa-foot, .aa-stepper-band, .aa-top { padding-left: var(--s-4); padding-right: var(--s-4); }
 }
 

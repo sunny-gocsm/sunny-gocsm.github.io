@@ -182,7 +182,7 @@ export default function PlaybookDetailPage() {
         </div>
         <div className="pbd-hero__cta" style={{ display: "flex", flexDirection: "column", gap: "var(--s-1)" }}>
           <Button variant="primary" onClick={() => setSetupOpen(true)}>
-            {isOn ? "Manage workflow" : "Set up workflow"}
+            {isOn ? "Manage playbook" : "Set up playbook"}
           </Button>
           <span style={{ fontSize: "var(--t-caption)", color: "var(--text-3, var(--text))" }}>
             {matches.length === 0 ? (

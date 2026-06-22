@@ -333,6 +333,11 @@ button.account-row:hover{border-color:var(--blue-5,#6f97e0);background:var(--blu
 .rule-group .rg-remove:hover{background:var(--surface-2,#f4f6fa);color:var(--neg-7,#c0392b);}
 .rule-group .rg-body{display:flex;flex-direction:column;gap:var(--s-2,8px);}
 .rule-group .rg-foot{display:flex;align-items:center;gap:var(--s-3,12px);flex-wrap:wrap;}
-.rule-group .rg-add{display:inline-flex;align-items:center;gap:5px;border:1px dashed var(--border-strong,rgba(15,27,45,0.14));background:transparent;border-radius:var(--r-pill,999px);padding:4px 12px;font-size:var(--t-body-sm);font-weight:600;color:var(--blue-7,#2c5cc5);cursor:pointer;transition:border-color 120ms ease,background 120ms ease;}
-.rule-group .rg-add svg{width:14px;height:14px;}
-.rule-group .rg-add:hover{border-color:var(--blue-5,#6f97e0);background:var(--blue-1,#f3f7ff);}
+/* .rg-add is a standalone affordance — style it unscoped so it always renders as
+   one cohesive "+ Add …" pill, whether it sits inside a .rule-group or on its own
+   (e.g. the criteria builder's Add-condition launcher). Previously it was scoped to
+   .rule-group, so the standalone instance fell back to a bare borderless button —
+   a detached "+" and centered "Add condition" that read as two controls. */
+.rg-add{display:inline-flex;align-items:center;gap:6px;border:1px dashed var(--border-strong,rgba(15,27,45,0.14));background:transparent;border-radius:var(--r-pill,999px);padding:6px 14px;font-size:var(--t-body-sm);font-weight:600;color:var(--blue-7,#2c5cc5);cursor:pointer;transition:border-color 120ms ease,background 120ms ease,color 120ms ease;}
+.rg-add svg{width:15px;height:15px;flex:0 0 auto;}
+.rg-add:hover{border-color:var(--blue-5,#6f97e0);background:var(--blue-1,#f3f7ff);color:var(--blue-8,#0c5aae);}
