@@ -2,14 +2,17 @@
 // (e.g. after step 1) returns with their criteria prefilled, straight to the workflow
 // step. localStorage-backed, keyed by the recipe/problem id. Cleared once it goes live.
 
-import type { Criterion } from "@/fixtures/criteriaMatch";
+import type { Criterion, Node } from "@/fixtures/criteriaMatch";
 
 export type DraftStep = "criteria" | "workflow" | "review";
 
 export interface WorkflowDraft {
   recipeId: string;
   match: "all" | "any";
+  /** Flat mirror (back-compat). */
   criteria: Criterion[];
+  /** Advanced structure (groups + bare criteria); optional for older drafts. */
+  nodes?: Node[];
   step: DraftStep;
   workflowReady: boolean;
   savedAt: number;

@@ -6,6 +6,7 @@ import {
   composition,
   forecast7d,
   describeSet,
+  flatten,
   INVENTORY_FLOOR,
   type CriteriaSet,
   type ForecastEntry,
@@ -90,8 +91,9 @@ function ForecastRows({ entries }: { entries: ForecastEntry[] }) {
   );
 }
 
-export function MatchWall({ set }: { set: CriteriaSet }) {
+export function MatchWall({ set, hideCount = false }: { set: CriteriaSet; hideCount?: boolean }) {
   const matched = matchAccounts(set);
+  const hasConditions = flatten(set).length > 0; // no conditions = the empty canvas (shows all)
   const forecast = forecast7d(set);
   const n = matched.length;
   const overFloor = n > 0 && n <= INVENTORY_FLOOR;
@@ -104,35 +106,29 @@ export function MatchWall({ set }: { set: CriteriaSet }) {
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "var(--s-5)" }}>
-      {/* Live count + breadth verdict */}
+      {/* Live count + breadth verdict (count optionally owned by the parent rail).
+          The Health composition bar moved BELOW the list (it's the busiest analyst-y
+          element) — this top block now stays calm: count + the breadth verdict only. */}
       <div style={{ display: "flex", flexDirection: "column", gap: "var(--s-3)" }}>
-        <div style={{ display: "flex", alignItems: "baseline", gap: "var(--s-2)" }}>
-          <span style={{ fontSize: "var(--t-display-lg)", fontWeight: 700, lineHeight: 1, color: "var(--text)" }}>
-            <Mono>{n}</Mono>
-          </span>
-          <span style={{ fontSize: "var(--t-body)", color: "var(--text-2, var(--text))" }}>
-            account{n === 1 ? "" : "s"} match now
-          </span>
-        </div>
-        <BreadthMeter count={n} />
-        {healthBar ? (
-          <div style={{ display: "flex", alignItems: "center", gap: "var(--s-2)" }}>
-            <span style={{ fontSize: "var(--t-caption)", color: "var(--text-3, var(--text))", width: 48, flex: "0 0 auto" }}>Health</span>
-            <div style={{ flex: 1 }}>
-              <StackedBar segments={healthBar.parts.map((p) => ({ pct: p.pct, tone: p.tone, label: p.label }))} />
-            </div>
-            <span style={{ fontSize: "var(--t-caption)", color: "var(--text-3, var(--text))" }}>
-              {healthBar.parts[0] ? `${healthBar.parts[0].pct}% ${healthBar.parts[0].label}` : ""}
+        {hideCount ? null : (
+          <div style={{ display: "flex", alignItems: "baseline", gap: "var(--s-2)" }}>
+            <span style={{ fontSize: "var(--t-display-lg)", fontWeight: 700, lineHeight: 1, color: "var(--text)" }}>
+              <Mono>{n}</Mono>
+            </span>
+            <span style={{ fontSize: "var(--t-body)", color: "var(--text-2, var(--text))" }}>
+              account{n === 1 ? "" : "s"} run on
             </span>
           </div>
-        ) : null}
+        )}
+        <BreadthMeter count={n} />
       </div>
 
-      {/* Matches now — rows */}
-      {n === 0 ? (
+      {/* Matches now — rows. Zero-match copy only fires when conditions exist (with no
+          conditions the wall shows every account, so n is never 0 on the empty canvas). */}
+      {n === 0 && hasConditions ? (
         <div style={{ padding: "var(--s-5)", borderRadius: "var(--r-md)", background: "var(--surface-2, #f4f6fa)", textAlign: "center" }}>
           <p style={{ margin: 0, fontSize: "var(--t-body)", color: "var(--text-2, var(--text))" }}>
-            No accounts match — your filters are too tight. Loosen the last one to bring the list back.
+            No accounts match yet. Loosen the last condition to bring some back.
           </p>
         </div>
       ) : (
@@ -163,10 +159,26 @@ export function MatchWall({ set }: { set: CriteriaSet }) {
         </section>
       )}
 
-      {/* 7-day forecast — ghost rows */}
-      <div style={{ borderTop: "1px solid var(--border)", paddingTop: "var(--s-4)" }}>
-        <ForecastRows entries={forecast} />
-      </div>
+      {/* Health composition — demoted: small, quiet, BELOW the match list. */}
+      {healthBar ? (
+        <div className="mw-health" style={{ display: "flex", alignItems: "center", gap: "var(--s-2)" }}>
+          <span style={{ fontSize: "var(--t-caption)", color: "var(--text-3, var(--text))", width: 44, flex: "0 0 auto" }}>Health</span>
+          <div style={{ flex: 1 }}>
+            <StackedBar height={5} segments={healthBar.parts.map((p) => ({ pct: p.pct, tone: p.tone, label: p.label }))} />
+          </div>
+          <span style={{ fontSize: "var(--t-caption)", color: "var(--text-3, var(--text))" }}>
+            {healthBar.parts[0] ? `${healthBar.parts[0].pct}% ${healthBar.parts[0].label}` : ""}
+          </span>
+        </div>
+      ) : null}
+
+      {/* 7-day forecast — ghost rows. Only when ≥1 condition exists; never on the
+          fresh/empty canvas. */}
+      {hasConditions ? (
+        <div style={{ borderTop: "1px solid var(--border)", paddingTop: "var(--s-4)" }}>
+          <ForecastRows entries={forecast} />
+        </div>
+      ) : null}
 
       {/* Plain-English summary */}
       <p style={{ margin: 0, fontSize: "var(--t-caption)", color: "var(--text-3, var(--text))", fontStyle: "italic" }}>

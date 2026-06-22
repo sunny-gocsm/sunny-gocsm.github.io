@@ -1,9 +1,11 @@
 // Starter recipes — the criteria-builder empty-state on-ramp (tappable, seeded from
-// real pillar data) AND the pre-seed source when the flow opens from a job-(a) row.
+// REAL §6 fields) AND the pre-seed source when the flow opens from a job-(a) row.
 // Picking one drops a fully-formed, editable CriteriaSet into the builder so the user
-// adjusts rather than authors from zero (ThoughtSpot suggested-questions pattern).
+// adjusts rather than authors from zero. The six recipes are CPDO §7; every PAS / pillar
+// recipe is gone. Each keeps its downstream playbookId mapping (the action half).
 
-import type { CriteriaSet } from "./criteriaMatch";
+import { normalize, type Criterion, type CriteriaSet } from "./criteriaMatch";
+import type { DateRelValue } from "./criteriaCatalog";
 
 export interface Recipe {
   id: string;
@@ -15,81 +17,83 @@ export interface Recipe {
   playbookId: string;
 }
 
+let rc = 0;
+const cid = () => `r${++rc}`;
+const c = (fieldId: string, op: Criterion["op"], value?: Criterion["value"]): Criterion => ({
+  id: cid(),
+  fieldId,
+  op,
+  value,
+});
+const next = (n: number): DateRelValue => ({ verb: "inNext", n, unit: "days" });
+
+const flat = (match: "all" | "any", ...criteria: Criterion[]): CriteriaSet =>
+  normalize({ match, criteria });
+
 export const RECIPES: Recipe[] = [
   {
-    id: "rec-pas-quiet",
-    icon: "activity",
-    label: "Slipping adoption + gone quiet",
-    blurb: "Product use is dropping and the owner has stopped logging in.",
-    playbookId: "pb-feature-drop",
-    set: {
-      match: "all",
-      criteria: [
-        { id: "c1", fieldId: "health.productAdoption", op: "lt", value: 50 },
-        { id: "c2", fieldId: "user.lastLoginDaysAgo", op: "gt", value: 14 },
-      ],
-    },
+    id: "rec-atrisk-renewing",
+    icon: "calendar-clock",
+    label: "At-risk & renewing soon",
+    blurb: "Shaky accounts with a renewal inside the next month.",
+    playbookId: "pb-renewal-save",
+    set: flat(
+      "all",
+      c("health.band", "isAnyOf", ["atrisk", "watch"]),
+      c("revenue.renewsWithin", "inNext", next(30)),
+    ),
   },
   {
-    id: "rec-highmrr-down",
+    id: "rec-big-downhill",
     icon: "trending-down",
-    label: "High-MRR, trending down",
+    label: "Big accounts going downhill",
     blurb: "Your biggest accounts whose health is falling.",
     playbookId: "pb-renewal-save",
-    set: {
-      match: "all",
-      criteria: [
-        { id: "c1", fieldId: "account.mrr", op: "gt", value: 1500 },
-        { id: "c2", fieldId: "health.delta", op: "falling" },
-      ],
-    },
+    set: flat(
+      "all",
+      c("revenue.mrr", "gt", 1500),
+      c("health.trend", "falling"),
+    ),
   },
   {
-    id: "rec-renew-risk",
-    icon: "calendar-clock",
-    label: "Renewing in 30 days & at-risk",
-    blurb: "Renewals inside a month that aren't healthy.",
-    playbookId: "pb-renewal-save",
-    set: {
-      match: "all",
-      criteria: [
-        { id: "c1", fieldId: "account.renewalInDays", op: "between", value: [0, 30] },
-        { id: "c2", fieldId: "health.band", op: "isAnyOf", value: ["atrisk", "watch"] },
-      ],
-    },
-  },
-  {
-    id: "rec-quiet",
+    id: "rec-gone-quiet",
     icon: "moon",
     label: "Gone quiet",
     blurb: "Owners who haven't logged in for 21+ days.",
     playbookId: "pb-no-login",
-    set: {
-      match: "all",
-      criteria: [{ id: "c1", fieldId: "user.lastLoginDaysAgo", op: "gt", value: 21 }],
-    },
+    set: flat("all", c("engagement.lastLoginDays", "gt", 21)),
   },
   {
-    id: "rec-payment",
+    id: "rec-quiet-no-core",
+    icon: "plug",
+    label: "Quiet and not using Workflows",
+    blurb: "Gone quiet and never turned on Workflows.",
+    playbookId: "pb-feature-drop",
+    set: flat(
+      "all",
+      c("engagement.lastLoginDays", "gt", 21),
+      c("feature.inUse", "isNoneOf", ["Workflow"]),
+    ),
+  },
+  {
+    id: "rec-payment-failed",
     icon: "credit-card",
     label: "Payment failed",
     blurb: "A charge was declined or failed.",
     playbookId: "pb-payment-failed",
-    set: {
-      match: "all",
-      criteria: [{ id: "c1", fieldId: "account.lastPayment", op: "is", value: "failed" }],
-    },
+    set: flat("all", c("revenue.failedPayment", "is", true)),
   },
   {
-    id: "rec-low-sentiment",
-    icon: "frown",
-    label: "Sentiment slipping",
-    blurb: "Accounts whose sentiment signal has dropped low.",
-    playbookId: "pb-no-login",
-    set: {
-      match: "all",
-      criteria: [{ id: "c1", fieldId: "health.sentiment", op: "lt", value: 40 }],
-    },
+    id: "rec-slipping-engagement",
+    icon: "activity",
+    label: "Slipping engagement",
+    blurb: "Feature use is falling and health is shaky.",
+    playbookId: "pb-feature-drop",
+    set: flat(
+      "all",
+      c("feature.engagementTrend", "falling"),
+      c("health.band", "isAnyOf", ["watch", "atrisk"]),
+    ),
   },
 ];
 

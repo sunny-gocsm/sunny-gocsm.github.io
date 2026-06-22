@@ -5,6 +5,30 @@ Durable, human- and agent-readable log of significant decisions and changes.
 
 ---
 
+## 2026-06-22 — Redesigned the trigger criteria builder (step 1 "Who it runs on")
+- Rebuilt the Attention activation wizard's step-1 criteria surface
+  (`components/attention/CriteriaBuilder.tsx`) into a real rule engine, via the full
+  **design-loop** (research → CPDO synthesis → DS-first build → 5-persona review → ship).
+- **Grounded in the REAL product:** researched the actual GoCSM backend (`csm-super-logger`)
+  + live Mongo `prod_v2` + ClickHouse `prod`. The user-facing attribute/filter universe is
+  saved at `apps/prototype/docs/design/gocsm-attribute-filter-catalog.md` (+ the design
+  briefs + research dossiers under `docs/design/`). **Hard rule: PAS and the raw pillar
+  scores are INTERNAL — never exposed as filters;** only health band/score/trend, lifecycle,
+  priority, and observable drivers (feature usage, logins, NPS, MRR/spend, payments, renewals).
+- **New DS primitives** (`packages/design-system`): `PromptArea` (multi-line NL hero),
+  `RangeInput`, `DateRelativeInput`, `MultiSelectCombobox`, `RuleGroup`. Reused
+  `SegmentedControl`/`FilterChip`/`Input` (Boolean = Yes/No segmented, never `Toggle`).
+- **The surface:** multi-line "describe who this runs on" hero that compiles to editable
+  sentence-chips; **Simple** (flat Match ALL/ANY) + **Advanced** (visible nested AND/OR group
+  cards, one level deep — never a typed boolean string); typed control per value type;
+  plain-English restatement always on top; live "runs on N accounts" count + MatchWall.
+- Catalog re-seeded to ~24 real fields (Common-first picker); recipes re-seeded (PAS recipes
+  dropped); `criteriaMatch` gained nested groups without breaking the flat path.
+- Review panel routed a revision pass (NL "renewing" compile fix + partial-parse note,
+  restatement grammar, right-rail de-clutter, vocabulary/copy). Verified live on :8080,
+  0 console errors. `bun run build` green; tsc clean; 11 tests pass.
+- Branch: `design/trigger-criteria-builder` (not yet merged/pushed — pending Karthik's review).
+
 ## 2026-06-22 — Migrated out of iCloud to ~/dev
 - Moved the project from `~/Documents/Codebase/gocsm-monorepo` (iCloud-synced — risk of
   eviction/corruption of `.git`/`node_modules`; user had lost files this way before) to

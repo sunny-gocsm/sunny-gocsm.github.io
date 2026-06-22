@@ -252,3 +252,87 @@ button.account-row:hover{border-color:var(--blue-5,#6f97e0);background:var(--blu
 .event-row .er-status.tone-neutral{background:var(--surface-2,#eef1f6);color:var(--text-3,#6a7689);}
 .event-row .er-value{flex:0 0 auto;width:74px;text-align:right;font-size:var(--t-body-sm,13px);font-weight:700;color:var(--text,#0f1b2d);font-variant-numeric:tabular-nums;}
 @media (max-width:640px){.event-row .er-name{max-width:108px;overflow:hidden;text-overflow:ellipsis;}.event-row .er-time{width:46px;}.event-row .er-value{width:60px;}}
+
+/* ── PromptArea ───────────────────────────────────────────────────────
+   Multi-line NL hero (sibling to PromptField). Soft-blue AI surface, auto-grow
+   textarea, state-aware submit, helper line, example chips below. */
+.prompt-area{display:flex;flex-direction:column;gap:var(--s-3,12px);}
+.prompt-area .pa-field{display:flex;align-items:flex-start;gap:var(--s-2,8px);padding:12px 14px;border:1.5px solid var(--blue-3);border-radius:var(--r-md);background:var(--blue-1);transition:border-color 140ms ease,box-shadow 140ms ease;}
+.prompt-area .pa-field:focus-within{border-color:var(--blue-6);box-shadow:var(--ring-focus);}
+.prompt-area .pa-ico{display:inline-flex;color:var(--blue-7);flex:0 0 auto;margin-top:2px;}
+.prompt-area .pa-input{flex:1;min-width:0;border:0;outline:0;background:transparent;resize:none;font:inherit;font-size:var(--t-body);line-height:1.5;color:var(--text);max-height:none;}
+.prompt-area .pa-input:focus,.prompt-area .pa-input:focus-visible{box-shadow:none;outline:none;}
+.prompt-area .pa-input::placeholder{color:var(--text-2);}
+.prompt-area .pa-actions{display:flex;align-items:center;justify-content:space-between;gap:var(--s-3,12px);}
+.prompt-area .pa-hint{font-size:var(--t-caption);color:var(--text-3,var(--text));}
+.prompt-area .pa-submit-wrap{display:inline-flex;align-items:center;gap:var(--s-2,8px);flex:0 0 auto;margin-left:auto;}
+.prompt-area .pa-kbd{font-size:var(--t-caption);color:var(--text-3,var(--text));font-variant-numeric:tabular-nums;}
+.prompt-area .pa-submit{display:inline-flex;align-items:center;gap:6px;border:0;border-radius:var(--r-md);background:var(--blue-7);color:#fff;font-size:var(--t-body-sm);font-weight:600;padding:8px 16px;cursor:pointer;transition:background 140ms ease,opacity 140ms ease;}
+.prompt-area .pa-submit svg{width:15px;height:15px;}
+.prompt-area .pa-submit:hover:not(:disabled){background:var(--blue-8);}
+.prompt-area .pa-submit:disabled{opacity:.5;cursor:not-allowed;}
+.prompt-area .pa-spin{animation:pa-spin 800ms linear infinite;}
+@keyframes pa-spin{to{transform:rotate(360deg);}}
+@media (prefers-reduced-motion:reduce){.prompt-area .pa-spin{animation:none;}}
+.prompt-area .pa-examples{display:flex;align-items:center;flex-wrap:wrap;gap:var(--s-2,8px);}
+.prompt-area .pa-try{font-size:var(--t-label,11px);font-weight:600;text-transform:uppercase;letter-spacing:0.04em;color:var(--text-3,var(--text));}
+.prompt-area .pa-example{border:1px solid var(--blue-3);background:var(--surface,#fff);border-radius:var(--r-pill,999px);padding:5px 12px;font-size:var(--t-caption);color:var(--blue-8,#0c5aae);cursor:pointer;text-align:left;transition:border-color 120ms ease,background 120ms ease;}
+.prompt-area .pa-example:hover{border-color:var(--blue-5);background:var(--blue-1,#f3f7ff);}
+
+/* ── RangeInput ───────────────────────────────────────────────────────
+   Two number inputs reading "[from] and [to]" with a unit affix. */
+.range-input{display:inline-flex;align-items:center;gap:6px;}
+.range-input .ri-cell{display:inline-flex;align-items:center;gap:2px;border:1px solid var(--border);border-radius:var(--r-sm,6px);background:var(--surface,#fff);padding:2px 6px;}
+.range-input .ri-input{width:52px;border:0;outline:0;background:transparent;font:inherit;font-size:var(--t-body-sm);color:var(--text);font-variant-numeric:tabular-nums;}
+.range-input .ri-input:focus,.range-input .ri-input:focus-visible{box-shadow:none;outline:none;}
+.range-input .ri-affix{color:var(--text-3,var(--text));font-size:var(--t-body-sm);}
+.range-input .ri-and{color:var(--text-3,var(--text));font-size:var(--t-body-sm);}
+
+/* ── DateRelativeInput ────────────────────────────────────────────────
+   Relative-first sentence: [verb segmented] [n] [unit] + quick-pick chips. */
+.date-rel{display:inline-flex;align-items:center;flex-wrap:wrap;gap:6px;}
+.date-rel .dr-verb{padding:2px;}
+.date-rel .dr-verb .seg-opt{padding:3px 9px;font-size:var(--t-caption);}
+.date-rel .dr-n{width:48px;border:1px solid var(--border);border-radius:var(--r-sm,6px);background:var(--surface,#fff);font-size:var(--t-body-sm);color:var(--text);padding:3px 6px;font-variant-numeric:tabular-nums;}
+.date-rel .dr-unit{border:1px solid var(--border);border-radius:var(--r-sm,6px);background:var(--surface,#fff);font-size:var(--t-body-sm);color:var(--text);padding:3px 6px;}
+.date-rel .dr-ago{color:var(--text-3,var(--text));font-size:var(--t-body-sm);}
+.date-rel .dr-quick{display:inline-flex;align-items:center;gap:4px;}
+.date-rel .dr-chip{border:1px solid var(--border);background:var(--surface,#fff);border-radius:var(--r-pill,999px);padding:1px 8px;font-size:var(--t-caption);color:var(--text-2,var(--text));cursor:pointer;font-variant-numeric:tabular-nums;}
+.date-rel .dr-chip.on{background:var(--blue-2,#e4ecfb);border-color:var(--blue-5,#6f97e0);color:var(--blue-9,#18336e);font-weight:600;}
+
+/* ── MultiSelectCombobox ──────────────────────────────────────────────
+   Searchable multi-select: in-field chips, checkable dropdown (stays open). */
+.ms-combo{position:relative;display:inline-flex;min-width:180px;}
+.ms-combo .ms-control{display:flex;align-items:center;flex-wrap:wrap;gap:4px;width:100%;border:1px solid var(--border);border-radius:var(--r-sm,6px);background:var(--surface,#fff);padding:3px 6px;cursor:text;}
+.ms-combo .ms-chip{display:inline-flex;align-items:center;gap:3px;background:var(--blue-2,#e4ecfb);color:var(--blue-9,#18336e);border-radius:var(--r-sm,6px);padding:1px 4px 1px 7px;font-size:var(--t-caption);font-weight:600;}
+.ms-combo .ms-chip-x{display:inline-flex;border:0;background:transparent;color:var(--blue-8,#0c5aae);cursor:pointer;padding:1px;border-radius:4px;}
+.ms-combo .ms-chip-x svg{width:11px;height:11px;}
+.ms-combo .ms-chip-x:hover{background:var(--blue-3);}
+.ms-combo .ms-more{font-size:var(--t-caption);color:var(--text-3,var(--text));}
+.ms-combo .ms-input{flex:1;min-width:60px;border:0;outline:0;background:transparent;font:inherit;font-size:var(--t-body-sm);color:var(--text);}
+.ms-combo .ms-input:focus,.ms-combo .ms-input:focus-visible{box-shadow:none;outline:none;}
+.ms-combo .ms-open{flex:1;text-align:left;border:0;background:transparent;color:var(--text-3,var(--text));font-size:var(--t-body-sm);cursor:pointer;}
+.ms-combo .ms-pop{position:absolute;top:calc(100% + 4px);left:0;z-index:30;min-width:100%;max-height:240px;overflow-y:auto;display:flex;flex-direction:column;background:var(--surface,#fff);border:1px solid var(--border);border-radius:var(--r-md);box-shadow:0 8px 24px rgba(8,14,28,0.14);padding:4px;}
+.ms-combo .ms-opt{display:flex;align-items:center;gap:8px;border:0;background:transparent;border-radius:var(--r-sm,6px);padding:6px 8px;font-size:var(--t-body-sm);color:var(--text);text-align:left;cursor:pointer;}
+.ms-combo .ms-opt:hover{background:var(--blue-1,#f3f7ff);}
+.ms-combo .ms-opt.on{color:var(--blue-9,#18336e);font-weight:600;}
+.ms-combo .ms-check{display:inline-flex;width:14px;flex:0 0 auto;color:var(--blue-7);}
+.ms-combo .ms-check svg{width:14px;height:14px;}
+.ms-combo .ms-empty{padding:8px;font-size:var(--t-body-sm);color:var(--text-3,var(--text));}
+
+/* ── RuleGroup ────────────────────────────────────────────────────────
+   Advanced nested-group card: header match all|any, body of conditions, footer adds. */
+.rule-group{display:flex;flex-direction:column;gap:var(--s-3,12px);}
+.rule-group.rg-group{border:1px solid var(--border);border-radius:var(--r-md);background:var(--surface,#fff);padding:var(--s-4,16px);}
+.rule-group .rg-head{display:flex;align-items:center;justify-content:space-between;gap:var(--s-2,8px);}
+.rule-group .rg-match{display:inline-flex;align-items:center;gap:var(--s-2,8px);}
+.rule-group .rg-label{font-size:var(--t-label,11px);font-weight:600;text-transform:uppercase;letter-spacing:0.04em;color:var(--text-3,var(--text));}
+.rule-group .rg-match-lead{font-size:var(--t-body-sm);color:var(--text-2,var(--text));}
+.rule-group .rg-remove{display:inline-flex;border:0;background:transparent;color:var(--text-3,var(--text));cursor:pointer;padding:4px;border-radius:var(--r-sm,6px);}
+.rule-group .rg-remove svg{width:15px;height:15px;}
+.rule-group .rg-remove:hover{background:var(--surface-2,#f4f6fa);color:var(--neg-7,#c0392b);}
+.rule-group .rg-body{display:flex;flex-direction:column;gap:var(--s-2,8px);}
+.rule-group .rg-foot{display:flex;align-items:center;gap:var(--s-3,12px);flex-wrap:wrap;}
+.rule-group .rg-add{display:inline-flex;align-items:center;gap:5px;border:1px dashed var(--border-strong,rgba(15,27,45,0.14));background:transparent;border-radius:var(--r-pill,999px);padding:4px 12px;font-size:var(--t-body-sm);font-weight:600;color:var(--blue-7,#2c5cc5);cursor:pointer;transition:border-color 120ms ease,background 120ms ease;}
+.rule-group .rg-add svg{width:14px;height:14px;}
+.rule-group .rg-add:hover{border-color:var(--blue-5,#6f97e0);background:var(--blue-1,#f3f7ff);}

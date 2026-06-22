@@ -4,7 +4,7 @@ import { CriteriaBuilder } from "./CriteriaBuilder";
 import { autopilotStore } from "@/state/autopilot";
 import { saveDraft, loadDraft, clearDraft } from "@/state/workflowDrafts";
 import { toast } from "sonner";
-import { matchCount, describeSet, type CriteriaSet } from "@/fixtures/criteriaMatch";
+import { matchCount, describeSet, normalize, type CriteriaSet } from "@/fixtures/criteriaMatch";
 import type { Recipe } from "@/fixtures/recipes";
 import type { Account } from "@/fixtures";
 
@@ -186,7 +186,11 @@ export function AttentionActivation({
   });
   const [set, setSet] = useState<CriteriaSet>(() => {
     const d = recipeId ? loadDraft(recipeId) : undefined;
-    return d ? { match: d.match, criteria: d.criteria } : recipe ? recipe.set : { match: "all", criteria: [] };
+    return d
+      ? normalize({ match: d.match, criteria: d.criteria, nodes: d.nodes })
+      : recipe
+        ? normalize(recipe.set)
+        : { match: "all", criteria: [], nodes: [] };
   });
   const [workflowReady, setWorkflowReady] = useState<boolean>(() => (recipeId ? loadDraft(recipeId)?.workflowReady ?? false : false));
   const [autopilot, setAutopilot] = useState(true);
@@ -209,7 +213,7 @@ export function AttentionActivation({
   // Autosave the draft as the build progresses.
   useEffect(() => {
     if (!recipeId || live) return;
-    saveDraft({ recipeId, match: set.match, criteria: set.criteria, step, workflowReady, savedAt: Date.now() });
+    saveDraft({ recipeId, match: set.match, criteria: set.criteria, nodes: set.nodes, step, workflowReady, savedAt: Date.now() });
   }, [recipeId, set, step, workflowReady, live]);
 
   const goLive = () => {

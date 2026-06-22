@@ -8,10 +8,15 @@ hot-reloads here. (History note: this was formerly a standalone Lovable repo tha
 vendored the DS into `src/gocsm-ds/`.)
 
 ## Design work — start here
-Any design/redesign/audit task: invoke the **`gocsm-design-loop`** skill, then read
+Any design/redesign/audit task: invoke the **`design-loop`** skill, then read
 **`docs/design/phase-2-playbooks.md`** (the active brief + all carried-over context).
 Durable facts also auto-load from memory: `gocsm-design-language`,
 `gocsm-ds-typography-gotchas`, `gocsm-today-activation`, `gocsm-ds-architecture`.
+
+**Trigger criteria builder** (step 1 "Who it runs on"): the user-facing attribute/filter
+universe is `docs/design/gocsm-attribute-filter-catalog.md` (derived from the real GoCSM
+backend + live DBs — **PAS & raw pillar scores are internal, never filterable**); the design
+contract is `docs/design/cpdo-brief.md`; supporting research in `docs/design/research/`.
 
 ## Non-negotiables
 - **Typography:** never use inline `font: var(--t-*)` (invalid → text silently 14px) — use `fontSize`.
