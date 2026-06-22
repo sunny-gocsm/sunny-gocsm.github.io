@@ -11,7 +11,7 @@
     <string>dev</string>
   </array>
   <key>WorkingDirectory</key>
-  <string>/Users/karthikanand/Documents/Codebase/gocsm-monorepo</string>
+  <string>/Users/karthikanand/dev/gocsm-monorepo</string>
   <key>EnvironmentVariables</key>
   <dict>
     <key>PATH</key>
@@ -22,9 +22,9 @@
   <key>KeepAlive</key>
   <true/>
   <key>StandardOutPath</key>
-  <string>/Users/karthikanand/Documents/Codebase/gocsm-monorepo/.dev-server.log</string>
+  <string>/Users/karthikanand/dev/gocsm-monorepo/.dev-server.log</string>
   <key>StandardErrorPath</key>
-  <string>/Users/karthikanand/Documents/Codebase/gocsm-monorepo/.dev-server.log</string>
+  <string>/Users/karthikanand/dev/gocsm-monorepo/.dev-server.log</string>
   <key>ProcessType</key>
   <string>Interactive</string>
 </dict>

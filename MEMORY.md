@@ -5,6 +5,16 @@ Durable, human- and agent-readable log of significant decisions and changes.
 
 ---
 
+## 2026-06-22 — Migrated out of iCloud to ~/dev
+- Moved the project from `~/Documents/Codebase/gocsm-monorepo` (iCloud-synced — risk of
+  eviction/corruption of `.git`/`node_modules`; user had lost files this way before) to
+  **`~/dev/gocsm-monorepo`** (outside iCloud's scope). Done via a fresh `git clone` from
+  GitHub, then `bun install` — pristine plumbing; the old iCloud copy is left as a backup.
+- Updated `ops/com.gocsm.dev.plist` WorkingDirectory + log paths to the new location.
+- Dev server restarted from the new path (verified HTTP 200 on :8080). Build green.
+- Canonical working dir is now `~/dev/gocsm-monorepo`. gh active account must be
+  `sunny-gocsm` for push/fetch (it owns the private repo).
+
 ## 2026-06-22 — Monorepo created, pushed to GitHub, dev server made always-on
 - Merged the former two repos — `executive-pulse-check` (Lovable UI/UX prototype) and
   `gocsm-design-system` (versioned DS) — into this **bun-workspace monorepo**.
