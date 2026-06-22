@@ -5,6 +5,14 @@ Durable, human- and agent-readable log of significant decisions and changes.
 
 ---
 
+## 2026-06-23 — Fix: playbook setup footer pushed off-screen under a browser infobar
+The setup-flow footer (Continue) vanished again — reproduced only with Chrome's
+screen-sharing infobar present. Cause: `.aa-fullpage` used `height: 100dvh`, which can
+compute taller than the visible area when an infobar/dynamic toolbar is shown, pushing
+the fixed footer below the fold. Fix: `position: fixed; inset: 0` (pins the bottom edge
+directly to the viewport bottom) — kept `.aa-body { min-height: 0 }` so it still scrolls.
+Verified footer pinned at 1280×620 with the tall step-1 criteria builder. `apps/prototype` build green.
+
 ## 2026-06-23 — Fix: marketplace card "$ at risk" line shattered into fragments
 The secondary $-impact line on marketplace cards reused `.mk-card-impact`
 (`display: inline-flex; gap`), which turned each word/`<Mono>` into a flex item and
