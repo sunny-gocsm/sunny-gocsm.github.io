@@ -1,9 +1,9 @@
-# GoCSM monorepo — `go-csm-playbooks`
+# gocsm-playbooks — GoCSM monorepo
 
 Bun-workspace monorepo. The **design system is the canonical source of truth**; the
 prototype and the production web app both consume it directly from source.
 
-Remote: `https://github.com/sunny-gocsm/go-csm-playbooks` (private).
+Remote: `https://github.com/sunny-gocsm/gocsm-playbooks` (private).
 
 ## Layout
 - `packages/design-system` — `@gocsm/design-system`: tsup-built component library, tokens, lint rules. The single UI source of truth.

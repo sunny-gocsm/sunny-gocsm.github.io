@@ -30,13 +30,13 @@ Durable, human- and agent-readable log of significant decisions and changes.
 - Branch: `design/trigger-criteria-builder` (not yet merged/pushed — pending Karthik's review).
 
 ## 2026-06-22 — Migrated out of iCloud to ~/dev
-- Moved the project from `~/Documents/Codebase/gocsm-monorepo` (iCloud-synced — risk of
+- Moved the project from `~/Documents/Codebase/gocsm-playbooks` (iCloud-synced — risk of
   eviction/corruption of `.git`/`node_modules`; user had lost files this way before) to
-  **`~/dev/gocsm-monorepo`** (outside iCloud's scope). Done via a fresh `git clone` from
+  **`~/dev/gocsm-playbooks`** (outside iCloud's scope). Done via a fresh `git clone` from
   GitHub, then `bun install` — pristine plumbing; the old iCloud copy is left as a backup.
 - Updated `ops/com.gocsm.dev.plist` WorkingDirectory + log paths to the new location.
 - Dev server restarted from the new path (verified HTTP 200 on :8080). Build green.
-- Canonical working dir is now `~/dev/gocsm-monorepo`. gh active account must be
+- Canonical working dir is now `~/dev/gocsm-playbooks`. gh active account must be
   `sunny-gocsm` for push/fetch (it owns the private repo).
 
 ## 2026-06-22 — Monorepo created, pushed to GitHub, dev server made always-on
@@ -49,7 +49,7 @@ Durable, human- and agent-readable log of significant decisions and changes.
 - Added `apps/web` (`@gocsm/web`) — production GoCSM starter consuming the DS (port 8081).
 - Single root `bun.lock`; per-package lockfiles removed. Renamed prototype package
   `vite_react_shadcn_ts` → `@gocsm/prototype`.
-- Pushed to `https://github.com/sunny-gocsm/go-csm-playbooks` (private).
+- Pushed to `https://github.com/sunny-gocsm/gocsm-playbooks` (private).
 - Prototype dev server (:8080) kept always-on via launchd agent `com.gocsm.dev`.
   Agent definition version-controlled at `ops/com.gocsm.dev.plist`. NOTE: the coding
   sandbox cannot write to `~/Library/LaunchAgents`, so the one-time install must be run
