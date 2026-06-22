@@ -1,0 +1,86 @@
+<!-- @dsCard group="Components" viewport="700x460" name="Health primitives" subtitle="Bands, score ring, distribution tiles, deltas, pillars" -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<link rel="stylesheet" href="../../styles.css" />
+<style>
+  body { margin: 0; background: var(--bg); color: var(--text); font-family: var(--font-ui); }
+  .wrap { padding: 24px; display: flex; flex-direction: column; gap: 22px; }
+  .row { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; }
+  .col { display: flex; flex-direction: column; gap: 10px; }
+  .gl { font-size: 11px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--text-3); }
+  .rings { display: flex; gap: 28px; align-items: center; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="col">
+    <span class="gl">Health bands — the locked spectrum</span>
+    <div class="row">
+      <span class="health-badge thriving">Thriving</span>
+      <span class="health-badge healthy">Healthy</span>
+      <span class="health-badge watch">Watch</span>
+      <span class="health-badge atrisk">At-Risk</span>
+    </div>
+  </div>
+
+  <div class="row" style="gap:40px;align-items:flex-start;">
+    <div class="col">
+      <span class="gl">Score ring</span>
+      <div class="rings">
+        <div class="ring" style="width:108px;height:108px;">
+          <svg width="108" height="108" viewBox="0 0 108 108">
+            <circle class="track" cx="54" cy="54" r="49"></circle>
+            <circle class="arc" cx="54" cy="54" r="49" style="stroke:var(--health-watch-strong);stroke-dasharray:307.9;stroke-dashoffset:160.1;"></circle>
+          </svg>
+          <div class="inner"><div class="score">48</div><div class="band" style="color:var(--health-watch-strong)">Watch</div></div>
+        </div>
+        <div class="ring" style="width:108px;height:108px;">
+          <svg width="108" height="108" viewBox="0 0 108 108">
+            <circle class="track" cx="54" cy="54" r="49"></circle>
+            <circle class="arc" cx="54" cy="54" r="49" style="stroke:var(--health-thriving-strong);stroke-dasharray:307.9;stroke-dashoffset:55.4;"></circle>
+          </svg>
+          <div class="inner"><div class="score">82</div><div class="band" style="color:var(--health-thriving-strong)">Thriving</div></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col" style="flex:1;min-width:300px;">
+      <span class="gl">Delta chips</span>
+      <div class="row">
+        <span class="delta delta-up">+2.1%<span class="ctx">vs last qtr</span></span>
+        <span class="delta delta-down">-4.0%</span>
+        <span class="delta delta-flat">0</span>
+        <span class="delta delta-bad-up">+8.0%<span class="ctx">churn</span></span>
+        <span class="delta delta-good-down">-$1,200<span class="ctx">cost</span></span>
+      </div>
+      <span class="gl" style="margin-top:10px;">Pillar weights (sample)</span>
+      <div class="pillar-bar">
+        <div class="pillar-seg pas" style="width:40%"></div>
+        <div class="pillar-seg revenue" style="width:30%"></div>
+        <div class="pillar-seg login" style="width:15%"></div>
+        <div class="pillar-seg feedback" style="width:15%"></div>
+      </div>
+      <div class="pillar-legend">
+        <span class="pillar-legend-item pas">Product Adoption<span class="wt">40%</span></span>
+        <span class="pillar-legend-item revenue">Revenue<span class="wt">30%</span></span>
+        <span class="pillar-legend-item login">Login<span class="wt">15%</span></span>
+        <span class="pillar-legend-item feedback">Feedback<span class="wt">15%</span></span>
+      </div>
+    </div>
+  </div>
+
+  <div class="col">
+    <span class="gl">Distribution tiles</span>
+    <div class="health-dist">
+      <div class="health-tile thriving"><div class="label">Thriving</div><div class="count">48</div><div class="pct">34%</div></div>
+      <div class="health-tile healthy"><div class="label">Healthy</div><div class="count">61</div><div class="pct">43%</div></div>
+      <div class="health-tile watch"><div class="label">Watch</div><div class="count">22</div><div class="pct">15%</div></div>
+      <div class="health-tile atrisk"><div class="label">At-Risk</div><div class="count">11</div><div class="pct">8%</div></div>
+    </div>
+  </div>
+</div>
+</body>
+</html>

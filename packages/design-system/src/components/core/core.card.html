@@ -1,0 +1,83 @@
+<!-- @dsCard group="Components" viewport="700x440" name="Core controls" subtitle="Buttons, badges, inputs, toggles, tabs" -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<link rel="stylesheet" href="../../styles.css" />
+<style>
+  body { margin: 0; background: var(--surface); color: var(--text); font-family: var(--font-ui); }
+  .wrap { padding: 24px; display: flex; flex-direction: column; gap: 20px; }
+  .row { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; }
+  .col { display: flex; flex-direction: column; gap: 8px; }
+  .two { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; align-items: start; }
+  .gl { font-size: 11px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--text-3); }
+  .badge { white-space: nowrap; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="col">
+    <span class="gl">Buttons</span>
+    <div class="row">
+      <button class="btn btn-primary"><i data-lucide="plus"></i><span>New journey</span></button>
+      <button class="btn btn-secondary"><span>Configure</span></button>
+      <button class="btn btn-ghost"><span>Dismiss</span></button>
+      <button class="btn btn-danger btn-sm"><span>Stop tracking</span></button>
+      <button class="btn btn-ai"><i data-lucide="sparkles"></i><span>Ask AI</span></button>
+      <button class="btn btn-secondary" disabled><span>Disabled</span></button>
+    </div>
+  </div>
+
+  <div class="two">
+    <div class="col">
+      <span class="gl">Badges</span>
+      <div class="row">
+        <span class="badge badge-pos">Synced</span>
+        <span class="badge badge-warn">Pending</span>
+        <span class="badge badge-danger">Sync failed</span>
+        <span class="badge badge-blue">v2</span>
+        <span class="badge badge-ai no-dot">AI draft</span>
+        <span class="badge badge-neutral">Draft</span>
+      </div>
+    </div>
+    <div class="col">
+      <span class="gl">Toggles &amp; checkbox</span>
+      <label style="display:flex;align-items:center;gap:10px;font-size:13px;"><span class="toggle on"></span>Auto-balance weights</label>
+      <label style="display:flex;align-items:center;gap:10px;font-size:13px;"><span class="toggle locked"></span>Owner visibility (enforced)</label>
+      <label style="display:inline-flex;align-items:center;gap:8px;font-size:13px;"><input type="checkbox" class="chk" checked />Auto-track new sub-accounts</label>
+    </div>
+  </div>
+
+  <div class="two">
+    <div class="col">
+      <span class="gl">Input</span>
+      <div class="field">
+        <label class="label">Account name</label>
+        <input class="input" value="Tailored Wellbeing" />
+        <div class="hint">Shown to the agency only</div>
+      </div>
+    </div>
+    <div class="col">
+      <span class="gl">Select</span>
+      <div class="field">
+        <label class="label">SLA tier</label>
+        <select class="select"><option>Standard · 7d</option><option>Priority · 3d</option></select>
+      </div>
+    </div>
+  </div>
+
+  <div class="col">
+    <span class="gl">Tabs</span>
+    <div class="tabs">
+      <span class="tab active">Overview</span>
+      <span class="tab">Sub-Accounts</span>
+      <span class="tab">Configure</span>
+    </div>
+  </div>
+</div>
+
+<script src="https://unpkg.com/lucide@0.460.0/dist/umd/lucide.min.js"></script>
+<script>window.lucide && lucide.createIcons();</script>
+</body>
+</html>
