@@ -313,7 +313,7 @@ function MarketCard({ p, impact, onOpen, rail }: { p: Playbook; impact: { count:
           <>
             <span className="mk-card-proof"><Icon name="users" /> {fmtCompact(p.usedByAgencies)} agencies · {fmtCompact(p.totalRuns)} runs</span>
             {impact.mrr > 0 ? (
-              <span className="mk-card-impact"><span className="at-risk"><Mono>{fmtMoney(impact.mrr)}</Mono> at risk</span> in <Mono>{impact.count}</Mono> of your account{impact.count === 1 ? "" : "s"} now</span>
+              <span className="mk-card-risk"><span className="at-risk"><Mono>{fmtMoney(impact.mrr)}</Mono> at risk</span> · <Mono>{impact.count}</Mono> account{impact.count === 1 ? "" : "s"} now</span>
             ) : null}
           </>
         )}

@@ -537,6 +537,9 @@ button {
 .mk-card-impact svg { width: 14px; height: 14px; color: var(--text-3, var(--text)); }
 .mk-card-proof { display: inline-flex; align-items: center; gap: 5px; color: var(--text-3, var(--text)); }
 .mk-card-proof svg { width: 14px; height: 14px; }
+/* The $-impact line is a plain wrapping sentence — NOT inline-flex (which would
+   shatter the words into flex items, e.g. a stranded "in 2"). */
+.mk-card-risk { display: block; font-size: var(--t-body-sm); color: var(--text-2, var(--text)); }
 .mk-card-foot { display: flex; align-items: center; justify-content: space-between; gap: var(--s-2); margin-top: auto; padding-top: var(--s-3); border-top: 1px solid var(--border); }
 .mk-effort { font-size: var(--t-caption); color: var(--text-3, var(--text)); }
 /* Quiet card CTA — blue text + arrow, NO fill. The card itself is the click

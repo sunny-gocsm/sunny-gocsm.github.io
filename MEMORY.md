@@ -5,6 +5,13 @@ Durable, human- and agent-readable log of significant decisions and changes.
 
 ---
 
+## 2026-06-23 — Fix: marketplace card "$ at risk" line shattered into fragments
+The secondary $-impact line on marketplace cards reused `.mk-card-impact`
+(`display: inline-flex; gap`), which turned each word/`<Mono>` into a flex item and
+stranded fragments (e.g. a floating "in 2"). Gave it its own plain-text class
+`.mk-card-risk` (`display: block`) so it wraps as a normal sentence, and tightened
+the copy to "$X at risk · N accounts now". `apps/prototype` build green.
+
 ## 2026-06-23 — Playbooks page reimagined as a template MARKETPLACE
 Full design-loop redesign of `/playbooks` (the main product surface — weekly new
 releases). 5 blind research dossiers (template/app marketplaces, CS playbook libraries,
