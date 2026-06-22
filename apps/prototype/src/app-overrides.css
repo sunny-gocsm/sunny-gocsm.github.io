@@ -488,3 +488,121 @@ button {
   .oc-filterbar { grid-template-columns: 1fr; }
   .oc-drawer { width: 100vw; }
 }
+
+/* ===== Playbooks marketplace (PlaybooksPage) ===== */
+.mk-main { padding: var(--s-8) var(--s-6); max-width: 1180px; margin: 0 auto; color: var(--text); display: flex; flex-direction: column; gap: var(--s-5); }
+.mk-wrap { display: flex; flex-direction: column; gap: var(--s-5); }
+
+/* search — the fallback affordance, not the hero */
+.mk-search { display: flex; align-items: center; gap: var(--s-2); border: 1px solid var(--border); border-radius: var(--r-md); background: var(--surface, #fff); padding: 9px 14px; max-width: 520px; }
+.mk-search > svg { width: 16px; height: 16px; color: var(--text-3, var(--text)); flex: 0 0 auto; }
+.mk-search-input { flex: 1; border: 0; outline: 0; background: transparent; font-size: var(--t-body); color: var(--text); }
+.mk-search-clear { display: inline-flex; border: 0; background: transparent; color: var(--text-3, var(--text)); cursor: pointer; padding: 2px; border-radius: var(--r-sm, 6px); flex: 0 0 auto; }
+.mk-search-clear:hover { background: var(--surface-2, #f4f6fa); color: var(--text); }
+
+/* category filter bar — ONE calm horizontal row, never a multi-row wall.
+   Scrolls horizontally when it overflows; the active pill uses soft-blue, not a
+   saturated fill, so the only solid-blue element on the page is the AI-pick CTA. */
+.mk-cats { display: flex; flex-wrap: nowrap; gap: var(--s-2); overflow-x: auto; padding-bottom: 2px; scrollbar-width: none; -ms-overflow-style: none; }
+.mk-cats::-webkit-scrollbar { display: none; }
+.mk-cat { flex: 0 0 auto; display: inline-flex; align-items: center; gap: 6px; border: 1px solid var(--border); background: var(--surface, #fff); border-radius: var(--r-pill, 999px); padding: 6px 14px; font-size: var(--t-body-sm); font-weight: 600; color: var(--text-2, var(--text)); cursor: pointer; transition: border-color 120ms ease, background 120ms ease, color 120ms ease; }
+.mk-cat svg { width: 14px; height: 14px; }
+.mk-cat:hover { border-color: var(--blue-5, #6f97e0); }
+.mk-cat.on { background: var(--blue-1, #f2f8ff); border-color: var(--blue-5, #6f97e0); color: var(--blue-8, #0c5aae); }
+
+/* row headers + rails + grid */
+/* Block (not flex-column) so the horizontal-scroll rail sizes to its content height
+   instead of collapsing as a flex item. */
+.mk-row { display: block; }
+.mk-row .mk-rowhead { margin-bottom: var(--s-3); }
+.mk-rowhead { display: flex; align-items: baseline; justify-content: space-between; gap: var(--s-3); }
+.mk-rowtitle { font-size: var(--t-heading); font-weight: 700; margin: 0; }
+.mk-rowsub { font-size: var(--t-body-sm); color: var(--text-3, var(--text)); margin-left: var(--s-2); }
+.mk-rowmeta { font-size: var(--t-body-sm); color: var(--text-3, var(--text)); }
+.mk-rail { display: grid; grid-auto-flow: column; grid-auto-columns: 300px; align-items: start; gap: var(--s-3); overflow-x: auto; padding-bottom: var(--s-2); scroll-snap-type: x proximity; }
+.mk-rail::-webkit-scrollbar { height: 8px; }
+.mk-rail::-webkit-scrollbar-thumb { background: var(--border-strong, rgba(15,27,45,0.14)); border-radius: 999px; }
+.mk-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: var(--s-3); }
+
+/* marketplace card — outcome title → one meta line → ONE CTA; status on the card */
+.mk-card { display: flex; flex-direction: column; gap: var(--s-2); }
+.mk-card.rail { scroll-snap-align: start; }
+.mk-card-top { display: flex; align-items: center; justify-content: space-between; gap: var(--s-2); }
+.mk-card-ico { display: inline-flex; align-items: center; justify-content: center; width: 38px; height: 38px; border-radius: 11px; background: var(--blue-1, #f2f8ff); color: var(--blue-7, #2c5cc5); flex: 0 0 auto; }
+.mk-card-ico svg { width: 19px; height: 19px; }
+.mk-card-title { font-size: var(--t-body-lg); font-weight: 700; margin: 0; color: var(--text); }
+.mk-card-sub { font-size: var(--t-body-sm); color: var(--text-3, var(--text)); margin: 0; }
+.mk-card-meta { display: flex; flex-direction: column; gap: 2px; font-size: var(--t-body-sm); color: var(--text-2, var(--text)); margin-top: 2px; min-height: 42px; }
+.mk-card-impact { display: inline-flex; align-items: center; gap: 5px; }
+.mk-card-impact svg { width: 14px; height: 14px; color: var(--text-3, var(--text)); }
+.mk-card-proof { display: inline-flex; align-items: center; gap: 5px; color: var(--text-3, var(--text)); }
+.mk-card-proof svg { width: 14px; height: 14px; }
+.mk-card-foot { display: flex; align-items: center; justify-content: space-between; gap: var(--s-2); margin-top: auto; padding-top: var(--s-3); border-top: 1px solid var(--border); }
+.mk-effort { font-size: var(--t-caption); color: var(--text-3, var(--text)); }
+/* Quiet card CTA — blue text + arrow, NO fill. The card itself is the click
+   target; this only signals "actionable". Brightens slightly as the card lifts. */
+.mk-cta { display: inline-flex; align-items: center; gap: 3px; font-size: var(--t-body-sm); font-weight: 600; color: var(--blue-7, #2c5cc5); white-space: nowrap; }
+.mk-cta svg { width: 15px; height: 15px; transition: transform 140ms var(--ease, ease); }
+.mk-card[data-clickable="true"]:hover .mk-cta { color: var(--blue-8, #0c5aae); }
+.mk-card[data-clickable="true"]:hover .mk-cta svg { transform: translateX(2px); }
+
+/* status chips */
+.mk-status { display: inline-flex; align-items: center; gap: 4px; font-size: var(--t-caption); font-weight: 700; padding: 2px 9px; border-radius: var(--r-pill, 999px); white-space: nowrap; }
+.mk-status svg { width: 12px; height: 12px; }
+.mk-status.live { background: var(--pos-soft, #e8f8e3); color: var(--pos-7, #1e874b); }
+.mk-status.paused { background: var(--warn-soft, #fef0d6); color: var(--warn-7, #b45309); }
+/* New/Trending are quiet text labels — filled chips are reserved for ownership state (Live/Paused). */
+.mk-status.new { background: transparent; color: var(--blue-8, #0c5aae); padding: 2px 0; }
+.mk-status.trend { background: transparent; color: var(--text-3, var(--text)); padding: 2px 0; }
+
+/* AI pick hero — violet/indigo, the number does the work */
+.mk-aipick { display: flex; align-items: center; justify-content: space-between; gap: var(--s-5); flex-wrap: wrap; padding: var(--s-5) var(--s-6); border: 1px solid var(--ai-border, #ddd6fe); background: var(--ai-soft, #f5f3ff); }
+.mk-aipick-body { display: flex; flex-direction: column; align-items: flex-start; gap: 7px; min-width: 0; max-width: 680px; }
+.mk-aipick-eyebrow { display: inline-flex; align-items: center; gap: 6px; font-size: var(--t-label); font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: var(--ai-7, #6d4bd8); }
+.mk-aipick-eyebrow svg { width: 14px; height: 14px; }
+.mk-aipick-title { font-size: var(--t-display-lg); font-weight: 750; margin: 0; letter-spacing: -0.01em; }
+.mk-aipick-line { font-size: var(--t-body-lg); color: var(--text-2, var(--text)); margin: 0; }
+.mk-aipick-why { font-size: var(--t-body-sm); color: var(--text-3, var(--text)); margin: 0; }
+.mk-aipick .btn { flex: 0 0 auto; }
+
+/* Curated home rows render as horizontal shelves — one clean row that scrolls,
+   never a wrapping grid that orphans a lone 4th card onto a second row (review:
+   the 3+1 orphan was the most visible craft tell). Browse/search results, which
+   live in a bare .mk-grid NOT inside .mk-row, keep the wrapping grid. */
+.mk-row .mk-grid { grid-template-columns: none; grid-auto-flow: column; grid-auto-columns: minmax(264px, 296px); overflow-x: auto; padding-bottom: var(--s-2); scroll-snap-type: x proximity; }
+.mk-row .mk-grid > * { scroll-snap-align: start; }
+.mk-row .mk-grid::-webkit-scrollbar { height: 8px; }
+.mk-row .mk-grid::-webkit-scrollbar-thumb { background: var(--border-strong, rgba(15,27,45,0.14)); border-radius: 999px; }
+
+/* empty states */
+.mk-empty { font-size: var(--t-body); color: var(--text-2, var(--text)); margin: 0; }
+.mk-empty-card { display: flex; flex-direction: column; align-items: center; gap: var(--s-3); text-align: center; padding: var(--s-10) var(--s-6); }
+.mk-empty-card > svg { width: 30px; height: 30px; color: var(--text-3, var(--text)); }
+
+/* your playbooks */
+.mk-mine { display: flex; flex-direction: column; gap: var(--s-6); }
+.mk-mine-sec { display: flex; flex-direction: column; gap: var(--s-3); }
+.mk-mine-head { display: flex; align-items: baseline; gap: var(--s-2); flex-wrap: wrap; }
+.mk-mine-title { font-size: var(--t-heading); font-weight: 700; margin: 0; }
+.mk-mine-title.pos { color: var(--pos-7, #1e874b); }
+.mk-mine-title.warn { color: var(--warn-7, #b45309); }
+.mk-mine-title.muted { color: var(--text-3, var(--text)); }
+.mk-mine-note { font-size: var(--t-body-sm); color: var(--text-3, var(--text)); }
+.mk-mine-rows { display: flex; flex-direction: column; gap: var(--s-2); }
+.mk-manage { display: flex; align-items: center; gap: var(--s-3); }
+.mk-manage-body { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.mk-manage-name { border: 0; background: transparent; padding: 0; text-align: left; cursor: pointer; font-size: var(--t-body-lg); font-weight: 700; color: var(--text); }
+.mk-manage-name:hover { color: var(--blue-8, #0c5aae); }
+.mk-manage-meta { font-size: var(--t-body-sm); color: var(--text-2, var(--text)); }
+.mk-manage-actions { display: flex; align-items: center; gap: var(--s-2); flex-wrap: wrap; justify-content: flex-end; }
+
+@media (max-width: 640px) {
+  .mk-main { padding: var(--s-6) var(--s-4); }
+  .mk-rail { grid-auto-columns: 84vw; }
+  .mk-manage { flex-wrap: wrap; }
+}
+
+/* Playbook detail — impact + social-proof signal strip in the hero */
+.pbd-signals { display: flex; flex-wrap: wrap; gap: var(--s-2) var(--s-4); margin-top: 2px; }
+.pbd-signal { display: inline-flex; align-items: center; gap: 5px; font-size: var(--t-body-sm); color: var(--text-2, var(--text)); }
+.pbd-signal svg { width: 14px; height: 14px; color: var(--text-3, var(--text)); flex: 0 0 auto; }

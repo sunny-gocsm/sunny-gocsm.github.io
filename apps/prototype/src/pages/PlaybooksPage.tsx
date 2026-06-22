@@ -1,435 +1,452 @@
 import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import {
-  Badge,
-  Card,
-  FixItCard,
-  Tabs,
-  ConfTag,
-  Icon,
-  Mono,
-  Button,
-  Toggle,
-  AssignmentRuleEditor,
-  SkillScheduleCard,
-} from "@gocsm/design-system";
+import { Badge, Card, Button, Icon, Mono, Tabs } from "@gocsm/design-system";
+import { toast } from "sonner";
 import { PageRibbon } from "@/components/PageRibbon";
 import {
   playbooks,
-  matchesToday,
+  playbookImpact,
+  isNewPlaybook,
+  categoryLabel,
+  CATEGORIES,
+  EFFORT_LABEL,
   type Playbook,
-  type PlaybookState,
+  type PlaybookCategory,
 } from "@/fixtures/playbooks";
 import {
-  triggers,
-  populationFor,
-  playbookOf,
-  TRIGGER_CLASS_LABEL,
-  type TriggerClass,
-} from "@/fixtures/triggers";
+  autopilotStore,
+  useAutopilotStatus,
+  useAutopilotVersion,
+  type AutopilotStatus,
+} from "@/state/autopilot";
+import { RECIPES, type Recipe } from "@/fixtures/recipes";
+import { hasDraft, clearDraft } from "@/state/workflowDrafts";
+import { AttentionActivation } from "@/components/attention/AttentionActivation";
 
+// PlaybooksPage — the Playbooks MARKETPLACE. Two tabs (research-backed, app-store model):
+//   • Marketplace — browse the catalog. Lead with curated/personalized rows (AI pick,
+//     Most deployed, New this week, Quick wins); a 7-category filter for deliberate
+//     browsing; NL-ish search as the fallback. Status lives ON each card (Live ✓ / Set up).
+//   • Your playbooks — what you've deployed: Live · Paused · Drafts · Archived, with manage.
+// Adding ≠ activating: "Set up" opens the detail (preview the bundle) → go live via the
+// existing setup flow. Lifecycle is Pause/Unpublish → Archive (soft) — never hard-delete.
 
+type TabId = "marketplace" | "mine";
 
-type TabId = "library" | "triggers";
+const fmtMoney = (n: number) => "$" + Math.round(n).toLocaleString();
+const fmtCompact = (n: number) =>
+  n >= 1000 ? (n / 1000).toFixed(n >= 10000 ? 0 : 1).replace(/\.0$/, "") + "k" : String(n);
 
-const TABS = [
-  { id: "library", label: "Library" },
-  { id: "triggers", label: "Triggers" },
-];
-
-type Filter = "all" | "save" | "retention" | "billing" | "adoption" | "onboarding" | "expansion";
-const FILTERS: { id: Filter; label: string }[] = [
-  { id: "all", label: "All" },
-  { id: "save", label: "Save plays" },
-  { id: "retention", label: "Retention" },
-  { id: "billing", label: "Billing" },
-  { id: "adoption", label: "Adoption" },
-  { id: "onboarding", label: "Onboarding" },
-  { id: "expansion", label: "Expansion" },
-];
-
-// State chip shown on a library row — only when the play is actually doing
-// something (Ran once / On / Paused). "Off" shows no chip, to keep the list calm.
-const STATE_CHIP: Record<PlaybookState, { variant: "pos" | "warn" | "blue"; icon: string; label: string } | null> = {
-  off: null,
-  ranonce: { variant: "blue", icon: "check", label: "Ran once" },
-  on: { variant: "pos", icon: "zap", label: "On · autopilot" },
-  paused: { variant: "warn", icon: "pause", label: "Paused" },
-};
-
-// Which kinds frame their dollars as risk vs upside on the stakes line.
-const RISK_KINDS = new Set<Playbook["kind"]>(["save", "billing", "retention", "onboarding"]);
-const UPSIDE_KINDS = new Set<Playbook["kind"]>(["expansion"]);
-
-type EnrichedRow = Playbook & { count: number; mrr: number };
+// Marketplace status for a card, derived from the lifecycle store.
+function marketStatus(s: AutopilotStatus): "available" | "live" | "paused" {
+  if (s === "on") return "live";
+  if (s === "paused") return "paused";
+  return "available"; // off | archived → re-installable from the catalog
+}
 
 export default function PlaybooksPage() {
-  const [tab, setTab] = useState<TabId>("library");
-  const [filter, setFilter] = useState<Filter>("all");
+  const [tab, setTab] = useState<TabId>("marketplace");
+  const [query, setQuery] = useState("");
+  const [cat, setCat] = useState<PlaybookCategory | "all">("all");
+  // activation overlay: a recipe to resume/edit, or {} for create-from-scratch
+  const [activation, setActivation] = useState<{ recipe?: Recipe } | null>(null);
   const navigate = useNavigate();
+  useAutopilotVersion(); // re-render on any lifecycle change
 
-  const enriched = useMemo<EnrichedRow[]>(
-    () =>
-      playbooks.map((p) => {
-        const accts = matchesToday(p);
-        return {
-          ...p,
-          count: accts.length,
-          mrr: accts.reduce((s, a) => s + (a.revenue?.mrr ?? 0), 0),
-        };
-      }),
-    [],
-  );
+  // Live impact per playbook (matching accounts + $), computed once.
+  const impacts = useMemo(() => {
+    const m = new Map<string, { count: number; mrr: number }>();
+    playbooks.forEach((p) => m.set(p.id, playbookImpact(p)));
+    return m;
+  }, []);
+  const impactOf = (p: Playbook) => impacts.get(p.id) ?? { count: 0, mrr: 0 };
 
-  const filtered = enriched.filter((p) => filter === "all" || p.kind === filter);
-  const needsYou = filtered.filter((p) => p.count > 0).sort((a, b) => b.count - a.count);
-  const watching = filtered.filter((p) => p.count === 0);
+  // Your-playbooks count for the tab label (re-renders via useAutopilotVersion above).
+  const mineCount =
+    autopilotStore.listOn().length +
+    autopilotStore.listPaused().length +
+    RECIPES.filter((r) => hasDraft(r.id) && autopilotStore.status(r.playbookId) !== "on").length;
 
-  const onCount = enriched.filter((p) => p.state === "on").length;
-  const needsYouCount = enriched.filter((p) => p.count > 0).length;
+  const open = (id: string) => navigate(`/playbooks/${id}`);
 
   return (
-    <main
-      style={{
-        padding: "var(--s-8) var(--s-6)",
-        maxWidth: 1280,
-        margin: "0 auto",
-        color: "var(--text)",
-        display: "flex",
-        flexDirection: "column",
-        gap: "var(--s-5)",
-      }}
-    >
+    <main className="mk-main">
+      {/* Calm browse surface: no KPI metric ribbon here (Stripe/Linear — keep
+          numeric density off a discovery view; "Live for you 0" read as a deficit).
+          Freshness is carried by the "New this week" rail; the live count lives on
+          the "Your playbooks" tab label. */}
       <PageRibbon
         title="Playbooks"
-        description="Ready-made fixes for the moments that cost you customers. Open one to run it."
-        kpis={[
-          { label: "Playbooks", value: <Mono>{enriched.length}</Mono> },
-          { label: "Need you today", value: <Mono>{needsYouCount}</Mono> },
-          { label: "On autopilot", value: <Mono>{onCount}</Mono> },
-        ]}
+        description="A growing marketplace of ready-made customer-success automations. Turn one on, customize it, done."
+        trailing={
+          <Button variant="ghost" className="btn-accent" size="sm" icon={<Icon name="plus" />} onClick={() => setActivation({})}>
+            Create from scratch
+          </Button>
+        }
       />
 
-      <Tabs tabs={TABS} active={tab} onChange={(id) => setTab(id as TabId)} />
+      <Tabs
+        tabs={[
+          { id: "marketplace", label: "Marketplace" },
+          { id: "mine", label: `Your playbooks${mineCount ? ` (${mineCount})` : ""}` },
+        ]}
+        active={tab}
+        onChange={(id) => setTab(id as TabId)}
+      />
 
-      {tab === "library" ? (
-        <div style={{ maxWidth: 920, width: "100%", display: "flex", flexDirection: "column", gap: "var(--s-5)" }}>
-          {/* Filter chips */}
-          <div style={{ display: "flex", flexWrap: "wrap", gap: "var(--s-2)", alignItems: "center" }}>
-            <span style={{ fontSize: "var(--t-caption)", color: "var(--text-3, var(--text))" }}>Filter</span>
-            {FILTERS.map((f) => (
-              <Badge
-                key={f.id}
-                variant={filter === f.id ? "blue" : "neutral"}
-                dot={false}
-                onClick={() => setFilter(f.id)}
-                style={{ cursor: "pointer" }}
-              >
-                {f.label}
-              </Badge>
-            ))}
-          </div>
-
-          {needsYou.length === 0 && watching.length === 0 ? (
-            <Card padded>
-              <span style={{ fontSize: "var(--t-body)", color: "var(--text-2, var(--text))" }}>
-                Nothing in this filter — try a different category, or clear it to see your full library.
-              </span>
-            </Card>
-          ) : null}
-
-          {needsYou.length ? (
-            <section style={{ display: "flex", flexDirection: "column", gap: "var(--s-3)" }}>
-              <h2 style={{ fontSize: "var(--t-heading)", fontWeight: 700, margin: 0 }}>Need you today</h2>
-              <div style={{ display: "flex", flexDirection: "column", gap: "var(--s-2)" }}>
-                {needsYou.map((p) => (
-                  <PlaybookRow key={p.id} p={p} onOpen={() => navigate(`/playbooks/${p.id}`)} />
-                ))}
-              </div>
-            </section>
-          ) : null}
-
-          {watching.length ? (
-            <section style={{ display: "flex", flexDirection: "column", gap: "var(--s-3)" }}>
-              <h2
-                style={{
-                  fontSize: "var(--t-heading)",
-                  fontWeight: 700,
-                  margin: 0,
-                  color: "var(--text-2, var(--text))",
-                }}
-              >
-                Armed &amp; watching
-              </h2>
-              <div style={{ display: "flex", flexDirection: "column", gap: "var(--s-2)" }}>
-                {watching.map((p) => (
-                  <PlaybookRow key={p.id} p={p} onOpen={() => navigate(`/playbooks/${p.id}`)} />
-                ))}
-              </div>
-            </section>
-          ) : null}
-        </div>
+      {tab === "marketplace" ? (
+        <MarketplaceTab
+          query={query}
+          setQuery={setQuery}
+          cat={cat}
+          setCat={setCat}
+          impactOf={impactOf}
+          onOpen={open}
+        />
       ) : (
-        <TriggersTab />
+        <YourPlaybooksTab impactOf={impactOf} onOpen={open} onResume={(recipe) => setActivation({ recipe })} onBrowse={() => setTab("marketplace")} />
       )}
+
+      {activation ? (
+        <AttentionActivation
+          recipe={activation.recipe}
+          backLabel="Playbooks"
+          onClose={() => setActivation(null)}
+        />
+      ) : null}
     </main>
   );
 }
 
-// ---------------------------------------------------------------------------
-// PlaybookRow — one calm, scannable library row: state eyebrow → bold name →
-// who it affects right now (with $ at risk / upside) → drill-in chevron. The
-// whole row is the tap target; running and rule-management live on the detail
-// page, so the library stays a quiet catalog you scan, not a control panel.
-// ---------------------------------------------------------------------------
+// ─────────────────────────────── Marketplace tab ───────────────────────────────
+function MarketplaceTab({
+  query,
+  setQuery,
+  cat,
+  setCat,
+  impactOf,
+  onOpen,
+}: {
+  query: string;
+  setQuery: (v: string) => void;
+  cat: PlaybookCategory | "all";
+  setCat: (c: PlaybookCategory | "all") => void;
+  impactOf: (p: Playbook) => { count: number; mrr: number };
+  onOpen: (id: string) => void;
+}) {
+  const q = query.trim().toLowerCase();
+  const browsing = q.length > 0 || cat !== "all";
 
-function StakesMeta({ p }: { p: EnrichedRow }) {
-  const count = (
-    <>
-      <strong style={{ fontWeight: 700, color: "var(--text)" }}>{p.count}</strong>{" "}
-      account{p.count === 1 ? "" : "s"} match today
-    </>
-  );
-  if (p.mrr > 0 && UPSIDE_KINDS.has(p.kind)) {
-    return (
-      <>
-        {count} · <span style={{ color: "var(--pos-7)", fontWeight: 600 }}>${p.mrr.toLocaleString()} upside</span>
-      </>
-    );
-  }
-  if (p.mrr > 0 && RISK_KINDS.has(p.kind)) {
-    return (
-      <>
-        {count} · <span className="at-risk">${p.mrr.toLocaleString()} at risk</span>
-      </>
-    );
-  }
-  return count;
-}
+  const results = useMemo(() => {
+    let list = playbooks.slice();
+    if (cat !== "all") list = list.filter((p) => p.category === cat);
+    if (q) list = list.filter((p) => `${p.title} ${p.subtitle} ${p.problem} ${categoryLabel(p.category)}`.toLowerCase().includes(q));
+    return list;
+  }, [q, cat]);
 
-function PlaybookRow({ p, onOpen }: { p: EnrichedRow; onOpen: () => void }) {
-  const chip = STATE_CHIP[p.state];
+  // Curated rows (home view) — ranked, then DEDUPED so each playbook headlines only
+  // one row (no repeats across rows). Computed inline so it reflects live lifecycle.
+  const notLive = (p: Playbook) => autopilotStore.status(p.id) !== "on";
+  const byImpact = (a: Playbook, b: Playbook) => impactOf(b).mrr - impactOf(a).mrr;
+  const byUsed = (a: Playbook, b: Playbook) => b.usedByAgencies - a.usedByAgencies;
+  const seen = new Set<string>();
+  const take = (list: Playbook[], n: number) => {
+    const out: Playbook[] = [];
+    for (const p of list) {
+      if (seen.has(p.id)) continue;
+      out.push(p);
+      seen.add(p.id);
+      if (out.length >= n) break;
+    }
+    return out;
+  };
+  // AI pick: the not-live playbook addressing the most at-risk $; fall back to the
+  // most-used not-live one so the hero never silently vanishes.
+  const aiPick =
+    playbooks.slice().filter(notLive).sort(byImpact).find((p) => impactOf(p).mrr > 0) ??
+    playbooks.slice().filter(notLive).sort(byUsed)[0];
+  if (aiPick) seen.add(aiPick.id);
+  const mostUsed = take(playbooks.slice().sort(byUsed), 4);
+  const newThisWeek = take(playbooks.filter(isNewPlaybook).slice().sort((a, b) => a.launchedDaysAgo - b.launchedDaysAgo), 4);
+  const quickWins = take(playbooks.filter((p) => p.effort !== "custom" && impactOf(p).count > 0).slice().sort(byImpact), 4);
+
   return (
-    <FixItCard
-      icon={p.icon}
-      tag={null}
-      title={p.title}
-      meta={
-        p.count > 0 ? (
-          <StakesMeta p={p} />
+    <div className="mk-wrap">
+      {/* Search (the fallback, not the hero) */}
+      <div className="mk-search">
+        <Icon name="search" />
+        <input
+          className="mk-search-input"
+          value={query}
+          placeholder="Search playbooks — churn, onboarding, renewals…"
+          onChange={(e) => setQuery(e.target.value)}
+        />
+        {query ? (
+          <button type="button" className="mk-search-clear" aria-label="Clear" onClick={() => setQuery("")}>
+            <Icon name="x" />
+          </button>
+        ) : null}
+      </div>
+
+      {/* Category filter bar */}
+      <div className="mk-cats">
+        <button type="button" className={`mk-cat${cat === "all" ? " on" : ""}`} onClick={() => setCat("all")}>All</button>
+        {CATEGORIES.map((c) => (
+          <button key={c.id} type="button" className={`mk-cat${cat === c.id ? " on" : ""}`} onClick={() => setCat(c.id)}>
+            <Icon name={c.icon} /> {c.label}
+          </button>
+        ))}
+      </div>
+
+      {browsing ? (
+        // Filtered / searched → a flat grid
+        results.length === 0 ? (
+          <Card padded><p className="mk-empty">Nothing matches{cat !== "all" ? ` in ${categoryLabel(cat as PlaybookCategory)}` : ""}{q ? ` for "${query}"` : ""}. Try another category, or clear the filter.</p></Card>
         ) : (
-          <span style={{ color: "var(--text-3, var(--text))" }}>{p.subtitle}</span>
+          <>
+            <div className="mk-rowhead"><h2 className="mk-rowtitle">{cat === "all" ? "Results" : categoryLabel(cat as PlaybookCategory)}</h2><span className="mk-rowmeta">{results.length} playbook{results.length === 1 ? "" : "s"}</span></div>
+            <div className="mk-grid">
+              {results.map((p) => (
+                <MarketCard key={p.id} p={p} impact={impactOf(p)} onOpen={() => onOpen(p.id)} />
+              ))}
+            </div>
+          </>
         )
-      }
-      action={
-        <span style={{ display: "inline-flex", alignItems: "center", gap: "var(--s-3)" }}>
-          {chip ? (
-            <Badge variant={chip.variant} dot={false}>
-              <span style={{ display: "inline-flex", alignItems: "center", gap: 4 }}>
-                <Icon name={chip.icon} /> {chip.label}
-              </span>
-            </Badge>
-          ) : null}
-          <Icon name="chevron-right" />
-        </span>
-      }
-      data-clickable="true"
-      role="button"
-      tabIndex={0}
-      onClick={onOpen}
-      onKeyDown={(e) => {
-        if (e.key === "Enter" || e.key === " ") onOpen();
-      }}
-    />
+      ) : (
+        // Home → curated rows
+        <>
+          {aiPick ? <AiPickCard p={aiPick} impact={impactOf(aiPick)} onOpen={() => onOpen(aiPick.id)} /> : null}
+          <CuratedRow title="Most used" sub="What agencies turn on most" items={mostUsed} impactOf={impactOf} onOpen={onOpen} />
+          {newThisWeek.length ? <CuratedRow title="New this week" sub="Fresh from the team" items={newThisWeek} impactOf={impactOf} onOpen={onOpen} /> : null}
+          {quickWins.length ? <CuratedRow title="Quick wins for you" sub="Low effort, matches your accounts now" items={quickWins} impactOf={impactOf} onOpen={onOpen} /> : null}
+        </>
+      )}
+    </div>
   );
 }
 
-// ============================================================================
-// Triggers tab — the catalog + composer
-// ============================================================================
+// AI pick hero — the single highest-impact available playbook, ranked by YOUR at-risk $.
+function AiPickCard({ p, impact, onOpen }: { p: Playbook; impact: { count: number; mrr: number }; onOpen: () => void }) {
+  return (
+    <Card padded className="mk-aipick" data-clickable="true" role="button" tabIndex={0} onClick={onOpen} onKeyDown={(e) => (e.key === "Enter" || e.key === " ") && onOpen()}>
+      <div className="mk-aipick-body">
+        <span className="mk-aipick-eyebrow"><Icon name="sparkles" /> AI pick for you</span>
+        {impact.mrr > 0 ? (
+          <>
+            <h2 className="mk-aipick-title">{p.title}</h2>
+            <p className="mk-aipick-line">
+              Turn this on first — it works on <span className="at-risk"><Mono>{fmtMoney(impact.mrr)}</Mono> at risk</span> across <Mono>{impact.count}</Mono> of your account{impact.count === 1 ? "" : "s"} today.
+            </p>
+            <p className="mk-aipick-why">Picked because it covers the most at-risk revenue across your accounts right now.</p>
+          </>
+        ) : (
+          <>
+            <h2 className="mk-aipick-title">{p.title}</h2>
+            <p className="mk-aipick-line">A popular place to start — used by <Mono>{fmtCompact(p.usedByAgencies)}</Mono> agencies.</p>
+            <p className="mk-aipick-why">Picked because nothing's at risk today — this is the most-trusted way to get ahead.</p>
+          </>
+        )}
+      </div>
+      <Button variant="primary" iconRight={<Icon name="arrow-right" />} onClick={(e: React.MouseEvent) => { e.stopPropagation(); onOpen(); }}>
+        Set up
+      </Button>
+    </Card>
+  );
+}
 
-const CLASS_ORDER: TriggerClass[] = [
-  "single-signal",
-  "recency-frequency",
-  "agentic-scheduler",
-  "reversal",
-];
+function CuratedRow({
+  title,
+  sub,
+  items,
+  impactOf,
+  onOpen,
+}: {
+  title: string;
+  sub: string;
+  items: Playbook[];
+  impactOf: (p: Playbook) => { count: number; mrr: number };
+  onOpen: (id: string) => void;
+}) {
+  if (!items.length) return null;
+  return (
+    <section className="mk-row">
+      <div className="mk-rowhead">
+        <div><h2 className="mk-rowtitle">{title}</h2><span className="mk-rowsub">{sub}</span></div>
+      </div>
+      <div className="mk-grid">
+        {items.map((p) => (
+          <MarketCard key={p.id} p={p} impact={impactOf(p)} onOpen={() => onOpen(p.id)} />
+        ))}
+      </div>
+    </section>
+  );
+}
 
-function TriggersTab() {
-  const [simulate, setSimulate] = useState(true);
-  const [assignMode, setAssignMode] = useState<"by-rule" | "round-robin">("by-rule");
-  const [rules, setRules] = useState([
-    { when: "Health band", is: "At risk", to: "Sinan" },
-    { when: "Renewal", is: "≤ 14 days", to: "Maya" },
-  ]);
+// One marketplace card — outcome title → one meta line → ONE CTA. Status lives here.
+function MarketCard({ p, impact, onOpen, rail }: { p: Playbook; impact: { count: number; mrr: number }; onOpen: () => void; rail?: boolean }) {
+  const status = marketStatus(useAutopilotStatus(p.id));
+  const isNew = isNewPlaybook(p);
+  const cta = status === "live" ? "Manage" : status === "paused" ? "Resume" : "Set up";
+  return (
+    <Card padded className={`mk-card${rail ? " rail" : ""}`} data-clickable="true" role="button" tabIndex={0} onClick={onOpen} onKeyDown={(e) => (e.key === "Enter" || e.key === " ") && onOpen()}>
+      <div className="mk-card-top">
+        <span className="mk-card-ico" aria-hidden><Icon name={p.icon} /></span>
+        {status === "live" ? (
+          <span className="mk-status live"><Icon name="check" /> Live</span>
+        ) : status === "paused" ? (
+          <span className="mk-status paused"><Icon name="pause" /> Paused</span>
+        ) : isNew ? (
+          <span className="mk-status new">New</span>
+        ) : p.trending ? (
+          <span className="mk-status trend"><Icon name="trending-up" /> Trending</span>
+        ) : null}
+      </div>
+      <h3 className="mk-card-title">{p.title}</h3>
+      <p className="mk-card-sub">{p.subtitle}</p>
+
+      {/* Social proof leads on every card (the differentiator); a quiet $ line only
+          appears where there are real matches today. Live cards show what's running. */}
+      <div className="mk-card-meta">
+        {status === "live" ? (
+          <span className="mk-card-impact"><Icon name="users" /> Running on <Mono>{impact.count}</Mono> client{impact.count === 1 ? "" : "s"}</span>
+        ) : (
+          <>
+            <span className="mk-card-proof"><Icon name="users" /> {fmtCompact(p.usedByAgencies)} agencies · {fmtCompact(p.totalRuns)} runs</span>
+            {impact.mrr > 0 ? (
+              <span className="mk-card-impact"><span className="at-risk"><Mono>{fmtMoney(impact.mrr)}</Mono> at risk</span> in <Mono>{impact.count}</Mono> of your account{impact.count === 1 ? "" : "s"} now</span>
+            ) : null}
+          </>
+        )}
+      </div>
+
+      {/* The whole card is the click target (role=button above). The CTA is a
+          quiet visual affordance — never a filled button — so a wall of cards
+          never competes with the single solid-blue AI-pick focal action. */}
+      <div className="mk-card-foot">
+        <span className="mk-effort">{EFFORT_LABEL[p.effort]}</span>
+        <span className="mk-cta">{cta} <Icon name="arrow-right" /></span>
+      </div>
+    </Card>
+  );
+}
+
+// ─────────────────────────────── Your playbooks tab ───────────────────────────────
+function YourPlaybooksTab({
+  impactOf,
+  onOpen,
+  onResume,
+  onBrowse,
+}: {
+  impactOf: (p: Playbook) => { count: number; mrr: number };
+  onOpen: (id: string) => void;
+  onResume: (recipe: Recipe) => void;
+  onBrowse: () => void;
+}) {
+  useAutopilotVersion();
+  const byId = (id: string) => playbooks.find((p) => p.id === id);
+  const live = autopilotStore.listOn().map(byId).filter(Boolean) as Playbook[];
+  const paused = autopilotStore.listPaused().map(byId).filter(Boolean) as Playbook[];
+  const archived = autopilotStore.listArchived().map(byId).filter(Boolean) as Playbook[];
+  // Drafts: recipes with a saved draft whose playbook isn't already live.
+  const drafts = RECIPES.filter((r) => hasDraft(r.id) && autopilotStore.status(r.playbookId) !== "on");
+
+  const empty = !live.length && !paused.length && !drafts.length && !archived.length;
+  if (empty) {
+    return (
+      <Card padded className="mk-empty-card">
+        <Icon name="book-open" />
+        <p className="mk-empty">No live playbooks yet. Browse the marketplace and turn one on — it takes about a minute.</p>
+        <Button variant="primary" icon={<Icon name="arrow-left" />} onClick={onBrowse}>Browse the marketplace</Button>
+      </Card>
+    );
+  }
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: "var(--s-5)" }}>
-      <Card padded>
-        <div style={{ display: "flex", flexDirection: "column", gap: "var(--s-2)" }}>
-          <h3 style={{ font: "var(--t-h3)", margin: 0 }}>How triggers work</h3>
-          <p style={{ font: "var(--t-body)", color: "var(--text-2, var(--text))", margin: 0 }}>
-            Every play watches for one of these shapes. You don't pick how it runs —
-            GoCSM decides whether it's a workflow watch or an AI watch and labels it
-            honestly on each trigger.
-          </p>
-          <div style={{ display: "flex", gap: "var(--s-3)", alignItems: "center" }}>
-            <Toggle
-              on={simulate}
-              onChange={setSimulate}
-              label="Simulate before publish"
-            />
-            <span style={{ font: "var(--t-meta)", color: "var(--text-3, var(--text))" }}>
-              Required by safety policy — see who would have matched before turning a trigger live.
-            </span>
-          </div>
-        </div>
-      </Card>
+    <div className="mk-mine">
+      {live.length ? (
+        <ManageSection title="Live" tone="pos" note="Running automatically.">
+          {live.map((p) => <ManageRow key={p.id} p={p} status="on" impact={impactOf(p)} onOpen={() => onOpen(p.id)} />)}
+        </ManageSection>
+      ) : null}
 
-      {CLASS_ORDER.map((cls) => {
-        const items = triggers.filter((t) => t.class === cls);
-        if (!items.length) return null;
-        return (
-          <section
-            key={cls}
-            style={{ display: "flex", flexDirection: "column", gap: "var(--s-3)" }}
-          >
-            <header style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between" }}>
-              <h3 style={{ font: "var(--t-h3)", margin: 0 }}>{TRIGGER_CLASS_LABEL[cls]}</h3>
-              {cls === "reversal" ? (
-                <Badge variant="danger" dot>Defection class — heaviest weight</Badge>
-              ) : cls === "agentic-scheduler" ? (
-                <Badge variant="blue" dot={false}>Composed across pillars</Badge>
-              ) : null}
-            </header>
-            <div
-              style={{
-                display: "grid",
-                gridTemplateColumns: "repeat(auto-fill, minmax(320px, 1fr))",
-                gap: "var(--s-3)",
-              }}
-            >
-              {items.map((t) => {
-                const pop = populationFor(t);
-                const pb = playbookOf(t);
-                return (
-                  <Card key={t.id} padded>
-                    <div style={{ display: "flex", flexDirection: "column", gap: "var(--s-2)" }}>
-                      <div style={{ display: "flex", alignItems: "center", gap: "var(--s-2)" }}>
-                        <Icon name={cls === "reversal" ? "alert-triangle" : cls === "agentic-scheduler" ? "sparkles" : "filter"} />
-                        <span style={{ font: "var(--t-body)", fontWeight: 600 }}>{t.title}</span>
-                        <span style={{ marginLeft: "auto" }}>
-                          <Badge variant={t.via === "AI watch" ? "blue" : "neutral"} dot={false}>
-                            {t.via}
-                          </Badge>
-                        </span>
-                      </div>
-                      <p style={{ font: "var(--t-meta)", color: "var(--text-2, var(--text))", margin: 0 }}>
-                        {t.when}
-                      </p>
-                      <p style={{ font: "var(--t-meta)", color: "var(--text-3, var(--text))", margin: 0 }}>
-                        {t.cadence}
-                      </p>
-                      {t.note ? (
-                        <p style={{ font: "var(--t-meta)", color: "var(--text-3, var(--text))", margin: 0, fontStyle: "italic" }}>
-                          {t.note}
-                        </p>
-                      ) : null}
-                      <div
-                        style={{
-                          display: "flex",
-                          alignItems: "center",
-                          gap: "var(--s-2)",
-                          paddingTop: "var(--s-2)",
-                          borderTop: "1px solid var(--border)",
-                        }}
-                      >
-                        <span style={{ font: "var(--t-meta)", color: "var(--text-3, var(--text))" }}>
-                          Live population
-                        </span>
-                        <Badge variant={pop > 0 ? "warn" : "neutral"} dot={false}>
-                          <Mono>{pop}</Mono> match{pop === 1 ? "" : "es"} today
-                        </Badge>
-                        {pb ? (
-                          <Badge variant="blue" dot={false}>
-                            <Icon name="book-open" /> {pb.title}
-                          </Badge>
-                        ) : null}
-                      </div>
-                    </div>
-                  </Card>
-                );
-              })}
-            </div>
-          </section>
-        );
-      })}
+      {drafts.length ? (
+        <ManageSection title="Drafts" tone="warn" note="Started but not live yet.">
+          {drafts.map((r) => <DraftRow key={r.id} recipe={r} onResume={() => onResume(r)} />)}
+        </ManageSection>
+      ) : null}
 
-      {/* Agentic scheduler — a scheduled AI skill card example */}
-      <section style={{ display: "flex", flexDirection: "column", gap: "var(--s-3)" }}>
-        <h3 style={{ font: "var(--t-h3)", margin: 0 }}>Scheduled AI skill · example</h3>
-        <SkillScheduleCard
-          desc="Nightly scan that composes health, lifecycle, and revenue to surface quiet renewals."
-          cadence="Nightly · 02:00 local"
-          scope="All live accounts"
-          autonomy="approve"
-          liveLabel="ran 8 hours ago"
-          lastRun={{
-            stats: [
-              { v: "14", l: "matched", tone: "pos" },
-              { v: "3", l: "queued for approval" },
-            ],
-          }}
-          lastRunLabel="last night"
-          state="running"
-          onPause={() => undefined}
-          onEdit={() => undefined}
-          onSeeLog={() => undefined}
-        />
-      </section>
+      {paused.length ? (
+        <ManageSection title="Paused" tone="warn" note="Set up, but not running.">
+          {paused.map((p) => <ManageRow key={p.id} p={p} status="paused" impact={impactOf(p)} onOpen={() => onOpen(p.id)} />)}
+        </ManageSection>
+      ) : null}
 
-      {/* Composer — assignment rules + simulate-before-publish */}
-      <section style={{ display: "flex", flexDirection: "column", gap: "var(--s-3)" }}>
-        <header style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between" }}>
-          <h3 style={{ font: "var(--t-h3)", margin: 0 }}>Compose a trigger</h3>
-          <ConfTag basis="projection" detail="population preview" />
-        </header>
-        <AssignmentRuleEditor
-          mode={assignMode}
-          rules={rules}
-          onModeChange={setAssignMode}
-          onAddRule={() =>
-            setRules((r) => [...r, { when: "Plan", is: "Pro", to: "Account owner" }])
-          }
-          onRemoveRule={(i: number) => setRules((r) => r.filter((_, idx) => idx !== i))}
-        />
-        <Card padded>
-          <div style={{ display: "flex", flexDirection: "column", gap: "var(--s-2)" }}>
-            <div style={{ display: "flex", alignItems: "center", gap: "var(--s-2)" }}>
-              <Icon name="play" />
-              <span style={{ font: "var(--t-body)", fontWeight: 600 }}>
-                Simulate before publish
-              </span>
-              <Badge variant={simulate ? "pos" : "neutral"} dot>
-                {simulate ? "On" : "Off"}
-              </Badge>
-            </div>
-            <p style={{ font: "var(--t-body)", color: "var(--text-2, var(--text))", margin: 0 }}>
-              When on, publishing a new trigger runs a dry pass first. You see exactly
-              who would have matched in the last 30 days and what each action would
-              have done — nothing leaves GoCSM until you approve.
-            </p>
-            <div style={{ display: "flex", gap: "var(--s-2)", alignItems: "center" }}>
-              <Button variant="secondary" size="sm" icon={<Icon name="play" />}>
-                Run a dry pass
-              </Button>
-              <Button variant="primary" size="sm" disabled={!simulate}>
-                Publish trigger
-              </Button>
-            </div>
-          </div>
-        </Card>
-      </section>
+      {archived.length ? (
+        <ManageSection title="Archived" tone="muted" note="Removed from your active list — history kept. Restore anytime.">
+          {archived.map((p) => <ManageRow key={p.id} p={p} status="archived" impact={impactOf(p)} onOpen={() => onOpen(p.id)} />)}
+        </ManageSection>
+      ) : null}
     </div>
+  );
+}
+
+function ManageSection({ title, note, tone, children }: { title: string; note: string; tone: "pos" | "warn" | "muted"; children: React.ReactNode }) {
+  return (
+    <section className="mk-mine-sec">
+      <div className="mk-mine-head">
+        <h2 className={`mk-mine-title ${tone}`}>{title}</h2>
+        <span className="mk-mine-note">{note}</span>
+      </div>
+      <div className="mk-mine-rows">{children}</div>
+    </section>
+  );
+}
+
+function ManageRow({ p, status, impact, onOpen }: { p: Playbook; status: AutopilotStatus; impact: { count: number; mrr: number }; onOpen: () => void }) {
+  const meta =
+    status === "on"
+      ? <>Running on <Mono>{impact.count}</Mono> client{impact.count === 1 ? "" : "s"} · next run tonight</>
+      : status === "paused"
+        ? <>Paused · would run on <Mono>{impact.count}</Mono> account{impact.count === 1 ? "" : "s"}</>
+        : <>Archived · history kept</>;
+  return (
+    <Card padded className="mk-manage">
+      <span className="mk-card-ico" aria-hidden><Icon name={p.icon} /></span>
+      <div className="mk-manage-body">
+        <button type="button" className="mk-manage-name" onClick={onOpen}>{p.title}</button>
+        <span className="mk-manage-meta">{meta}</span>
+      </div>
+      <div className="mk-manage-actions">
+        {status === "on" ? (
+          <>
+            <Button variant="ghost" className="btn-accent" size="sm" icon={<Icon name="pencil" />} onClick={onOpen}>Edit</Button>
+            <Button variant="ghost" className="btn-accent" size="sm" icon={<Icon name="pause" />} onClick={() => { autopilotStore.pause(p.id); toast("Playbook paused", { description: `${p.title} stopped running. Resume anytime.` }); }}>Pause</Button>
+          </>
+        ) : status === "paused" ? (
+          <>
+            <Button variant="primary" size="sm" icon={<Icon name="zap" />} onClick={() => { autopilotStore.resume(p.id); toast.success("Playbook live again", { description: `${p.title} is running.` }); }}>Resume</Button>
+            <Button variant="ghost" className="btn-accent" size="sm" icon={<Icon name="archive" />} onClick={() => { autopilotStore.archive(p.id); toast("Archived", { description: `${p.title} moved to Archived. History kept.` }); }}>Archive</Button>
+          </>
+        ) : (
+          <Button variant="ghost" className="btn-accent" size="sm" icon={<Icon name="rotate-ccw" />} onClick={() => { autopilotStore.restore(p.id); toast("Restored", { description: `${p.title} is back in Paused — turn it on when ready.` }); }}>Restore</Button>
+        )}
+      </div>
+    </Card>
+  );
+}
+
+function DraftRow({ recipe, onResume }: { recipe: Recipe; onResume: () => void }) {
+  return (
+    <Card padded className="mk-manage">
+      <span className="mk-card-ico" aria-hidden><Icon name={recipe.icon} /></span>
+      <div className="mk-manage-body">
+        <button type="button" className="mk-manage-name" onClick={onResume}>{recipe.label}</button>
+        <span className="mk-manage-meta">Draft · {recipe.blurb}</span>
+      </div>
+      <div className="mk-manage-actions">
+        <Button variant="primary" size="sm" iconRight={<Icon name="arrow-right" />} onClick={onResume}>Resume setup</Button>
+        <Button variant="ghost" className="btn-accent" size="sm" icon={<Icon name="trash-2" />} onClick={() => { clearDraft(recipe.id); toast("Draft discarded", { description: `${recipe.label} setup removed.` }); }}>Discard</Button>
+      </div>
+    </Card>
   );
 }

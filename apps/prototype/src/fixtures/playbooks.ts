@@ -18,6 +18,27 @@ import {
 export type PlaybookState = "off" | "ranonce" | "on" | "paused";
 export type PlaybookKind = "save" | "retention" | "adoption" | "billing" | "onboarding" | "expansion";
 
+// Marketplace outcome taxonomy — 7 plain-language buckets the owner thinks in
+// (collapsed from the doc's 8 system categories). Used as a filter, not the front door.
+export type PlaybookCategory =
+  | "winback" | "reengage" | "adoption" | "revenue" | "onboard" | "grow" | "listen";
+export type PlaybookEffort = "ready" | "quick" | "custom";
+
+export const CATEGORIES: { id: PlaybookCategory; label: string; icon: string }[] = [
+  { id: "winback", label: "Win back at-risk", icon: "shield" },
+  { id: "reengage", label: "Re-engage quiet", icon: "log-in" },
+  { id: "adoption", label: "Drive adoption", icon: "trending-up" },
+  { id: "revenue", label: "Rescue revenue", icon: "credit-card" },
+  { id: "onboard", label: "Onboard faster", icon: "rocket" },
+  { id: "grow", label: "Grow & upsell", icon: "sparkles" },
+  { id: "listen", label: "Listen & celebrate", icon: "heart" },
+];
+export const EFFORT_LABEL: Record<PlaybookEffort, string> = {
+  ready: "Ready to go",
+  quick: "Quick setup",
+  custom: "Add your wording",
+};
+
 /** One reviewable action inside a playbook. Pre-written; edited in HighLevel. */
 export type PlaybookActionType = "customer-email" | "internal-email" | "slack" | "task";
 export interface PlaybookAction {
@@ -45,6 +66,14 @@ export interface Playbook {
   outcome: string;
   /** The pre-written actions the play runs — reviewable before handoff, edited in HighLevel. */
   actions: PlaybookAction[];
+  /** Marketplace outcome category (the 7-bucket plain-language taxonomy). */
+  category: PlaybookCategory;
+  /** Marketplace signals (prototype seed data — labeled as such in the UI). */
+  usedByAgencies: number;   // popularity: how many agencies run it
+  totalRuns: number;        // total runs across all customers
+  launchedDaysAgo: number;  // freshness; < 14 ⇒ "New this week"
+  trending: boolean;        // fastest-growing this week
+  effort: PlaybookEffort;   // readiness vocabulary
   /** Pure predicate against the unified fixtures. */
   match: (a: Account) => boolean;
   /** Short explainer video for this play (~1 min). Empty string until a real
@@ -148,9 +177,58 @@ const PLAY_ACTIONS: Record<string, PlaybookAction[]> = {
     { type: "internal-email", subject: "Expansion ready: {{account}}", preview: "Healthy and trending up. Good upsell and testimonial candidate." },
     { type: "task", preview: "Reach out about expansion, or ask for a testimonial." },
   ],
+  "pb-quiet-renewal": [
+    { type: "slack", preview: "{{account}} is quiet and renews soon — worth a personal check-in." },
+    { type: "customer-email", subject: "Checking in before your renewal", preview: "Hi {{name}}, you've been quiet lately and your renewal's coming up — here's a quick recap and a hand if you want it." },
+  ],
+  "pb-low-adoption": [
+    { type: "customer-email", subject: "A 2-minute setup that pays off", preview: "Hi {{name}}, there's a feature in your plan you haven't switched on yet — here's the two-minute setup." },
+    { type: "internal-email", subject: "Low adoption: {{account}}", preview: "Core features never set up. Nudge sent; offer to do it with them if no movement." },
+  ],
+  "pb-nps-detractor": [
+    { type: "internal-email", subject: "Unhappy feedback: {{account}}", preview: "Left negative feedback. Call personally before anything automated goes out." },
+    { type: "customer-email", subject: "I'd like to make this right", preview: "Hi {{name}}, thank you for the honest feedback — I'd like to make this right. Can we talk this week?" },
+  ],
+  "pb-nps-promoter": [
+    { type: "customer-email", subject: "Mind sharing a quick review?", preview: "Hi {{name}}, so glad it's working well — would you share a quick review? It genuinely helps." },
+  ],
+  "pb-milestone": [
+    { type: "customer-email", subject: "Congrats on the milestone!", preview: "Hi {{name}}, just wanted to say congrats — you hit a real milestone. Here's to the next one." },
+  ],
+  "pb-upsell-limit": [
+    { type: "internal-email", subject: "Near plan limit: {{account}}", preview: "Bumping the ceiling of their plan. Good moment for a value-led upgrade offer." },
+    { type: "customer-email", subject: "You're outgrowing your plan — in a good way", preview: "Hi {{name}}, you're hitting the limits of your current plan. Here's what the next tier unlocks." },
+  ],
 };
 
-type PlaybookSeed = Omit<Playbook, "videoUrl" | "actions">;
+type PlaybookSeed = Omit<
+  Playbook,
+  "videoUrl" | "actions" | "category" | "usedByAgencies" | "totalRuns" | "launchedDaysAgo" | "trending" | "effort"
+>;
+
+// Marketplace metadata, merged into the catalog below. Prototype seed numbers —
+// the UI labels them as community/aggregate signals, never invents precision.
+const PLAY_META: Record<
+  string,
+  { category: PlaybookCategory; usedByAgencies: number; totalRuns: number; launchedDaysAgo: number; trending?: boolean; effort?: PlaybookEffort }
+> = {
+  "pb-no-login":           { category: "reengage", usedByAgencies: 2400, totalRuns: 51200, launchedDaysAgo: 210, effort: "ready" },
+  "pb-renewal-save":       { category: "winback",  usedByAgencies: 1980, totalRuns: 38400, launchedDaysAgo: 180, trending: true, effort: "ready" },
+  "pb-payment-failed":     { category: "revenue",  usedByAgencies: 3100, totalRuns: 72500, launchedDaysAgo: 240, effort: "ready" },
+  "pb-plan-downgrade":     { category: "winback",  usedByAgencies: 860,  totalRuns: 12300, launchedDaysAgo: 95,  effort: "quick" },
+  "pb-feature-drop":       { category: "adoption", usedByAgencies: 1450, totalRuns: 26800, launchedDaysAgo: 130, effort: "ready" },
+  "pb-onboarding-stalled": { category: "onboard",  usedByAgencies: 2100, totalRuns: 44100, launchedDaysAgo: 160, effort: "ready" },
+  "pb-save-domain":        { category: "winback",  usedByAgencies: 540,  totalRuns: 6900,  launchedDaysAgo: 70,  effort: "ready" },
+  "pb-save-integration":   { category: "winback",  usedByAgencies: 470,  totalRuns: 5400,  launchedDaysAgo: 64,  effort: "ready" },
+  "pb-save-a2p":           { category: "winback",  usedByAgencies: 390,  totalRuns: 4200,  launchedDaysAgo: 58,  effort: "quick" },
+  "pb-expansion-ready":    { category: "grow",     usedByAgencies: 1230, totalRuns: 19800, launchedDaysAgo: 110, trending: true, effort: "ready" },
+  "pb-quiet-renewal":      { category: "winback",  usedByAgencies: 320,  totalRuns: 2100,  launchedDaysAgo: 5,   trending: true, effort: "ready" },
+  "pb-low-adoption":       { category: "adoption", usedByAgencies: 410,  totalRuns: 3300,  launchedDaysAgo: 9,   effort: "quick" },
+  "pb-nps-detractor":      { category: "listen",   usedByAgencies: 760,  totalRuns: 9100,  launchedDaysAgo: 30,  effort: "ready" },
+  "pb-nps-promoter":       { category: "listen",   usedByAgencies: 1120, totalRuns: 15600, launchedDaysAgo: 12,  trending: true, effort: "ready" },
+  "pb-milestone":          { category: "listen",   usedByAgencies: 280,  totalRuns: 1800,  launchedDaysAgo: 3,   effort: "ready" },
+  "pb-upsell-limit":       { category: "grow",     usedByAgencies: 690,  totalRuns: 7400,  launchedDaysAgo: 18,  effort: "quick" },
+};
 
 const playbookSeeds: PlaybookSeed[] = [
   // ----- Retention / lifecycle -----
@@ -241,7 +319,7 @@ const playbookSeeds: PlaybookSeed[] = [
   {
     id: "pb-save-domain",
     title: "Website disconnected — win them back",
-    subtitle: "Save play · key setup lost",
+    subtitle: "Win-back · key setup lost",
     icon: "globe",
     state: "on",
     kind: "save",
@@ -253,7 +331,7 @@ const playbookSeeds: PlaybookSeed[] = [
   {
     id: "pb-save-integration",
     title: "Key integration removed",
-    subtitle: "Save play · key setup lost",
+    subtitle: "Win-back · key setup lost",
     icon: "plug",
     state: "ranonce",
     kind: "save",
@@ -265,7 +343,7 @@ const playbookSeeds: PlaybookSeed[] = [
   {
     id: "pb-save-a2p",
     title: "Texting registration lost — win them back",
-    subtitle: "Save play · key setup lost",
+    subtitle: "Win-back · key setup lost",
     icon: "message-square-x",
     state: "off",
     kind: "save",
@@ -291,13 +369,114 @@ const playbookSeeds: PlaybookSeed[] = [
       a.lifecycle.stage === "established" &&
       a.health.band === "thriving",
   },
+
+  // ----- Newer marketplace additions (populate categories + curated rows) -----
+  {
+    id: "pb-quiet-renewal",
+    title: "Quiet account, renewal close",
+    subtitle: "Reach quiet owners before they lapse",
+    icon: "calendar-clock",
+    state: "off",
+    kind: "retention",
+    problem: "Hasn't logged in lately and renews within 45 days.",
+    does: "Alerts your team and sends a warm, value-led check-in ahead of renewal.",
+    outcome: "Re-open the relationship before the renewal decision.",
+    match: (a) =>
+      a.status.enabled === "Enabled" &&
+      a.login.lastLoginDaysAgo >= 14 &&
+      (() => {
+        const d = daysUntil(a.revenue.renewalDate);
+        return d >= 0 && d <= 45;
+      })(),
+  },
+  {
+    id: "pb-low-adoption",
+    title: "Key feature never set up",
+    subtitle: "Turn shelfware into habit",
+    icon: "trending-up",
+    state: "off",
+    kind: "adoption",
+    problem: "Paying, but two or more core features were never switched on.",
+    does: "Sends a two-minute setup nudge and offers a hand if there's no movement.",
+    outcome: "Get the value they're paying for switched on.",
+    match: (a) => a.adoption.underutilizedFeatures.length >= 2,
+  },
+  {
+    id: "pb-nps-detractor",
+    title: "Unhappy feedback — make it right",
+    subtitle: "Catch a detractor before they leave",
+    icon: "frown",
+    state: "off",
+    kind: "retention",
+    problem: "Left low or negative feedback recently.",
+    does: "Alerts you to call personally and drafts a make-it-right note for your OK.",
+    outcome: "Turn a bad moment into a saved relationship.",
+    match: () => false,
+  },
+  {
+    id: "pb-nps-promoter",
+    title: "Happy customer — ask for a review",
+    subtitle: "Turn a fan into proof",
+    icon: "star",
+    state: "off",
+    kind: "expansion",
+    problem: "Healthy, established, and clearly happy.",
+    does: "Sends a friendly review/testimonial ask once they're past a good moment.",
+    outcome: "Turn momentum into social proof.",
+    match: (a) =>
+      a.status.enabled === "Enabled" &&
+      a.lifecycle.stage === "established" &&
+      a.health.band === "thriving",
+  },
+  {
+    id: "pb-milestone",
+    title: "Celebrate a milestone",
+    subtitle: "Mark the wins that build loyalty",
+    icon: "award",
+    state: "off",
+    kind: "expansion",
+    problem: "Hit a meaningful milestone (anniversary, usage high, first result).",
+    does: "Sends a warm, on-brand congrats — no ask attached.",
+    outcome: "Deepen loyalty by noticing the good moments.",
+    match: () => false,
+  },
+  {
+    id: "pb-upsell-limit",
+    title: "Hitting plan limits",
+    subtitle: "Offer the upgrade at the right moment",
+    icon: "arrow-up-circle",
+    state: "off",
+    kind: "expansion",
+    problem: "Bumping against the ceiling of their current plan.",
+    does: "Flags the moment and offers a frictionless upgrade with the value spelled out.",
+    outcome: "Expand revenue exactly when the need is real.",
+    match: () => false,
+  },
 ];
 
-export const playbooks: Playbook[] = playbookSeeds.map((p) => ({
-  ...p,
-  videoUrl: PLAY_VIDEOS[p.id] ?? PLACEHOLDER_VIDEO,
-  actions: PLAY_ACTIONS[p.id] ?? [],
-}));
+const DEFAULT_META = {
+  category: "winback" as PlaybookCategory,
+  usedByAgencies: 0,
+  totalRuns: 0,
+  launchedDaysAgo: 999,
+  trending: false,
+  effort: "ready" as PlaybookEffort,
+};
+
+export const playbooks: Playbook[] = playbookSeeds.map((p) => {
+  const m = PLAY_META[p.id] ?? DEFAULT_META;
+  return {
+    ...p,
+    category: m.category,
+    usedByAgencies: m.usedByAgencies,
+    totalRuns: m.totalRuns,
+    launchedDaysAgo: m.launchedDaysAgo,
+    trending: m.trending ?? false,
+    effort: m.effort ?? "ready",
+    videoUrl: PLAY_VIDEOS[p.id] ?? PLACEHOLDER_VIDEO,
+    actions: PLAY_ACTIONS[p.id] ?? [],
+  };
+});
 
 // ----- Selectors -----
 
@@ -308,3 +487,16 @@ export const matchCount = (p: Playbook): number => matchesToday(p).length;
 
 export const playbookById = (id: string): Playbook | undefined =>
   playbooks.find((p) => p.id === id);
+
+/** Live impact for a playbook: matching accounts today + their MRR (the "$ it can
+ *  address if enabled" the marketplace surfaces). */
+export const playbookImpact = (p: Playbook): { count: number; mrr: number } => {
+  const accts = matchesToday(p);
+  return { count: accts.length, mrr: accts.reduce((s, a) => s + (a.revenue?.mrr ?? 0), 0) };
+};
+
+export const categoryLabel = (c: PlaybookCategory): string =>
+  CATEGORIES.find((x) => x.id === c)?.label ?? c;
+
+export const NEW_WINDOW_DAYS = 14;
+export const isNewPlaybook = (p: Playbook): boolean => p.launchedDaysAgo <= NEW_WINDOW_DAYS;

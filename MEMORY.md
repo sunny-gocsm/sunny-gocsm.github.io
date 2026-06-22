@@ -5,6 +5,50 @@ Durable, human- and agent-readable log of significant decisions and changes.
 
 ---
 
+## 2026-06-23 — Playbooks page reimagined as a template MARKETPLACE
+Full design-loop redesign of `/playbooks` (the main product surface — weekly new
+releases). 5 blind research dossiers (template/app marketplaces, CS playbook libraries,
+install-lifecycle+delete, AI-readiness, + code map) → CPDO brief
+(`docs/design/cpdo-brief-playbooks-marketplace.md`) → build → 5-persona review panel.
+
+- **3 decisions (Karthik):** (1) **Delete → Archive, not delete** — live/ever-run
+  playbooks Pause/Unpublish → Archive (soft, recoverable, history kept); drafts Discard.
+  No hard delete of anything that touched client accounts (research-backed: Salesforce/
+  GitHub/HubSpot/app-stores all gate or omit it). (2) **Two tabs: Marketplace / Your
+  playbooks** (app-store Browse vs Installed; status shown on catalog cards). (3) **Home
+  = curated rows + 7-category filter** (not a category grid, not one flat list).
+- **Marketplace tab:** an **"AI pick for you"** hero ranked by the agency's OWN at-risk $
+  ("works on $X at risk across N accounts" + a plain "why this pick" line) — the single
+  filled-blue focal action on the screen. Then curated rows **Most used · New this week ·
+  Quick wins**, deduped so each playbook headlines one row. A single-row 7-category filter
+  + result-first keyword search. **Cards are quiet click targets** (no per-card filled
+  button — only the hero is loud; brief + persona panel both demanded this): outcome title
+  → social proof ("2.4k agencies · 51k runs", the in-product differentiator no competitor
+  ships) → labeled "$X at risk in N accounts now" only where real → quiet "Set up → / Manage
+  → / Resume →". **Status lives on the card** (Live ✓ self-receding).
+- **Your playbooks tab:** Live · Drafts · Paused · Archived, each with manage actions
+  (Edit, Pause, Resume, Archive, Restore, Discard draft, Create from scratch).
+- **Lifecycle vocab unified** (copy review): dropped "autopilot" and "Unpublish" → one
+  model **Set up → Live → Pause → Resume → Archive → Restore**. De-jargoned the detail
+  page ("dunning"→"payment retry reminders", "watches"/"armed" softened); effort labels
+  "Ready to go / Quick setup / Add your wording".
+- **AI dosage:** one explained, deterministic "AI pick" (it's *your* numbers, with a why-
+  line); search is honest keyword ("Search playbooks — churn, onboarding, renewals…"), not
+  fake NL. Generation (AI-draft-from-scratch) and a chatbot deliberately deferred/skipped.
+- **Triggers tab REMOVED** — a playbook's trigger is just its "who it runs on."
+- **Data/state:** enriched `playbooks.ts` with the 7-category taxonomy + marketplace
+  signals (usedByAgencies, totalRuns, launchedDaysAgo, trending, effort) + 6 new playbooks
+  (16 total; seed numbers, labeled as such). `autopilot.ts` gained `archived` + archive/
+  restore + **localStorage persistence**. "Create from scratch" / draft-resume reuse the
+  existing setup wizard.
+- **Notable bug fixed in review:** horizontal-scroll rails collapsed (overflow:auto forced
+  the cross-axis indefinite → cards blew to 100vh). Root cause is the flex/grid-scroll
+  interaction; switched curated rows to capped wrapping `.mk-grid` (the proven no-overflow
+  pattern). Verified mobile + desktop.
+- **Files:** `apps/prototype/src/pages/PlaybooksPage.tsx` (rewritten), `.../PlaybookDetailPage.tsx`,
+  `.../fixtures/playbooks.ts`, `.../state/autopilot.ts`, `.../app-overrides.css` (`mk-*`/`pbd-*`),
+  + brief `docs/design/cpdo-brief-playbooks-marketplace.md`. `bun run build` green (DS → prototype → web).
+
 ## 2026-06-23 — Attention page + playbook setup flow: naming, audit, bug fixes
 Two rounds of feedback on `/today` (the attention page) and the playbook setup wizard
 (`AttentionActivation`). Research-backed (3 parallel agents: naming/titles, wizard

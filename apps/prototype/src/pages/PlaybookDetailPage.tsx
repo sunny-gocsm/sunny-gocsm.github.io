@@ -12,13 +12,19 @@ import {
 } from "@gocsm/design-system";
 import { AttentionActivation } from "@/components/attention/AttentionActivation";
 import { recipeForPlaybook, type Recipe } from "@/fixtures/recipes";
-import { useAutopilotStatus } from "@/state/autopilot";
+import { autopilotStore, useAutopilotStatus } from "@/state/autopilot";
+import { toast } from "sonner";
 import {
   playbookById,
   matchesToday,
+  EFFORT_LABEL,
   type Playbook,
   type PlaybookState,
 } from "@/fixtures/playbooks";
+
+const fmtMoney = (n: number) => "$" + Math.round(n).toLocaleString();
+const fmtCompact = (n: number) =>
+  n >= 1000 ? (n / 1000).toFixed(n >= 10000 ? 0 : 1).replace(/\.0$/, "") + "k" : String(n);
 
 interface SeedAction {
   icon: string;
@@ -38,7 +44,7 @@ function actionsFor(p: Playbook): SeedAction[] {
       ];
     case "billing":
       return [
-        { icon: "credit-card", title: "Run dunning sequence", desc: "Standard retry cadence (3 attempts).", supervised: false, on: true },
+        { icon: "credit-card", title: "Send payment retry reminders", desc: "Retries the charge up to 3 times and reminds them to update their card.", supervised: false, on: true },
         { icon: "bell", title: "Flag the owner", desc: "Surface in Today with the failed-payment cohort.", supervised: false, on: true },
         { icon: "mail", title: "Drafted note to the customer", desc: "Polite reminder — needs your OK before it sends.", supervised: true, on: true },
       ];
@@ -84,7 +90,7 @@ export default function PlaybookDetailPage() {
         <h1 style={{ fontSize: "var(--t-display-lg)", fontWeight: 700, margin: 0 }}>Playbook not found</h1>
         <div style={{ marginTop: "var(--s-3)" }}>
           <Button variant="secondary" size="sm" onClick={() => navigate("/playbooks")}>
-            Back to Library
+            Back to Playbooks
           </Button>
         </div>
       </main>
@@ -92,6 +98,7 @@ export default function PlaybookDetailPage() {
   }
 
   const matches = matchesToday(playbook);
+  const impactMrr = matches.reduce((s, a) => s + (a.revenue?.mrr ?? 0), 0);
   const isOn = status === "on";
   const playbookState: PlaybookState = isOn ? "on" : "off";
   const baseRecipe = recipeForPlaybook(playbook.id);
@@ -108,32 +115,32 @@ export default function PlaybookDetailPage() {
     save: {
       summary: `A sticky setup was reversed — ${playbook.title.toLowerCase()}.`,
       cadence: "Checks every 15 minutes.",
-      via: "Runs as a workflow watch.",
+      via: "Runs automatically in the background.",
     },
     billing: {
       summary: "A payment failed or was declined.",
       cadence: "Checks on each billing event.",
-      via: "Runs as a workflow watch.",
+      via: "Runs automatically in the background.",
     },
     onboarding: {
       summary: "The account has been on the same setup step past its SLA.",
       cadence: "Checks daily.",
-      via: "Runs as a workflow watch.",
+      via: "Runs automatically in the background.",
     },
     adoption: {
       summary: "Core-feature usage has fallen sharply in the last month.",
       cadence: "Checks nightly.",
-      via: "Runs as an AI watch.",
+      via: "Runs automatically in the background.",
     },
     expansion: {
       summary: "Established account, thriving health, and a fresh positive signal.",
       cadence: "Checks weekly.",
-      via: "Runs as an AI watch.",
+      via: "Runs automatically in the background.",
     },
     retention: {
       summary: "The owner hasn't logged in for 21+ days.",
       cadence: "Checks nightly.",
-      via: "Runs as a workflow watch.",
+      via: "Runs automatically in the background.",
     },
   }[playbook.kind];
 
@@ -165,34 +172,48 @@ export default function PlaybookDetailPage() {
         <Icon name="arrow-left" /> All playbooks
       </Link>
 
-      {/* Hero — the single source of identity + the one focal action */}
+      {/* Hero — identity + impact/social-proof + the one focal action + lifecycle */}
       <header style={{ display: "flex", alignItems: "flex-start", gap: "var(--s-4)", flexWrap: "wrap" }}>
         <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: "var(--s-2)", minWidth: 280 }}>
           <div style={{ display: "flex", alignItems: "center", gap: "var(--s-3)", flexWrap: "wrap" }}>
             <h1 style={{ fontSize: "var(--t-display-lg)", fontWeight: 700, lineHeight: 1.15, margin: 0 }}>
               {playbook.title}
             </h1>
-            <Badge variant={isOn ? "pos" : "neutral"} dot>
-              {isOn ? "On · autopilot" : "Off"}
-            </Badge>
+            {status === "on" ? <Badge variant="pos" dot>Live</Badge>
+              : status === "paused" ? <Badge variant="warn" dot>Paused</Badge>
+              : status === "archived" ? <Badge variant="neutral" dot>Archived</Badge>
+              : <Badge variant="neutral" dot={false}>Available</Badge>}
           </div>
           <p style={{ fontSize: "var(--t-body-lg)", color: "var(--text-2, var(--text))", margin: 0 }}>
             {playbook.subtitle}
           </p>
+          <div className="pbd-signals">
+            {matches.length > 0 ? (
+              <span className="pbd-signal"><Icon name="users" /> <span className="at-risk"><Mono>{fmtMoney(impactMrr)}</Mono></span>&nbsp;across <Mono>{matches.length}</Mono> account{matches.length === 1 ? "" : "s"} today</span>
+            ) : null}
+            <span className="pbd-signal"><Icon name="bar-chart-2" /> {fmtCompact(playbook.usedByAgencies)} agencies · {fmtCompact(playbook.totalRuns)} runs</span>
+            <span className="pbd-signal"><Icon name="zap" /> {EFFORT_LABEL[playbook.effort]}</span>
+          </div>
         </div>
-        <div className="pbd-hero__cta" style={{ display: "flex", flexDirection: "column", gap: "var(--s-1)" }}>
-          <Button variant="primary" onClick={() => setSetupOpen(true)}>
-            {isOn ? "Manage playbook" : "Set up playbook"}
-          </Button>
-          <span style={{ fontSize: "var(--t-caption)", color: "var(--text-3, var(--text))" }}>
-            {matches.length === 0 ? (
-              "Nothing matches today"
-            ) : (
-              <>
-                <Mono>{matches.length}</Mono> account{matches.length === 1 ? "" : "s"} match today
-              </>
-            )}
-          </span>
+        <div className="pbd-hero__cta" style={{ display: "flex", flexDirection: "column", gap: "var(--s-2)" }}>
+          {status === "on" ? (
+            <>
+              <Button variant="primary" onClick={() => setSetupOpen(true)}>Manage playbook</Button>
+              <div style={{ display: "flex", gap: "var(--s-2)", justifyContent: "flex-end" }}>
+                <Button variant="ghost" className="btn-accent" size="sm" icon={<Icon name="pause" />} onClick={() => { autopilotStore.pause(playbook.id); toast("Playbook paused", { description: "Stopped running. Resume anytime." }); }}>Pause</Button>
+                <Button variant="ghost" className="btn-accent" size="sm" icon={<Icon name="archive" />} onClick={() => { autopilotStore.archive(playbook.id); toast("Archived", { description: "Moved to Archived. History kept." }); }}>Archive</Button>
+              </div>
+            </>
+          ) : status === "paused" ? (
+            <>
+              <Button variant="primary" icon={<Icon name="zap" />} onClick={() => { autopilotStore.resume(playbook.id); toast.success("Playbook live again", { description: `${playbook.title} is running.` }); }}>Resume</Button>
+              <Button variant="ghost" className="btn-accent" size="sm" icon={<Icon name="archive" />} onClick={() => { autopilotStore.archive(playbook.id); toast("Archived", { description: "History kept." }); }}>Archive</Button>
+            </>
+          ) : status === "archived" ? (
+            <Button variant="primary" icon={<Icon name="rotate-ccw" />} onClick={() => { autopilotStore.restore(playbook.id); toast("Restored", { description: "Back in Paused — turn it on when ready." }); }}>Restore</Button>
+          ) : (
+            <Button variant="primary" onClick={() => setSetupOpen(true)}>Set up playbook</Button>
+          )}
         </div>
       </header>
 
@@ -230,7 +251,7 @@ export default function PlaybookDetailPage() {
         {matches.length === 0 ? (
           <Card padded>
             <span style={{ fontSize: "var(--t-body-lg)", color: "var(--pos-7)" }}>
-              ✓ Nothing matches today — this play is armed and watching.
+              Nothing matches today — it's on and watching for it.
             </span>
           </Card>
         ) : (
