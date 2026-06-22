@@ -1,0 +1,16 @@
+{
+  "name": "gocsm",
+  "private": true,
+  "type": "module",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev": "bun --filter '@gocsm/prototype' dev",
+    "build": "bun --filter '@gocsm/design-system' build && bun --filter '@gocsm/prototype' build",
+    "build:ds": "bun --filter '@gocsm/design-system' build",
+    "build:app": "bun --filter '@gocsm/prototype' build",
+    "lint": "bun --filter '*' lint"
+  }
+}

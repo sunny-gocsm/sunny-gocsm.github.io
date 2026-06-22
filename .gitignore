@@ -1,0 +1,22 @@
+# dependencies
+node_modules/
+
+# build output
+dist/
+dist */
+
+# logs
+*.log
+npm-debug.log*
+
+# editor / OS
+.DS_Store
+.idea/
+.vscode/
+
+# misc Finder-duplicate cruft
+* [0-9]/
+
+# per-package lockfiles (root bun.lock is the single source of truth)
+**/package-lock.json
+**/bun.lockb
