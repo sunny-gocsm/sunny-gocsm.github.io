@@ -12,7 +12,7 @@ import {
   MetricCard,
   HealthTile,
   TeamPulseStrip,
-} from "@/gocsm-ds";
+} from "@gocsm/design-system";
 import {
   allAccounts,
   byUrgency,

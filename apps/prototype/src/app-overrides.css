@@ -1,6 +1,9 @@
 /* app-overrides.css — app-level polish layered on top of the GoCSM design system.
-   Sync-proof: sync-ds.sh regenerates gocsm-ds-overrides.css (rem-base only) and
-   never touches this file. MUST be imported LAST, after gocsm-ds-overrides.css. */
+   Imported LAST in src/main.tsx, after @gocsm/design-system/styles.css. */
+
+/* rem-base: the DS stylesheet sets html font-size:14px, which rescales Tailwind/shadcn
+   rem units. Restore 16px here. Folded in from the former gocsm-ds-overrides.css. */
+html { font-size: 16px; }
 
 /* Canvas: the outermost background is the DS canvas token (--bg) so that
    neutral cards (var(--surface)) visibly lift off the page. We don't restyle

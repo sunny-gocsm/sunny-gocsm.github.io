@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { Badge, Card, DataTable, MetricCard, Mono, Tabs, ConfTag, Icon } from "@/gocsm-ds";
+import { Badge, Card, DataTable, MetricCard, Mono, Tabs, ConfTag, Icon } from "@gocsm/design-system";
 import type { Account, AdoptionFeature, AssetType } from "@/fixtures";
 
 const ALL_ASSET_TYPES: AssetType[] = [

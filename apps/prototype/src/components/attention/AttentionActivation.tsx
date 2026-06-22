@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Button, Icon, Mono, Stepper, Toggle, Checkbox, Badge, VideoCard, AccountRow } from "@/gocsm-ds";
+import { Button, Icon, Mono, Stepper, Toggle, Checkbox, Badge, VideoCard, AccountRow } from "@gocsm/design-system";
 import { CriteriaBuilder } from "./CriteriaBuilder";
 import { autopilotStore } from "@/state/autopilot";
 import { saveDraft, loadDraft, clearDraft } from "@/state/workflowDrafts";

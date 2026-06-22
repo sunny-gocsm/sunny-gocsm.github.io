@@ -33,7 +33,7 @@ import {
   MetricCard,
   Mono,
   Tabs,
-} from "@/gocsm-ds";
+} from "@gocsm/design-system";
 import { PageRibbon } from "@/components/PageRibbon";
 import {
   agencyRollup,

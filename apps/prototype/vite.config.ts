@@ -16,6 +16,8 @@ export default defineConfig(({ mode }) => ({
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),
+      // Consume the design system from source (workspace package) — full HMR, no build step.
+      "@gocsm/design-system": path.resolve(__dirname, "../../packages/design-system/src"),
     },
   },
 }));

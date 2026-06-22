@@ -31,7 +31,7 @@ import {
   MetricCard,
   Mono,
   Tabs,
-} from "@/gocsm-ds";
+} from "@gocsm/design-system";
 import {
   allAccounts,
   daysSince,

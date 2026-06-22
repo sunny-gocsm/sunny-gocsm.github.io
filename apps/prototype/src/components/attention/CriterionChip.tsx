@@ -1,4 +1,4 @@
-import { FilterChip } from "@/gocsm-ds";
+import { FilterChip } from "@gocsm/design-system";
 import {
   fieldById,
   opsFor,

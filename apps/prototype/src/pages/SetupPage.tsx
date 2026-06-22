@@ -13,7 +13,7 @@ import {
   OnboardingStep,
   QueueRow,
   ScoreRing,
-} from "@/gocsm-ds";
+} from "@gocsm/design-system";
 import { allAccounts, atRiskByUrgency, bandLabel, daysUntil } from "@/fixtures";
 
 type StepKey = "install" | "select" | "tracking" | "sync" | "prioritize" | "activate" | "hero";

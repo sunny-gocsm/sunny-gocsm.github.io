@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Mono, Icon, ConfTag, StackedBar, AccountRow } from "@/gocsm-ds";
+import { Mono, Icon, ConfTag, StackedBar, AccountRow } from "@gocsm/design-system";
 import { allAccounts } from "@/fixtures";
 import {
   matchAccounts,

@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { ActivityLog, Badge } from "@/gocsm-ds";
+import { ActivityLog, Badge } from "@gocsm/design-system";
 import { activityLog, type ActivityMode } from "./briefing.fixtures";
 
 const MODE_LABEL: Record<ActivityMode, string> = {

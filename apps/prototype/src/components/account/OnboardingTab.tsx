@@ -8,7 +8,7 @@ import {
   OnboardingStep,
   StageProgress,
   ConfTag,
-} from "@/gocsm-ds";
+} from "@gocsm/design-system";
 import type { Account, AccountOnboarding } from "@/fixtures";
 
 // The standard 8-step journey shape. Real per-step states are derived from

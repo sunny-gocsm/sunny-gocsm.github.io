@@ -4,7 +4,7 @@
 // - Non-blocking: clicking outside or the close button dismisses it.
 
 import { useState } from "react";
-import { Button, Icon } from "@/gocsm-ds";
+import { Button, Icon } from "@gocsm/design-system";
 import type { Playbook } from "@/fixtures/playbooks";
 
 interface Props {

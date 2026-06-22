@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Button, Icon, Card, PromptField } from "@/gocsm-ds";
+import { Button, Icon, Card, PromptField } from "@gocsm/design-system";
 import { MatchWall } from "./MatchWall";
 import { CriterionChip, makeCriterion } from "./CriterionChip";
 import { RECIPES, type Recipe } from "@/fixtures/recipes";

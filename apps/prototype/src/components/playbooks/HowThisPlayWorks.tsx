@@ -1,4 +1,4 @@
-import { Button, Icon } from "@/gocsm-ds";
+import { Button, Icon } from "@gocsm/design-system";
 import type { Playbook } from "@/fixtures/playbooks";
 
 const ACTION_META: Record<string, { label: string; icon: string }> = {

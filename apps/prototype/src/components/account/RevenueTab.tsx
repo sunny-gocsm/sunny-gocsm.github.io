@@ -10,7 +10,7 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
-import { Badge, Card, DataTable, Delta, MetricCard, Mono, ConfTag, Icon } from "@/gocsm-ds";
+import { Badge, Card, DataTable, Delta, MetricCard, Mono, ConfTag, Icon } from "@gocsm/design-system";
 import type { Account, PaymentAttempt, PlanChange } from "@/fixtures";
 import { daysUntil } from "@/fixtures";
 const fmtDate = (iso: string) => new Date(iso).toLocaleDateString(undefined,{month:"short",day:"numeric"});

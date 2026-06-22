@@ -1,5 +1,5 @@
 import { Outlet, useLocation, useNavigate } from "react-router-dom";
-import { AppShell, Rail } from "@/gocsm-ds";
+import { AppShell, Rail } from "@gocsm/design-system";
 
 const GROUPS = [
   {

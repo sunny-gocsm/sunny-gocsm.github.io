@@ -17,7 +17,7 @@ import {
   Tabs,
   TeamPulseStrip,
   Toggle,
-} from "@/gocsm-ds";
+} from "@gocsm/design-system";
 import { allAccounts, type Account } from "@/fixtures";
 
 type Weight = "high" | "med" | "low" | "off";

@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Card, Button, Icon, Mono, Badge, FixItCard, ConfTag } from "@/gocsm-ds";
+import { Card, Button, Icon, Mono, Badge, FixItCard, ConfTag } from "@gocsm/design-system";
 import { useIsAutopilot } from "@/state/autopilot";
 import { hasDraft } from "@/state/workflowDrafts";
 import { AttentionActivation } from "@/components/attention/AttentionActivation";

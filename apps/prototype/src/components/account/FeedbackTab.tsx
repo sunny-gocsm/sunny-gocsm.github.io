@@ -8,7 +8,7 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
-import { Badge, Card, MetricCard, Mono, ConfTag, Icon } from "@/gocsm-ds";
+import { Badge, Card, MetricCard, Mono, ConfTag, Icon } from "@gocsm/design-system";
 import type { Account, FeedbackResponse } from "@/fixtures";
 const fmtDate = (iso: string) => new Date(iso).toLocaleDateString(undefined,{month:"short",day:"numeric"});
 

@@ -12,7 +12,7 @@ import {
   ConfTag,
   HealthScoreEvidence,
   MethodologyExplainer,
-} from "@/gocsm-ds";
+} from "@gocsm/design-system";
 import type { Account, HealthBand } from "@/fixtures";
 
 type PillarKey = "productAdoption" | "revenue" | "login" | "sentiment";

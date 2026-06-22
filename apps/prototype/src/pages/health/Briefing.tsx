@@ -26,7 +26,7 @@ import {
   ExecChip,
   Tabs,
   DraftReviewSheet,
-} from "@/gocsm-ds";
+} from "@gocsm/design-system";
 import {
   ResponsiveContainer,
   AreaChart,

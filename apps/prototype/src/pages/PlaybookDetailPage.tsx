@@ -9,7 +9,7 @@ import {
   PlaybookDetail,
   ConfTag,
   AccountRow,
-} from "@/gocsm-ds";
+} from "@gocsm/design-system";
 import { AttentionActivation } from "@/components/attention/AttentionActivation";
 import { recipeForPlaybook, type Recipe } from "@/fixtures/recipes";
 import { useAutopilotStatus } from "@/state/autopilot";

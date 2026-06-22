@@ -31,7 +31,7 @@ import {
   QueueRow,
   Tabs,
   Toggle,
-} from "@/gocsm-ds";
+} from "@gocsm/design-system";
 import {
   allAccounts,
   stalledByImpact,

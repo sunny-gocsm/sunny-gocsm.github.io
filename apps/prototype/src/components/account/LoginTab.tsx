@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { Badge, DataTable, MetricCard, Mono, ConfTag, Icon } from "@/gocsm-ds";
+import { Badge, DataTable, MetricCard, Mono, ConfTag, Icon } from "@gocsm/design-system";
 import type { Account, LoginUser, ActivityStatus } from "@/fixtures";
 import { daysSince, TODAY } from "@/fixtures";
 

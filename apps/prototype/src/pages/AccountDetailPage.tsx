@@ -12,7 +12,7 @@ import {
   LiveStatus,
   Verdict,
   ActivityLog,
-} from "@/gocsm-ds";
+} from "@gocsm/design-system";
 
 import {
   accountById,
