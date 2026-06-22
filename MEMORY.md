@@ -5,6 +5,21 @@ Durable, human- and agent-readable log of significant decisions and changes.
 
 ---
 
+## 2026-06-23 — Fixed health-badge wrap + widened criteria preview pane
+- **Symptom (trigger setup, step 1 "Who it runs on"):** in the right live-preview
+  pane, the `At-Risk` health pill wrapped to two lines ("At-/Risk") and squeezed the
+  account name so it truncated hard ("Organize Your Onlin…").
+- **Root cause was the DS, not the app:** `.health-badge` (the *sole* band renderer,
+  `packages/design-system/src/styles/components.css`) had no `white-space`/`flex-shrink`,
+  so in the tight `.account-row` flex it wrapped and got squeezed. Fixed at the source —
+  added `white-space:nowrap; flex-shrink:0;` so a status pill can never wrap/shrink in
+  ANY consumer.
+- **Layout (the app side, per Karthik's call):** the full-page builder had spare
+  horizontal gutters, so widened the preview pane (`.cb-grid` right col `380px→460px`)
+  and the page (`.aa-body-inner` `1180px→1320px`) in `apps/prototype/src/app-overrides.css`.
+- **Verified live** (Playwright, 9-match case): 0/9 badges wrapped, 0/9 names truncated;
+  `bun run build` green (DS→prototype→web). DS + app landed in one commit.
+
 ## 2026-06-22 — Created GoCSM signal knowledge base + playbook marketplace vision
 - Built `apps/prototype/docs/design/gocsm-signal-knowledge-base.md` — the complete
   internal reference: MongoDB `prod_v2` collections, ClickHouse `prod` tables (both
