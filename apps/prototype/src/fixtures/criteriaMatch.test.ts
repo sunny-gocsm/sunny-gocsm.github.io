@@ -13,13 +13,14 @@ describe("criteria matching engine", () => {
 
   it("describeSet renders plain English for each recipe", () => {
     for (const r of RECIPES) {
-      expect(describeSet(r.set).toLowerCase()).toContain("accounts with");
+      expect(describeSet(r.set).toLowerCase()).toContain("accounts where");
     }
   });
 
   it("candidateDelta is ≤ 0 when narrowing an existing set (AND match)", () => {
-    const base = RECIPES.find((r) => r.id === "rec-renew-risk")!;
-    const single = { ...base.set, criteria: base.set.criteria.slice(0, 1) };
+    const base = RECIPES.find((r) => r.id === "rec-atrisk-renewing")!;
+    // single-condition set (flat path: nodes derive from criteria)
+    const single = { match: "all" as const, criteria: base.set.criteria.slice(0, 1) };
     const delta = candidateDelta(single, base.set.criteria[1]);
     expect(delta).toBeLessThanOrEqual(0);
   });

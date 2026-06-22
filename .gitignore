@@ -20,3 +20,6 @@ npm-debug.log*
 # per-package lockfiles (root bun.lock is the single source of truth)
 **/package-lock.json
 **/bun.lockb
+
+# Playwright MCP scratch
+.playwright-mcp/
