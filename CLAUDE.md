@@ -3,7 +3,10 @@
 Bun-workspace monorepo. The **design system is the canonical source of truth**; the
 prototype and the production web app both consume it directly from source.
 
-Remote: `https://github.com/sunny-gocsm/gocsm-playbooks` (private).
+Remote: `https://github.com/sunny-gocsm/sunny-gocsm.github.io` (public — the repo name
+**is** the org user-page, so the prototype publishes to https://sunny-gocsm.github.io/).
+The workspace/package names stay `gocsm-playbooks` / `@gocsm/*`; only the GitHub repo is
+named for Pages. `origin` is the deploy remote; `karthik` is a legacy mirror.
 
 ## Layout
 - `packages/design-system` — `@gocsm/design-system`: tsup-built component library, tokens, lint rules. The single UI source of truth.
@@ -20,6 +23,17 @@ no sync step** (this replaced the old Lovable `sync-ds.sh` workflow).
 - `bun run dev:web` — production app dev server (:8081)
 - `bun run build` — build DS → prototype → web (the full verify gate)
 - `bun run build:ds` / `build:app` / `build:web` — build one package
+
+## Deploy — GitHub Pages (prototype only)
+Every push to `main` publishes **`apps/prototype`** to https://sunny-gocsm.github.io/ via
+`.github/workflows/deploy.yml` (build prototype → `actions/deploy-pages`). Pages source =
+**GitHub Actions** (`build_type: workflow`), not a branch. Notes:
+- Vite `base: "/"` (root user-page) and `index.html` is copied to `404.html` at build
+  time (a Vite plugin) so deep-link refreshes don't 404 — the SPA shell is served for any path.
+- Bundle is split into long-cacheable chunks (`vendor`, `charts`, `icons`, app `index`);
+  the `icons` chunk is ~810 kB because lucide-react v1.x's `icons` namespace re-export
+  defeats tree-shaking — **TODO**: deep per-icon imports or pin lucide to fix.
+- The `web` app is **not** deployed anywhere yet.
 
 ## Always-on dev server
 `bun run dev` (prototype, :8080) is kept running **at all times** by a launchd agent

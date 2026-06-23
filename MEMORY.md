@@ -5,6 +5,23 @@ Durable, human- and agent-readable log of significant decisions and changes.
 
 ---
 
+## 2026-06-23 — Prototype deploys to GitHub Pages at the org user-page (root)
+Stood up continuous deploy of **`apps/prototype`** to https://sunny-gocsm.github.io/. To serve at
+root (`base: "/"`) we renamed the GitHub repo `gocsm-playbooks` → **`sunny-gocsm.github.io`** (the
+user-page repo name); the local workspace/package names are unchanged, `origin` now points at the
+renamed repo. Pages source switched from legacy-branch to **GitHub Actions** (`build_type: workflow`).
+`.github/workflows/deploy.yml` builds the prototype on push to `main` and runs `actions/deploy-pages`.
+Two Vite changes (`apps/prototype/vite.config.ts`): (1) a `spa-404-fallback` plugin copies
+`index.html`→`404.html` at build so Pages serves the SPA shell on deep-link refreshes (no server
+rewrite on Pages); (2) `manualChunks` splits the old single 1.8 MB bundle into long-cacheable chunks
+— `vendor` (381 kB), `charts`/recharts (321 kB), `icons`/lucide (810 kB), app `index` (336 kB) — so
+app edits only re-download `index`. **Only big LEAF libs are split** (recharts, lucide); splitting
+non-leaves (react/radix) caused `vendor<->chunk` circular-chunk warnings (vaul→radix, react-dom→…).
+Known wart: the 810 kB `icons` chunk — lucide-react v1.x's ESM entry re-exports an `icons` namespace
+barrel that this Rollup can't tree-shake, so all ~1,500 icons ship. TODO: deep per-icon imports or
+pin lucide. Also cleaned the Lovable placeholder `<title>`/author in `index.html`. `bun run build`
+green (DS → prototype → web). Git identity for this repo is now `sunny-gocsm` / sunny@gocsm.com.
+
 ## 2026-06-23 — Nav-less embed routes for HighLevel custom-menu-links
 To start selling the prototype via HighLevel custom menu links, added three bare URLs that
 render the SAME page components with NO left nav (no "menu inside a menu"):
