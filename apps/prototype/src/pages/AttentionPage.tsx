@@ -7,13 +7,26 @@ import { hasDraft } from "@/state/workflowDrafts";
 import { attentionQueue, queueAccountCount, type QueueItem } from "@/fixtures/attentionSignals";
 import { triedButFailed, triedUnconfirmed, type Attempt } from "@/fixtures/attempts";
 
+const fmtMoney = (n: number) => "$" + Math.round(n).toLocaleString();
+
+// MRR represented by an event's matching accounts + the customer names behind it.
+function eventStakes(item: QueueItem): { mrr: number; customers: string } {
+  const mrr = item.accounts.reduce((s, a) => s + a.revenue.mrr, 0);
+  const shown = item.accounts.slice(0, 3).map((a) => a.identity.name);
+  const more = item.accounts.length - shown.length;
+  const customers = shown.join(", ") + (more > 0 ? ` +${more} more` : "");
+  return { mrr, customers };
+}
+
 // ----- Needs-attention queue row: one HL-native (or, in Phase 2, health) event -----
 // Leads with the plain event (title) → a one-line "what this means" (meta, Pattern 2) →
-// one clear action (Pattern 7). Carries forward the autopilot / draft states.
+// the $ at risk + the customers behind it (note) → one clear action (Pattern 7).
 function QueueRow({ item, onSetup }: { item: QueueItem; onSetup: (item: QueueItem) => void }) {
   const on = useIsAutopilot(item.playbookId);
   const draft = hasDraft(item.id);
   const title = item.title(item.count);
+  const { mrr, customers } = eventStakes(item);
+  const stakes = mrr > 0 ? `${fmtMoney(mrr)} MRR at risk · ${customers}` : customers;
 
   if (on) {
     return (
@@ -23,7 +36,7 @@ function QueueRow({ item, onSetup }: { item: QueueItem; onSetup: (item: QueueIte
         title={title}
         meta={item.meaning}
         badge={<Badge variant="pos" dot={false}>On · autopilot</Badge>}
-        note="A playbook handles new matches automatically · next run tonight."
+        note={`${stakes} · auto-handled, next run tonight`}
         action={
           <Button variant="ghost" className="btn-accent" size="sm" icon={<Icon name="pencil" />} onClick={() => onSetup(item)}>
             Edit
@@ -38,6 +51,7 @@ function QueueRow({ item, onSetup }: { item: QueueItem; onSetup: (item: QueueIte
       tag={null}
       title={title}
       meta={item.meaning}
+      note={stakes}
       badge={
         draft ? (
           <Badge variant="warn" dot={false}>Draft</Badge>
@@ -121,6 +135,20 @@ export default function AttentionPage() {
   const queue = useMemo(() => attentionQueue(healthConfigured), [healthConfigured]);
   const needing = useMemo(() => queueAccountCount(queue), [queue]);
 
+  // MRR at risk — total monthly revenue across the UNIQUE sub-accounts needing attention
+  // (an account matching two events is counted once).
+  const mrrAtRisk = useMemo(() => {
+    const seen = new Set<string>();
+    let mrr = 0;
+    for (const q of queue)
+      for (const a of q.accounts) {
+        if (seen.has(a.identity.id)) continue;
+        seen.add(a.identity.id);
+        mrr += a.revenue.mrr;
+      }
+    return mrr;
+  }, [queue]);
+
   const failed = useMemo(() => triedButFailed(), []);
   const unconfirmed = useMemo(() => triedUnconfirmed(), []);
   const jobB = [...failed, ...unconfirmed];
@@ -129,15 +157,33 @@ export default function AttentionPage() {
 
   return (
     <main className="today-main" style={{ maxWidth: 1080, margin: "0 auto", color: "var(--text)", display: "flex", flexDirection: "column" }}>
-      {/* Hero — the page's thesis */}
-      <header style={{ display: "flex", flexDirection: "column", gap: "var(--s-3)" }}>
-        <div style={{ display: "flex", alignItems: "center", gap: "var(--s-3)", flexWrap: "wrap" }}>
+      {/* Hero — the page's thesis + the two numbers that frame it: who needs attention,
+          and how much revenue is on the line. */}
+      <header style={{ display: "flex", flexDirection: "column", gap: "var(--s-4)" }}>
+        <div style={{ display: "flex", flexDirection: "column", gap: "var(--s-2)" }}>
           <h1 style={{ fontSize: "var(--t-display-xl)", fontWeight: 700, letterSpacing: "-0.02em", lineHeight: 1.05, margin: 0 }}>Needs attention</h1>
-          {needing > 0 ? <Badge variant="danger" dot={false}><Mono>{needing}</Mono> sub-account{needing === 1 ? "" : "s"}</Badge> : null}
+          <p style={{ margin: 0, fontSize: "var(--t-body-lg)", color: "var(--text-2, var(--text))", maxWidth: 640 }}>
+            What’s happening across your sub-accounts right now — start a playbook to handle each one.
+          </p>
         </div>
-        <p style={{ margin: 0, fontSize: "var(--t-body-lg)", color: "var(--text-2, var(--text))", maxWidth: 640 }}>
-          What’s happening across your sub-accounts right now — start a playbook to handle each one.
-        </p>
+        {needing > 0 ? (
+          <div style={{ display: "flex", gap: "var(--s-8)", flexWrap: "wrap" }}>
+            <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
+              <span style={{ fontSize: "var(--t-display-lg)", fontWeight: 750, lineHeight: 1, letterSpacing: "-0.01em" }}>
+                <Mono>{needing}</Mono>
+              </span>
+              <span style={{ fontSize: "var(--t-body-sm)", color: "var(--text-3, var(--text))" }}>
+                sub-account{needing === 1 ? "" : "s"} need attention
+              </span>
+            </div>
+            <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
+              <span className="at-risk" style={{ fontSize: "var(--t-display-lg)", fontWeight: 750, lineHeight: 1, letterSpacing: "-0.01em" }}>
+                <Mono>{fmtMoney(mrrAtRisk)}</Mono>
+              </span>
+              <span style={{ fontSize: "var(--t-body-sm)", color: "var(--text-3, var(--text))" }}>MRR at risk</span>
+            </div>
+          </div>
+        ) : null}
       </header>
 
       {/* Step in — a playbook ran but the account still needs a human. Shown FIRST when it

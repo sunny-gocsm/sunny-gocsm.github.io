@@ -5,6 +5,21 @@ Durable, human- and agent-readable log of significant decisions and changes.
 
 ---
 
+## 2026-06-24 — Playbooks → "Library" storefront + Attention MRR-at-risk
+Three UX changes after the 57-play expansion. (1) **Renamed** the Playbooks "Marketplace" tab/copy to
+**"Library"** (`PlaybooksPage.tsx`, TabId `marketplace`→`library`). (2) **Amazon-style storefront**: replaced
+the top pill bar + curated-rows home with a **sticky left filter rail** (`.mk-catalog`/`.mk-filters` in
+`app-overrides.css`) — facets for Category (single-select, live counts), Setup effort + Highlights
+(multi-select checkboxes), search, and a sort control (Most used / Highest impact / Newest) — beside the
+**full grid of all 57 plays**. This also fixed the report that "new plays can't be found": the old home only
+rendered ~13 curated cards, hiding the other ~44 behind a category/search filter; the catalog now shows
+everything by default. A single AI-pick hero still leads the unfiltered view (promoted out of the grid to
+avoid dupes). (3) **Attention page** (`AttentionPage.tsx`, the `/today` Index): brought back a hero metric
+ribbon showing **N sub-accounts need attention + $X MRR at risk** (sum over unique matching accounts), and
+each queue row now shows its own `$ MRR at risk · Customer A, B +N more` note (the "different customers"
+behind the event) on both autopilot and actionable rows. Verified live on :8080 via Playwright (0 console
+errors). `bun run build` green; tsc clean.
+
 ## 2026-06-24 — Playbook library expanded to 57 (grounded, live counts)
 Grew the marketplace catalog from ~16 to **57 playbooks** (`apps/prototype/src/fixtures/playbooks.ts`),
 each a real signal→action play rated on a churn↔expansion spectrum (🔴🔴🔴 critical churn … 🟢🟢🟢 hot

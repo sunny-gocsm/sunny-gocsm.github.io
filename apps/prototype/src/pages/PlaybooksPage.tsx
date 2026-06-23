@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Badge, Card, Button, Icon, Mono, Tabs } from "@gocsm/design-system";
+import { Card, Button, Icon, Mono, Tabs } from "@gocsm/design-system";
 import { toast } from "sonner";
 import { PageRibbon } from "@/components/PageRibbon";
 import {
@@ -12,6 +12,7 @@ import {
   EFFORT_LABEL,
   type Playbook,
   type PlaybookCategory,
+  type PlaybookEffort,
 } from "@/fixtures/playbooks";
 import {
   autopilotStore,
@@ -23,21 +24,22 @@ import { RECIPES, type Recipe } from "@/fixtures/recipes";
 import { hasDraft, clearDraft } from "@/state/workflowDrafts";
 import { AttentionActivation } from "@/components/attention/AttentionActivation";
 
-// PlaybooksPage — the Playbooks MARKETPLACE. Two tabs (research-backed, app-store model):
-//   • Marketplace — browse the catalog. Lead with curated/personalized rows (AI pick,
-//     Most deployed, New this week, Quick wins); a 7-category filter for deliberate
-//     browsing; NL-ish search as the fallback. Status lives ON each card (Live ✓ / Set up).
+// PlaybooksPage — the Playbooks LIBRARY. Two tabs:
+//   • Library — browse the full catalog in an Amazon-style storefront: a sticky left
+//     filter rail (Category · Setup effort · Highlights) + search + sort, and the
+//     COMPLETE grid of plays on the right (every play visible, narrowed by the facets).
+//     A single AI-pick hero leads the unfiltered view. Status lives ON each card.
 //   • Your playbooks — what you've deployed: Live · Paused · Drafts · Archived, with manage.
 // Adding ≠ activating: "Set up" opens the detail (preview the bundle) → go live via the
 // existing setup flow. Lifecycle is Pause/Unpublish → Archive (soft) — never hard-delete.
 
-type TabId = "marketplace" | "mine";
+type TabId = "library" | "mine";
 
 const fmtMoney = (n: number) => "$" + Math.round(n).toLocaleString();
 const fmtCompact = (n: number) =>
   n >= 1000 ? (n / 1000).toFixed(n >= 10000 ? 0 : 1).replace(/\.0$/, "") + "k" : String(n);
 
-// Marketplace status for a card, derived from the lifecycle store.
+// Library status for a card, derived from the lifecycle store.
 function marketStatus(s: AutopilotStatus): "available" | "live" | "paused" {
   if (s === "on") return "live";
   if (s === "paused") return "paused";
@@ -45,9 +47,7 @@ function marketStatus(s: AutopilotStatus): "available" | "live" | "paused" {
 }
 
 export default function PlaybooksPage() {
-  const [tab, setTab] = useState<TabId>("marketplace");
-  const [query, setQuery] = useState("");
-  const [cat, setCat] = useState<PlaybookCategory | "all">("all");
+  const [tab, setTab] = useState<TabId>("library");
   // activation overlay: a recipe to resume/edit, or {} for create-from-scratch
   const [activation, setActivation] = useState<{ recipe?: Recipe } | null>(null);
   const navigate = useNavigate();
@@ -71,13 +71,9 @@ export default function PlaybooksPage() {
 
   return (
     <main className="mk-main">
-      {/* Calm browse surface: no KPI metric ribbon here (Stripe/Linear — keep
-          numeric density off a discovery view; "Live for you 0" read as a deficit).
-          Freshness is carried by the "New this week" rail; the live count lives on
-          the "Your playbooks" tab label. */}
       <PageRibbon
         title="Playbooks"
-        description="A growing marketplace of ready-made customer-success automations. Turn one on, customize it, done."
+        description="A growing library of ready-made customer-success automations. Turn one on, customize it, done."
         trailing={
           <Button variant="ghost" className="btn-accent" size="sm" icon={<Icon name="plus" />} onClick={() => setActivation({})}>
             Create from scratch
@@ -87,24 +83,17 @@ export default function PlaybooksPage() {
 
       <Tabs
         tabs={[
-          { id: "marketplace", label: "Marketplace" },
+          { id: "library", label: "Library" },
           { id: "mine", label: `Your playbooks${mineCount ? ` (${mineCount})` : ""}` },
         ]}
         active={tab}
         onChange={(id) => setTab(id as TabId)}
       />
 
-      {tab === "marketplace" ? (
-        <MarketplaceTab
-          query={query}
-          setQuery={setQuery}
-          cat={cat}
-          setCat={setCat}
-          impactOf={impactOf}
-          onOpen={open}
-        />
+      {tab === "library" ? (
+        <LibraryTab impactOf={impactOf} onOpen={open} />
       ) : (
-        <YourPlaybooksTab impactOf={impactOf} onOpen={open} onResume={(recipe) => setActivation({ recipe })} onBrowse={() => setTab("marketplace")} />
+        <YourPlaybooksTab impactOf={impactOf} onOpen={open} onResume={(recipe) => setActivation({ recipe })} onBrowse={() => setTab("library")} />
       )}
 
       {activation ? (
@@ -118,109 +107,169 @@ export default function PlaybooksPage() {
   );
 }
 
-// ─────────────────────────────── Marketplace tab ───────────────────────────────
-function MarketplaceTab({
-  query,
-  setQuery,
-  cat,
-  setCat,
+type SortKey = "used" | "impact" | "new";
+
+// ─────────────────────────────── Library tab (storefront) ───────────────────────────────
+function LibraryTab({
   impactOf,
   onOpen,
 }: {
-  query: string;
-  setQuery: (v: string) => void;
-  cat: PlaybookCategory | "all";
-  setCat: (c: PlaybookCategory | "all") => void;
   impactOf: (p: Playbook) => { count: number; mrr: number };
   onOpen: (id: string) => void;
 }) {
+  const [query, setQuery] = useState("");
+  const [cat, setCat] = useState<PlaybookCategory | "all">("all");
+  const [efforts, setEfforts] = useState<Set<PlaybookEffort>>(new Set());
+  const [flags, setFlags] = useState<Set<"new" | "trending">>(new Set());
+  const [sort, setSort] = useState<SortKey>("used");
+
   const q = query.trim().toLowerCase();
-  const browsing = q.length > 0 || cat !== "all";
+  const anyFilter = cat !== "all" || efforts.size > 0 || flags.size > 0 || q.length > 0;
+
+  const matchText = (p: Playbook) =>
+    !q || `${p.title} ${p.subtitle} ${p.problem} ${categoryLabel(p.category)}`.toLowerCase().includes(q);
+  const matchEffort = (p: Playbook) => efforts.size === 0 || efforts.has(p.effort);
+  const matchFlags = (p: Playbook) =>
+    flags.size === 0 || (flags.has("new") && isNewPlaybook(p)) || (flags.has("trending") && p.trending);
+
+  // Category counts honour the OTHER active facets (standard faceted-search behaviour).
+  const catCounts = useMemo(() => {
+    const base = playbooks.filter((p) => matchEffort(p) && matchFlags(p) && matchText(p));
+    const by = new Map<string, number>();
+    for (const p of base) by.set(p.category, (by.get(p.category) ?? 0) + 1);
+    return { all: base.length, by };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [efforts, flags, q]);
 
   const results = useMemo(() => {
-    let list = playbooks.slice();
-    if (cat !== "all") list = list.filter((p) => p.category === cat);
-    if (q) list = list.filter((p) => `${p.title} ${p.subtitle} ${p.problem} ${categoryLabel(p.category)}`.toLowerCase().includes(q));
-    return list;
-  }, [q, cat]);
+    const list = playbooks.filter(
+      (p) => (cat === "all" || p.category === cat) && matchEffort(p) && matchFlags(p) && matchText(p),
+    );
+    const byUsed = (a: Playbook, b: Playbook) => b.usedByAgencies - a.usedByAgencies;
+    const byImpact = (a: Playbook, b: Playbook) =>
+      impactOf(b).mrr - impactOf(a).mrr || impactOf(b).count - impactOf(a).count || byUsed(a, b);
+    const byNew = (a: Playbook, b: Playbook) => a.launchedDaysAgo - b.launchedDaysAgo;
+    return list.sort(sort === "impact" ? byImpact : sort === "new" ? byNew : byUsed);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [cat, efforts, flags, q, sort]);
 
-  // Curated rows (home view) — ranked, then DEDUPED so each playbook headlines only
-  // one row (no repeats across rows). Computed inline so it reflects live lifecycle.
-  const notLive = (p: Playbook) => autopilotStore.status(p.id) !== "on";
-  const byImpact = (a: Playbook, b: Playbook) => impactOf(b).mrr - impactOf(a).mrr;
-  const byUsed = (a: Playbook, b: Playbook) => b.usedByAgencies - a.usedByAgencies;
-  const seen = new Set<string>();
-  const take = (list: Playbook[], n: number) => {
-    const out: Playbook[] = [];
-    for (const p of list) {
-      if (seen.has(p.id)) continue;
-      out.push(p);
-      seen.add(p.id);
-      if (out.length >= n) break;
-    }
-    return out;
-  };
-  // AI pick: the not-live playbook addressing the most at-risk $; fall back to the
-  // most-used not-live one so the hero never silently vanishes.
-  const aiPick =
-    playbooks.slice().filter(notLive).sort(byImpact).find((p) => impactOf(p).mrr > 0) ??
-    playbooks.slice().filter(notLive).sort(byUsed)[0];
-  if (aiPick) seen.add(aiPick.id);
-  const mostUsed = take(playbooks.slice().sort(byUsed), 4);
-  const newThisWeek = take(playbooks.filter(isNewPlaybook).slice().sort((a, b) => a.launchedDaysAgo - b.launchedDaysAgo), 4);
-  const quickWins = take(playbooks.filter((p) => p.effort !== "custom" && impactOf(p).count > 0).slice().sort(byImpact), 4);
+  // AI pick — only on the unfiltered landing view; promoted out of the grid below.
+  const aiPick = useMemo(() => {
+    if (anyFilter) return null;
+    const notLive = (p: Playbook) => autopilotStore.status(p.id) !== "on";
+    return (
+      playbooks.slice().filter(notLive).sort((a, b) => impactOf(b).mrr - impactOf(a).mrr).find((p) => impactOf(p).mrr > 0) ??
+      playbooks.slice().filter(notLive).sort((a, b) => b.usedByAgencies - a.usedByAgencies)[0] ??
+      null
+    );
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [anyFilter]);
+
+  const gridItems = aiPick ? results.filter((p) => p.id !== aiPick.id) : results;
+
+  const toggleEffort = (e: PlaybookEffort) =>
+    setEfforts((s) => { const n = new Set(s); n.has(e) ? n.delete(e) : n.add(e); return n; });
+  const toggleFlag = (f: "new" | "trending") =>
+    setFlags((s) => { const n = new Set(s); n.has(f) ? n.delete(f) : n.add(f); return n; });
+  const clearAll = () => { setCat("all"); setEfforts(new Set()); setFlags(new Set()); setQuery(""); };
 
   return (
-    <div className="mk-wrap">
-      {/* Search (the fallback, not the hero) */}
-      <div className="mk-search">
-        <Icon name="search" />
-        <input
-          className="mk-search-input"
-          value={query}
-          placeholder="Search playbooks — churn, onboarding, renewals…"
-          onChange={(e) => setQuery(e.target.value)}
-        />
-        {query ? (
-          <button type="button" className="mk-search-clear" aria-label="Clear" onClick={() => setQuery("")}>
-            <Icon name="x" />
+    <div className="mk-catalog">
+      {/* Sticky left filter rail — accessible while the catalog scrolls. */}
+      <aside className="mk-filters">
+        <div className="mk-search">
+          <Icon name="search" />
+          <input
+            className="mk-search-input"
+            value={query}
+            placeholder="Search playbooks…"
+            onChange={(e) => setQuery(e.target.value)}
+          />
+          {query ? (
+            <button type="button" className="mk-search-clear" aria-label="Clear" onClick={() => setQuery("")}>
+              <Icon name="x" />
+            </button>
+          ) : null}
+        </div>
+
+        <div className="mk-facet">
+          <p className="mk-facet-title">Category</p>
+          <button type="button" className={`mk-facet-item${cat === "all" ? " on" : ""}`} onClick={() => setCat("all")}>
+            <Icon name="layout-grid" /><span className="lbl">All playbooks</span><span className="cnt">{catCounts.all}</span>
           </button>
+          {CATEGORIES.map((cdef) => (
+            <button
+              key={cdef.id}
+              type="button"
+              className={`mk-facet-item${cat === cdef.id ? " on" : ""}`}
+              onClick={() => setCat(cat === cdef.id ? "all" : cdef.id)}
+            >
+              <Icon name={cdef.icon} /><span className="lbl">{cdef.label}</span>
+              <span className="cnt">{catCounts.by.get(cdef.id) ?? 0}</span>
+            </button>
+          ))}
+        </div>
+
+        <div className="mk-facet">
+          <p className="mk-facet-title">Setup effort</p>
+          {(["ready", "quick", "custom"] as PlaybookEffort[]).map((e) => (
+            <button key={e} type="button" className={`mk-facet-item${efforts.has(e) ? " on" : ""}`} onClick={() => toggleEffort(e)}>
+              <span className="mk-facet-check">{efforts.has(e) ? <Icon name="check" /> : null}</span>
+              <span className="lbl">{EFFORT_LABEL[e]}</span>
+            </button>
+          ))}
+        </div>
+
+        <div className="mk-facet">
+          <p className="mk-facet-title">Highlights</p>
+          <button type="button" className={`mk-facet-item${flags.has("new") ? " on" : ""}`} onClick={() => toggleFlag("new")}>
+            <span className="mk-facet-check">{flags.has("new") ? <Icon name="check" /> : null}</span>
+            <span className="lbl">New this week</span>
+          </button>
+          <button type="button" className={`mk-facet-item${flags.has("trending") ? " on" : ""}`} onClick={() => toggleFlag("trending")}>
+            <span className="mk-facet-check">{flags.has("trending") ? <Icon name="check" /> : null}</span>
+            <span className="lbl">Trending</span>
+          </button>
+        </div>
+
+        {anyFilter ? (
+          <button type="button" className="mk-filters-clear" onClick={clearAll}>Clear all filters</button>
         ) : null}
-      </div>
+      </aside>
 
-      {/* Category filter bar */}
-      <div className="mk-cats">
-        <button type="button" className={`mk-cat${cat === "all" ? " on" : ""}`} onClick={() => setCat("all")}>All</button>
-        {CATEGORIES.map((c) => (
-          <button key={c.id} type="button" className={`mk-cat${cat === c.id ? " on" : ""}`} onClick={() => setCat(c.id)}>
-            <Icon name={c.icon} /> {c.label}
-          </button>
-        ))}
-      </div>
+      <div className="mk-catalog-main">
+        {aiPick ? <AiPickCard p={aiPick} impact={impactOf(aiPick)} onOpen={() => onOpen(aiPick.id)} /> : null}
 
-      {browsing ? (
-        // Filtered / searched → a flat grid
-        results.length === 0 ? (
-          <Card padded><p className="mk-empty">Nothing matches{cat !== "all" ? ` in ${categoryLabel(cat as PlaybookCategory)}` : ""}{q ? ` for "${query}"` : ""}. Try another category, or clear the filter.</p></Card>
+        <div className="mk-toolbar">
+          <span className="mk-toolbar-count">
+            {results.length} playbook{results.length === 1 ? "" : "s"}
+            {cat !== "all" ? ` in ${categoryLabel(cat as PlaybookCategory)}` : ""}
+          </span>
+          <label className="mk-sort">
+            <Icon name="arrow-up-down" /> Sort
+            <select value={sort} onChange={(e) => setSort(e.target.value as SortKey)}>
+              <option value="used">Most used</option>
+              <option value="impact">Highest impact</option>
+              <option value="new">Newest</option>
+            </select>
+          </label>
+        </div>
+
+        {results.length === 0 ? (
+          <Card padded>
+            <p className="mk-empty">
+              Nothing matches these filters.{" "}
+              <button type="button" className="mk-filters-clear" onClick={clearAll}>Clear all</button>
+            </p>
+          </Card>
         ) : (
-          <>
-            <div className="mk-rowhead"><h2 className="mk-rowtitle">{cat === "all" ? "Results" : categoryLabel(cat as PlaybookCategory)}</h2><span className="mk-rowmeta">{results.length} playbook{results.length === 1 ? "" : "s"}</span></div>
-            <div className="mk-grid">
-              {results.map((p) => (
-                <MarketCard key={p.id} p={p} impact={impactOf(p)} onOpen={() => onOpen(p.id)} />
-              ))}
-            </div>
-          </>
-        )
-      ) : (
-        // Home → curated rows
-        <>
-          {aiPick ? <AiPickCard p={aiPick} impact={impactOf(aiPick)} onOpen={() => onOpen(aiPick.id)} /> : null}
-          <CuratedRow title="Most used" sub="What agencies turn on most" items={mostUsed} impactOf={impactOf} onOpen={onOpen} />
-          {newThisWeek.length ? <CuratedRow title="New this week" sub="Fresh from the team" items={newThisWeek} impactOf={impactOf} onOpen={onOpen} /> : null}
-          {quickWins.length ? <CuratedRow title="Quick wins for you" sub="Low effort, matches your accounts now" items={quickWins} impactOf={impactOf} onOpen={onOpen} /> : null}
-        </>
-      )}
+          <div className="mk-grid">
+            {gridItems.map((p) => (
+              <MarketCard key={p.id} p={p} impact={impactOf(p)} onOpen={() => onOpen(p.id)} />
+            ))}
+          </div>
+        )}
+      </div>
     </div>
   );
 }
@@ -254,35 +303,7 @@ function AiPickCard({ p, impact, onOpen }: { p: Playbook; impact: { count: numbe
   );
 }
 
-function CuratedRow({
-  title,
-  sub,
-  items,
-  impactOf,
-  onOpen,
-}: {
-  title: string;
-  sub: string;
-  items: Playbook[];
-  impactOf: (p: Playbook) => { count: number; mrr: number };
-  onOpen: (id: string) => void;
-}) {
-  if (!items.length) return null;
-  return (
-    <section className="mk-row">
-      <div className="mk-rowhead">
-        <div><h2 className="mk-rowtitle">{title}</h2><span className="mk-rowsub">{sub}</span></div>
-      </div>
-      <div className="mk-grid">
-        {items.map((p) => (
-          <MarketCard key={p.id} p={p} impact={impactOf(p)} onOpen={() => onOpen(p.id)} />
-        ))}
-      </div>
-    </section>
-  );
-}
-
-// One marketplace card — outcome title → one meta line → ONE CTA. Status lives here.
+// One library card — outcome title → one meta line → ONE CTA. Status lives here.
 function MarketCard({ p, impact, onOpen, rail }: { p: Playbook; impact: { count: number; mrr: number }; onOpen: () => void; rail?: boolean }) {
   const status = marketStatus(useAutopilotStatus(p.id));
   const isNew = isNewPlaybook(p);
@@ -355,8 +376,8 @@ function YourPlaybooksTab({
     return (
       <Card padded className="mk-empty-card">
         <Icon name="book-open" />
-        <p className="mk-empty">No live playbooks yet. Browse the marketplace and turn one on — it takes about a minute.</p>
-        <Button variant="primary" icon={<Icon name="arrow-left" />} onClick={onBrowse}>Browse the marketplace</Button>
+        <p className="mk-empty">No live playbooks yet. Browse the library and turn one on — it takes about a minute.</p>
+        <Button variant="primary" icon={<Icon name="arrow-left" />} onClick={onBrowse}>Browse the library</Button>
       </Card>
     );
   }
