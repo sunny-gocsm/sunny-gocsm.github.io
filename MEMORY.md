@@ -5,6 +5,24 @@ Durable, human- and agent-readable log of significant decisions and changes.
 
 ---
 
+## 2026-06-23 — Attention: needs-attention queue, HL-native in Phase 1 (+ Health gating)
+Built the needs-attention queue as Attention's lead layer, applying the GoCSM signal tiers.
+New `src/fixtures/attentionSignals.ts` defines the queue's signal library in two tiers:
+**Tier 1 "native"** (HL-native, always on — payment failed, no-login-14d) and **Tier 2
+"health"** (GoCSM-computed, gated — e.g. dropped to At-Risk). Each signal leads with the
+plain event (Pattern 3), carries a one-line "what this means" (Pattern 2), and runs its
+cohort through the criteria engine so the count and the activation it opens always agree.
+New `src/state/healthConfig.ts` is the Phase-1/Phase-2 gate (localStorage, defaults OFF =
+no Health configured). `attentionQueue(healthConfigured)` returns native-only in Phase 1
+and native+health merged (by priority) in Phase 2 — health JOINS, never replaces. Reworked
+`AttentionPage.tsx`: the queue is the lead section (folds in the old Job-A playbook-activation
+path — autopilot/draft states preserved, nothing lost); Job-B "Step in" kept, its coined
+pillar reason gated so Phase 1 reads HL-native ("the issue is still open"). Added a clearly
+labeled **Prototype preview** toggle to flip phases. Verified live on :8080 — Phase 1 render
+scanned **zero coined terms** (no band/score/pillar/lifecycle); Phase 2 shows the At-Risk row
+joining the queue. `bun run build` green DS→prototype→web; prototype `tsc` clean. Branch
+`design/universal-ux-patterns`, not merged.
+
 ## 2026-06-23 — Policy: design-loop is now EXPLICIT-REQUEST-ONLY (never auto-invoke)
 Per Karthik (it's very token-intensive), the `design-loop` skill must run **only when he
 explicitly asks for it by name** — a general design/redesign/audit/UI task is no longer a
