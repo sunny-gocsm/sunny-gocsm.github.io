@@ -5,6 +5,25 @@ Durable, human- and agent-readable log of significant decisions and changes.
 
 ---
 
+## 2026-06-23 — Unify playbook setup: ONE 3-step wizard, reused by both entry points
+Per Karthik: clicking a playbook from EITHER the catalog OR an Attention card must open the
+SAME setup interface — no two flows. Converged everything on `AttentionActivation` (the one
+full-page wizard) and reordered it to: **① What it does** (hero video + the play's real
+outcome/does + social proof + "Open & modify it" → "I've completed this") **→ ② When & who it
+runs on** (the trigger; CriteriaBuilder) **→ ③ Review & publish** (the two conditions in plain
+English + Publish). `PlaybookDetailPage` is now a thin wrapper that renders the wizard (clicking
+a playbook lands straight in setup at Step 1); the Attention queue's "Set up playbook" now
+navigates to `/playbooks/:id` instead of opening its own modal. Added a "How to set up triggers"
+explainer video to Step 2 (NEEDS KARTHIK: real clip; hero video also placeholder).
+**Health gating (Phase 1) in the trigger step** — removed ALL health from both sides: the
+field-picker drops the "health" group + any `health.*` field; NL compile, examples, recipe
+templates, and suggestions strip health; a health-seeded recipe is degraded via `stripHealth`
+(e.g. "at-risk & renewing" → "renewing in 30d"); and the right accounts pane (MatchWall) is
+replaced with a plain count + "matched live" note. Review step shows no account rows in Phase 1.
+All of it returns additively in Phase 2 (verified: accounts pane + health group reappear).
+Verified live on :8080 across both entry points and both phases — Phase-1 scan = zero coined
+terms on every step. `bun run build` green; prototype `tsc` clean. Branch `design/universal-ux-patterns`.
+
 ## 2026-06-23 — Playbook detail page: video-first, outcome-first 3-step activation
 Rebuilt `PlaybookDetailPage.tsx` per the 04 brief. Structure top→bottom: (1) hero **video up
 front** (first element; honest "coming soon" placeholder since `videoUrl` is empty — NEEDS

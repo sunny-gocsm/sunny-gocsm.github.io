@@ -2,54 +2,49 @@ import { useEffect, useState } from "react";
 import { Button, Icon, Mono, Stepper, Toggle, Badge, VideoCard, AccountRow } from "@gocsm/design-system";
 import { CriteriaBuilder } from "./CriteriaBuilder";
 import { autopilotStore } from "@/state/autopilot";
+import { useHealthConfigured } from "@/state/healthConfig";
 import { saveDraft, loadDraft, clearDraft } from "@/state/workflowDrafts";
 import { toast } from "sonner";
-import { matchCount, matchAccounts, describeSet, normalize, type CriteriaSet } from "@/fixtures/criteriaMatch";
+import { matchCount, matchAccounts, describeSet, normalize, nodesOf, isGroup, withNodes, type CriteriaSet, type Criterion } from "@/fixtures/criteriaMatch";
+import { playbookById, type Playbook } from "@/fixtures/playbooks";
 import type { Recipe } from "@/fixtures/recipes";
 import type { Account } from "@/fixtures";
 
-// AttentionActivation — the FULL-PAGE playbook builder. Three clear steps:
-//   ① Who it runs on (criteria + live preview) → ② What it does (the pre-built starter
-//   playbook; switch it on in HighLevel) → ③ Go live (review the real accounts it touches
-//   + autopilot, then start). Going live shows a calm in-flow success beat, not just a toast.
-// The build autosaves as a draft, so a user who leaves returns with their criteria
-// prefilled — straight to the workflow step. The persistent header + stepper + footer
-// answer "why / where am I / what's next" from every step (the ADHD orientation contract).
-// See docs/design/cpdo-brief-activation-steps-2-3.md for the fidelity contract.
+// AttentionActivation — the ONE full-page playbook setup flow, reused everywhere a user
+// sets up a playbook (the Attention queue, the Playbooks catalog, the Accounts table).
+// Three clear steps, outcome-first:
+//   ① What it does (hero video + the actions; open & modify in HighLevel, then "I've
+//      completed") → ② When & who it runs on (configure the trigger; HL-native only until
+//      Health Config exists) → ③ Review & publish (the two conditions in plain English).
+// The build autosaves as a draft, so a user who leaves returns with their progress.
+// The persistent header + stepper + footer answer "why / where am I / what's next" from
+// every step (the ADHD orientation contract).
 
 type Step = "criteria" | "workflow" | "review";
-const STEP_INDEX: Record<Step, number> = { criteria: 0, workflow: 1, review: 2 };
-const STEP_BY_INDEX: Step[] = ["criteria", "workflow", "review"];
-const STEPS = [{ label: "Who it runs on" }, { label: "What it does" }, { label: "Go live" }];
+// Display order is What-it-does (workflow) → When & who (criteria) → Review & publish.
+const STEP_INDEX: Record<Step, number> = { workflow: 0, criteria: 1, review: 2 };
+const STEP_BY_INDEX: Step[] = ["workflow", "criteria", "review"];
+const STEPS = [{ label: "What it does" }, { label: "When & who" }, { label: "Review & publish" }];
 
-const ACTION_STEPS = [
-  { icon: "zap", label: "When an account matches", optional: false },
-  { icon: "bell", label: "Alert you in GoCSM", optional: false },
-  { icon: "mail", label: "Send the owner a drafted note — your OK first", optional: true },
-  { icon: "clock", label: "If still unresolved after 7 days, escalate", optional: true },
-];
+const fmtCompact = (n: number) =>
+  n >= 1000 ? (n / 1000).toFixed(n >= 10000 ? 0 : 1).replace(/\.0$/, "") + "k" : String(n);
 
-// Full-width, single-line, tap-to-edit "who it runs on" scope band. Rendered in the
-// fixed header stack (NOT inside the scroll area) so it's always visible and content
-// scrolls cleanly beneath it — no sticky overlap. Criteria text truncates, never wraps.
-function ScopeBand({ n, contextLabel, onEdit }: { n: number; contextLabel: string; onEdit: () => void }) {
-  return (
-    <div className="aa-scopeband">
-      <button type="button" className="aa-pinned-chip" onClick={onEdit} title="Edit who it runs on">
-        <Icon name="users" />
-        <span className="aa-scope-text">
-          Runs on <Mono>{n}</Mono> account{n === 1 ? "" : "s"} · {contextLabel}
-        </span>
-        <span className="aa-pinned-edit"><Icon name="pencil" /> Edit</span>
-      </button>
-    </div>
-  );
+// Phase 1: strip any Health (`health.*`) criteria from a seeded trigger so coined chips
+// never render in the no-config state — gracefully degrades a health-seeded recipe to its
+// HL-native parts (e.g. "at-risk & renewing" → "renewing in 30 days").
+function stripHealth(s: CriteriaSet): CriteriaSet {
+  const kept = nodesOf(s)
+    .map((node) => (isGroup(node) ? { ...node, criteria: node.criteria.filter((c) => !c.fieldId.startsWith("health.")) } : node))
+    .filter((node) => (isGroup(node) ? node.criteria.length > 0 : !(node as Criterion).fieldId.startsWith("health.")));
+  return withNodes(s, kept);
 }
 
 function WorkflowStep({
+  playbook,
   workflowReady,
   setWorkflowReady,
 }: {
+  playbook?: Playbook;
   workflowReady: boolean;
   setWorkflowReady: (v: boolean) => void;
 }) {
@@ -57,41 +52,43 @@ function WorkflowStep({
   return (
       <div className="aa-step2">
         <div className="aa-setup-head">
-          <Badge variant={workflowReady ? "pos" : "warn"} dot>{workflowReady ? "Published" : "Not set up yet"}</Badge>
+          <Badge variant={workflowReady ? "pos" : "warn"} dot>{workflowReady ? "Ready" : "Not set up yet"}</Badge>
           <h2 style={{ fontSize: "var(--t-heading)", fontWeight: 700, margin: 0 }}>What this playbook does</h2>
           <p className="aa-setup-lede">
-            We built this starter playbook for you. Switch it on in HighLevel and it's live.
+            {playbook ? playbook.outcome : "We built this starter playbook for you — open it, tweak the wording, then come back."}
           </p>
         </div>
 
-        {/* The 2-minute walkthrough is a focal element — owners rely on it to understand
-            the playbook before customizing in HighLevel. Prominent card, not a buried link. */}
+        {/* Hero video — the first thing the user sees; owners rely on it to understand the
+            playbook before customizing in HighLevel. Prominent card, not a buried link.
+            NEEDS KARTHIK: a real per-playbook recording (placeholder card until then). */}
         <VideoCard title="How this playbook works" duration="2 min" />
 
-        {/* What the starter playbook actually does — solid rows, this is what we built. */}
-        <div className="aa-snapshot">
-          <span className="aa-snapshot-label">What's in the starter playbook</span>
-          <div className="aa-steplist">
-            {ACTION_STEPS.map((s, i) => (
-              <div key={i} className="aa-stepline">
-                <span className="aa-stepline-ico" aria-hidden><Icon name={s.icon} /></span>
-                <span style={{ flex: 1 }}>{s.label}</span>
-                {s.optional ? <span className="aa-opt">optional</span> : null}
-              </div>
-            ))}
+        {/* What it actually does — the play's real, plain-language actions. */}
+        {playbook ? (
+          <div className="aa-snapshot">
+            <span className="aa-snapshot-label">What it does</span>
+            <p style={{ margin: 0, fontSize: "var(--t-body)", color: "var(--text-2, var(--text))" }}>{playbook.does}</p>
           </div>
-        </div>
+        ) : null}
 
-        {/* Two clear steps: open & publish in HighLevel, then confirm. The confirm is a
-            real button + confirmed state, not a fine-print checkbox — it's the gate to go live. */}
+        {/* Social proof (Pattern 1: a number always paired with a plain subtext). */}
+        {playbook ? (
+          <span className="aa-setup-hint" style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
+            <Icon name="users" /> Used by {fmtCompact(playbook.usedByAgencies)} agencies · {fmtCompact(playbook.totalRuns)} runs across all customers.
+          </span>
+        ) : null}
+
+        {/* Open & modify in HighLevel, then confirm. The confirm is a real button + state,
+            not fine print — it's the gate to continue to the trigger step. */}
         <div className="aa-setup-actions">
           <div className="aa-setup-step">
             <span className="aa-setup-num">1</span>
             <div className="aa-setup-step-body">
               <Button variant="primary" iconRight={<Icon name="external-link" />} onClick={openHighLevel}>
-                Open in HighLevel
+                Open &amp; modify it
               </Button>
-              <span className="aa-setup-hint">Tweak the messages if you want, then switch it to <strong>Publish</strong> — top-right. Come back when it's on.</span>
+              <span className="aa-setup-hint">Tweak the messages if you want, then switch it to <strong>Publish</strong> in HighLevel — top-right. Come back when it's done.</span>
             </div>
           </div>
           <div className="aa-setup-step">
@@ -99,12 +96,12 @@ function WorkflowStep({
             <div className="aa-setup-step-body">
               {workflowReady ? (
                 <div className="aa-published">
-                  <span className="aa-published-badge"><Icon name="check-circle" /> Published in HighLevel</span>
+                  <span className="aa-published-badge"><Icon name="check-circle" /> Completed</span>
                   <button type="button" className="aa-published-undo" onClick={() => setWorkflowReady(false)}>Not yet</button>
                 </div>
               ) : (
                 <button type="button" className="aa-confirm-btn" onClick={() => setWorkflowReady(true)}>
-                  I've published it in HighLevel
+                  I've completed this
                 </button>
               )}
             </div>
@@ -115,67 +112,68 @@ function WorkflowStep({
 }
 
 function ReviewStep({
-  contextLabel,
+  whenLine,
+  doesLine,
   n,
   previewAccounts,
   autopilot,
   setAutopilot,
   showAutopilot,
+  healthConfigured,
   onEditWho,
   onEditWhat,
 }: {
-  contextLabel: string;
+  whenLine: string;
+  doesLine: string;
   n: number;
   previewAccounts: Account[];
   autopilot: boolean;
   setAutopilot: (v: boolean) => void;
   showAutopilot: boolean;
+  healthConfigured: boolean;
   onEditWho: () => void;
   onEditWhat: () => void;
 }) {
-  // Show the real accounts this touches — the one thing the persona actually reads at
-  // go-live ("who is this about to hit?"). Truth made tangible is the only thing we add.
   const top = previewAccounts.slice(0, 5);
   const more = n - top.length;
   return (
     <div className="aa-review">
-      {/* Hero: the audience count is the page's thesis — the now half of now-vs-future. */}
       <div className="aa-golive-hero">
-        <span className="aa-golive-count"><Mono>{n}</Mono></span>
-        <span className="aa-golive-count-label">account{n === 1 ? " gets" : "s get"} this playbook</span>
+        <h2 style={{ fontSize: "var(--t-heading)", fontWeight: 700, margin: 0 }}>Review &amp; publish</h2>
+        <span className="aa-golive-count-label">Two things, in plain English — then publish.</span>
       </div>
 
-      {/* Who it runs on — a glanceable preview of the real accounts. */}
-      <div className="aa-summary-card">
-        <div className="aa-sc-head">
-          <span><Icon name="users" /> Who it runs on</span>
-          <button type="button" className="aa-sc-edit" onClick={onEditWho}>Edit</button>
-        </div>
-        <div className="mw-rows">
-          {top.map((a) => (
-            <AccountRow
-              key={a.identity.id}
-              name={a.identity.name}
-              band={a.health.band}
-              value={`$${Math.round(a.revenue.mrr).toLocaleString()}`}
-            />
-          ))}
-        </div>
-        {more > 0 ? <span className="aa-golive-more">+{more} more account{more === 1 ? "" : "s"}</span> : null}
-        <p className="aa-golive-sub">{contextLabel}</p>
-      </div>
-
-      {/* What it does — recap, links back to step 2. */}
+      {/* Condition 1 — what it does. */}
       <div className="aa-summary-card">
         <div className="aa-sc-head">
           <span><Icon name="list-checks" /> What it does</span>
           <button type="button" className="aa-sc-edit" onClick={onEditWhat}>Edit</button>
         </div>
-        <p className="aa-sc-body">Published in HighLevel · alert you, drafted note (your OK first), escalate after 7 days.</p>
+        <p className="aa-sc-body">{doesLine}</p>
       </div>
 
-      {/* Autopilot — the future half, made legible against the "now" hero above.
-          Default ON (the set-and-forget promise), with reversibility stated in one line. */}
+      {/* Condition 2 — when & who it runs on. Real accounts only once Health is set up. */}
+      <div className="aa-summary-card">
+        <div className="aa-sc-head">
+          <span><Icon name="zap" /> When &amp; who it runs on</span>
+          <button type="button" className="aa-sc-edit" onClick={onEditWho}>Edit</button>
+        </div>
+        <p className="aa-sc-body">{whenLine}.</p>
+        {healthConfigured && top.length > 0 ? (
+          <>
+            <div className="mw-rows" style={{ marginTop: "var(--s-2)" }}>
+              {top.map((a) => (
+                <AccountRow key={a.identity.id} name={a.identity.name} band={a.health.band} value={`$${Math.round(a.revenue.mrr).toLocaleString()}`} />
+              ))}
+            </div>
+            {more > 0 ? <span className="aa-golive-more">+{more} more account{more === 1 ? "" : "s"}</span> : null}
+          </>
+        ) : (
+          <span className="aa-golive-sub"><Mono>{n}</Mono> account{n === 1 ? "" : "s"} match right now.</span>
+        )}
+      </div>
+
+      {/* Autopilot — set-and-forget, reversibility stated in one line. */}
       {showAutopilot ? (
         <div className="aa-summary-card">
           <div className="aa-autopilot-row">
@@ -214,25 +212,27 @@ function LiveSuccess({ n, showPause, onDone, onPause }: { n: number; showPause: 
 
 // Step 1 when the user pre-selected specific accounts (e.g. from the Accounts table):
 // a fixed list instead of the criteria builder — the workflow runs once on these.
-function FixedSelectionStep({ accounts }: { accounts: Account[] }) {
+function FixedSelectionStep({ accounts, healthConfigured }: { accounts: Account[]; healthConfigured: boolean }) {
   const sorted = [...accounts].sort((a, b) => b.revenue.mrr - a.revenue.mrr);
   return (
     <div style={{ maxWidth: 680, margin: "0 auto", display: "flex", flexDirection: "column", gap: "var(--s-4)" }}>
       <div style={{ display: "flex", flexDirection: "column", gap: "var(--s-1)" }}>
-        <h2 style={{ fontSize: "var(--t-heading)", fontWeight: 700, margin: 0 }}>Who it runs on</h2>
+        <h2 style={{ fontSize: "var(--t-heading)", fontWeight: 700, margin: 0 }}>When &amp; who it runs on</h2>
         <p style={{ margin: 0, fontSize: "var(--t-body-sm)", color: "var(--text-3, var(--text))" }}>
           The {accounts.length} account{accounts.length === 1 ? "" : "s"} you selected — the playbook runs once on these.
         </p>
       </div>
       <div className="mw-rows">
-        {sorted.map((a) => (
-          <AccountRow
-            key={a.identity.id}
-            name={a.identity.name}
-            band={a.health.band}
-            value={`$${Math.round(a.revenue.mrr).toLocaleString()}`}
-          />
-        ))}
+        {sorted.map((a) =>
+          healthConfigured ? (
+            <AccountRow key={a.identity.id} name={a.identity.name} band={a.health.band} value={`$${Math.round(a.revenue.mrr).toLocaleString()}`} />
+          ) : (
+            <div key={a.identity.id} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "var(--s-2) var(--s-3)", borderBottom: "1px solid var(--border)", fontSize: "var(--t-body-sm)" }}>
+              <span>{a.identity.name}</span>
+              <Mono>${Math.round(a.revenue.mrr).toLocaleString()}</Mono>
+            </div>
+          ),
+        )}
       </div>
     </div>
   );
@@ -250,17 +250,19 @@ export function AttentionActivation({
   backLabel?: string;
 }) {
   const recipeId = recipe?.id;
+  const healthConfigured = useHealthConfigured();
   const [step, setStep] = useState<Step>(() => {
     const d = recipeId ? loadDraft(recipeId) : undefined;
-    return d?.step ?? "criteria";
+    return d?.step ?? "workflow"; // start at "What it does"
   });
   const [set, setSet] = useState<CriteriaSet>(() => {
     const d = recipeId ? loadDraft(recipeId) : undefined;
-    return d
+    const base = d
       ? normalize({ match: d.match, criteria: d.criteria, nodes: d.nodes })
       : recipe
         ? normalize(recipe.set)
-        : { match: "all", criteria: [], nodes: [] };
+        : normalize({ match: "all", criteria: [] });
+    return healthConfigured ? base : stripHealth(base);
   });
   const [workflowReady, setWorkflowReady] = useState<boolean>(() => (recipeId ? loadDraft(recipeId)?.workflowReady ?? false : false));
   const [autopilot, setAutopilot] = useState(true);
@@ -269,8 +271,10 @@ export function AttentionActivation({
   const fixed = !!fixedAccounts && fixedAccounts.length > 0;
   const n = fixed ? fixedAccounts!.length : matchCount(set);
   const playbookId = recipe?.playbookId ?? "pb-no-login";
-  const problemName = recipe?.label ?? (fixed ? "Selected accounts" : "New playbook");
-  const contextLabel = fixed ? "hand-picked from Accounts" : describeSet(set);
+  const playbook = playbookById(playbookId);
+  const problemName = recipe?.label ?? playbook?.title ?? (fixed ? "Selected accounts" : "New playbook");
+  const whenLine = fixed ? `Runs once on the ${n} account${n === 1 ? "" : "s"} you picked` : describeSet(set);
+  const doesLine = playbook?.does ?? "Published in HighLevel · alerts you, sends the drafted note (your OK first), then escalates if it's still open.";
   // The real accounts this run touches — sorted by value, top first — for the go-live preview.
   const previewAccounts = (fixed ? fixedAccounts! : matchAccounts(set))
     .slice()
@@ -340,25 +344,32 @@ export function AttentionActivation({
         <Stepper steps={STEPS} current={STEP_INDEX[step]} onStepClick={(i) => setStep(STEP_BY_INDEX[i])} />
       </div>
 
-      {/* Scope band — pinned "who it runs on" context for step 2 (fixed in the header
-          stack, so it never overlaps the scrolling content below). */}
-      {step === "workflow" ? <ScopeBand n={n} contextLabel={contextLabel} onEdit={() => setStep("criteria")} /> : null}
-
-      {/* Body — the review step centers its content so go-live never floats in a void. */}
+      {/* Body — the review step centers its content so it never floats in a void. */}
       <div className={["aa-body", step === "review" ? "aa-body--center" : ""].filter(Boolean).join(" ")}>
         <div className="aa-body-inner">
-          {step === "criteria" ? (
-            fixed ? <FixedSelectionStep accounts={fixedAccounts!} /> : <CriteriaBuilder set={set} onChange={setSet} />
-          ) : step === "workflow" ? (
-            <WorkflowStep workflowReady={workflowReady} setWorkflowReady={setWorkflowReady} />
+          {step === "workflow" ? (
+            <WorkflowStep playbook={playbook} workflowReady={workflowReady} setWorkflowReady={setWorkflowReady} />
+          ) : step === "criteria" ? (
+            fixed ? (
+              <FixedSelectionStep accounts={fixedAccounts!} healthConfigured={healthConfigured} />
+            ) : (
+              <div style={{ display: "flex", flexDirection: "column", gap: "var(--s-4)" }}>
+                {/* The "how to set up triggers" explainer clip — sits above the builder.
+                    NEEDS KARTHIK: a real recording (placeholder card until then). */}
+                <VideoCard title="How to set up triggers" duration="1 min" />
+                <CriteriaBuilder set={set} onChange={setSet} />
+              </div>
+            )
           ) : (
             <ReviewStep
-              contextLabel={contextLabel}
+              whenLine={whenLine}
+              doesLine={doesLine}
               n={n}
               previewAccounts={previewAccounts}
               autopilot={autopilot}
               setAutopilot={setAutopilot}
               showAutopilot={!fixed}
+              healthConfigured={healthConfigured}
               onEditWho={() => setStep("criteria")}
               onEditWhat={() => setStep("workflow")}
             />
@@ -366,44 +377,44 @@ export function AttentionActivation({
         </div>
       </div>
 
-      {/* Sticky footer nav */}
+      {/* Sticky footer nav — What it does → When & who → Review & publish */}
       <footer className="aa-foot">
-        {step === "criteria" ? (
+        {step === "workflow" ? (
           <>
-            <span className="aa-foot-note">
-              {fixed ? (
-                <><Mono>{n}</Mono> account{n === 1 ? "" : "s"} selected</>
-              ) : n === 0 ? (
-                "No accounts match — try loosening a condition"
-              ) : (
-                <><Mono>{n}</Mono> account{n === 1 ? "" : "s"} match</>
-              )}
-            </span>
-            <Button variant="primary" iconRight={<Icon name="arrow-right" />} disabled={n === 0} onClick={() => setStep("workflow")}>
+            <span className="aa-foot-note">{workflowReady ? "Nice — next, set when it should run." : "Open & modify it, then mark it complete to continue."}</span>
+            <Button variant="primary" iconRight={<Icon name="arrow-right" />} disabled={!workflowReady} onClick={() => setStep("criteria")}>
               Continue
             </Button>
           </>
-        ) : step === "workflow" ? (
+        ) : step === "criteria" ? (
           <>
-            <Button variant="ghost" className="btn-accent" icon={<Icon name="arrow-left" />} onClick={() => setStep("criteria")}>
+            <Button variant="ghost" className="btn-accent" icon={<Icon name="arrow-left" />} onClick={() => setStep("workflow")}>
               Back
             </Button>
             <div style={{ display: "flex", alignItems: "center", gap: "var(--s-3)" }}>
-              {!workflowReady ? <span className="aa-foot-note">Publish it in HighLevel to continue</span> : null}
-              <Button variant="primary" iconRight={<Icon name="arrow-right" />} disabled={!workflowReady} onClick={() => setStep("review")}>
-                Continue to go live
+              <span className="aa-foot-note">
+                {fixed ? (
+                  <><Mono>{n}</Mono> account{n === 1 ? "" : "s"} selected</>
+                ) : n === 0 ? (
+                  "No accounts match yet — adjust the trigger"
+                ) : (
+                  <><Mono>{n}</Mono> account{n === 1 ? "" : "s"} match</>
+                )}
+              </span>
+              <Button variant="primary" iconRight={<Icon name="arrow-right" />} disabled={!fixed && n === 0} onClick={() => setStep("review")}>
+                Continue
               </Button>
             </div>
           </>
         ) : (
           <>
-            <Button variant="ghost" className="btn-accent" icon={<Icon name="arrow-left" />} onClick={() => setStep("workflow")}>
+            <Button variant="ghost" className="btn-accent" icon={<Icon name="arrow-left" />} onClick={() => setStep("criteria")}>
               Back
             </Button>
             <div className="aa-foot-commit">
               <span className="aa-foot-note">Starts tonight · pause anytime · we'll send you a summary</span>
               <Button variant="primary" icon={<Icon name="zap" />} onClick={goLive}>
-                {fixed ? <>Start on <Mono>{n}</Mono> account{n === 1 ? "" : "s"}</> : "Start playbook"}
+                {fixed ? <>Publish on <Mono>{n}</Mono> account{n === 1 ? "" : "s"}</> : "Publish"}
               </Button>
             </div>
           </>

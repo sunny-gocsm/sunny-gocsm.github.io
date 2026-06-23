@@ -1,12 +1,10 @@
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { Card, Button, Icon, Mono, Badge, FixItCard, ConfTag } from "@gocsm/design-system";
 import { useIsAutopilot } from "@/state/autopilot";
 import { useHealthConfigured, healthConfigStore } from "@/state/healthConfig";
 import { hasDraft } from "@/state/workflowDrafts";
-import { AttentionActivation } from "@/components/attention/AttentionActivation";
-import { type Recipe } from "@/fixtures/recipes";
-import { attentionQueue, queueAccountCount, recipeForSignal, type QueueItem } from "@/fixtures/attentionSignals";
+import { attentionQueue, queueAccountCount, type QueueItem } from "@/fixtures/attentionSignals";
 import { triedButFailed, triedUnconfirmed, type Attempt } from "@/fixtures/attempts";
 
 // ----- Needs-attention queue row: one HL-native (or, in Phase 2, health) event -----
@@ -117,7 +115,6 @@ function JobBCard({ attempt, onOpen, healthConfigured }: { attempt: Attempt; onO
 export default function AttentionPage() {
   const navigate = useNavigate();
   const healthConfigured = useHealthConfigured();
-  const [activation, setActivation] = useState<Recipe | null>(null);
 
   // The needs-attention queue — HL-native events in Phase 1; health-derived events join
   // the same list once Health Config exists (Phase 2). Re-derives when the phase flips.
@@ -175,7 +172,7 @@ export default function AttentionPage() {
         ) : (
           <div style={{ display: "flex", flexDirection: "column", gap: "var(--s-2)" }}>
             {queue.map((item) => (
-              <QueueRow key={item.id} item={item} onSetup={(it) => setActivation(recipeForSignal(it))} />
+              <QueueRow key={item.id} item={item} onSetup={(it) => navigate(`/playbooks/${it.playbookId}`)} />
             ))}
           </div>
         )}
@@ -194,8 +191,6 @@ export default function AttentionPage() {
           {healthConfigured ? "Turn Health off" : "Preview with Health on"}
         </Button>
       </div>
-
-      {activation ? <AttentionActivation recipe={activation} onClose={() => setActivation(null)} /> : null}
     </main>
   );
 }

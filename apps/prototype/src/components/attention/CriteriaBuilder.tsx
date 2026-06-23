@@ -2,6 +2,7 @@ import { useMemo, useState } from "react";
 import { Button, Icon, Card, PromptArea, SegmentedControl, RuleGroup } from "@gocsm/design-system";
 import { MatchWall } from "./MatchWall";
 import { CriterionChip, makeCriterion } from "./CriterionChip";
+import { useHealthConfigured } from "@/state/healthConfig";
 import { RECIPES, type Recipe } from "@/fixtures/recipes";
 import {
   CATALOG,
@@ -70,6 +71,13 @@ function restate(set: CriteriaSet): string {
   return describeSet(set); // "Accounts where X and Y" | "All accounts"
 }
 
+// Health (the gated/coined system) lives in the `health.*` fields. In Phase 1 (no Health
+// configured) we strip every health signal from the trigger builder — the field picker,
+// NL examples, recipe templates, suggestions, and the right-hand accounts pane — so the
+// trial never sees coined vocab (Patterns 3 & 4). It all returns additively in Phase 2.
+const isHealthField = (fieldId: string): boolean => fieldId.startsWith("health.");
+const recipeHasHealth = (r: Recipe): boolean => JSON.stringify(r.set).includes("health.");
+
 export function CriteriaBuilder({
   set,
   onChange,
@@ -83,6 +91,10 @@ export function CriteriaBuilder({
   const [clarify, setClarify] = useState(false);
   const [compiledNote, setCompiledNote] = useState(false); // soft "did I get everything?" note after an NL compile
   const [picker, setPicker] = useState<{ target: "top" | string } | null>(null); // groupId or "top"
+
+  const healthConfigured = useHealthConfigured();
+  const visibleRecipes = healthConfigured ? RECIPES : RECIPES.filter((r) => !recipeHasHealth(r));
+  const visibleExamples = healthConfigured ? EXAMPLES : EXAMPLES.filter((e) => !/health|risk/i.test(e.label));
 
   const nodes = nodesOf(set);
   const leaves = useMemo(() => nodes.flatMap((n) => (isGroup(n) ? n.criteria : [n])), [nodes]);
@@ -111,7 +123,8 @@ export function CriteriaBuilder({
     setCompiledNote(false);
     // tiny async beat so the button reads "Compiling…" (prototype theater, deterministic).
     window.setTimeout(() => {
-      const compiled = compileNL(text);
+      const raw = compileNL(text);
+      const compiled = healthConfigured ? raw : raw.filter((c) => !isHealthField(c.fieldId));
       setBusy(false);
       if (compiled.length === 0) {
         setClarify(true);
@@ -196,8 +209,8 @@ export function CriteriaBuilder({
       <div className="cb-left">
         <div className="cb-headrow">
           <div className="cb-head">
-            <h2 className="cb-title">Who should this run on?</h2>
-            <p className="cb-sub">Describe it, or start from a template.</p>
+            <h2 className="cb-title">When should this run — and on whom?</h2>
+            <p className="cb-sub">Pick the signal that triggers it. Describe it, or start from a template.</p>
           </div>
           <div className="cb-mode">
             <SegmentedControl
@@ -220,7 +233,7 @@ export function CriteriaBuilder({
           placeholder="Describe who this should run on…"
           submitLabel="Build rules"
           hint="We'll turn this into editable rules below — always check them."
-          examples={EXAMPLES}
+          examples={visibleExamples}
         />
 
         {clarify ? (
@@ -231,7 +244,7 @@ export function CriteriaBuilder({
                 renewing in 30 days" — or start from one of these:
               </span>
               <div style={{ display: "flex", flexWrap: "wrap", gap: "var(--s-2)" }}>
-                {RECIPES.slice(0, 4).map((r) => (
+                {visibleRecipes.slice(0, 4).map((r) => (
                   <Button key={r.id} variant="secondary" size="sm" icon={<Icon name={r.icon} />} onClick={() => applyRecipe(r)}>
                     {r.label}
                   </Button>
@@ -253,7 +266,7 @@ export function CriteriaBuilder({
 
         {/* the rules — empty state OR simple OR advanced */}
         {empty ? (
-          <EmptyState onRecipe={applyRecipe} onSuggested={addCriterionTo} />
+          <EmptyState onRecipe={applyRecipe} onSuggested={addCriterionTo} healthConfigured={healthConfigured} />
         ) : mode === "advanced" ? (
           <AdvancedBuilder
             set={set}
@@ -314,7 +327,13 @@ export function CriteriaBuilder({
           <span className="cb-count-label">account{n === 1 ? "" : "s"}</span>
           <span className="cb-count-runs">runs on</span>
         </div>
-        <MatchWall set={set} hideCount />
+        {healthConfigured ? (
+          <MatchWall set={set} hideCount />
+        ) : (
+          <p style={{ margin: "var(--s-3) 0 0", fontSize: "var(--t-body-sm)", color: "var(--text-3, var(--text))" }}>
+            Accounts are matched live when the trigger fires.
+          </p>
+        )}
       </Card>
     </div>
   );
@@ -324,23 +343,27 @@ export function CriteriaBuilder({
 function EmptyState({
   onRecipe,
   onSuggested,
+  healthConfigured,
 }: {
   onRecipe: (r: Recipe) => void;
   onSuggested: (target: "top", fieldId: string) => void;
+  healthConfigured: boolean;
 }) {
   // suggested filters seed a single fully-formed condition (Totango-style)
-  const suggestions: { label: string; fieldId: string }[] = [
+  const allSuggestions: { label: string; fieldId: string }[] = [
     { label: "Health is At-risk", fieldId: "health.band" },
     { label: "Renewing in 30 days", fieldId: "revenue.renewsWithin" },
     { label: "Gone quiet 21+ days", fieldId: "engagement.lastLoginDays" },
     { label: "Payment failed", fieldId: "revenue.failedPayment" },
   ];
+  const suggestions = healthConfigured ? allSuggestions : allSuggestions.filter((s) => !isHealthField(s.fieldId));
+  const recipes = healthConfigured ? RECIPES : RECIPES.filter((r) => !recipeHasHealth(r));
   return (
     <div className="cb-empty">
       <div className="cb-block">
         <span className="cb-eyebrow">Start from a template</span>
         <div className="cb-recipes">
-          {RECIPES.map((r) => (
+          {recipes.map((r) => (
             <button key={r.id} type="button" className="cb-recipe" onClick={() => onRecipe(r)}>
               <span className="cb-recipe-ico"><Icon name={r.icon} /></span>
               <span className="cb-recipe-body">
@@ -520,13 +543,20 @@ function FieldPickerLauncher({
 function FieldPicker({ onPick, onClose }: { onPick: (fieldId: string) => void; onClose: () => void }) {
   const [query, setQuery] = useState("");
   const [group, setGroup] = useState<AttrGroup>("common");
+  const healthConfigured = useHealthConfigured();
+
+  // Phase 1: the Health group + any health.* field are absent from the picker.
+  const groups = healthConfigured ? GROUP_ORDER : GROUP_ORDER.filter((g) => g !== "health");
+  const dropHealth = (fs: typeof CATALOG) => (healthConfigured ? fs : fs.filter((f) => f.group !== "health"));
 
   const q = query.trim().toLowerCase();
-  const results = q
-    ? CATALOG.filter((f) => f.label.toLowerCase().includes(q) || f.phrase.toLowerCase().includes(q))
-    : group === "common"
-      ? commonFields()
-      : fieldsForGroup(group);
+  const results = dropHealth(
+    q
+      ? CATALOG.filter((f) => f.label.toLowerCase().includes(q) || f.phrase.toLowerCase().includes(q))
+      : group === "common"
+        ? commonFields()
+        : fieldsForGroup(group),
+  );
 
   return (
     <Card padded className="cb-picker">
@@ -540,7 +570,7 @@ function FieldPicker({ onPick, onClose }: { onPick: (fieldId: string) => void; o
 
       {!q ? (
         <div className="cb-picker-groups">
-          {GROUP_ORDER.map((g) => (
+          {groups.map((g) => (
             <button
               key={g}
               type="button"
