@@ -5,6 +5,26 @@ Durable, human- and agent-readable log of significant decisions and changes.
 
 ---
 
+## 2026-06-23 — Playbook detail page: video-first, outcome-first 3-step activation
+Rebuilt `PlaybookDetailPage.tsx` per the 04 brief. Structure top→bottom: (1) hero **video up
+front** (first element; honest "coming soon" placeholder since `videoUrl` is empty — NEEDS
+KARTHIK: source per-play hero video + the trigger-config clip), (2) plain-English outcome,
+(3) social-proof + expected-impact **StatCards** using the new `caption` slot (Pattern 1: value
++ subtext, no naked numbers), then the **3-step activation**: Step 1 *What needs to be done*
+(the action), Step 2 *The trigger* (firing rule + config explainer video; HL-native only in
+Phase 1), Step 3 *Review scope & activate* with a confirm that restates trigger + action in one
+sentence before the single Activate CTA. Lifecycle (Manage/Pause/Resume/Restore) preserved.
+**Phase gating (Pattern 4):** a playbook whose firing condition is Health-derived (coined vocab
+in its trigger OR its `problem`, e.g. "…healthy…") is GATED in Phase 1 — trigger + impact + scope
+suppressed, Activate replaced by "Set up Health Config" (→ /configure). Fixed copy bugs found in
+the live audit (used `outcome` not `does` so "GoCSM will …" reads grammatically; killed a double
+period). Verified live on :8080: Phase-1 scan = **zero coined band/score/pillar/lifecycle terms**
+(incl. "healthy") across both an HL-native play (`pb-no-login`) and a gated play
+(`pb-expansion-ready`); Phase 2 unlocks the real trigger + Activate. `bun run build` green;
+prototype `tsc` clean. Branch `design/universal-ux-patterns`, not merged.
+NEEDS KARTHIK: the Phase-1 **catalog** (prompt 03) should hide health-intrinsic plays so the
+gated detail state is an edge case (direct-nav fallback), not a primary path.
+
 ## 2026-06-23 — Attention: needs-attention queue, HL-native in Phase 1 (+ Health gating)
 Built the needs-attention queue as Attention's lead layer, applying the GoCSM signal tiers.
 New `src/fixtures/attentionSignals.ts` defines the queue's signal library in two tiers:
