@@ -84,6 +84,23 @@ export function TriggerStep({
     ...(plan !== "all" ? [crit("revenue.plan", "isAnyOf", [plan])] : []),
   ] }));
 
+  // Advanced (the full rule builder) renders at FULL width — its two-column .cb-grid
+  // breaks if squeezed into the narrow simple-view column. Simple view stays centered/narrow.
+  if (advanced) {
+    return (
+      <div style={{ display: "flex", flexDirection: "column", gap: "var(--s-3)" }}>
+        <button
+          type="button"
+          onClick={() => setAdvanced(false)}
+          style={{ alignSelf: "flex-start", border: 0, background: "transparent", padding: 0, cursor: "pointer", fontSize: "var(--t-body-sm)", color: "var(--text-3, var(--text))", fontWeight: 600, display: "inline-flex", alignItems: "center", gap: 4 }}
+        >
+          <Icon name="chevron-left" /> Back to simple setup
+        </button>
+        <CriteriaBuilder set={set} onChange={onChange} />
+      </div>
+    );
+  }
+
   return (
     <div style={{ maxWidth: 640, margin: "0 auto", display: "flex", flexDirection: "column", gap: "var(--s-4)" }}>
       {/* Block A — the trigger, as a fact you confirm (read-only). */}
@@ -112,10 +129,8 @@ export function TriggerStep({
         </div>
       </div>
 
-      {!advanced ? (
-        <>
-          {/* Block B — ONE optional narrowing, labeled controls defaulting to "all". */}
-          <div style={{ display: "flex", flexDirection: "column", gap: "var(--s-3)" }}>
+      {/* Block B — ONE optional narrowing, labeled controls defaulting to "all". */}
+      <div style={{ display: "flex", flexDirection: "column", gap: "var(--s-3)" }}>
             <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
               <span style={{ fontSize: "var(--t-subheading)", fontWeight: 700 }}>Only run it for…</span>
               <span style={{ fontSize: "var(--t-body-sm)", color: "var(--text-3, var(--text))" }}>Optional — leave on “all” to run on every account that matches.</span>
@@ -141,23 +156,18 @@ export function TriggerStep({
             ) : null}
           </div>
 
-          {/* Live audience count — the accept-and-publish confidence builder (Pattern 1). */}
-          <div style={{ display: "flex", alignItems: "baseline", gap: "var(--s-2)", padding: "var(--s-3) var(--s-4)", borderRadius: "var(--r-md, 10px)", background: "var(--blue-1, #eef3fc)" }}>
-            <Mono style={{ fontSize: "var(--t-display-lg)", fontWeight: 750, color: "var(--blue-7, #1558c0)" }}>{n}</Mono>
-            <span style={{ fontSize: "var(--t-body)", color: "var(--text-2, var(--text))" }}>of your accounts match right now.</span>
-          </div>
-        </>
-      ) : (
-        /* The full rule builder — for the rare power case only. */
-        <CriteriaBuilder set={set} onChange={onChange} />
-      )}
+      {/* Live audience count — the accept-and-publish confidence builder (Pattern 1). */}
+      <div style={{ display: "flex", alignItems: "baseline", gap: "var(--s-2)", padding: "var(--s-3) var(--s-4)", borderRadius: "var(--r-md, 10px)", background: "var(--blue-1, #eef3fc)" }}>
+        <Mono style={{ fontSize: "var(--t-display-lg)", fontWeight: 750, color: "var(--blue-7, #1558c0)" }}>{n}</Mono>
+        <span style={{ fontSize: "var(--t-body)", color: "var(--text-2, var(--text))" }}>of your accounts match right now.</span>
+      </div>
 
       <button
         type="button"
-        onClick={() => setAdvanced((a) => !a)}
+        onClick={() => setAdvanced(true)}
         style={{ alignSelf: "flex-start", border: 0, background: "transparent", padding: 0, cursor: "pointer", fontSize: "var(--t-body-sm)", color: "var(--text-3, var(--text))", fontWeight: 600, display: "inline-flex", alignItems: "center", gap: 4 }}
       >
-        <Icon name={advanced ? "chevron-up" : "sliders"} /> {advanced ? "Back to simple" : "Customize trigger (advanced)"}
+        <Icon name="sliders" /> Customize trigger (advanced)
       </button>
     </div>
   );
