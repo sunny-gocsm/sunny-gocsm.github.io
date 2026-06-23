@@ -4,6 +4,8 @@ export declare function StatCard(props: {
   label?: React.ReactNode;
   icon?: string;
   value?: React.ReactNode;
+  /** One-line plain-English explainer shown directly beneath the value (Pattern 1: no naked big numbers). */
+  caption?: React.ReactNode;
   secondary?: React.ReactNode;
   delta?: number | null;
   deltaText?: React.ReactNode;

@@ -5,6 +5,23 @@ Durable, human- and agent-readable log of significant decisions and changes.
 
 ---
 
+## 2026-06-23 — Universal UX patterns codified into the design-loop skill + DS contract
+Encoded seven product-agnostic UX defaults (feed-01 brief) so they apply on every future
+surface. (1) No naked big numbers — every prominent stat/hero figure gets a one-line
+plain-English explainer subtext; (2) self-explanatory labels; (3) speak the customer's
+language, not coined terms; (4) progressive disclosure — gate advanced/coined systems
+behind setup; (5) simplicity over completeness; (6) sell the outcome; (7) one click from
+signal to action. Changes: added a **"Universal UX patterns"** section to the global
+`design-loop` SKILL.md (wired into Phase 3 build + Phase 4 review as a baseline gate); added
+a **"Universal content rules"** block to the DS **contract** (`packages/design-system/README.md`);
+and made Pattern 1 buildable by adding an optional `caption` explainer slot to `StatCard`
+(`.sc-caption`, `--t-body-sm`/`--text-3`, types updated). Kept strictly product-agnostic —
+persona/native-vs-coined vocabulary/which-system-is-gated stay in the product context file.
+**No token conflicts** (caption reuses existing muted-text tokens) → no NEEDS KARTHIK note.
+Verified: `bun run build` green DS→prototype→web; DS lint clean; `OutcomesPage` audited —
+every prominent figure already carries a label + explainer, no naked stats. Branch
+`design/universal-ux-patterns`, not merged.
+
 ## 2026-06-23 — Fix: playbook setup footer pushed off-screen under a browser infobar
 The setup-flow footer (Continue) vanished again — reproduced only with Chrome's
 screen-sharing infobar present. Cause: `.aa-fullpage` used `height: 100dvh`, which can

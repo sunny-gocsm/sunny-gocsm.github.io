@@ -212,6 +212,7 @@ button.account-row:hover{border-color:var(--blue-5,#6f97e0);background:var(--blu
 .stat-card .sc-label{display:inline-flex;align-items:center;gap:6px;font-size:var(--t-caption,12px);font-weight:600;text-transform:uppercase;letter-spacing:0.04em;color:var(--text-3,#6a7689);}
 .stat-card .sc-label svg{width:14px;height:14px;}
 .stat-card .sc-value{font-size:var(--t-display-lg,26px);font-weight:750;line-height:1.04;color:var(--text,#0f1b2d);letter-spacing:-0.012em;font-variant-numeric:tabular-nums;}
+.stat-card .sc-caption{font-size:var(--t-body-sm,13px);line-height:1.35;color:var(--text-3,#6a7689);text-wrap:pretty;}
 .stat-card .sc-foot{display:flex;align-items:baseline;gap:var(--s-2,8px);flex-wrap:wrap;min-height:18px;}
 .stat-card .sc-secondary{font-size:var(--t-body-sm,13px);color:var(--text-3,#6a7689);}
 .stat-card .sc-delta{display:inline-flex;align-items:center;gap:2px;font-size:var(--t-caption,12px);font-weight:700;font-variant-numeric:tabular-nums;}

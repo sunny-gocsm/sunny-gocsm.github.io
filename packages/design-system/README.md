@@ -48,6 +48,24 @@ npm install lucide-react
   carry a blast-radius line + ≥5s undo.
 - **Numbers** render in JetBrains Mono. **AI surfaces** use the reserved indigo, never a band color.
 
+## Universal content rules (every surface)
+Product-agnostic defaults the `design-loop` skill enforces on every surface (see that
+skill's "Universal UX patterns" for the rules + rationale). Encoded here because the DS
+is where they become buildable:
+- **No naked big numbers.** Every prominent value carries a one-line plain-English
+  explainer subtext (e.g. `1,284` → *"Active users this month."*). The stat primitives
+  expose the slot: `StatCard` `caption`, `MetricCard` `context`.
+- **Self-explanatory labels.** A label/title is paired with a one-line description; the
+  user never has to guess what it means.
+- **Customer's language, not coined terms.** Default to vocabulary the customer already
+  knows. Internally-coined terms stay out of default/first-run states.
+- **Progressive disclosure.** Advanced/coined systems are *absent* until the user opts in
+  (completes setup) — never an "unlock this" nag in a primary action path. Every surface
+  works with the advanced layer OFF and degrades gracefully into it once configured.
+- **Simplicity over completeness, outcome-first, one click to action.** Show fewer,
+  clearer things; lead with the result not the mechanics; keep one obvious click between
+  a signal and the action that fixes it.
+
 ## Scripts
 ```bash
 npm run build    # compile → dist/ (ESM + CJS)

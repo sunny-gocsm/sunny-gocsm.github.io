@@ -3,15 +3,18 @@ import { Icon } from "../util/Icon.jsx";
 
 /**
  * GoCSM StatCard — a value card for report cards / KPIs. A label, a big focal value, an
- * optional secondary axis (the "$142k (37)" dual read — money AND count in one tile), and
- * a signed delta vs a prior period rendered as a green/red arrow so direction reads before
- * the number. `size="hero"` for the one oversized headline figure. Tappable to drill in.
+ * optional one-line plain-English `caption` directly beneath the value (the "what does this
+ * number mean?" explainer — Universal UX Pattern 1: no naked big numbers), an optional
+ * secondary axis (the "$142k (37)" dual read — money AND count in one tile), and a signed
+ * delta vs a prior period rendered as a green/red arrow so direction reads before the
+ * number. `size="hero"` for the one oversized headline figure. Tappable to drill in.
  * Maps to .stat-card.
  */
 export function StatCard({
   label,
   icon,
   value,
+  caption,
   secondary,
   delta,
   deltaText,
@@ -37,6 +40,7 @@ export function StatCard({
         </span>
       ) : null}
       <span className="sc-value">{value}</span>
+      {caption != null ? <span className="sc-caption">{caption}</span> : null}
       {(secondary != null || deltaText != null) ? (
         <span className="sc-foot">
           {secondary != null ? <span className="sc-secondary">{secondary}</span> : null}
