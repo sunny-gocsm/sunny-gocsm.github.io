@@ -5,6 +5,22 @@ Durable, human- and agent-readable log of significant decisions and changes.
 
 ---
 
+## 2026-06-24 — Playbook library expanded to 57 (grounded, live counts)
+Grew the marketplace catalog from ~16 to **57 playbooks** (`apps/prototype/src/fixtures/playbooks.ts`),
+each a real signal→action play rated on a churn↔expansion spectrum (🔴🔴🔴 critical churn … 🟢🟢🟢 hot
+expansion). The full rated catalog + rating legend + feasibility tags lives in
+`docs/design/playbook-library-v1.md`. Grounded in `gocsm-signal-knowledge-base.md` (live Mongo/ClickHouse
+schema + System-A/B trigger types) — observable drivers only, never PAS/pillar scores. Each play has a
+pure `match()` over the Account model; **55/57 render live matching-account counts + MRR impact** (the 2
+zeros — `pb-admin-removed`, `pb-churned-winback` — are honest structural rarities). To support the new
+plays, `index.ts` gained: `Email`/`Calendar` signal subjects; 5 sticky-setup-REVERSE "teardown" signals
+(phone port-out, email/Stripe/calendar disconnect, workflow turned off — the heaviest churn tells); 2 new
+onboarding accounts (day-7 ghost `a-dayspring-coaching`, day-1 welcome `a-harbor-fitness`); and field
+tweaks (Modern Physio detractor NPS, Evergreen recent upgrade, Organize downgrade, Paws underutilized
+features). No `criteriaCatalog.ts` change — it already covers every field the triggers read. The 3 prior
+`() => false` plays (nps-detractor, milestone, upsell-limit) now have real matches. `bun run build` green
+(DS→prototype→web); 11/11 vitest pass; tsc clean.
+
 ## 2026-06-23 — Prototype deploys to GitHub Pages at the org user-page (root)
 Stood up continuous deploy of **`apps/prototype`** to https://sunny-gocsm.github.io/. To serve at
 root (`base: "/"`) we renamed the GitHub repo `gocsm-playbooks` → **`sunny-gocsm.github.io`** (the

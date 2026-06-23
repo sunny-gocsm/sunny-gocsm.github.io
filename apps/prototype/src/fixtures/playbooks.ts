@@ -110,6 +110,29 @@ const usageReverse = (a: Account, subjects: SignalSubject[], windowDays = 60): b
       daysSince(s.detectedAt) <= windowDays,
   );
 
+// ---- shared predicates for the v1 library matches (read-only over the Account model) ----
+const notOnboardingLive = (a: Account): boolean =>
+  a.status.enabled === "Enabled" &&
+  a.lifecycle.stage !== "onboarding" &&
+  a.lifecycle.stage !== "churned";
+
+const hasFeature = (a: Account, name: string): boolean =>
+  a.adoption.features.some((f) => f.name === name && f.engagement > 0);
+
+const lifetimeSpendOf = (a: Account): number =>
+  Math.round(a.revenue.mrr * Math.max(1, a.identity.activeDays / 30));
+
+const recentPlanChange = (a: Account, type: string, withinDays: number): boolean =>
+  a.revenue.planChanges.some((p) => p.type === type && daysSince(p.date) <= withinDays);
+
+const failedAttempts = (a: Account): number =>
+  a.revenue.paymentAttempts.filter((p) => p.status === "failed").length;
+
+const renewsWithin = (a: Account, minDays: number, maxDays: number): boolean => {
+  const d = daysUntil(a.revenue.renewalDate);
+  return d >= minDays && d <= maxDays;
+};
+
 // Per-play video assignments. All point to the placeholder for now;
 // production swaps these for the real recordings keyed by play id.
 const PLAY_VIDEOS: Record<string, string> = {
@@ -199,6 +222,142 @@ const PLAY_ACTIONS: Record<string, PlaybookAction[]> = {
     { type: "internal-email", subject: "Near plan limit: {{account}}", preview: "Bumping the ceiling of their plan. Good moment for a value-led upgrade offer." },
     { type: "customer-email", subject: "You're outgrowing your plan — in a good way", preview: "Hi {{name}}, you're hitting the limits of your current plan. Here's what the next tier unlocks." },
   ],
+
+  // ----- v1 library actions -----
+  "pb-quiet-7d": [
+    { type: "customer-email", subject: "A quick hello from {{account}}", preview: "Hi {{name}}, noticed it's been a few days — here's one quick thing worth a look." },
+  ],
+  "pb-admin-dark-30": [
+    { type: "slack", preview: "{{account}}'s admin has been dark for a month — worth a personal note." },
+    { type: "customer-email", subject: "Checking in, {{name}}", preview: "Hi {{name}}, we haven't seen you in a while — anything we can help unblock?" },
+  ],
+  "pb-all-inactive": [
+    { type: "internal-email", subject: "Account gone quiet: {{account}}", preview: "No logins from anyone in 30+ days. Time for a real outreach." },
+    { type: "customer-email", subject: "Still getting value from {{account}}?", preview: "Hi {{name}}, it's been quiet on your end — let's make sure this is still working for you." },
+  ],
+  "pb-login-collapsed": [
+    { type: "customer-email", subject: "Here when you need us", preview: "Hi {{name}}, you've been logging in less lately — here's a fast way back to value." },
+  ],
+  "pb-admin-removed": [
+    { type: "internal-email", subject: "Admin removed: {{account}}", preview: "A key user is gone. Find the new point of contact before the relationship drifts." },
+  ],
+  "pb-reengaged": [
+    { type: "customer-email", subject: "Welcome back, {{name}}", preview: "Great to see you again — here's the quickest win to pick up where you left off." },
+  ],
+  "pb-health-atrisk": [
+    { type: "slack", preview: "{{account}} just dropped to at-risk — worth a look today." },
+    { type: "customer-email", subject: "Let's get {{account}} back on track", preview: "Hi {{name}}, I'd love to help you get more out of this — can we grab 15 minutes?" },
+  ],
+  "pb-health-watch": [
+    { type: "customer-email", subject: "A quick tune-up for {{account}}", preview: "Hi {{name}}, a couple of small things could make this run a lot smoother — want a hand?" },
+  ],
+  "pb-prolonged-decline": [
+    { type: "internal-email", subject: "Sustained decline: {{account}}", preview: "Health's been falling for weeks. Time for a structured save." },
+  ],
+  "pb-save-big": [
+    { type: "slack", preview: "High-value {{account}} is at-risk — escalating." },
+    { type: "task", preview: "Personally reach out to {{account}} (high MRR, at-risk)." },
+  ],
+  "pb-renewal-dark": [
+    { type: "customer-email", subject: "Before your renewal — a quick recap", preview: "Hi {{name}}, you're up for renewal soon. Here's the value you've gotten, and a hand if you want it." },
+  ],
+  "pb-annual-renewal": [
+    { type: "customer-email", subject: "Your renewal's coming up", preview: "Hi {{name}}, your annual renewal is approaching — here's a recap and what's ahead." },
+  ],
+  "pb-funnel-unpublished": [
+    { type: "internal-email", subject: "Funnel unpublished: {{account}}", preview: "They took a live funnel down. Strong leaving signal — reach out now." },
+    { type: "customer-email", subject: "Noticed your funnel went offline", preview: "Hi {{name}}, your funnel is no longer live — want us to help get it back up?" },
+  ],
+  "pb-phone-portout": [
+    { type: "slack", preview: "{{account}} ported their number out — likely leaving. Call today." },
+    { type: "internal-email", subject: "Phone ported out: {{account}}", preview: "One of the strongest exit signals. Personal call before they fully migrate." },
+  ],
+  "pb-email-disconnect": [
+    { type: "customer-email", subject: "Your email sending got disconnected", preview: "Hi {{name}}, your sending domain is disconnected — let's reconnect so campaigns keep landing." },
+  ],
+  "pb-stripe-disconnect": [
+    { type: "internal-email", subject: "Payments disconnected: {{account}}", preview: "They can't collect right now. Offer an urgent reconnect." },
+    { type: "customer-email", subject: "Let's get your payments working again", preview: "Hi {{name}}, your payment processor is disconnected — we can reconnect it with you in minutes." },
+  ],
+  "pb-calendar-disconnect": [
+    { type: "customer-email", subject: "Your calendar got disconnected", preview: "Hi {{name}}, bookings won't go through until your calendar's reconnected — want a hand?" },
+  ],
+  "pb-workflow-off": [
+    { type: "internal-email", subject: "Workflow turned off: {{account}}", preview: "A published automation was switched off. Find out why and offer to re-set-up." },
+  ],
+  "pb-payment-dunning": [
+    { type: "customer-email", subject: "Your payment didn't go through — again", preview: "Hi {{name}}, we've tried your card a couple of times — update it here to avoid any interruption." },
+    { type: "slack", preview: "{{account}} has multiple failed payments — escalating before cancel." },
+  ],
+  "pb-wallet-low": [
+    { type: "customer-email", subject: "Top up to keep your texts and emails sending", preview: "Hi {{name}}, your balance is nearly out — a quick top-up keeps everything running." },
+  ],
+  "pb-spend-drop": [
+    { type: "internal-email", subject: "Spend falling: {{account}}", preview: "Rebilling usage dropped sharply. Diagnose the pullback." },
+  ],
+  "pb-cancellation": [
+    { type: "slack", preview: "{{account}} asked to cancel — pausing automations, routing to you now." },
+    { type: "customer-email", subject: "Before you go — can we talk?", preview: "Hi {{name}}, I saw you're thinking of cancelling. I'd love 10 minutes to make this right." },
+  ],
+  "pb-churned-winback": [
+    { type: "customer-email", subject: "We've changed a lot — come see", preview: "Hi {{name}}, it's been a while. Here's what's new since you left, and an easy way back." },
+  ],
+  "pb-workflows-unpublished": [
+    { type: "customer-email", subject: "Let's publish your first automation", preview: "Hi {{name}}, you haven't launched a workflow yet — here's a two-minute starter, or we'll build one with you." },
+  ],
+  "pb-payments-unset": [
+    { type: "customer-email", subject: "You're leaving money on the table", preview: "Hi {{name}}, payments isn't switched on yet — here's the quick setup to start collecting." },
+  ],
+  "pb-sms-unset": [
+    { type: "customer-email", subject: "Send your first text campaign", preview: "Hi {{name}}, you're set up for texting but haven't sent one yet — here's how to launch your first." },
+  ],
+  "pb-reviews-unset": [
+    { type: "customer-email", subject: "Start collecting reviews", preview: "Hi {{name}}, connect your profile and we'll help you turn happy clients into reviews." },
+  ],
+  "pb-breadth-no-depth": [
+    { type: "customer-email", subject: "Pick one, go deep", preview: "Hi {{name}}, you've tried a lot — let's master one feature that'll move the needle." },
+  ],
+  "pb-day7-ghost": [
+    { type: "internal-email", subject: "New account hasn't logged in: {{account}}", preview: "Day-7 ghost. Personal outreach before activation is lost." },
+    { type: "customer-email", subject: "Let's get you started", preview: "Hi {{name}}, welcome aboard — grab 10 minutes and we'll set up your first win together." },
+  ],
+  "pb-onb-day30": [
+    { type: "customer-email", subject: "How's setup going?", preview: "Hi {{name}}, want to make sure nothing's blocking you — here's a quick check-in." },
+  ],
+  "pb-onb-longtail": [
+    { type: "internal-email", subject: "Long-tail onboarding: {{account}}", preview: "90+ days and still not live. Time for an intensive activation push." },
+  ],
+  "pb-welcome-day1": [
+    { type: "customer-email", subject: "Welcome to {{account}}!", preview: "Hi {{name}}, so glad you're here — here's the two-minute path to your first win." },
+  ],
+  "pb-graduated": [
+    { type: "customer-email", subject: "You're off to a great start", preview: "Hi {{name}}, you've cleared setup — here are the next features worth turning on." },
+  ],
+  "pb-spend-surge": [
+    { type: "internal-email", subject: "Scaling fast: {{account}}", preview: "Spend is surging. Great moment for an expansion conversation." },
+    { type: "customer-email", subject: "You're growing — let's grow with you", preview: "Hi {{name}}, you're scaling fast. Here's how to get even more, plus a quick planning call." },
+  ],
+  "pb-plan-upgrade": [
+    { type: "customer-email", subject: "Welcome to your new plan", preview: "Hi {{name}}, congrats on upgrading — here's how to switch on what you just unlocked." },
+  ],
+  "pb-lifetime-milestone": [
+    { type: "customer-email", subject: "Thank you for {{account}}", preview: "Hi {{name}}, you've hit a real milestone with us — here's to what's next." },
+  ],
+  "pb-high-engage-entry": [
+    { type: "customer-email", subject: "You've outgrown your plan — in a good way", preview: "Hi {{name}}, you're using this heavily. Here's what the next tier unlocks." },
+  ],
+  "pb-power-user": [
+    { type: "internal-email", subject: "Champion at {{account}}", preview: "Daily-active power user. Great testimonial or referral candidate." },
+  ],
+  "pb-no-feedback": [
+    { type: "customer-email", subject: "How are we doing?", preview: "Hi {{name}}, we'd love your honest take — anything we could be doing better?" },
+  ],
+  "pb-health-thriving": [
+    { type: "customer-email", subject: "You're thriving — here's what's next", preview: "Hi {{name}}, things are clicking. Want to explore a couple of ways to get even more?" },
+  ],
+  "pb-anniversary": [
+    { type: "customer-email", subject: "Happy one year, {{name}}!", preview: "Hi {{name}}, it's been a year — here's a quick look back at what you've accomplished." },
+  ],
 };
 
 type PlaybookSeed = Omit<
@@ -228,6 +387,49 @@ const PLAY_META: Record<
   "pb-nps-promoter":       { category: "listen",   usedByAgencies: 1120, totalRuns: 15600, launchedDaysAgo: 12,  trending: true, effort: "ready" },
   "pb-milestone":          { category: "listen",   usedByAgencies: 280,  totalRuns: 1800,  launchedDaysAgo: 3,   effort: "ready" },
   "pb-upsell-limit":       { category: "grow",     usedByAgencies: 690,  totalRuns: 7400,  launchedDaysAgo: 18,  effort: "quick" },
+
+  // ----- v1 library metadata -----
+  "pb-quiet-7d":            { category: "reengage", usedByAgencies: 1680, totalRuns: 33400, launchedDaysAgo: 140, effort: "ready" },
+  "pb-admin-dark-30":      { category: "reengage", usedByAgencies: 1320, totalRuns: 21800, launchedDaysAgo: 6,   trending: true, effort: "ready" },
+  "pb-all-inactive":       { category: "reengage", usedByAgencies: 940,  totalRuns: 12600, launchedDaysAgo: 44,  effort: "ready" },
+  "pb-login-collapsed":    { category: "reengage", usedByAgencies: 720,  totalRuns: 8800,  launchedDaysAgo: 33,  effort: "quick" },
+  "pb-admin-removed":      { category: "reengage", usedByAgencies: 410,  totalRuns: 3100,  launchedDaysAgo: 21,  effort: "quick" },
+  "pb-reengaged":          { category: "reengage", usedByAgencies: 560,  totalRuns: 6200,  launchedDaysAgo: 11,  effort: "ready" },
+  "pb-health-atrisk":      { category: "winback",  usedByAgencies: 2260, totalRuns: 48900, launchedDaysAgo: 150, effort: "ready" },
+  "pb-health-watch":       { category: "winback",  usedByAgencies: 1410, totalRuns: 22300, launchedDaysAgo: 88,  effort: "ready" },
+  "pb-prolonged-decline":  { category: "winback",  usedByAgencies: 880,  totalRuns: 11200, launchedDaysAgo: 52,  effort: "quick" },
+  "pb-save-big":           { category: "winback",  usedByAgencies: 1180, totalRuns: 9400,  launchedDaysAgo: 40,  trending: true, effort: "ready" },
+  "pb-renewal-dark":       { category: "winback",  usedByAgencies: 990,  totalRuns: 13700, launchedDaysAgo: 7,   trending: true, effort: "ready" },
+  "pb-annual-renewal":     { category: "winback",  usedByAgencies: 760,  totalRuns: 8100,  launchedDaysAgo: 64,  effort: "quick" },
+  "pb-funnel-unpublished": { category: "winback",  usedByAgencies: 620,  totalRuns: 7300,  launchedDaysAgo: 16,  trending: true, effort: "ready" },
+  "pb-phone-portout":      { category: "winback",  usedByAgencies: 480,  totalRuns: 4900,  launchedDaysAgo: 8,   trending: true, effort: "ready" },
+  "pb-email-disconnect":   { category: "winback",  usedByAgencies: 430,  totalRuns: 4400,  launchedDaysAgo: 34,  effort: "ready" },
+  "pb-stripe-disconnect":  { category: "winback",  usedByAgencies: 510,  totalRuns: 5600,  launchedDaysAgo: 27,  effort: "ready" },
+  "pb-calendar-disconnect":{ category: "winback",  usedByAgencies: 360,  totalRuns: 3500,  launchedDaysAgo: 30,  effort: "quick" },
+  "pb-workflow-off":       { category: "winback",  usedByAgencies: 540,  totalRuns: 6100,  launchedDaysAgo: 23,  effort: "ready" },
+  "pb-payment-dunning":    { category: "revenue",  usedByAgencies: 2540, totalRuns: 58200, launchedDaysAgo: 200, effort: "ready" },
+  "pb-wallet-low":         { category: "revenue",  usedByAgencies: 1290, totalRuns: 24800, launchedDaysAgo: 19,  trending: true, effort: "ready" },
+  "pb-spend-drop":         { category: "revenue",  usedByAgencies: 1010, totalRuns: 14300, launchedDaysAgo: 70,  effort: "quick" },
+  "pb-cancellation":       { category: "revenue",  usedByAgencies: 1460, totalRuns: 11900, launchedDaysAgo: 12,  trending: true, effort: "ready" },
+  "pb-churned-winback":    { category: "revenue",  usedByAgencies: 870,  totalRuns: 7600,  launchedDaysAgo: 55,  effort: "custom" },
+  "pb-workflows-unpublished": { category: "adoption", usedByAgencies: 1340, totalRuns: 19200, launchedDaysAgo: 9, trending: true, effort: "ready" },
+  "pb-payments-unset":     { category: "adoption", usedByAgencies: 980,  totalRuns: 12400, launchedDaysAgo: 41,  effort: "quick" },
+  "pb-sms-unset":          { category: "adoption", usedByAgencies: 740,  totalRuns: 8300,  launchedDaysAgo: 48,  effort: "quick" },
+  "pb-reviews-unset":      { category: "adoption", usedByAgencies: 650,  totalRuns: 6900,  launchedDaysAgo: 60,  effort: "quick" },
+  "pb-breadth-no-depth":   { category: "adoption", usedByAgencies: 420,  totalRuns: 3600,  launchedDaysAgo: 26,  effort: "custom" },
+  "pb-day7-ghost":         { category: "onboard",  usedByAgencies: 1720, totalRuns: 29800, launchedDaysAgo: 5,   trending: true, effort: "ready" },
+  "pb-onb-day30":          { category: "onboard",  usedByAgencies: 1180, totalRuns: 18400, launchedDaysAgo: 36,  effort: "ready" },
+  "pb-onb-longtail":       { category: "onboard",  usedByAgencies: 540,  totalRuns: 5200,  launchedDaysAgo: 50,  effort: "quick" },
+  "pb-welcome-day1":       { category: "onboard",  usedByAgencies: 2010, totalRuns: 51800, launchedDaysAgo: 175, effort: "ready" },
+  "pb-graduated":          { category: "onboard",  usedByAgencies: 690,  totalRuns: 7100,  launchedDaysAgo: 14,  effort: "ready" },
+  "pb-spend-surge":        { category: "grow",     usedByAgencies: 1130, totalRuns: 13900, launchedDaysAgo: 10,  trending: true, effort: "ready" },
+  "pb-plan-upgrade":       { category: "grow",     usedByAgencies: 980,  totalRuns: 11200, launchedDaysAgo: 31,  effort: "ready" },
+  "pb-lifetime-milestone": { category: "grow",     usedByAgencies: 520,  totalRuns: 4800,  launchedDaysAgo: 22,  effort: "ready" },
+  "pb-high-engage-entry":  { category: "grow",     usedByAgencies: 860,  totalRuns: 9700,  launchedDaysAgo: 38,  effort: "quick" },
+  "pb-power-user":         { category: "grow",     usedByAgencies: 740,  totalRuns: 8200,  launchedDaysAgo: 17,  effort: "ready" },
+  "pb-no-feedback":        { category: "listen",   usedByAgencies: 630,  totalRuns: 6400,  launchedDaysAgo: 45,  effort: "quick" },
+  "pb-health-thriving":    { category: "listen",   usedByAgencies: 910,  totalRuns: 12100, launchedDaysAgo: 13,  trending: true, effort: "ready" },
+  "pb-anniversary":        { category: "listen",   usedByAgencies: 1240, totalRuns: 21600, launchedDaysAgo: 120, effort: "ready" },
 };
 
 const playbookSeeds: PlaybookSeed[] = [
@@ -411,7 +613,10 @@ const playbookSeeds: PlaybookSeed[] = [
     problem: "Left low or negative feedback recently.",
     does: "Alerts you to call personally and drafts a make-it-right note for your OK.",
     outcome: "Turn a bad moment into a saved relationship.",
-    match: () => false,
+    match: (a) =>
+      a.status.enabled === "Enabled" &&
+      (a.feedback.sentiment === "negative" ||
+        (a.feedback.npsScore > 0 && a.feedback.npsScore <= 6)),
   },
   {
     id: "pb-nps-promoter",
@@ -438,7 +643,10 @@ const playbookSeeds: PlaybookSeed[] = [
     problem: "Hit a meaningful milestone (anniversary, usage high, first result).",
     does: "Sends a warm, on-brand congrats — no ask attached.",
     outcome: "Deepen loyalty by noticing the good moments.",
-    match: () => false,
+    match: (a) =>
+      a.status.enabled === "Enabled" &&
+      ((a.identity.activeDays >= 350 && a.identity.activeDays <= 380) ||
+        (a.identity.activeDays >= 705 && a.identity.activeDays <= 740)),
   },
   {
     id: "pb-upsell-limit",
@@ -450,7 +658,566 @@ const playbookSeeds: PlaybookSeed[] = [
     problem: "Bumping against the ceiling of their current plan.",
     does: "Flags the moment and offers a frictionless upgrade with the value spelled out.",
     outcome: "Expand revenue exactly when the need is real.",
-    match: () => false,
+    match: (a) =>
+      a.status.enabled === "Enabled" &&
+      (a.health.band === "thriving" || a.health.band === "healthy") &&
+      a.login.activeUsers >= 5 &&
+      !a.identity.plan.includes("Pro+"),
+  },
+
+  // ============================================================
+  // v1 LIBRARY — 41 new plays (grounded in gocsm-signal-knowledge-base.md).
+  // Rated on the churn↔expansion spectrum; see playbook-library-v1.md.
+  // ============================================================
+
+  // ----- Re-engage quiet (login & inactivity) -----
+  {
+    id: "pb-quiet-7d",
+    title: "No login — 7 days",
+    subtitle: "Catch drift with an early, soft nudge",
+    icon: "log-in",
+    state: "off",
+    kind: "retention",
+    problem: "The owner hasn't logged in for a week.",
+    does: "Sends a light 'here's what's new' nudge — no alarm, just a reason to come back.",
+    outcome: "Re-open the habit before the gap widens.",
+    match: (a) => notOnboardingLive(a) && a.login.lastLoginDaysAgo >= 7 && a.login.lastLoginDaysAgo < 21,
+  },
+  {
+    id: "pb-admin-dark-30",
+    title: "Admin gone dark — 30 days",
+    subtitle: "Step in when the key user disappears",
+    icon: "user-x",
+    state: "off",
+    kind: "retention",
+    problem: "The account admin hasn't logged in for 30+ days.",
+    does: "Alerts your team and sends an urgent, personal check-in to the admin.",
+    outcome: "Reconnect the decision-maker before the account goes cold.",
+    match: (a) => notOnboardingLive(a) && a.login.lastLoginDaysAgo >= 30,
+  },
+  {
+    id: "pb-all-inactive",
+    title: "Whole account inactive",
+    subtitle: "Nobody's logged in for a month",
+    icon: "users",
+    state: "off",
+    kind: "retention",
+    problem: "Every user has been idle for 30+ days — the account is going dark.",
+    does: "Escalates to your team and sends an account-level re-engagement outreach.",
+    outcome: "Revive the account before it lapses entirely.",
+    match: (a) =>
+      notOnboardingLive(a) && a.login.lastLoginDaysAgo >= 30 && a.login.activityStatus === "ghosting",
+  },
+  {
+    id: "pb-login-collapsed",
+    title: "Login frequency collapsed",
+    subtitle: "From regular to barely there",
+    icon: "activity",
+    state: "off",
+    kind: "retention",
+    problem: "They were logging in regularly and have suddenly dropped off.",
+    does: "Sends a re-anchor nudge with a quick reason to return.",
+    outcome: "Catch the slowdown before it becomes silence.",
+    match: (a) => a.status.enabled === "Enabled" && usageReverse(a, ["Login"], 90),
+  },
+  {
+    id: "pb-admin-removed",
+    title: "Key admin removed",
+    subtitle: "A champion may have left",
+    icon: "user-minus",
+    state: "off",
+    kind: "retention",
+    problem: "An admin user was deactivated or removed from the account.",
+    does: "Alerts your team to find out who's now in charge and re-establish the relationship.",
+    outcome: "Don't let a staffing change become a silent churn.",
+    match: (a) =>
+      a.status.enabled === "Enabled" &&
+      a.login.users.some((u) => u.role !== "owner" && u.status === "inactive"),
+  },
+  {
+    id: "pb-reengaged",
+    title: "Owner re-engaged",
+    subtitle: "They came back — make it count",
+    icon: "user-check",
+    state: "off",
+    kind: "expansion",
+    problem: "An account that had gone quiet is active again.",
+    does: "Sends a warm 'welcome back' and surfaces a quick win to rebuild momentum.",
+    outcome: "Turn a return into a re-rooted habit.",
+    match: (a) =>
+      a.status.enabled === "Enabled" &&
+      (a.lifecycle.reactivated || (a.health.delta > 0 && a.login.lastLoginDaysAgo <= 7 && a.lifecycle.stage === "activated")),
+  },
+
+  // ----- Win back at-risk (health & renewal) -----
+  {
+    id: "pb-health-atrisk",
+    title: "Health dropped to at-risk",
+    subtitle: "Move the moment the band breaks",
+    icon: "heart-pulse",
+    state: "off",
+    kind: "retention",
+    problem: "Overall health just fell into the at-risk band.",
+    does: "Alerts your team and opens a diagnostic, recovery-focused outreach.",
+    outcome: "Intervene while there's still a relationship to save.",
+    match: (a) => a.status.enabled === "Enabled" && a.health.band === "atrisk" && a.health.delta < 0,
+  },
+  {
+    id: "pb-health-watch",
+    title: "Slipped to watch",
+    subtitle: "The earliest warning worth acting on",
+    icon: "alert-triangle",
+    state: "off",
+    kind: "retention",
+    problem: "Health softened from healthy into the watch band.",
+    does: "Sends a light-touch nudge before the slide continues.",
+    outcome: "Course-correct early, while it's cheap to fix.",
+    match: (a) => a.status.enabled === "Enabled" && a.health.band === "watch" && a.health.delta < 0,
+  },
+  {
+    id: "pb-prolonged-decline",
+    title: "Prolonged decline",
+    subtitle: "Falling for weeks, not days",
+    icon: "trending-down",
+    state: "off",
+    kind: "retention",
+    problem: "Health has been falling steadily — a sustained downward trend.",
+    does: "Flags the pattern and runs a structured save play with your team.",
+    outcome: "Break the decline before it reaches at-risk.",
+    match: (a) => a.status.enabled === "Enabled" && a.health.delta <= -7,
+  },
+  {
+    id: "pb-save-big",
+    title: "Save the big ones",
+    subtitle: "Your largest accounts, at risk",
+    icon: "shield",
+    state: "off",
+    kind: "save",
+    problem: "A high-MRR account is at-risk — the most expensive churn you can have.",
+    does: "Top-priorities your team, loops in an exec, and opens a personal save.",
+    outcome: "Protect the revenue that matters most.",
+    match: (a) => a.status.enabled === "Enabled" && a.health.band === "atrisk" && a.revenue.mrr >= 2000,
+  },
+  {
+    id: "pb-renewal-dark",
+    title: "Renewing in 30 days & gone dark",
+    subtitle: "Silent right before the renewal",
+    icon: "calendar-clock",
+    state: "off",
+    kind: "retention",
+    problem: "Renews within 30 days and hasn't logged in for a month.",
+    does: "Sends a value recap and books a personal pre-renewal check-in.",
+    outcome: "Re-open the conversation before the renewal decision lands.",
+    match: (a) => a.status.enabled === "Enabled" && a.login.lastLoginDaysAgo >= 30 && renewsWithin(a, 0, 30),
+  },
+  {
+    id: "pb-annual-renewal",
+    title: "Annual renewal approaching",
+    subtitle: "Warm up the big yearly decision",
+    icon: "calendar",
+    state: "off",
+    kind: "retention",
+    problem: "An annual account is coming up for renewal in the next 60 days.",
+    does: "Starts an early, value-led warm-up ahead of the renewal date.",
+    outcome: "Make the annual renewal a formality, not a surprise.",
+    match: (a) => a.status.enabled === "Enabled" && a.identity.plan.includes("Pro") && renewsWithin(a, 0, 60),
+  },
+
+  // ----- Value teardown (sticky-setup reverse) — strongest churn tells -----
+  {
+    id: "pb-funnel-unpublished",
+    title: "Website / funnel unpublished",
+    subtitle: "Win-back · they took it live, then down",
+    icon: "globe",
+    state: "off",
+    kind: "save",
+    problem: "A funnel that was live has been unpublished — a strong leaving signal.",
+    does: "Stops other automations, alerts you, and offers a hands-on save call.",
+    outcome: "Find out why it came down and keep them on the platform.",
+    match: (a) => stickyReverseSubjects(a, ["Funnel"]),
+  },
+  {
+    id: "pb-phone-portout",
+    title: "Phone number ported out",
+    subtitle: "Win-back · near-certain exit",
+    icon: "phone",
+    state: "off",
+    kind: "save",
+    problem: "They ported their phone number off the platform — one of the strongest exit signals.",
+    does: "Immediately alerts your team for a personal call — automations paused.",
+    outcome: "Intervene before the move becomes a full migration.",
+    match: (a) => stickyReverseSubjects(a, ["Phone"]),
+  },
+  {
+    id: "pb-email-disconnect",
+    title: "Email sending domain disconnected",
+    subtitle: "Win-back · deliverability at risk",
+    icon: "mail",
+    state: "off",
+    kind: "save",
+    problem: "Their email sending domain was disconnected — campaigns will stop landing.",
+    does: "Alerts you and offers a hands-on reconnect before deliverability craters.",
+    outcome: "Restore sending and confirm they're staying.",
+    match: (a) => stickyReverseSubjects(a, ["Email"]),
+  },
+  {
+    id: "pb-stripe-disconnect",
+    title: "Payment processor disconnected",
+    subtitle: "Win-back · they can't collect",
+    icon: "credit-card",
+    state: "off",
+    kind: "save",
+    problem: "Their Stripe/payment processor was disconnected — they can't take payments.",
+    does: "Alerts you and offers an urgent reconnect call.",
+    outcome: "Get them collecting again before they give up on the platform.",
+    match: (a) => stickyReverseSubjects(a, ["Payment"]),
+  },
+  {
+    id: "pb-calendar-disconnect",
+    title: "Calendar disconnected",
+    subtitle: "Win-back · booking flow broken",
+    icon: "calendar-x",
+    state: "off",
+    kind: "save",
+    problem: "Their calendar integration was disconnected — bookings will fail.",
+    does: "Alerts you and offers a quick reconnect before missed appointments pile up.",
+    outcome: "Restore scheduling and the value that depends on it.",
+    match: (a) => stickyReverseSubjects(a, ["Calendar"]),
+  },
+  {
+    id: "pb-workflow-off",
+    title: "Published workflow turned off",
+    subtitle: "Win-back · automation switched off",
+    icon: "workflow",
+    state: "off",
+    kind: "save",
+    problem: "A live, published workflow was turned off or deleted.",
+    does: "Finds the cause and offers to help re-set-up the automation.",
+    outcome: "Re-anchor the automation that made them sticky.",
+    match: (a) => stickyReverseSubjects(a, ["Workflow"]),
+  },
+
+  // ----- Rescue revenue (billing & spend) -----
+  {
+    id: "pb-payment-dunning",
+    title: "Payment failing repeatedly",
+    subtitle: "Two strikes — escalate now",
+    icon: "credit-card",
+    state: "off",
+    kind: "billing",
+    problem: "A card has failed two or more times in a row.",
+    does: "Escalates beyond auto-reminders to a personal nudge before the subscription cancels.",
+    outcome: "Recover the payment before dunning ends in a cancel.",
+    match: (a) => a.status.enabled === "Enabled" && failedAttempts(a) >= 2,
+  },
+  {
+    id: "pb-wallet-low",
+    title: "Rebilling wallet critically low",
+    subtitle: "Their texts and emails are about to stop",
+    icon: "wallet",
+    state: "off",
+    kind: "billing",
+    problem: "The rebilling wallet is nearly empty while usage keeps drawing it down.",
+    does: "Sends a top-up reminder before SMS and email delivery halts.",
+    outcome: "Keep their messaging running — and your rebilling revenue with it.",
+    match: (a) =>
+      a.status.enabled === "Enabled" &&
+      a.revenue.mrr > 0 &&
+      a.revenue.walletBalance < 250 &&
+      a.revenue.walletSpend30d > a.revenue.walletBalance,
+  },
+  {
+    id: "pb-spend-drop",
+    title: "Spend dropping",
+    subtitle: "Rebilling usage is falling fast",
+    icon: "trending-down",
+    state: "off",
+    kind: "billing",
+    problem: "Their rebilling spend has fallen sharply — usage is pulling back.",
+    does: "Diagnoses the pullback and re-engages them on the value they're dropping.",
+    outcome: "Reverse the decline before it shows up at renewal.",
+    match: (a) => a.status.enabled === "Enabled" && a.revenue.spendTrend <= -15,
+  },
+  {
+    id: "pb-cancellation",
+    title: "Cancellation requested",
+    subtitle: "Stop everything — save it personally",
+    icon: "x-circle",
+    state: "off",
+    kind: "retention",
+    problem: "They've signaled intent to cancel.",
+    does: "Pauses all automations and routes an immediate, founder-level save offer.",
+    outcome: "Win the conversation before the cancel is final.",
+    match: (a) => a.status.enabled === "Enabled" && a.status.pendingStop,
+  },
+  {
+    id: "pb-churned-winback",
+    title: "Churned — win back",
+    subtitle: "Bring them back with what's new",
+    icon: "rotate-ccw",
+    state: "off",
+    kind: "retention",
+    problem: "An account cancelled recently.",
+    does: "Runs a timed win-back sequence highlighting what's changed since they left.",
+    outcome: "Reopen the door once the dust settles.",
+    match: (a) => a.lifecycle.stage === "churned" || recentPlanChange(a, "churn", 90),
+  },
+
+  // ----- Drive adoption (feature activation) -----
+  {
+    id: "pb-workflows-unpublished",
+    title: "No workflow 30 days after signup",
+    subtitle: "Automation never got switched on",
+    icon: "workflow",
+    state: "off",
+    kind: "adoption",
+    problem: "A month in and they still haven't published a single automation.",
+    does: "Sends a guided 'publish your first workflow' nudge and offers to build one with them.",
+    outcome: "Get them to the automation aha before they drift.",
+    match: (a) => notOnboardingLive(a) && a.identity.activeDays >= 30 && !hasFeature(a, "Workflow"),
+  },
+  {
+    id: "pb-payments-unset",
+    title: "Payments never set up",
+    subtitle: "Leaving money uncollected",
+    icon: "banknote",
+    state: "off",
+    kind: "adoption",
+    problem: "A paying account never switched on payments — money they could be collecting.",
+    does: "Sends a short walkthrough to connect payments and take the first invoice.",
+    outcome: "Turn on a feature that pays for itself.",
+    match: (a) =>
+      notOnboardingLive(a) &&
+      a.revenue.mrr > 0 &&
+      !a.identity.isNonSaaS &&
+      !hasFeature(a, "Payment"),
+  },
+  {
+    id: "pb-sms-unset",
+    title: "Texting never sent",
+    subtitle: "Phone set up, but no SMS going out",
+    icon: "message-square",
+    state: "off",
+    kind: "adoption",
+    problem: "They have phone capability but haven't sent any texts.",
+    does: "Nudges them to register and send a first SMS campaign.",
+    outcome: "Unlock the channel with the highest response rate they own.",
+    match: (a) => a.status.enabled === "Enabled" && hasFeature(a, "Phone") && !hasFeature(a, "SMS"),
+  },
+  {
+    id: "pb-reviews-unset",
+    title: "Reviews never connected",
+    subtitle: "Reputation tools sitting idle",
+    icon: "star",
+    state: "off",
+    kind: "adoption",
+    problem: "A local-service account hasn't connected review/reputation tools.",
+    does: "Sends a light nudge to connect their profile and start collecting reviews.",
+    outcome: "Help them win the local-search game they're paying for.",
+    match: (a) =>
+      a.status.enabled === "Enabled" &&
+      ["Healthcare", "Fitness", "Wellness", "Legal"].includes(a.identity.industry) &&
+      !hasFeature(a, "Reputation"),
+  },
+  {
+    id: "pb-breadth-no-depth",
+    title: "Breadth without depth",
+    subtitle: "Lots of features, none used deeply",
+    icon: "layers",
+    state: "off",
+    kind: "adoption",
+    problem: "They've touched several features but go deep on none of them.",
+    does: "Helps them pick one feature and actually master it.",
+    outcome: "Trade shallow sprawl for one real habit.",
+    match: (a) =>
+      a.status.enabled === "Enabled" &&
+      a.adoption.features.length >= 2 &&
+      a.adoption.features.every((f) => f.engagement > 0 && f.engagement <= 40),
+  },
+
+  // ----- Onboard faster (lifecycle-aware) -----
+  {
+    id: "pb-day7-ghost",
+    title: "Day-7 ghost",
+    subtitle: "Signed up, never logged in",
+    icon: "ghost",
+    state: "off",
+    kind: "onboarding",
+    problem: "A new account hasn't logged in at all in its first week.",
+    does: "Triggers a hands-on 'let's get you started' outreach from your team.",
+    outcome: "Rescue the activation before it's lost on day one.",
+    match: (a) =>
+      a.status.enabled === "Enabled" &&
+      a.lifecycle.stage === "onboarding" &&
+      a.identity.activeDays <= 14 &&
+      a.login.activityStatus === "ghosting",
+  },
+  {
+    id: "pb-onb-day30",
+    title: "Day-30 onboarding health check",
+    subtitle: "Still finding their feet",
+    icon: "clipboard-check",
+    state: "off",
+    kind: "onboarding",
+    problem: "An onboarding account is past the first weeks but health is still low.",
+    does: "Runs a structured check-in to unblock whatever's stalling them.",
+    outcome: "Get them to value before momentum dies.",
+    match: (a) =>
+      a.status.enabled === "Enabled" && a.lifecycle.stage === "onboarding" && a.health.score < 60,
+  },
+  {
+    id: "pb-onb-longtail",
+    title: "Long-tail onboarding",
+    subtitle: "Months in, still not activated",
+    icon: "clock",
+    state: "off",
+    kind: "onboarding",
+    problem: "The account is 90+ days old but never finished onboarding.",
+    does: "Escalates to an intensive, hands-on activation push.",
+    outcome: "Finally get them live — or learn why they can't be.",
+    match: (a) =>
+      a.status.enabled === "Enabled" && a.lifecycle.stage === "onboarding" && a.identity.activeDays >= 85,
+  },
+  {
+    id: "pb-welcome-day1",
+    title: "Welcome — day 1",
+    subtitle: "Start the relationship right",
+    icon: "calendar-check",
+    state: "off",
+    kind: "onboarding",
+    problem: "A brand-new account just came on board.",
+    does: "Sends a warm welcome and the two-minute path to their first win.",
+    outcome: "Make a strong first impression and set the tone.",
+    match: (a) =>
+      a.status.enabled === "Enabled" &&
+      a.lifecycle.stage === "onboarding" &&
+      daysSince(a.identity.clientSince) <= 2,
+  },
+  {
+    id: "pb-graduated",
+    title: "Graduated to growth",
+    subtitle: "Onboarding done — what's next",
+    icon: "rocket",
+    state: "off",
+    kind: "expansion",
+    problem: "An account just moved from onboarding into active growth.",
+    does: "Celebrates the milestone and introduces the next set of features.",
+    outcome: "Carry early momentum into deeper adoption.",
+    match: (a) => a.status.enabled === "Enabled" && a.lifecycle.stage === "activated" && a.health.delta > 0,
+  },
+
+  // ----- Grow & upsell (the happy signals) -----
+  {
+    id: "pb-spend-surge",
+    title: "Spend surging",
+    subtitle: "Usage is taking off — strike now",
+    icon: "trending-up",
+    state: "off",
+    kind: "expansion",
+    problem: "Their rebilling spend is climbing fast — they're scaling.",
+    does: "Flags the moment and opens an expansion conversation while it's hot.",
+    outcome: "Grow with them at exactly the right time.",
+    match: (a) =>
+      a.status.enabled === "Enabled" &&
+      (a.health.band === "thriving" || a.health.band === "healthy") &&
+      a.revenue.spendTrend >= 12,
+  },
+  {
+    id: "pb-plan-upgrade",
+    title: "Plan upgraded — deepen",
+    subtitle: "They just leveled up",
+    icon: "arrow-up-circle",
+    state: "off",
+    kind: "expansion",
+    problem: "They recently upgraded to a higher plan.",
+    does: "Sends a congrats and helps them activate the features the new tier unlocks.",
+    outcome: "Make the upgrade pay off so it sticks.",
+    match: (a) => a.status.enabled === "Enabled" && recentPlanChange(a, "upgrade", 30),
+  },
+  {
+    id: "pb-lifetime-milestone",
+    title: "Lifetime spend milestone",
+    subtitle: "A long, valuable relationship",
+    icon: "gem",
+    state: "off",
+    kind: "expansion",
+    problem: "Their total spend with you has crossed a meaningful threshold.",
+    does: "Recognizes the milestone and opens an expansion or advocacy ask.",
+    outcome: "Turn loyalty into growth or proof.",
+    match: (a) => a.status.enabled === "Enabled" && lifetimeSpendOf(a) >= 30000,
+  },
+  {
+    id: "pb-high-engage-entry",
+    title: "High engagement on entry plan",
+    subtitle: "Outgrowing their starter tier",
+    icon: "zap",
+    state: "off",
+    kind: "expansion",
+    problem: "They're using the product heavily while still on an entry plan.",
+    does: "Frames the upgrade around what they've already outgrown.",
+    outcome: "Match their plan to the value they're getting.",
+    match: (a) =>
+      a.status.enabled === "Enabled" &&
+      a.identity.plan.includes("Starter") &&
+      a.login.activityStatus === "highly",
+  },
+  {
+    id: "pb-power-user",
+    title: "Power user emerged",
+    subtitle: "A daily-active champion",
+    icon: "crown",
+    state: "off",
+    kind: "expansion",
+    problem: "Someone is in the product daily — a clear champion.",
+    does: "Surfaces them for a testimonial, referral, or expansion conversation.",
+    outcome: "Turn a power user into advocacy or expansion.",
+    match: (a) =>
+      a.status.enabled === "Enabled" &&
+      a.login.activityStatus === "highly" &&
+      a.login.lastLoginDaysAgo <= 2 &&
+      (a.health.band === "thriving" || a.health.band === "healthy"),
+  },
+
+  // ----- Listen & celebrate (feedback & milestones) -----
+  {
+    id: "pb-no-feedback",
+    title: "No feedback in 60+ days",
+    subtitle: "Quiet established account",
+    icon: "message-square",
+    state: "off",
+    kind: "retention",
+    problem: "An established account hasn't given any feedback in a long time.",
+    does: "Sends a proactive 'how are we doing' ask to surface any hidden issues.",
+    outcome: "Catch silent dissatisfaction before it becomes churn.",
+    match: (a) =>
+      a.status.enabled === "Enabled" &&
+      a.lifecycle.stage === "established" &&
+      a.feedback.lastFeedbackDate === null,
+  },
+  {
+    id: "pb-health-thriving",
+    title: "Health reached thriving",
+    subtitle: "Everything's clicking",
+    icon: "heart",
+    state: "off",
+    kind: "expansion",
+    problem: "Their health just climbed into the thriving band.",
+    does: "Sends a warm note and tees up an expansion or testimonial ask.",
+    outcome: "Capitalize on a peak moment.",
+    match: (a) => a.status.enabled === "Enabled" && a.health.band === "thriving" && a.health.delta > 0,
+  },
+  {
+    id: "pb-anniversary",
+    title: "1-year anniversary",
+    subtitle: "Mark a year together",
+    icon: "award",
+    state: "off",
+    kind: "expansion",
+    problem: "An account is hitting its one-year mark with you.",
+    does: "Sends a warm year-in-review recap — a loyalty moment, no ask.",
+    outcome: "Deepen the relationship at a natural milestone.",
+    match: (a) =>
+      a.status.enabled === "Enabled" && a.identity.activeDays >= 350 && a.identity.activeDays <= 380,
   },
 ];
 

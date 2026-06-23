@@ -54,6 +54,8 @@ export type SignalSubject =
   | "Workflow"
   | "Login"
   | "Payment"
+  | "Email"
+  | "Calendar"
   | "NPS";
 
 export interface Signal {
@@ -415,6 +417,7 @@ const seeds: Seed[] = [
     features: [{ name: "Workflow", engagement: 22 }, { name: "Calendar", engagement: 35 }],
     mrr: 2400, spendTrend: -18, renewalInDays: 6, margin: 38,
     riskTags: ["renewal-urgent"],
+    nps: 3, sentiment: "negative",
   },
   {
     id: "a-badasslink", name: "Brightlink Media", industry: "Agency", plan: "Pro",
@@ -442,6 +445,7 @@ const seeds: Seed[] = [
     loginDays: 34, activeUsers: 1, activity: "ghosting",
     features: [{ name: "Email", engagement: 12 }],
     mrr: 1200, spendTrend: -22, renewalInDays: 9, margin: 30,
+    planChanges: [{ date: iso(-18), from: "Pro", to: "Starter", type: "downgrade", mrrImpact: -600 }],
   },
   {
     id: "a-cedar-clinic", name: "Cedar Clinic", industry: "Healthcare", plan: "Pro",
@@ -529,6 +533,7 @@ const seeds: Seed[] = [
     pillars: { productAdoption: 60, revenue: 65, login: 70, sentiment: 62 },
     loginDays: 4, activeUsers: 3, activity: "moderately",
     features: [{ name: "Calendar", engagement: 70 }, { name: "Reputation", engagement: 55 }],
+    under: ["Payment", "Workflow"],
     mrr: 980, spendTrend: 3, renewalInDays: 110, margin: 45,
   },
   {
@@ -573,6 +578,7 @@ const seeds: Seed[] = [
     features: [{ name: "WebsiteFunnel", engagement: 86 }, { name: "Workflow", engagement: 82 }],
     mrr: 1750, spendTrend: 9, renewalInDays: 120, margin: 55,
     nps: 10, sentiment: "positive",
+    planChanges: [{ date: iso(-12), from: "Pro", to: "Pro+", type: "upgrade", mrrImpact: 600 }],
   },
 
   // ----- ONBOARDING (one stalled, one healthy, one waiting on agency) -----
@@ -652,6 +658,43 @@ const seeds: Seed[] = [
     loginDays: 19, activeUsers: 1, activity: "low",
     features: [{ name: "WebsiteFunnel", engagement: 20 }, { name: "Calendar", engagement: 35 }],
     mrr: 1350, spendTrend: -15, renewalInDays: 16, margin: 25,
+  },
+
+  // ----- NEW ONBOARDING EDGE CASES (day-7 ghost · day-1 welcome) -----
+  {
+    id: "a-dayspring-coaching", name: "Dayspring Coaching", industry: "Coaching", plan: "Starter",
+    clientSinceDays: 8, owner: "Auto", csm: "Maya",
+    stage: "onboarding", pipeline: "Onboarding",
+    score: 40, band: "watch", delta: -3,
+    pillars: { productAdoption: 20, revenue: 55, login: 15, sentiment: 40 },
+    riskSignals: ["No login since signup"],
+    loginDays: 8, activeUsers: 1, activity: "ghosting",
+    features: [{ name: "Email", engagement: 0 }],
+    mrr: 470, spendTrend: 0, renewalInDays: 357, margin: 24,
+    onb: {
+      journeyName: "Standard", journeyVersion: "v1",
+      steps_total: 8, steps_done: 0, pct_complete: 0,
+      current_step: "Welcome call", current_step_state: "needs_attention",
+      days_on_current_step: 8, sla_days: 3, stalled: false, blocked_by: "client",
+      journey_started_days_ago: 8, last_intervention: null, completionSource: "manual",
+    },
+  },
+  {
+    id: "a-harbor-fitness", name: "Harbor Fitness", industry: "Fitness", plan: "Starter",
+    clientSinceDays: 1, owner: "Auto", csm: "Maya",
+    stage: "onboarding", pipeline: "Onboarding",
+    score: 55, band: "watch", delta: 0,
+    pillars: { productAdoption: 30, revenue: 60, login: 60, sentiment: 50 },
+    loginDays: 0, activeUsers: 1, activity: "moderately",
+    features: [{ name: "Calendar", engagement: 10 }],
+    mrr: 490, spendTrend: 0, renewalInDays: 364, margin: 25,
+    onb: {
+      journeyName: "Standard", journeyVersion: "v1",
+      steps_total: 8, steps_done: 1, pct_complete: 12,
+      current_step: "Welcome", current_step_state: "in_progress",
+      days_on_current_step: 1, sla_days: 5, stalled: false, blocked_by: null,
+      journey_started_days_ago: 1, last_intervention: null, completionSource: "auto",
+    },
   },
 ];
 
@@ -770,6 +813,13 @@ const seedSignals: SeedSignal[] = [
   // Workflow usage
   { accountId: "a-greenfield-partners", subject: "Workflow", type: "usage", direction: "reverse", sticky: false, weight: 3, label: "Workflow runs −40%", daysAgo: 25 },
   { accountId: "a-lauren-fondriest", subject: "Workflow", type: "usage", direction: "reverse", sticky: false, weight: 2, label: "Workflow runs −30%", daysAgo: 20 },
+
+  // Teardown / "leaving now" — sticky setup REVERSE on per-feature value. Heaviest churn tells.
+  { accountId: "a-cedar-clinic", subject: "Phone", type: "setup", direction: "reverse", sticky: true, weight: 10, label: "Phone number ported out", daysAgo: 4 },
+  { accountId: "a-organize-online-biz", subject: "Email", type: "setup", direction: "reverse", sticky: true, weight: 8, label: "Email sending domain disconnected", daysAgo: 8 },
+  { accountId: "a-northside-dental", subject: "Calendar", type: "setup", direction: "reverse", sticky: true, weight: 7, label: "Calendar integration disconnected", daysAgo: 6 },
+  { accountId: "a-greenfield-partners", subject: "Payment", type: "setup", direction: "reverse", sticky: true, weight: 8, label: "Stripe payment processor disconnected", daysAgo: 7 },
+  { accountId: "a-greenfield-partners", subject: "Workflow", type: "setup", direction: "reverse", sticky: true, weight: 6, label: "Published workflow turned off", daysAgo: 10 },
 ];
 
 export const signals: Signal[] = seedSignals.map((s, i) => ({
