@@ -59,7 +59,6 @@ export function TriggerStep({
   const [mrr, setMrr] = useState<"all" | "1500" | "3000">("all");
   const [plan, setPlan] = useState<string>("all");
   const [advanced, setAdvanced] = useState(false);
-  const [help, setHelp] = useState(false);
 
   const planOptions = useMemo<string[]>(() => {
     const f = fieldById("revenue.plan");
@@ -84,6 +83,14 @@ export function TriggerStep({
     ...(plan !== "all" ? [crit("revenue.plan", "isAnyOf", [plan])] : []),
   ] }));
 
+  // A small, always-visible explainer clip — rendered in BOTH the simple and advanced views
+  // so it never disappears when the user customizes. Right-sized (not a hero).
+  const videoBlock = (
+    <div style={{ width: "100%", maxWidth: 320 }}>
+      <VideoCard title="How triggers work" duration="1 min" />
+    </div>
+  );
+
   // Advanced (the full rule builder) renders at FULL width — its two-column .cb-grid
   // breaks if squeezed into the narrow simple-view column. Simple view stays centered/narrow.
   if (advanced) {
@@ -96,6 +103,7 @@ export function TriggerStep({
         >
           <Icon name="chevron-left" /> Back to simple setup
         </button>
+        {videoBlock}
         <CriteriaBuilder set={set} onChange={onChange} />
       </div>
     );
@@ -113,21 +121,11 @@ export function TriggerStep({
             Runs automatically when
           </span>
           <p style={{ margin: "2px 0 0", fontSize: "var(--t-body-lg)", fontWeight: 600, color: "var(--text)", lineHeight: 1.3 }}>{triggerText}</p>
-          <button
-            type="button"
-            onClick={() => setHelp((h) => !h)}
-            style={{ marginTop: "var(--s-2)", border: 0, background: "transparent", padding: 0, cursor: "pointer", fontSize: "var(--t-body-sm)", color: "var(--blue-7, #1558c0)", fontWeight: 600, display: "inline-flex", alignItems: "center", gap: 4 }}
-          >
-            <Icon name="play-circle" /> {help ? "Hide" : "How triggers work"}
-          </button>
-          {help ? (
-            <div style={{ marginTop: "var(--s-2)", maxWidth: 360 }}>
-              {/* Demoted from a hero block to a small on-demand clip. */}
-              <VideoCard title="How triggers work" duration="1 min" />
-            </div>
-          ) : null}
         </div>
       </div>
+
+      {/* Small explainer clip — always visible (also shown in the advanced view). */}
+      {videoBlock}
 
       {/* Block B — ONE optional narrowing, labeled controls defaulting to "all". */}
       <div style={{ display: "flex", flexDirection: "column", gap: "var(--s-3)" }}>
