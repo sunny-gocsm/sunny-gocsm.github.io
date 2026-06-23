@@ -8,8 +8,10 @@ hot-reloads here. (History note: this was formerly a standalone Lovable repo tha
 vendored the DS into `src/gocsm-ds/`.)
 
 ## Design work — start here
-Any design/redesign/audit task: invoke the **`design-loop`** skill, then read
-**`docs/design/phase-2-playbooks.md`** (the active brief + all carried-over context).
+For any design/redesign/audit task, read **`docs/design/phase-2-playbooks.md`** (the
+active brief + all carried-over context) and do the work directly, applying the design
+language below. **Do NOT auto-invoke the `design-loop` skill** — it is token-intensive
+and runs **only when Karthik explicitly asks for it** by name ("run the design loop").
 Durable facts also auto-load from memory: `gocsm-design-language`,
 `gocsm-ds-typography-gotchas`, `gocsm-today-activation`, `gocsm-ds-architecture`.
 

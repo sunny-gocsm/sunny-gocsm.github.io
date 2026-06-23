@@ -5,6 +5,15 @@ Durable, human- and agent-readable log of significant decisions and changes.
 
 ---
 
+## 2026-06-23 — Policy: design-loop is now EXPLICIT-REQUEST-ONLY (never auto-invoke)
+Per Karthik (it's very token-intensive), the `design-loop` skill must run **only when he
+explicitly asks for it by name** — a general design/redesign/audit/UI task is no longer a
+trigger; do that work directly, applying the design language. Flipped all four levers:
+removed the `UserPromptSubmit` design-loop nudge hook from `~/.claude/settings.json` (the
+per-turn "[STANDING POLICY]" injection; the nudge script is left on disk, unwired); rewrote
+the policy in `~/.claude/CLAUDE.md` and the skill's `SKILL.md` description to explicit-only;
+and updated this repo's `apps/prototype/CLAUDE.md` "Design work — start here" line to match.
+
 ## 2026-06-23 — Universal UX patterns codified into the design-loop skill + DS contract
 Encoded seven product-agnostic UX defaults (feed-01 brief) so they apply on every future
 surface. (1) No naked big numbers — every prominent stat/hero figure gets a one-line
