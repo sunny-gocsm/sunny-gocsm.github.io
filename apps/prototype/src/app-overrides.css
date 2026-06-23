@@ -568,6 +568,26 @@ button {
 .mk-status.new { background: transparent; color: var(--blue-8, #0c5aae); padding: 2px 0; }
 .mk-status.trend { background: transparent; color: var(--text-3, var(--text)); padding: 2px 0; }
 
+/* Top-right tag cluster: optional ownership/highlight status stacked over the
+   always-present situation rating. */
+.mk-card-tags { display: flex; flex-direction: column; align-items: flex-end; gap: 5px; flex: 0 0 auto; }
+
+/* Situation rating — churn↔expansion band (Critical → Very positive). A colored
+   dot + label; the dot colour also drives the left-rail facet swatches. Quiet
+   text weight so a wall of cards reads as an urgency column, never a rainbow. */
+.mk-sig { display: inline-flex; align-items: center; gap: 5px; font-size: var(--t-caption); font-weight: 700; white-space: nowrap; }
+.mk-sig-dot { width: 8px; height: 8px; border-radius: 999px; flex: 0 0 auto; background: var(--text-3, #98a2b3); }
+.mk-sig.critical { color: #8f2719; }
+.mk-sig.atrisk { color: #c2410c; }
+.mk-sig.watch { color: #9a6b08; }
+.mk-sig.positive { color: #176b3c; }
+.mk-sig.verypositive { color: #1f6e12; }
+.mk-sig.critical .mk-sig-dot,     .mk-sig-dot.critical     { background: #c73a26; }
+.mk-sig.atrisk .mk-sig-dot,       .mk-sig-dot.atrisk       { background: #ea580c; }
+.mk-sig.watch .mk-sig-dot,        .mk-sig-dot.watch        { background: #b45309; }
+.mk-sig.positive .mk-sig-dot,     .mk-sig-dot.positive     { background: #2f9e1b; }
+.mk-sig.verypositive .mk-sig-dot, .mk-sig-dot.verypositive { background: #1f8f3d; }
+
 /* AI pick hero — violet/indigo, the number does the work */
 .mk-aipick { display: flex; align-items: center; justify-content: space-between; gap: var(--s-5); flex-wrap: wrap; padding: var(--s-5) var(--s-6); border: 1px solid var(--ai-border, #ddd6fe); background: var(--ai-soft, #f5f3ff); }
 .mk-aipick-body { display: flex; flex-direction: column; align-items: flex-start; gap: 7px; min-width: 0; max-width: 680px; }

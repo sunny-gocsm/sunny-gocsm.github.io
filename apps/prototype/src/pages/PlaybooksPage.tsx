@@ -10,9 +10,12 @@ import {
   categoryLabel,
   CATEGORIES,
   EFFORT_LABEL,
+  SIGNALS,
+  SIGNAL_LABEL,
   type Playbook,
   type PlaybookCategory,
   type PlaybookEffort,
+  type PlaybookSignal,
 } from "@/fixtures/playbooks";
 import {
   autopilotStore,
@@ -120,30 +123,44 @@ function LibraryTab({
   const [query, setQuery] = useState("");
   const [cat, setCat] = useState<PlaybookCategory | "all">("all");
   const [efforts, setEfforts] = useState<Set<PlaybookEffort>>(new Set());
+  const [sigs, setSigs] = useState<Set<PlaybookSignal>>(new Set());
   const [flags, setFlags] = useState<Set<"new" | "trending">>(new Set());
   const [sort, setSort] = useState<SortKey>("used");
 
   const q = query.trim().toLowerCase();
-  const anyFilter = cat !== "all" || efforts.size > 0 || flags.size > 0 || q.length > 0;
+  const anyFilter = cat !== "all" || efforts.size > 0 || sigs.size > 0 || flags.size > 0 || q.length > 0;
 
   const matchText = (p: Playbook) =>
     !q || `${p.title} ${p.subtitle} ${p.problem} ${categoryLabel(p.category)}`.toLowerCase().includes(q);
   const matchEffort = (p: Playbook) => efforts.size === 0 || efforts.has(p.effort);
+  const matchSignal = (p: Playbook) => sigs.size === 0 || sigs.has(p.signal);
   const matchFlags = (p: Playbook) =>
     flags.size === 0 || (flags.has("new") && isNewPlaybook(p)) || (flags.has("trending") && p.trending);
 
   // Category counts honour the OTHER active facets (standard faceted-search behaviour).
   const catCounts = useMemo(() => {
-    const base = playbooks.filter((p) => matchEffort(p) && matchFlags(p) && matchText(p));
+    const base = playbooks.filter((p) => matchEffort(p) && matchSignal(p) && matchFlags(p) && matchText(p));
     const by = new Map<string, number>();
     for (const p of base) by.set(p.category, (by.get(p.category) ?? 0) + 1);
     return { all: base.length, by };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [efforts, flags, q]);
+  }, [efforts, sigs, flags, q]);
+
+  // Situation counts honour every OTHER facet (category, effort, highlights, text) —
+  // but not the Situation selection itself, so all bands stay switchable.
+  const sigCounts = useMemo(() => {
+    const base = playbooks.filter(
+      (p) => (cat === "all" || p.category === cat) && matchEffort(p) && matchFlags(p) && matchText(p),
+    );
+    const by = new Map<PlaybookSignal, number>();
+    for (const p of base) by.set(p.signal, (by.get(p.signal) ?? 0) + 1);
+    return by;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [cat, efforts, flags, q]);
 
   const results = useMemo(() => {
     const list = playbooks.filter(
-      (p) => (cat === "all" || p.category === cat) && matchEffort(p) && matchFlags(p) && matchText(p),
+      (p) => (cat === "all" || p.category === cat) && matchEffort(p) && matchSignal(p) && matchFlags(p) && matchText(p),
     );
     const byUsed = (a: Playbook, b: Playbook) => b.usedByAgencies - a.usedByAgencies;
     const byImpact = (a: Playbook, b: Playbook) =>
@@ -151,7 +168,7 @@ function LibraryTab({
     const byNew = (a: Playbook, b: Playbook) => a.launchedDaysAgo - b.launchedDaysAgo;
     return list.sort(sort === "impact" ? byImpact : sort === "new" ? byNew : byUsed);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [cat, efforts, flags, q, sort]);
+  }, [cat, efforts, sigs, flags, q, sort]);
 
   // AI pick — only on the unfiltered landing view; promoted out of the grid below.
   const aiPick = useMemo(() => {
@@ -169,9 +186,11 @@ function LibraryTab({
 
   const toggleEffort = (e: PlaybookEffort) =>
     setEfforts((s) => { const n = new Set(s); n.has(e) ? n.delete(e) : n.add(e); return n; });
+  const toggleSignal = (sig: PlaybookSignal) =>
+    setSigs((s) => { const n = new Set(s); n.has(sig) ? n.delete(sig) : n.add(sig); return n; });
   const toggleFlag = (f: "new" | "trending") =>
     setFlags((s) => { const n = new Set(s); n.has(f) ? n.delete(f) : n.add(f); return n; });
-  const clearAll = () => { setCat("all"); setEfforts(new Set()); setFlags(new Set()); setQuery(""); };
+  const clearAll = () => { setCat("all"); setEfforts(new Set()); setSigs(new Set()); setFlags(new Set()); setQuery(""); };
 
   return (
     <div className="mk-catalog">
@@ -206,6 +225,18 @@ function LibraryTab({
             >
               <Icon name={cdef.icon} /><span className="lbl">{cdef.label}</span>
               <span className="cnt">{catCounts.by.get(cdef.id) ?? 0}</span>
+            </button>
+          ))}
+        </div>
+
+        <div className="mk-facet">
+          <p className="mk-facet-title">Situation</p>
+          {SIGNALS.map((s) => (
+            <button key={s.id} type="button" className={`mk-facet-item${sigs.has(s.id) ? " on" : ""}`} onClick={() => toggleSignal(s.id)}>
+              <span className="mk-facet-check">{sigs.has(s.id) ? <Icon name="check" /> : null}</span>
+              <span className={`mk-sig-dot ${s.id}`} aria-hidden />
+              <span className="lbl">{SIGNAL_LABEL[s.id]}</span>
+              <span className="cnt">{sigCounts.get(s.id) ?? 0}</span>
             </button>
           ))}
         </div>
@@ -303,6 +334,17 @@ function AiPickCard({ p, impact, onOpen }: { p: Playbook; impact: { count: numbe
   );
 }
 
+// Churn↔expansion rating — a colored dot + band label (Critical → Very positive).
+// Present on every card, so the grid reads as an at-a-glance urgency column.
+function SignalPill({ signal }: { signal: PlaybookSignal }) {
+  return (
+    <span className={`mk-sig ${signal}`} title={`Situation: ${SIGNAL_LABEL[signal]}`}>
+      <span className="mk-sig-dot" aria-hidden />
+      {SIGNAL_LABEL[signal]}
+    </span>
+  );
+}
+
 // One library card — outcome title → one meta line → ONE CTA. Status lives here.
 function MarketCard({ p, impact, onOpen, rail }: { p: Playbook; impact: { count: number; mrr: number }; onOpen: () => void; rail?: boolean }) {
   const status = marketStatus(useAutopilotStatus(p.id));
@@ -312,15 +354,18 @@ function MarketCard({ p, impact, onOpen, rail }: { p: Playbook; impact: { count:
     <Card padded className={`mk-card${rail ? " rail" : ""}`} data-clickable="true" role="button" tabIndex={0} onClick={onOpen} onKeyDown={(e) => (e.key === "Enter" || e.key === " ") && onOpen()}>
       <div className="mk-card-top">
         <span className="mk-card-ico" aria-hidden><Icon name={p.icon} /></span>
-        {status === "live" ? (
-          <span className="mk-status live"><Icon name="check" /> Live</span>
-        ) : status === "paused" ? (
-          <span className="mk-status paused"><Icon name="pause" /> Paused</span>
-        ) : isNew ? (
-          <span className="mk-status new">New</span>
-        ) : p.trending ? (
-          <span className="mk-status trend"><Icon name="trending-up" /> Trending</span>
-        ) : null}
+        <span className="mk-card-tags">
+          {status === "live" ? (
+            <span className="mk-status live"><Icon name="check" /> Live</span>
+          ) : status === "paused" ? (
+            <span className="mk-status paused"><Icon name="pause" /> Paused</span>
+          ) : isNew ? (
+            <span className="mk-status new">New</span>
+          ) : p.trending ? (
+            <span className="mk-status trend"><Icon name="trending-up" /> Trending</span>
+          ) : null}
+          <SignalPill signal={p.signal} />
+        </span>
       </div>
       <h3 className="mk-card-title">{p.title}</h3>
       <p className="mk-card-sub">{p.subtitle}</p>

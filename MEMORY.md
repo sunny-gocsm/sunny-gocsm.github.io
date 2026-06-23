@@ -5,6 +5,19 @@ Durable, human- and agent-readable log of significant decisions and changes.
 
 ---
 
+## 2026-06-24 — Playbook "Situation" rating (churn↔expansion) on cards + left filter
+Materialized the churn↔expansion rating that was only conceptual after the 57-play expansion (plays were
+grouped by section comments; no per-play field existed). Added a **`signal: PlaybookSignal`** field
+(`apps/prototype/src/fixtures/playbooks.ts`) — a 5-band scale **Critical · At risk · Watch · Positive ·
+Very positive** (worst→best), with `SIGNALS`/`SIGNAL_LABEL` exports. All 57 plays rated in `PLAY_META`,
+grounded in each play's `problem` (distribution **16 / 15 / 13 / 8 / 5**). Surfaced two ways in
+`PlaybooksPage.tsx`: (1) a `SignalPill` (colored dot + label) in each market card's top-right `.mk-card-tags`
+cluster, stacked under any Live/New/Trending status; (2) a new **"Situation"** left-rail facet (under
+Category) — multi-select with dot swatches + live counts that honour the other facets (`sigCounts` memo).
+Diverging red→green colors in `app-overrides.css` (`.mk-sig` / `.mk-sig-dot`). NB: `signal` is the play's
+severity band, distinct from the detected `signals` events. Verified on :8080 via Playwright (filter narrows
+grid + cross-facet counts re-tally, 0 console errors); `bun run build` green; tsc clean.
+
 ## 2026-06-24 — Playbooks → "Library" storefront + Attention MRR-at-risk
 Three UX changes after the 57-play expansion. (1) **Renamed** the Playbooks "Marketplace" tab/copy to
 **"Library"** (`PlaybooksPage.tsx`, TabId `marketplace`→`library`). (2) **Amazon-style storefront**: replaced

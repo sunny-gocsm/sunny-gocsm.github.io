@@ -39,6 +39,26 @@ export const EFFORT_LABEL: Record<PlaybookEffort, string> = {
   custom: "Add your wording",
 };
 
+// Churn↔expansion rating — how critical the situation is the moment a play fires,
+// from `critical` (about to lose them) to `verypositive` (thriving — grow the
+// relationship). NB: this is the play's severity BAND, distinct from the detected
+// `signals` events imported above. Ordered worst→best for filter rails.
+export type PlaybookSignal = "critical" | "atrisk" | "watch" | "positive" | "verypositive";
+export const SIGNALS: { id: PlaybookSignal; label: string }[] = [
+  { id: "critical", label: "Critical" },
+  { id: "atrisk", label: "At risk" },
+  { id: "watch", label: "Watch" },
+  { id: "positive", label: "Positive" },
+  { id: "verypositive", label: "Very positive" },
+];
+export const SIGNAL_LABEL: Record<PlaybookSignal, string> = {
+  critical: "Critical",
+  atrisk: "At risk",
+  watch: "Watch",
+  positive: "Positive",
+  verypositive: "Very positive",
+};
+
 /** One reviewable action inside a playbook. Pre-written; edited in HighLevel. */
 export type PlaybookActionType = "customer-email" | "internal-email" | "slack" | "task";
 export interface PlaybookAction {
@@ -74,6 +94,8 @@ export interface Playbook {
   launchedDaysAgo: number;  // freshness; < 14 ⇒ "New this week"
   trending: boolean;        // fastest-growing this week
   effort: PlaybookEffort;   // readiness vocabulary
+  /** Churn↔expansion rating: how critical the moment is (critical → verypositive). */
+  signal: PlaybookSignal;
   /** Pure predicate against the unified fixtures. */
   match: (a: Account) => boolean;
   /** Short explainer video for this play (~1 min). Empty string until a real
@@ -362,74 +384,74 @@ const PLAY_ACTIONS: Record<string, PlaybookAction[]> = {
 
 type PlaybookSeed = Omit<
   Playbook,
-  "videoUrl" | "actions" | "category" | "usedByAgencies" | "totalRuns" | "launchedDaysAgo" | "trending" | "effort"
+  "videoUrl" | "actions" | "category" | "usedByAgencies" | "totalRuns" | "launchedDaysAgo" | "trending" | "effort" | "signal"
 >;
 
 // Marketplace metadata, merged into the catalog below. Prototype seed numbers —
 // the UI labels them as community/aggregate signals, never invents precision.
 const PLAY_META: Record<
   string,
-  { category: PlaybookCategory; usedByAgencies: number; totalRuns: number; launchedDaysAgo: number; trending?: boolean; effort?: PlaybookEffort }
+  { category: PlaybookCategory; usedByAgencies: number; totalRuns: number; launchedDaysAgo: number; trending?: boolean; effort?: PlaybookEffort; signal: PlaybookSignal }
 > = {
-  "pb-no-login":           { category: "reengage", usedByAgencies: 2400, totalRuns: 51200, launchedDaysAgo: 210, effort: "ready" },
-  "pb-renewal-save":       { category: "winback",  usedByAgencies: 1980, totalRuns: 38400, launchedDaysAgo: 180, trending: true, effort: "ready" },
-  "pb-payment-failed":     { category: "revenue",  usedByAgencies: 3100, totalRuns: 72500, launchedDaysAgo: 240, effort: "ready" },
-  "pb-plan-downgrade":     { category: "winback",  usedByAgencies: 860,  totalRuns: 12300, launchedDaysAgo: 95,  effort: "quick" },
-  "pb-feature-drop":       { category: "adoption", usedByAgencies: 1450, totalRuns: 26800, launchedDaysAgo: 130, effort: "ready" },
-  "pb-onboarding-stalled": { category: "onboard",  usedByAgencies: 2100, totalRuns: 44100, launchedDaysAgo: 160, effort: "ready" },
-  "pb-save-domain":        { category: "winback",  usedByAgencies: 540,  totalRuns: 6900,  launchedDaysAgo: 70,  effort: "ready" },
-  "pb-save-integration":   { category: "winback",  usedByAgencies: 470,  totalRuns: 5400,  launchedDaysAgo: 64,  effort: "ready" },
-  "pb-save-a2p":           { category: "winback",  usedByAgencies: 390,  totalRuns: 4200,  launchedDaysAgo: 58,  effort: "quick" },
-  "pb-expansion-ready":    { category: "grow",     usedByAgencies: 1230, totalRuns: 19800, launchedDaysAgo: 110, trending: true, effort: "ready" },
-  "pb-quiet-renewal":      { category: "winback",  usedByAgencies: 320,  totalRuns: 2100,  launchedDaysAgo: 5,   trending: true, effort: "ready" },
-  "pb-low-adoption":       { category: "adoption", usedByAgencies: 410,  totalRuns: 3300,  launchedDaysAgo: 9,   effort: "quick" },
-  "pb-nps-detractor":      { category: "listen",   usedByAgencies: 760,  totalRuns: 9100,  launchedDaysAgo: 30,  effort: "ready" },
-  "pb-nps-promoter":       { category: "listen",   usedByAgencies: 1120, totalRuns: 15600, launchedDaysAgo: 12,  trending: true, effort: "ready" },
-  "pb-milestone":          { category: "listen",   usedByAgencies: 280,  totalRuns: 1800,  launchedDaysAgo: 3,   effort: "ready" },
-  "pb-upsell-limit":       { category: "grow",     usedByAgencies: 690,  totalRuns: 7400,  launchedDaysAgo: 18,  effort: "quick" },
+  "pb-no-login":           { category: "reengage", usedByAgencies: 2400, totalRuns: 51200, launchedDaysAgo: 210, effort: "ready", signal: "atrisk" },
+  "pb-renewal-save":       { category: "winback",  usedByAgencies: 1980, totalRuns: 38400, launchedDaysAgo: 180, trending: true, effort: "ready", signal: "atrisk" },
+  "pb-payment-failed":     { category: "revenue",  usedByAgencies: 3100, totalRuns: 72500, launchedDaysAgo: 240, effort: "ready", signal: "critical" },
+  "pb-plan-downgrade":     { category: "winback",  usedByAgencies: 860,  totalRuns: 12300, launchedDaysAgo: 95,  effort: "quick", signal: "atrisk" },
+  "pb-feature-drop":       { category: "adoption", usedByAgencies: 1450, totalRuns: 26800, launchedDaysAgo: 130, effort: "ready", signal: "atrisk" },
+  "pb-onboarding-stalled": { category: "onboard",  usedByAgencies: 2100, totalRuns: 44100, launchedDaysAgo: 160, effort: "ready", signal: "watch" },
+  "pb-save-domain":        { category: "winback",  usedByAgencies: 540,  totalRuns: 6900,  launchedDaysAgo: 70,  effort: "ready", signal: "critical" },
+  "pb-save-integration":   { category: "winback",  usedByAgencies: 470,  totalRuns: 5400,  launchedDaysAgo: 64,  effort: "ready", signal: "critical" },
+  "pb-save-a2p":           { category: "winback",  usedByAgencies: 390,  totalRuns: 4200,  launchedDaysAgo: 58,  effort: "quick", signal: "critical" },
+  "pb-expansion-ready":    { category: "grow",     usedByAgencies: 1230, totalRuns: 19800, launchedDaysAgo: 110, trending: true, effort: "ready", signal: "positive" },
+  "pb-quiet-renewal":      { category: "winback",  usedByAgencies: 320,  totalRuns: 2100,  launchedDaysAgo: 5,   trending: true, effort: "ready", signal: "atrisk" },
+  "pb-low-adoption":       { category: "adoption", usedByAgencies: 410,  totalRuns: 3300,  launchedDaysAgo: 9,   effort: "quick", signal: "watch" },
+  "pb-nps-detractor":      { category: "listen",   usedByAgencies: 760,  totalRuns: 9100,  launchedDaysAgo: 30,  effort: "ready", signal: "atrisk" },
+  "pb-nps-promoter":       { category: "listen",   usedByAgencies: 1120, totalRuns: 15600, launchedDaysAgo: 12,  trending: true, effort: "ready", signal: "verypositive" },
+  "pb-milestone":          { category: "listen",   usedByAgencies: 280,  totalRuns: 1800,  launchedDaysAgo: 3,   effort: "ready", signal: "positive" },
+  "pb-upsell-limit":       { category: "grow",     usedByAgencies: 690,  totalRuns: 7400,  launchedDaysAgo: 18,  effort: "quick", signal: "positive" },
 
   // ----- v1 library metadata -----
-  "pb-quiet-7d":            { category: "reengage", usedByAgencies: 1680, totalRuns: 33400, launchedDaysAgo: 140, effort: "ready" },
-  "pb-admin-dark-30":      { category: "reengage", usedByAgencies: 1320, totalRuns: 21800, launchedDaysAgo: 6,   trending: true, effort: "ready" },
-  "pb-all-inactive":       { category: "reengage", usedByAgencies: 940,  totalRuns: 12600, launchedDaysAgo: 44,  effort: "ready" },
-  "pb-login-collapsed":    { category: "reengage", usedByAgencies: 720,  totalRuns: 8800,  launchedDaysAgo: 33,  effort: "quick" },
-  "pb-admin-removed":      { category: "reengage", usedByAgencies: 410,  totalRuns: 3100,  launchedDaysAgo: 21,  effort: "quick" },
-  "pb-reengaged":          { category: "reengage", usedByAgencies: 560,  totalRuns: 6200,  launchedDaysAgo: 11,  effort: "ready" },
-  "pb-health-atrisk":      { category: "winback",  usedByAgencies: 2260, totalRuns: 48900, launchedDaysAgo: 150, effort: "ready" },
-  "pb-health-watch":       { category: "winback",  usedByAgencies: 1410, totalRuns: 22300, launchedDaysAgo: 88,  effort: "ready" },
-  "pb-prolonged-decline":  { category: "winback",  usedByAgencies: 880,  totalRuns: 11200, launchedDaysAgo: 52,  effort: "quick" },
-  "pb-save-big":           { category: "winback",  usedByAgencies: 1180, totalRuns: 9400,  launchedDaysAgo: 40,  trending: true, effort: "ready" },
-  "pb-renewal-dark":       { category: "winback",  usedByAgencies: 990,  totalRuns: 13700, launchedDaysAgo: 7,   trending: true, effort: "ready" },
-  "pb-annual-renewal":     { category: "winback",  usedByAgencies: 760,  totalRuns: 8100,  launchedDaysAgo: 64,  effort: "quick" },
-  "pb-funnel-unpublished": { category: "winback",  usedByAgencies: 620,  totalRuns: 7300,  launchedDaysAgo: 16,  trending: true, effort: "ready" },
-  "pb-phone-portout":      { category: "winback",  usedByAgencies: 480,  totalRuns: 4900,  launchedDaysAgo: 8,   trending: true, effort: "ready" },
-  "pb-email-disconnect":   { category: "winback",  usedByAgencies: 430,  totalRuns: 4400,  launchedDaysAgo: 34,  effort: "ready" },
-  "pb-stripe-disconnect":  { category: "winback",  usedByAgencies: 510,  totalRuns: 5600,  launchedDaysAgo: 27,  effort: "ready" },
-  "pb-calendar-disconnect":{ category: "winback",  usedByAgencies: 360,  totalRuns: 3500,  launchedDaysAgo: 30,  effort: "quick" },
-  "pb-workflow-off":       { category: "winback",  usedByAgencies: 540,  totalRuns: 6100,  launchedDaysAgo: 23,  effort: "ready" },
-  "pb-payment-dunning":    { category: "revenue",  usedByAgencies: 2540, totalRuns: 58200, launchedDaysAgo: 200, effort: "ready" },
-  "pb-wallet-low":         { category: "revenue",  usedByAgencies: 1290, totalRuns: 24800, launchedDaysAgo: 19,  trending: true, effort: "ready" },
-  "pb-spend-drop":         { category: "revenue",  usedByAgencies: 1010, totalRuns: 14300, launchedDaysAgo: 70,  effort: "quick" },
-  "pb-cancellation":       { category: "revenue",  usedByAgencies: 1460, totalRuns: 11900, launchedDaysAgo: 12,  trending: true, effort: "ready" },
-  "pb-churned-winback":    { category: "revenue",  usedByAgencies: 870,  totalRuns: 7600,  launchedDaysAgo: 55,  effort: "custom" },
-  "pb-workflows-unpublished": { category: "adoption", usedByAgencies: 1340, totalRuns: 19200, launchedDaysAgo: 9, trending: true, effort: "ready" },
-  "pb-payments-unset":     { category: "adoption", usedByAgencies: 980,  totalRuns: 12400, launchedDaysAgo: 41,  effort: "quick" },
-  "pb-sms-unset":          { category: "adoption", usedByAgencies: 740,  totalRuns: 8300,  launchedDaysAgo: 48,  effort: "quick" },
-  "pb-reviews-unset":      { category: "adoption", usedByAgencies: 650,  totalRuns: 6900,  launchedDaysAgo: 60,  effort: "quick" },
-  "pb-breadth-no-depth":   { category: "adoption", usedByAgencies: 420,  totalRuns: 3600,  launchedDaysAgo: 26,  effort: "custom" },
-  "pb-day7-ghost":         { category: "onboard",  usedByAgencies: 1720, totalRuns: 29800, launchedDaysAgo: 5,   trending: true, effort: "ready" },
-  "pb-onb-day30":          { category: "onboard",  usedByAgencies: 1180, totalRuns: 18400, launchedDaysAgo: 36,  effort: "ready" },
-  "pb-onb-longtail":       { category: "onboard",  usedByAgencies: 540,  totalRuns: 5200,  launchedDaysAgo: 50,  effort: "quick" },
-  "pb-welcome-day1":       { category: "onboard",  usedByAgencies: 2010, totalRuns: 51800, launchedDaysAgo: 175, effort: "ready" },
-  "pb-graduated":          { category: "onboard",  usedByAgencies: 690,  totalRuns: 7100,  launchedDaysAgo: 14,  effort: "ready" },
-  "pb-spend-surge":        { category: "grow",     usedByAgencies: 1130, totalRuns: 13900, launchedDaysAgo: 10,  trending: true, effort: "ready" },
-  "pb-plan-upgrade":       { category: "grow",     usedByAgencies: 980,  totalRuns: 11200, launchedDaysAgo: 31,  effort: "ready" },
-  "pb-lifetime-milestone": { category: "grow",     usedByAgencies: 520,  totalRuns: 4800,  launchedDaysAgo: 22,  effort: "ready" },
-  "pb-high-engage-entry":  { category: "grow",     usedByAgencies: 860,  totalRuns: 9700,  launchedDaysAgo: 38,  effort: "quick" },
-  "pb-power-user":         { category: "grow",     usedByAgencies: 740,  totalRuns: 8200,  launchedDaysAgo: 17,  effort: "ready" },
-  "pb-no-feedback":        { category: "listen",   usedByAgencies: 630,  totalRuns: 6400,  launchedDaysAgo: 45,  effort: "quick" },
-  "pb-health-thriving":    { category: "listen",   usedByAgencies: 910,  totalRuns: 12100, launchedDaysAgo: 13,  trending: true, effort: "ready" },
-  "pb-anniversary":        { category: "listen",   usedByAgencies: 1240, totalRuns: 21600, launchedDaysAgo: 120, effort: "ready" },
+  "pb-quiet-7d":            { category: "reengage", usedByAgencies: 1680, totalRuns: 33400, launchedDaysAgo: 140, effort: "ready", signal: "watch" },
+  "pb-admin-dark-30":      { category: "reengage", usedByAgencies: 1320, totalRuns: 21800, launchedDaysAgo: 6,   trending: true, effort: "ready", signal: "atrisk" },
+  "pb-all-inactive":       { category: "reengage", usedByAgencies: 940,  totalRuns: 12600, launchedDaysAgo: 44,  effort: "ready", signal: "critical" },
+  "pb-login-collapsed":    { category: "reengage", usedByAgencies: 720,  totalRuns: 8800,  launchedDaysAgo: 33,  effort: "quick", signal: "atrisk" },
+  "pb-admin-removed":      { category: "reengage", usedByAgencies: 410,  totalRuns: 3100,  launchedDaysAgo: 21,  effort: "quick", signal: "atrisk" },
+  "pb-reengaged":          { category: "reengage", usedByAgencies: 560,  totalRuns: 6200,  launchedDaysAgo: 11,  effort: "ready", signal: "positive" },
+  "pb-health-atrisk":      { category: "winback",  usedByAgencies: 2260, totalRuns: 48900, launchedDaysAgo: 150, effort: "ready", signal: "atrisk" },
+  "pb-health-watch":       { category: "winback",  usedByAgencies: 1410, totalRuns: 22300, launchedDaysAgo: 88,  effort: "ready", signal: "watch" },
+  "pb-prolonged-decline":  { category: "winback",  usedByAgencies: 880,  totalRuns: 11200, launchedDaysAgo: 52,  effort: "quick", signal: "atrisk" },
+  "pb-save-big":           { category: "winback",  usedByAgencies: 1180, totalRuns: 9400,  launchedDaysAgo: 40,  trending: true, effort: "ready", signal: "critical" },
+  "pb-renewal-dark":       { category: "winback",  usedByAgencies: 990,  totalRuns: 13700, launchedDaysAgo: 7,   trending: true, effort: "ready", signal: "critical" },
+  "pb-annual-renewal":     { category: "winback",  usedByAgencies: 760,  totalRuns: 8100,  launchedDaysAgo: 64,  effort: "quick", signal: "watch" },
+  "pb-funnel-unpublished": { category: "winback",  usedByAgencies: 620,  totalRuns: 7300,  launchedDaysAgo: 16,  trending: true, effort: "ready", signal: "critical" },
+  "pb-phone-portout":      { category: "winback",  usedByAgencies: 480,  totalRuns: 4900,  launchedDaysAgo: 8,   trending: true, effort: "ready", signal: "critical" },
+  "pb-email-disconnect":   { category: "winback",  usedByAgencies: 430,  totalRuns: 4400,  launchedDaysAgo: 34,  effort: "ready", signal: "critical" },
+  "pb-stripe-disconnect":  { category: "winback",  usedByAgencies: 510,  totalRuns: 5600,  launchedDaysAgo: 27,  effort: "ready", signal: "critical" },
+  "pb-calendar-disconnect":{ category: "winback",  usedByAgencies: 360,  totalRuns: 3500,  launchedDaysAgo: 30,  effort: "quick", signal: "critical" },
+  "pb-workflow-off":       { category: "winback",  usedByAgencies: 540,  totalRuns: 6100,  launchedDaysAgo: 23,  effort: "ready", signal: "atrisk" },
+  "pb-payment-dunning":    { category: "revenue",  usedByAgencies: 2540, totalRuns: 58200, launchedDaysAgo: 200, effort: "ready", signal: "critical" },
+  "pb-wallet-low":         { category: "revenue",  usedByAgencies: 1290, totalRuns: 24800, launchedDaysAgo: 19,  trending: true, effort: "ready", signal: "critical" },
+  "pb-spend-drop":         { category: "revenue",  usedByAgencies: 1010, totalRuns: 14300, launchedDaysAgo: 70,  effort: "quick", signal: "atrisk" },
+  "pb-cancellation":       { category: "revenue",  usedByAgencies: 1460, totalRuns: 11900, launchedDaysAgo: 12,  trending: true, effort: "ready", signal: "critical" },
+  "pb-churned-winback":    { category: "revenue",  usedByAgencies: 870,  totalRuns: 7600,  launchedDaysAgo: 55,  effort: "custom", signal: "critical" },
+  "pb-workflows-unpublished": { category: "adoption", usedByAgencies: 1340, totalRuns: 19200, launchedDaysAgo: 9, trending: true, effort: "ready", signal: "atrisk" },
+  "pb-payments-unset":     { category: "adoption", usedByAgencies: 980,  totalRuns: 12400, launchedDaysAgo: 41,  effort: "quick", signal: "watch" },
+  "pb-sms-unset":          { category: "adoption", usedByAgencies: 740,  totalRuns: 8300,  launchedDaysAgo: 48,  effort: "quick", signal: "watch" },
+  "pb-reviews-unset":      { category: "adoption", usedByAgencies: 650,  totalRuns: 6900,  launchedDaysAgo: 60,  effort: "quick", signal: "watch" },
+  "pb-breadth-no-depth":   { category: "adoption", usedByAgencies: 420,  totalRuns: 3600,  launchedDaysAgo: 26,  effort: "custom", signal: "watch" },
+  "pb-day7-ghost":         { category: "onboard",  usedByAgencies: 1720, totalRuns: 29800, launchedDaysAgo: 5,   trending: true, effort: "ready", signal: "atrisk" },
+  "pb-onb-day30":          { category: "onboard",  usedByAgencies: 1180, totalRuns: 18400, launchedDaysAgo: 36,  effort: "ready", signal: "watch" },
+  "pb-onb-longtail":       { category: "onboard",  usedByAgencies: 540,  totalRuns: 5200,  launchedDaysAgo: 50,  effort: "quick", signal: "watch" },
+  "pb-welcome-day1":       { category: "onboard",  usedByAgencies: 2010, totalRuns: 51800, launchedDaysAgo: 175, effort: "ready", signal: "watch" },
+  "pb-graduated":          { category: "onboard",  usedByAgencies: 690,  totalRuns: 7100,  launchedDaysAgo: 14,  effort: "ready", signal: "positive" },
+  "pb-spend-surge":        { category: "grow",     usedByAgencies: 1130, totalRuns: 13900, launchedDaysAgo: 10,  trending: true, effort: "ready", signal: "verypositive" },
+  "pb-plan-upgrade":       { category: "grow",     usedByAgencies: 980,  totalRuns: 11200, launchedDaysAgo: 31,  effort: "ready", signal: "verypositive" },
+  "pb-lifetime-milestone": { category: "grow",     usedByAgencies: 520,  totalRuns: 4800,  launchedDaysAgo: 22,  effort: "ready", signal: "positive" },
+  "pb-high-engage-entry":  { category: "grow",     usedByAgencies: 860,  totalRuns: 9700,  launchedDaysAgo: 38,  effort: "quick", signal: "positive" },
+  "pb-power-user":         { category: "grow",     usedByAgencies: 740,  totalRuns: 8200,  launchedDaysAgo: 17,  effort: "ready", signal: "verypositive" },
+  "pb-no-feedback":        { category: "listen",   usedByAgencies: 630,  totalRuns: 6400,  launchedDaysAgo: 45,  effort: "quick", signal: "watch" },
+  "pb-health-thriving":    { category: "listen",   usedByAgencies: 910,  totalRuns: 12100, launchedDaysAgo: 13,  trending: true, effort: "ready", signal: "verypositive" },
+  "pb-anniversary":        { category: "listen",   usedByAgencies: 1240, totalRuns: 21600, launchedDaysAgo: 120, effort: "ready", signal: "positive" },
 };
 
 const playbookSeeds: PlaybookSeed[] = [
@@ -1228,6 +1250,7 @@ const DEFAULT_META = {
   launchedDaysAgo: 999,
   trending: false,
   effort: "ready" as PlaybookEffort,
+  signal: "watch" as PlaybookSignal,
 };
 
 export const playbooks: Playbook[] = playbookSeeds.map((p) => {
@@ -1240,6 +1263,7 @@ export const playbooks: Playbook[] = playbookSeeds.map((p) => {
     launchedDaysAgo: m.launchedDaysAgo,
     trending: m.trending ?? false,
     effort: m.effort ?? "ready",
+    signal: m.signal ?? "watch",
     videoUrl: PLAY_VIDEOS[p.id] ?? PLACEHOLDER_VIDEO,
     actions: PLAY_ACTIONS[p.id] ?? [],
   };
