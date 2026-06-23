@@ -20,6 +20,16 @@ universe is `docs/design/gocsm-attribute-filter-catalog.md` (derived from the re
 backend + live DBs — **PAS & raw pillar scores are internal, never filterable**); the design
 contract is `docs/design/cpdo-brief.md`; supporting research in `docs/design/research/`.
 
+## Embeds (HighLevel custom-menu-links)
+Three bare, nav-less URLs render the **same** page components for embedding as separate
+HighLevel custom menu links (no "menu inside a menu"):
+`/embed/attention` · `/embed/playbooks` · `/embed/outcomes`.
+Mechanism: `AppLayout` reads a load-time `IS_EMBED` flag (`path starts with /embed`) and drops
+the Rail/mobile bar, rendering `.embed-shell` + `<Outlet/>`. Each menu link is its own iframe,
+so the flag stays fixed for that iframe — all in-iframe navigation stays nav-less. **No
+duplication**: edits to the pages flow to the embeds automatically. To add an embed, add a
+`/embed/<x>` route inside the `AppLayout` group in `App.tsx` pointing at the same page.
+
 ## Non-negotiables
 - **Typography:** never use inline `font: var(--t-*)` (invalid → text silently 14px) — use `fontSize`.
   `--t-h3/h4/h6` don't exist; real scale is `--t-display-xl/lg`, `--t-heading`, `--t-subheading`,

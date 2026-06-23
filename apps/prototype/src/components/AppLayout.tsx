@@ -1,6 +1,12 @@
 import { Outlet, useLocation, useNavigate } from "react-router-dom";
 import { AppShell, Rail } from "@gocsm/design-system";
 
+// Embed mode (HighLevel custom-menu-link embeds): when the page is first loaded under
+// /embed/* we render the SAME pages with NO left nav — so each link embeds as a bare page
+// (no "menu inside a menu"). Evaluated once at load; each HighLevel menu link is its own
+// iframe, so the flag stays fixed for that iframe even as the user navigates within it.
+const IS_EMBED = typeof window !== "undefined" && window.location.pathname.startsWith("/embed");
+
 const GROUPS = [
   {
     items: [
@@ -65,6 +71,16 @@ export default function AppLayout() {
   const navigate = useNavigate();
   const { pathname } = useLocation();
   const active = activeId(pathname);
+
+  // Bare page for embeds — no Rail, no mobile bar, just the brand stripe + the page.
+  if (IS_EMBED) {
+    return (
+      <div className="embed-shell">
+        <div className="topbar" />
+        <Outlet />
+      </div>
+    );
+  }
 
   return (
     <AppShell

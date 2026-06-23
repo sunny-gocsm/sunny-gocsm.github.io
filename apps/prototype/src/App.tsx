@@ -33,6 +33,12 @@ const App = () => (
           <Routes>
             <Route path="/setup" element={<SetupPage />} />
             <Route element={<AppLayout />}>
+              {/* HighLevel custom-menu-link embeds — the same pages, rendered with NO left
+                  nav (AppLayout drops the rail in embed mode). Three standalone URLs:
+                  /embed/attention · /embed/playbooks · /embed/outcomes */}
+              <Route path="/embed/attention" element={<Index />} />
+              <Route path="/embed/playbooks" element={<PlaybooksPage />} />
+              <Route path="/embed/outcomes" element={<OutcomesPage />} />
               <Route path="/" element={<Index />} />
               <Route path="/today" element={<Index />} />
               <Route path="/accounts" element={<AccountsPage />} />

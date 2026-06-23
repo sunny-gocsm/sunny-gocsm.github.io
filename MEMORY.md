@@ -5,6 +5,19 @@ Durable, human- and agent-readable log of significant decisions and changes.
 
 ---
 
+## 2026-06-23 — Nav-less embed routes for HighLevel custom-menu-links
+To start selling the prototype via HighLevel custom menu links, added three bare URLs that
+render the SAME page components with NO left nav (no "menu inside a menu"):
+`/embed/attention` · `/embed/playbooks` · `/embed/outcomes`. Mechanism: `AppLayout` reads a
+load-time `IS_EMBED` flag (`window.location.pathname.startsWith("/embed")`) and, when set, early
+-returns `.embed-shell` (brand stripe + `<Outlet/>`) instead of the `AppShell`+`Rail`. The three
+routes live inside the existing `AppLayout` group in `App.tsx` pointing at `Index`/`PlaybooksPage`/
+`OutcomesPage` — **zero duplication**, so the embeds update whenever the pages do. Because the flag
+is read once per page load and each menu link is its own iframe, all in-iframe navigation (e.g.
+drilling into a playbook) stays nav-less. New `.embed-shell` CSS (min-height:100vh, bg `--bg`).
+Normal app (non-/embed) keeps the Rail — verified. `bun run build` green; tsc clean. Branch
+`design/universal-ux-patterns`.
+
 ## 2026-06-23 — Design-loop: redesign the trigger step + kill the success page
 Ran the full design-loop (Karthik explicitly invoked it) on the wizard's Step 2 "When & who".
 **Research** (3 parallel dossiers: workflow builders · CS platforms · filter-chip/PD): strong
