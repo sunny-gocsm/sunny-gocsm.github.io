@@ -1,5 +1,5 @@
 import { useMemo } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useNavigate, useParams, useLocation } from "react-router-dom";
 import { Button } from "@gocsm/design-system";
 import { AttentionActivation } from "@/components/attention/AttentionActivation";
 import { recipeForPlaybook, type Recipe } from "@/fixtures/recipes";
@@ -12,6 +12,7 @@ import { playbookById } from "@/fixtures/playbooks";
 export default function PlaybookDetailPage() {
   const { id = "" } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const location = useLocation();
   const playbook = useMemo(() => playbookById(id), [id]);
 
   if (!playbook) {
@@ -34,5 +35,8 @@ export default function PlaybookDetailPage() {
     playbookId: playbook.id,
   };
 
-  return <AttentionActivation recipe={recipe} backLabel="Playbooks" onClose={() => navigate("/playbooks")} />;
+  // Return to wherever they came from (Playbooks catalog or the Attention queue). location.key
+  // is "default" only on a cold/deep-link entry with no in-app history → fall back to /playbooks.
+  const back = () => (location.key !== "default" ? navigate(-1) : navigate("/playbooks"));
+  return <AttentionActivation recipe={recipe} backLabel="Back" onClose={back} />;
 }

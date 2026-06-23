@@ -1,6 +1,6 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Button, Icon, Mono, Stepper, Toggle, Badge, VideoCard, AccountRow } from "@gocsm/design-system";
-import { CriteriaBuilder } from "./CriteriaBuilder";
+import { TriggerStep } from "./TriggerStep";
 import { autopilotStore } from "@/state/autopilot";
 import { useHealthConfigured } from "@/state/healthConfig";
 import { saveDraft, loadDraft, clearDraft } from "@/state/workflowDrafts";
@@ -193,23 +193,6 @@ function ReviewStep({
 
 // The calm, right-sized confirmation after going live — a milestone beat (not a corner
 // toast): what happened · what's next · a path forward + a quiet pause. No confetti.
-function LiveSuccess({ n, showPause, onDone, onPause }: { n: number; showPause: boolean; onDone: () => void; onPause: () => void }) {
-  return (
-    <div className="aa-live">
-      <span className="aa-live-check" aria-hidden><Icon name="check-circle" /></span>
-      <h1 className="aa-live-title">Your playbook is live</h1>
-      <p className="aa-live-body">Running on <Mono>{n}</Mono> account{n === 1 ? "" : "s"}.</p>
-      <p className="aa-live-next">First check runs tonight. We'll send you a summary.</p>
-      <div className="aa-live-actions">
-        <Button variant="primary" onClick={onDone}>Done</Button>
-        {showPause ? (
-          <button type="button" className="aa-live-pause" onClick={onPause}>Pause for now</button>
-        ) : null}
-      </div>
-    </div>
-  );
-}
-
 // Step 1 when the user pre-selected specific accounts (e.g. from the Accounts table):
 // a fixed list instead of the criteria builder — the workflow runs once on these.
 function FixedSelectionStep({ accounts, healthConfigured }: { accounts: Account[]; healthConfigured: boolean }) {
@@ -266,7 +249,6 @@ export function AttentionActivation({
   });
   const [workflowReady, setWorkflowReady] = useState<boolean>(() => (recipeId ? loadDraft(recipeId)?.workflowReady ?? false : false));
   const [autopilot, setAutopilot] = useState(true);
-  const [live, setLive] = useState(false); // shows the in-flow success beat after go-live
 
   const fixed = !!fixedAccounts && fixedAccounts.length > 0;
   const n = fixed ? fixedAccounts!.length : matchCount(set);
@@ -275,6 +257,17 @@ export function AttentionActivation({
   const problemName = recipe?.label ?? playbook?.title ?? (fixed ? "Selected accounts" : "New playbook");
   const whenLine = fixed ? `Runs once on the ${n} account${n === 1 ? "" : "s"} you picked` : describeSet(set);
   const doesLine = playbook?.does ?? "Published in HighLevel · alerts you, sends the drafted note (your OK first), then escalates if it's still open.";
+
+  // The playbook's baked-in behavioral trigger — read-only "fact you confirm" in Step 2.
+  // (Health-stripped in Phase 1 so no coined vocab leaks.) The narrowing layers onto this.
+  const baseTrigger = useMemo(() => {
+    const b = recipe ? normalize(recipe.set) : normalize({ match: "all", criteria: [] });
+    return healthConfigured ? b : stripHealth(b);
+  }, [recipe, healthConfigured]);
+  const triggerText = useMemo(() => {
+    if (nodesOf(baseTrigger).length > 0) return describeSet(baseTrigger).replace(/^Accounts where /i, "");
+    return healthConfigured && playbook?.problem ? playbook.problem.replace(/\.$/, "") : "this playbook’s built-in signals fire";
+  }, [baseTrigger, healthConfigured, playbook]);
   // The real accounts this run touches — sorted by value, top first — for the go-live preview.
   const previewAccounts = (fixed ? fixedAccounts! : matchAccounts(set))
     .slice()
@@ -294,36 +287,21 @@ export function AttentionActivation({
     saveDraft({ recipeId, match: set.match, criteria: set.criteria, nodes: set.nodes, step, workflowReady, savedAt: Date.now() });
   }, [recipeId, set, step, workflowReady]);
 
-  // Go live: enable autopilot (per the toggle), clear the draft, and show a calm in-flow
-  // success beat — a real milestone confirmation, not just a corner toast.
+  // Publish: enable autopilot (per the toggle), clear the draft, fire a single green
+  // success toast, and return the user to wherever they came from (no separate success page).
   const goLive = () => {
     if (!fixed && autopilot) autopilotStore.enable(playbookId, "review");
     if (recipeId) clearDraft(recipeId);
-    setLive(true);
-  };
-
-  // From the success beat: "Done" echoes a toast on the page we return to; "Pause for now"
-  // keeps the playbook but stops auto-runs (resumable later).
-  const doneLive = () => {
-    toast.success(fixed ? "Playbook started" : "Playbook is live", {
-      description: `Running on ${n} account${n === 1 ? "" : "s"} now.`,
+    toast.success("Your playbook is now live", {
+      description: fixed
+        ? `${problemName} — running on ${n} account${n === 1 ? "" : "s"} now.`
+        : `${problemName} — first check runs tonight.`,
       duration: 6000,
+      // Force green (the app's sonner config overrides success styling to neutral).
+      style: { background: "var(--pos-soft, #e8f8e3)", border: "1px solid var(--pos-7, #2f9e1b)", color: "var(--pos-9, #1f6e12)" },
     });
     onClose();
   };
-  const pauseLive = () => {
-    if (!fixed) autopilotStore.pause(playbookId);
-    toast("Autopilot paused", { description: "The playbook is set up — resume it anytime." });
-    onClose();
-  };
-
-  if (live) {
-    return (
-      <div className="aa-fullpage aa-fullpage--done" role="dialog" aria-modal>
-        <LiveSuccess n={n} showPause={!fixed} onDone={doneLive} onPause={pauseLive} />
-      </div>
-    );
-  }
 
   return (
     <div className="aa-fullpage" role="dialog" aria-modal>
@@ -353,12 +331,7 @@ export function AttentionActivation({
             fixed ? (
               <FixedSelectionStep accounts={fixedAccounts!} healthConfigured={healthConfigured} />
             ) : (
-              <div style={{ display: "flex", flexDirection: "column", gap: "var(--s-4)" }}>
-                {/* The "how to set up triggers" explainer clip — sits above the builder.
-                    NEEDS KARTHIK: a real recording (placeholder card until then). */}
-                <VideoCard title="How to set up triggers" duration="1 min" />
-                <CriteriaBuilder set={set} onChange={setSet} />
-              </div>
+              <TriggerStep baseTrigger={baseTrigger} triggerText={triggerText} set={set} onChange={setSet} />
             )
           ) : (
             <ReviewStep

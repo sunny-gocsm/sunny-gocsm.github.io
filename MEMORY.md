@@ -5,6 +5,28 @@ Durable, human- and agent-readable log of significant decisions and changes.
 
 ---
 
+## 2026-06-23 — Design-loop: redesign the trigger step + kill the success page
+Ran the full design-loop (Karthik explicitly invoked it) on the wizard's Step 2 "When & who".
+**Research** (3 parallel dossiers: workflow builders · CS platforms · filter-chip/PD): strong
+convergence — Customer.io literally *deleted* its second filter level (Apr-2025) as a UX defect;
+HubSpot "one refine by criteria"; Salesforce/ActiveCampaign hide advanced; nobody ships two
+identical pill rows; **zero leaders embed a hero video in a builder**. **CPDO north star:** *the
+trigger is a fact you confirm; narrowing is one optional dropdown defaulting to everyone;
+everything else one click away.* **Build:** new `TriggerStep.tsx` replaces the busy CriteriaBuilder
+view at rest — (A) read-only **trigger fact** ("Runs automatically when …") + a small "How triggers
+work" link (video demoted from hero), (B) **labeled narrowing dropdowns** (Account value, Plan)
+each defaulting to "All" — the two-identical-pill bug is fixed by *removing* the 2nd pill (the label
+is the field; user only touches the value), (C) a **live audience count** (accept-and-publish
+confidence). Cut at rest: NL box, suggestion pills, plain-English restatement, two-level pills,
+accounts pane, hero video. The full builder survives behind **"Customize (advanced)"**. Phase-1
+Health gating preserved (narrowers are HL-native; base trigger health-stripped).
+**Success page removed** (`LiveSuccess` deleted): Publish → a single **green toast** (top-right,
+"Your playbook is now live", styled with `--pos-*`) + return to where the user came from
+(`location.key` guard; `navigate(-1)` else `/playbooks`). **Live review** (both phases, Playwright)
+found + fixed a cold-load back-nav→about:blank bug; verified zero coined terms, live count reacts
+to narrowing, advanced discloses the builder, green toast fires. `bun run build` green; tsc clean.
+Branch `design/universal-ux-patterns`, not merged.
+
 ## 2026-06-23 — Unify playbook setup: ONE 3-step wizard, reused by both entry points
 Per Karthik: clicking a playbook from EITHER the catalog OR an Attention card must open the
 SAME setup interface — no two flows. Converged everything on `AttentionActivation` (the one
