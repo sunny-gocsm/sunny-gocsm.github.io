@@ -282,18 +282,39 @@ button {
 .cb-body { display: flex; flex-direction: column; gap: var(--s-3); }
 .cb-body > .rg-add { align-self: flex-start; }
 
-/* Who it runs on — quiet eyebrow label + the LIVE plain-English restatement (the hero line) + mode toggle. */
+/* Who it runs on — a control row (eyebrow · secondary video disclosure · mode toggle) over the
+   full-width LIVE plain-English restatement (the hero line). */
 .ts-who { display: flex; flex-direction: column; gap: var(--s-3); }
-.ts-who-head { display: flex; align-items: flex-start; justify-content: space-between; gap: var(--s-3); flex-wrap: wrap; }
-.ts-who-head-text { display: flex; flex-direction: column; gap: 3px; min-width: 0; flex: 1 1 320px; }
+.ts-who-head { display: flex; align-items: center; justify-content: space-between; gap: var(--s-3); flex-wrap: wrap; }
+.ts-who-head-right { display: flex; align-items: center; gap: var(--s-3); flex-wrap: wrap; }
 .ts-who-title { display: inline-flex; align-items: center; gap: 6px; font-size: var(--t-label); text-transform: uppercase; letter-spacing: 0.05em; font-weight: 700; color: var(--text-3, var(--text)); }
 .ts-who-title svg { width: 13px; height: 13px; }
 .ts-who-restate { margin: 0; font-size: var(--t-body-lg); font-weight: 600; line-height: 1.4; color: var(--text); }
 
-/* Live audience count band. */
-.ts-count { display: flex; align-items: baseline; gap: var(--s-2); padding: var(--s-3) var(--s-4); border-radius: var(--r-md, 10px); background: var(--blue-1, #eef3fc); }
+/* Secondary "watch how triggers work" disclosure — caption-weight, never rivals the hero. */
+.ts-video-toggle { display: inline-flex; align-items: center; gap: 5px; border: 0; background: transparent; cursor: pointer; font-size: var(--t-body-sm); font-weight: 600; color: var(--text-3, var(--text)); padding: 4px 7px; border-radius: var(--r-sm, 8px); white-space: nowrap; transition: background 120ms ease, color 120ms ease; }
+.ts-video-toggle:hover { background: var(--surface-2, #f4f6fa); color: var(--text-2, var(--text)); }
+.ts-video-toggle svg { width: 14px; height: 14px; flex: 0 0 auto; }
+.ts-video-dur { color: var(--text-3, var(--text)); font-weight: 500; }
+.ts-video { max-width: 320px; }
+
+/* Live audience count band — a disclosure: tap to expand the actual matching-accounts list. */
+.ts-count-wrap { display: flex; flex-direction: column; gap: var(--s-2); }
+.ts-count { display: flex; align-items: center; gap: var(--s-2); width: 100%; text-align: left; border: 0; cursor: pointer; padding: var(--s-3) var(--s-4); border-radius: var(--r-md, 10px); background: var(--blue-1, #eef3fc); transition: background 120ms ease; }
+.ts-count:hover:not(:disabled) { background: var(--blue-2, #e0ecfb); }
+.ts-count:disabled { cursor: default; }
 .ts-count-n { font-size: var(--t-display-lg); font-weight: 750; color: var(--blue-7, #1558c0); line-height: 1; }
 .ts-count-label { font-size: var(--t-body); color: var(--text-2, var(--text)); }
+.ts-count-see { margin-left: auto; display: inline-flex; align-items: center; gap: 3px; font-size: var(--t-body-sm); font-weight: 600; color: var(--blue-7, #1558c0); white-space: nowrap; flex: 0 0 auto; }
+.ts-count-see svg { width: 15px; height: 15px; }
+
+/* Expanded matches — calm, bounded, scrollable. Phase 1 = plain name + monthly $. */
+.ts-matches { border: 1px solid var(--border); border-radius: var(--r-md, 10px); padding: var(--s-2) var(--s-4); background: var(--surface, #fff); }
+.ts-matches-list { display: flex; flex-direction: column; max-height: 244px; overflow-y: auto; }
+.ts-match-row { display: flex; align-items: center; justify-content: space-between; gap: var(--s-3); padding: 8px 0; border-bottom: 1px solid var(--border); font-size: var(--t-body-sm); }
+.ts-match-row:last-child { border-bottom: 0; }
+.ts-match-name { color: var(--text); font-weight: 500; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ts-match-mrr { color: var(--text-2, var(--text)); font-variant-numeric: tabular-nums; flex: 0 0 auto; }
 
 /* Simple-mode prebuilt quick-add list (chips reuse .cb-suggested-chip). */
 .cb-quick { display: flex; flex-direction: column; gap: var(--s-2); }

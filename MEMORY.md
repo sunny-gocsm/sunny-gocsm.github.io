@@ -5,6 +5,20 @@ Durable, human- and agent-readable log of significant decisions and changes.
 
 ---
 
+## 2026-06-24 — Trigger step: explainer video back + expand-to-see-matching-accounts
+Two additions to the "When & who it runs on" step (`TriggerStep.tsx`), placement decided via a
+frontend-design (CDO) consultation agent. **(1)** Brought back the "How triggers work" explainer
+video (removed in the v2 refactor) as a **secondary, on-demand disclosure** on the header control
+row — a caption-weight "▸ Watch how triggers work · 1 min" toggle that expands a width-capped
+(320px) `VideoCard` inline; never rivals the restatement hero or the Continue focal action, and
+step 1 already carries the big play hero. This also moved the restatement to full width below the
+control row (eyebrow · video · mode-toggle). **(2)** The live count band is now a **disclosure**:
+"N match · See who" expands the actual list of matching accounts (`matchAccounts(set)`, sorted by
+$ desc, scrollable). Phase-1-safe: plain **name + monthly $** only (no Health bands/scores); Phase 2
+(Health configured) reuses the richer `MatchWall` (which is no longer always-on — decluttered into
+the disclosure). New CSS: `.ts-video-toggle/.ts-video`, `.ts-count` as a button + `.ts-matches*`.
+`bun run build` green; tsc clean; both disclosures verified on :8080 (0 console errors).
+
 ## 2026-06-24 — Design-loop v2: Situation rename + two-mode trigger + top restatement
 Ran the full **design-loop** (research → CPDO synthesis → build → 5-lens review → ship) on three
 linked changes; brief at `apps/prototype/docs/design/trigger-situation-v2-brief.md`. **(1) Situation

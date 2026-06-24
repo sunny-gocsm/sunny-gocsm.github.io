@@ -25,7 +25,10 @@ competitor incl. HighLevel shows one) + a `Simple | Advanced` toggle; `CriteriaB
 mode-driven body (**Simple** = prebuilt quick-add list, NO AI; **Advanced** = NL "describe your
 audience" box → editable rules + the nested boolean builder). No separate "Runs automatically
 when…" fact card (it duplicated a seeded chip). Note `account.priority` is an Account field
-(Phase-1 safe), not `health.*`.
+(Phase-1 safe), not `health.*`. The header control row carries a secondary "Watch how triggers
+work" video disclosure (collapsed `VideoCard`, never rivals the hero); the live count band IS a
+disclosure — expand to see the matching accounts (Phase 1 = plain name + monthly $, no Health
+vocab; Phase 2 = the richer `MatchWall`).
 
 ## Embeds (HighLevel custom-menu-links)
 Three bare, nav-less URLs render the **same** page components for embedding as separate
