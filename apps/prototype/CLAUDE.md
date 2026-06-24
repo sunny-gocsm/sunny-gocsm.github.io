@@ -15,6 +15,12 @@ and runs **only when Karthik explicitly asks for it** by name ("run the design l
 Durable facts also auto-load from memory: `gocsm-design-language`,
 `gocsm-ds-typography-gotchas`, `gocsm-today-activation`, `gocsm-ds-architecture`.
 
+**Backend PRD:** the full build spec for the Attention + Playbooks features lives at
+`docs/prd/attention-and-playbooks-prd.md` (canonical data model, 7 epics, 44 stories,
+265 acceptance criteria, research appendix) with a visual dev quick-read alongside it
+(`docs/prd/attention-and-playbooks-quickread.html`). It's a self-contained handoff for
+backend devs — grounded in this prototype's fixtures/state but written to stand alone.
+
 **Trigger criteria builder** (step "When & who it runs on"): the user-facing attribute/filter
 universe is `docs/design/gocsm-attribute-filter-catalog.md` (derived from the real GoCSM
 backend + live DBs — **PAS & raw pillar scores are internal, never filterable**); the design

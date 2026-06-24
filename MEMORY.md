@@ -5,6 +5,22 @@ Durable, human- and agent-readable log of significant decisions and changes.
 
 ---
 
+## 2026-06-24 — Backend PRD for Attention + Playbooks (+ visual HTML quick-read)
+Authored a developer-ready PRD for the Attention + Playbooks features so backend devs (and their
+Claude Code) can build the backend with the least effort. `apps/prototype/docs/prd/attention-and-playbooks-prd.md`
+— ~27k words / 1,357 lines: §1–§4 overview/goals/personas/glossary, **§5 canonical domain model & data
+dictionary** (Account 11 sub-objects, Signal, the 30-field criteria catalog + per-operator semantics, the
+matching engine, all 57 plays + predicates, autopilot state machine, recipes, drafts, the Phase-1/Phase-2
+Health gate), **§6 seven epics → 44 user stories → 265 Given/When/Then acceptance criteria** (E1 platform ·
+E2 Attention queue · E3 catalog · E4 setup flow · E5 trigger builder & matching · E6 lifecycle/autopilot ·
+E7 HighLevel integration & embeds), §7 NFRs, §8 suggested REST API, §9 research-evidence appendix + the
+full catalog. Process: 4 CPO/PM-style agents extracted exact ground truth; epic authoring was delegated to
+CPO/PM agents (E1/E4/E7 landed; 3 stalled on a stream watchdog, so E2/E3/E5/E6 were authored directly and
+E1/E4/E7 recovered from the agent transcripts via shell — assembled with a python splice). Also built a
+**self-contained visual HTML quick-read** (`attention-and-playbooks-quickread.html`, no external deps —
+architecture/phase-gate/state-machine/flow diagrams, 7 epic cards, API tables) at 100% fidelity; verified
+in-browser. A pointer was added to `apps/prototype/CLAUDE.md` (Design work section).
+
 ## 2026-06-24 — Trigger step: explainer video back + expand-to-see-matching-accounts
 Two additions to the "When & who it runs on" step (`TriggerStep.tsx`), placement decided via a
 frontend-design (CDO) consultation agent. **(1)** Brought back the "How triggers work" explainer

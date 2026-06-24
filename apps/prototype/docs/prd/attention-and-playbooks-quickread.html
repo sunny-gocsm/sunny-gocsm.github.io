@@ -1,0 +1,548 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>GoCSM — Attention &amp; Playbooks · Developer Quick-Read</title>
+<style>
+  :root{
+    --ink:#0f1b2d; --ink2:#3c4a63; --ink3:#6b7686; --line:#e4e9f1; --line2:#eef2f8;
+    --bg:#f6f8fc; --card:#fff; --blue:#1558c0; --blue7:#2c5cc5; --blue-soft:#eef3fc; --blue-bd:#cfe0f7;
+    --violet:#6d4bd8; --violet-soft:#f5f3ff; --violet-bd:#e4ddff;
+    --pos:#2f9e1b; --pos-soft:#e9f8e4; --neg:#c73a26; --neg-soft:#fdeae6; --warn:#b45309; --warn-soft:#fef0d6;
+    --crit:#c73a26; --slip:#f97316; --steady:#6b7280; --strong:#2f9e1b; --boom:#137a52;
+    --r:12px; --r2:9px; --sh:0 1px 2px rgba(16,27,45,.05),0 6px 20px rgba(16,27,45,.05);
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{margin:0;background:var(--bg);color:var(--ink);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    font-size:15px;line-height:1.55;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:1080px;margin:0 auto;padding:0 22px}
+  a{color:var(--blue);text-decoration:none}
+  a:hover{text-decoration:underline}
+  code{font-family:"SF Mono",ui-monospace,Menlo,Consolas,monospace;font-size:.86em;background:var(--line2);
+    padding:1px 5px;border-radius:5px;color:#243a5e;white-space:nowrap}
+  h2{font-size:22px;letter-spacing:-.01em;margin:0 0 4px}
+  h3{font-size:16px;margin:0 0 8px}
+  p{margin:0 0 10px;color:var(--ink2)}
+  .muted{color:var(--ink3)}
+  .eyebrow{font-size:11.5px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--blue7)}
+
+  /* top bar */
+  header.top{background:linear-gradient(135deg,#0f2a55,#14377a);color:#fff;padding:34px 0 30px}
+  header.top .eyebrow{color:#9db8ec}
+  header.top h1{margin:6px 0 6px;font-size:30px;letter-spacing:-.02em;font-weight:760}
+  header.top p{color:#cdd9ef;max-width:760px;margin:0}
+  .pills{display:flex;flex-wrap:wrap;gap:8px;margin-top:16px}
+  .pill{background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.18);border-radius:999px;
+    padding:5px 12px;font-size:12.5px;font-weight:600;color:#eaf1ff}
+  .pill b{color:#fff}
+
+  /* sticky nav */
+  nav.toc{position:sticky;top:0;z-index:20;background:rgba(255,255,255,.92);backdrop-filter:blur(8px);
+    border-bottom:1px solid var(--line);overflow-x:auto;white-space:nowrap}
+  nav.toc .wrap{display:flex;gap:4px;padding-top:8px;padding-bottom:8px}
+  nav.toc a{color:var(--ink2);font-size:12.5px;font-weight:600;padding:6px 11px;border-radius:8px;flex:0 0 auto}
+  nav.toc a:hover{background:var(--blue-soft);text-decoration:none;color:var(--blue)}
+
+  section{padding:34px 0;border-bottom:1px solid var(--line)}
+  section>.wrap>.eyebrow{margin-bottom:2px}
+  .lead{font-size:15.5px;color:var(--ink2);max-width:820px}
+
+  .grid{display:grid;gap:14px}
+  .g2{grid-template-columns:1fr 1fr}
+  .g3{grid-template-columns:repeat(3,1fr)}
+  .g4{grid-template-columns:repeat(4,1fr)}
+  @media(max-width:820px){.g2,.g3,.g4{grid-template-columns:1fr}}
+
+  .card{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:16px 18px;box-shadow:var(--sh)}
+  .card h3{display:flex;align-items:center;gap:8px}
+  .kcard{background:var(--card);border:1px solid var(--line);border-radius:var(--r2);padding:13px 15px}
+  .kcard .t{font-weight:700;font-size:14px;margin-bottom:3px}
+  .kcard .d{font-size:13px;color:var(--ink3)}
+
+  ul.tick{list-style:none;padding:0;margin:6px 0 0}
+  ul.tick li{position:relative;padding:3px 0 3px 22px;font-size:13.5px;color:var(--ink2)}
+  ul.tick li::before{content:"›";position:absolute;left:4px;color:var(--blue7);font-weight:800}
+
+  .badge{display:inline-flex;align-items:center;gap:5px;font-size:11.5px;font-weight:700;border-radius:999px;padding:2px 9px;line-height:1.7}
+  .b-blue{background:var(--blue-soft);color:var(--blue);border:1px solid var(--blue-bd)}
+  .b-violet{background:var(--violet-soft);color:var(--violet);border:1px solid var(--violet-bd)}
+  .b-pos{background:var(--pos-soft);color:#1c6b12}
+  .b-neg{background:var(--neg-soft);color:#9a2c1c}
+  .b-warn{background:var(--warn-soft);color:#8a4708}
+  .b-gray{background:#eef1f6;color:#516079}
+  .dot{width:9px;height:9px;border-radius:999px;display:inline-block}
+
+  table{width:100%;border-collapse:collapse;font-size:13px;background:var(--card);border:1px solid var(--line);border-radius:var(--r2);overflow:hidden}
+  th,td{text-align:left;padding:8px 11px;border-bottom:1px solid var(--line2);vertical-align:top}
+  th{background:#f3f6fb;font-size:11px;text-transform:uppercase;letter-spacing:.04em;color:var(--ink3);font-weight:700}
+  tr:last-child td{border-bottom:0}
+  td code{white-space:nowrap}
+
+  .callout{border-radius:var(--r);padding:16px 18px;border:1px solid}
+  .c-amber{background:#fff8ec;border-color:#f3dcae}
+  .c-blue{background:var(--blue-soft);border-color:var(--blue-bd)}
+  .c-violet{background:var(--violet-soft);border-color:var(--violet-bd)}
+
+  /* architecture diagram */
+  .arch{display:flex;flex-direction:column;gap:0;margin-top:6px}
+  .layer{background:var(--card);border:1px solid var(--line);border-left:4px solid var(--blue7);border-radius:var(--r2);
+    padding:11px 15px;box-shadow:var(--sh)}
+  .layer .ln{font-weight:700;font-size:13.5px}
+  .layer .ld{font-size:12.5px;color:var(--ink3)}
+  .arrow-d{align-self:center;color:var(--blue7);font-size:18px;line-height:1;margin:4px 0}
+
+  /* phase gate */
+  .phase{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  @media(max-width:820px){.phase{grid-template-columns:1fr}}
+  .phase .col{border-radius:var(--r);padding:15px 17px;border:1px solid}
+  .p1{background:#fff;border-color:var(--line)}
+  .p2{background:#fbf9ff;border-color:var(--violet-bd)}
+  .yes{color:#1c6b12} .no{color:#9a2c1c}
+  ul.pl{list-style:none;padding:0;margin:8px 0 0}
+  ul.pl li{padding:3px 0 3px 22px;position:relative;font-size:13px;color:var(--ink2)}
+  ul.pl li.y::before{content:"✓";position:absolute;left:2px;color:#2f9e1b;font-weight:800}
+  ul.pl li.x::before{content:"✕";position:absolute;left:2px;color:#c73a26;font-weight:800}
+
+  /* state machine */
+  .sm{display:flex;align-items:center;flex-wrap:wrap;gap:8px;margin-top:8px}
+  .st{border:1.5px solid var(--line);border-radius:999px;padding:6px 14px;font-weight:700;font-size:13px;background:#fff}
+  .st.on{border-color:#bfe3b6;background:var(--pos-soft);color:#1c6b12}
+  .st.pa{border-color:#f3dcae;background:var(--warn-soft);color:#8a4708}
+  .st.ar{border-color:#d7dde7;background:#eef1f6;color:#516079}
+  .st.of{border-color:#d7dde7;color:#516079}
+  .tr{color:var(--ink3);font-size:12px;font-weight:600}
+
+  /* stepper */
+  .stepper{display:flex;gap:0;margin-top:6px}
+  @media(max-width:820px){.stepper{flex-direction:column;gap:10px}}
+  .step{flex:1;position:relative;padding:0 10px}
+  .step .num{width:28px;height:28px;border-radius:999px;background:var(--blue);color:#fff;font-weight:800;
+    display:flex;align-items:center;justify-content:center;font-size:14px;margin-bottom:8px}
+  .step .st-t{font-weight:700;font-size:14px;margin-bottom:3px}
+  .step .st-d{font-size:12.5px;color:var(--ink3)}
+  .step:not(:last-child)::after{content:"→";position:absolute;right:-6px;top:4px;color:var(--blue7);font-weight:800}
+  @media(max-width:820px){.step:not(:last-child)::after{content:"↓";right:auto;left:8px;top:auto;bottom:-14px}}
+
+  /* situation scale */
+  .scale{display:flex;gap:8px;flex-wrap:wrap;margin-top:6px}
+  .sb{display:flex;align-items:center;gap:7px;border:1px solid var(--line);border-radius:999px;padding:5px 12px;font-weight:700;font-size:13px;background:#fff}
+
+  /* epics */
+  .epic{background:var(--card);border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--sh);overflow:hidden}
+  .epic .hd{padding:13px 16px;display:flex;align-items:center;gap:10px;border-bottom:1px solid var(--line2)}
+  .epic .eid{font-weight:800;font-size:13px;color:#fff;background:var(--blue7);border-radius:7px;padding:3px 9px;flex:0 0 auto}
+  .epic .et{font-weight:740;font-size:15.5px}
+  .epic .bd{padding:13px 16px}
+  .epic .goal{font-size:13.5px;color:var(--ink2);margin:0 0 8px}
+  .epic .meta{margin-top:10px;padding-top:10px;border-top:1px dashed var(--line);display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+  .epic .meta .lbl{font-size:11px;font-weight:700;color:var(--ink3);text-transform:uppercase;letter-spacing:.04em;margin-right:2px}
+  .chip{font-size:11.5px;font-weight:600;background:var(--line2);color:#46566f;border-radius:6px;padding:2px 8px}
+
+  footer{padding:30px 0 60px}
+  .foot{background:#0f2a55;color:#cdd9ef;border-radius:var(--r);padding:20px 22px}
+  .foot a{color:#9db8ec}
+  .foot b{color:#fff}
+  .small{font-size:12.5px}
+  .src{font-size:12px;color:var(--ink3);margin-top:8px}
+  @media print{nav.toc{display:none}header.top{background:#0f2a55}.epic,.card,.kcard,table{box-shadow:none}section{break-inside:avoid}}
+</style>
+</head>
+<body>
+
+<header class="top">
+  <div class="wrap">
+    <div class="eyebrow">GoCSM · Developer Quick-Read</div>
+    <h1>Attention &amp; Playbooks</h1>
+    <p>The 15-minute build briefing. GoCSM helps a non-technical HighLevel agency owner keep ~1,000 client sub-accounts from churning — and grow the ones doing well — with one-click pre-built automations. This is the <b>visual summary</b>; the exhaustive acceptance criteria live in the full PRD (<code>attention-and-playbooks-prd.md</code>).</p>
+    <div class="pills">
+      <span class="pill"><b>2</b> surfaces</span>
+      <span class="pill"><b>7</b> epics</span>
+      <span class="pill"><b>44</b> user stories</span>
+      <span class="pill"><b>265</b> acceptance criteria</span>
+      <span class="pill"><b>57</b> playbooks</span>
+      <span class="pill"><b>30</b> filter fields</span>
+      <span class="pill">looks worth <b>$2,000/mo</b></span>
+    </div>
+  </div>
+</header>
+
+<nav class="toc">
+  <div class="wrap">
+    <a href="#tldr">TL;DR</a>
+    <a href="#arch">Architecture</a>
+    <a href="#phase">Phase gate ★</a>
+    <a href="#model">Domain model</a>
+    <a href="#lifecycle">Lifecycle</a>
+    <a href="#flow">Setup flow</a>
+    <a href="#builder">Trigger builder</a>
+    <a href="#playbooks">Playbooks</a>
+    <a href="#epics">Epics</a>
+    <a href="#api">API</a>
+    <a href="#diff">Differentiators</a>
+  </div>
+</nav>
+
+<!-- TL;DR -->
+<section id="tldr">
+  <div class="wrap">
+    <div class="eyebrow">What we're building</div>
+    <h2>Two surfaces, one engine</h2>
+    <p class="lead">Everything operates on the <b>Account</b> (one HL sub-account) and a shared <b>criteria/matching engine</b> that answers “who matches right now / how many / who's about to.” Two surfaces sit on top.</p>
+    <div class="grid g2" style="margin-top:14px">
+      <div class="card" style="border-left:4px solid var(--warn)">
+        <h3>🔔 Attention <span class="badge b-warn">action layer</span></h3>
+        <p>“What needs me right now?” A live queue of sub-accounts needing a play + two hero numbers (<b>N need attention</b>, <b>$X MRR at risk</b>), plus a “Step in” list for accounts a play ran on but didn't fix.</p>
+        <div class="muted small">Epic E2 · page <code>/today</code> · embed <code>/embed/attention</code></div>
+      </div>
+      <div class="card" style="border-left:4px solid var(--blue7)">
+        <h3>📘 Playbooks <span class="badge b-blue">systems layer</span></h3>
+        <p>A marketplace of 57 pre-built automations: browse → set up (3 steps) → run on the right accounts. Each play = a HighLevel workflow + an audience. <b>This is the core product.</b></p>
+        <div class="muted small">Epics E3–E6 · page <code>/playbooks</code> · embed <code>/embed/playbooks</code></div>
+      </div>
+    </div>
+    <div class="callout c-blue" style="margin-top:14px">
+      <b>The product stance:</b> GoCSM <b>diagnoses; HighLevel executes.</b> There are exactly two outward actions — <span class="badge b-blue">Trigger Workflow</span> <span class="badge b-blue">Request Feedback</span> — both run as HighLevel workflows. GoCSM owns the audience + lifecycle; HighLevel owns sending. <span class="muted">(§4.7, Epic E7)</span>
+    </div>
+  </div>
+</section>
+
+<!-- Architecture -->
+<section id="arch">
+  <div class="wrap">
+    <div class="eyebrow">How it fits together</div>
+    <h2>Layered architecture</h2>
+    <p class="lead">Build bottom-up: get accounts &amp; signals fresh, expose the phase-filtered field catalog, implement the matching engine, then the playbooks/queue/flow on top, handing off to HighLevel to execute.</p>
+    <div class="arch">
+      <div class="layer"><div class="ln">① HL-native account data &amp; signals <span class="badge b-gray">E1</span></div><div class="ld">~1,000 agency sub-accounts synced from HighLevel (logins, payments, workflow usage, plan, renewal, feature adoption, NPS) + a Signal event log (sticky setup reversals = strongest churn predictor).</div></div>
+      <div class="arrow-d">↓</div>
+      <div class="layer"><div class="ln">② Criteria catalog (30 fields, phase-filtered) <span class="badge b-gray">E1 · E5</span></div><div class="ld">The curated, filterable field universe; Phase-1 strips all Health fields; PAS/pillar scores never exposed.</div></div>
+      <div class="arrow-d">↓</div>
+      <div class="layer" style="border-left-color:var(--violet)"><div class="ln">③ Matching engine <span class="badge b-violet">E5</span></div><div class="ld"><code>matchAccounts</code> · <code>matchCount</code> · <code>describeSet</code> (plain-English restatement) · <code>forecast7d</code> · <code>composition</code>. One-level boolean nesting. Unknown field ⇒ no-match.</div></div>
+      <div class="arrow-d">↓</div>
+      <div class="layer" style="border-left-color:#0d9488"><div class="ln">④ Playbooks (57) + Recipes (6) + AttentionSignals <span class="badge b-gray">E3 · E2</span></div><div class="ld">Pre-built plays with a match predicate, marketplace metadata &amp; a Situation rating; recipes seed the builder; AttentionSignals turn (query + play) into queue rows.</div></div>
+      <div class="arrow-d">↓</div>
+      <div class="layer" style="border-left-color:var(--warn)"><div class="ln">⑤ Surfaces: Attention queue + 3-step setup flow + lifecycle <span class="badge b-gray">E2 · E4 · E6</span></div><div class="ld">Surface what needs action; configure &amp; publish a play; manage on/paused/archived deployments (soft archive, no hard delete).</div></div>
+      <div class="arrow-d">↓</div>
+      <div class="layer" style="border-left-color:#3730a3"><div class="ln">⑥ HighLevel execution &amp; embeds <span class="badge b-gray">E7</span></div><div class="ld">GoCSM arms the play's HL workflow on the resolved audience; HighLevel sends. Pages also render nav-less inside HL via <code>/embed/*</code>.</div></div>
+    </div>
+  </div>
+</section>
+
+<!-- Phase gate -->
+<section id="phase">
+  <div class="wrap">
+    <div class="eyebrow">The most important cross-cutting rule</div>
+    <h2>Phase 1 vs Phase 2 — the Health gate ★</h2>
+    <p class="lead"><b>Health</b> is a gated, coined scoring system. Every surface must work in <b>two phases</b>, and the gate is enforced <b>server-side</b> (it's a trust/security rule, not cosmetic — NFR-4).</p>
+    <div class="phase">
+      <div class="col p1">
+        <h3>Phase 1 — Health NOT configured <span class="badge b-gray">default / trial · the majority state</span></h3>
+        <p class="small">Fully functional on its own, using only HL-native data.</p>
+        <ul class="pl">
+          <li class="y"><b>Available:</b> logins, payment/billing status, workflow usage, plan, renewal date, feature adoption, raw NPS, MRR/spend, <code>account.priority</code></li>
+          <li class="x"><b>Hidden:</b> Health score, Health <b>bands</b> (Thriving/Healthy/Watch/At-Risk), lifecycle stages</li>
+          <li class="x"><b>Hidden:</b> Health-derived queue signals, the rich match preview (band/breadth/forecast)</li>
+        </ul>
+      </div>
+      <div class="col p2">
+        <h3>Phase 2 — Health configured <span class="badge b-violet">additive, never a prerequisite</span></h3>
+        <p class="small">Unlocks <b>additively</b> — nothing that worked in Phase 1 changes or breaks.</p>
+        <ul class="pl">
+          <li class="y"><b>Adds:</b> Health score &amp; bands, lifecycle stages, the “Health &amp; Risk” filter group</li>
+          <li class="y"><b>Adds:</b> Health-derived AttentionSignals, <code>forecast7d</code>, <code>composition</code>, band-aware previews</li>
+          <li class="x"><b>Still never exposed (either phase):</b> PAS &amp; raw pillar scores — never filterable, internal only</li>
+        </ul>
+      </div>
+    </div>
+    <div class="callout c-amber" style="margin-top:14px">
+      ⚠️ <b>Implementation rule:</b> a single <code>health-config.isConfigured()</code> flag (per agency) drives every branch. In Phase 1, the serializer/selector layer must <b>strip</b> all <code>health.*</code> fields, bands, lifecycle, pillars from <i>every</i> response — catalog, accounts, queue, previews, restatement, copy. The marketplace “Situation” rating uses plain words that <b>deliberately avoid</b> the Health-band terms for exactly this reason.
+    </div>
+  </div>
+</section>
+
+<!-- Domain model -->
+<section id="model">
+  <div class="wrap">
+    <div class="eyebrow">Schema &amp; business objects (§5 — canonical)</div>
+    <h2>Domain model at a glance</h2>
+    <p class="lead">All entities are <b>agency-scoped</b> (multi-tenant; account ids unique within an agency). “Live account” = <code>enabled</code> &amp; not <code>churned</code>.</p>
+    <div class="grid g3" style="margin-top:6px">
+      <div class="kcard"><div class="t">Account <span class="badge b-blue">core</span></div><div class="d">11 sub-objects: identity, ownership, status, <i>lifecycle*</i>, pipeline, <i>health*</i>, login, adoption, revenue, feedback, onboarding. <i>(* = gated)</i></div></div>
+      <div class="kcard"><div class="t">Signal</div><div class="d">Event log. <code>sticky &amp; reverse &amp; setup &amp; ≤30d</code> = account is losing a critical setup → the “save” plays.</div></div>
+      <div class="kcard"><div class="t">Playbook ×57</div><div class="d">title, problem, <code>does</code>, pre-written <b>actions</b>, category, effort, <b>Situation</b> rating, <code>match(account)→bool</code>.</div></div>
+      <div class="kcard"><div class="t">Recipe ×6</div><div class="d">A pre-seeded <code>CriteriaSet</code> + linked play; seeds the builder's empty state.</div></div>
+      <div class="kcard"><div class="t">CriteriaSet</div><div class="d"><code>{match:"all"|"any", criteria[], nodes?}</code> → Criterion (field·op·value) / Group (1 level only). The audience query.</div></div>
+      <div class="kcard"><div class="t">AttentionSignal</div><div class="d">A named (query + play + priority) that becomes a queue row. <code>tier: native | health</code>.</div></div>
+      <div class="kcard"><div class="t">Attempt</div><div class="d">A play ran but didn't fix — powers the “Step in” list. <code>status</code> flat/worse/unconfirmed · <code>confidence</code> high/low.</div></div>
+      <div class="kcard"><div class="t">AutopilotStatus + OverseeMode</div><div class="d">Per-agency deployment: <code>off→on→paused→archived</code> + governance <code>auto/ease/review</code>.</div></div>
+      <div class="kcard"><div class="t">WorkflowDraft</div><div class="d">Autosaved setup-in-progress, keyed by recipe; <code>{step, criteria, workflowReady, savedAt}</code>.</div></div>
+    </div>
+    <div class="callout c-blue" style="margin-top:14px"><b>Criteria catalog (§5.2):</b> 30 fields · 8 groups · ~7 “common”. Operators are <b>plain words, never symbols</b> (e.g. <code>is more than</code>, <code>in the next</code>, <code>is any of</code>). FieldTypes: score/money/number/days (numeric + between), dateRelative (inNext/inLast/moreThanAgo/within), enum (isAnyOf/isNoneOf/is/isNot), band <span class="badge b-gray">P2</span>, boolean, trendDir (falling/rising). An unknown field id ⇒ <b>false</b> (drop, never error).</div>
+  </div>
+</section>
+
+<!-- Lifecycle -->
+<section id="lifecycle">
+  <div class="wrap">
+    <div class="eyebrow">Epic E6 · §5.7</div>
+    <h2>Playbook lifecycle (state machine)</h2>
+    <p class="lead">Per-agency, idempotent transitions. <b>No hard deletes</b> of a play that ever ran — soft archive only; restore always lands in <b>paused</b> (never directly live).</p>
+    <div class="sm">
+      <span class="st of">off</span>
+      <span class="tr">— enable(oversee) →</span>
+      <span class="st on">on</span>
+      <span class="tr">⇄ pause / resume ⇄</span>
+      <span class="st pa">paused</span>
+      <span class="tr">— archive →</span>
+      <span class="st ar">archived</span>
+      <span class="tr">— restore → paused</span>
+    </div>
+    <p class="src">Each transition has an exact confirmation toast (e.g. “Playbook paused”, “Archived — history kept”, “Restored — back in Paused”). <code>disable</code> (on|paused → off) exists but is not offered for plays with run history. Listed via <code>GET /deployments?status=</code>.</p>
+  </div>
+</section>
+
+<!-- Setup flow -->
+<section id="flow">
+  <div class="wrap">
+    <div class="eyebrow">Epic E4 · the heart of activation</div>
+    <h2>The unified 3-step setup &amp; activation flow</h2>
+    <p class="lead">One reusable flow opened from the marketplace, the Attention queue, or the Accounts table. Persistent header + stepper + footer. <b>Autosaves a draft on every change</b> (resume: “Picked up where you left off”). Publish is <b>idempotent</b>.</p>
+    <div class="stepper">
+      <div class="step"><div class="num">1</div><div class="st-t">What it does</div><div class="st-d">Video + the play's plain actions + an HL gate: “Open &amp; modify it” → “I've completed this” sets <code>workflowReady</code>. Continue is locked until then.</div></div>
+      <div class="step"><div class="num">2</div><div class="st-t">When &amp; who it runs on</div><div class="st-d">The trigger builder (E5), seeded from a recipe (Phase-1 strips health.*). Live match count; Continue locked at 0 matches.</div></div>
+      <div class="step"><div class="num">3</div><div class="st-t">Review &amp; publish</div><div class="st-d">Two plain-English summaries + account preview (P2 rows / P1 count) + Autopilot toggle (default <b>ON</b>) → Publish.</div></div>
+    </div>
+    <div class="callout c-blue" style="margin-top:16px"><b>Publish semantics:</b> ongoing + autopilot ON ⇒ lifecycle <code>off→on</code>, runs continuously on new matches; autopilot OFF ⇒ one-time run over current matches; <b>fixed-selection variant</b> (opened with pre-picked accounts) runs <b>ONCE</b> on exactly those, no autopilot toggle. Double-publish is a no-op (idempotency key per agency·play·recipe / ·fixed-set). Draft cleared only on success.</div>
+  </div>
+</section>
+
+<!-- Trigger builder -->
+<section id="builder">
+  <div class="wrap">
+    <div class="eyebrow">Epic E5 · the engine + the UX</div>
+    <h2>The trigger / audience builder — two modes</h2>
+    <p class="lead">A <b>live plain-English restatement</b> sits at the top at all times (“Runs on accounts where…”) and the live count expands to show exactly who matches. The mode toggle is <b>non-destructive</b>.</p>
+    <div class="grid g2" style="margin-top:6px">
+      <div class="card" style="border-top:3px solid var(--steady)">
+        <h3>Simple <span class="badge b-gray">default · no AI</span></h3>
+        <ul class="tick">
+          <li>A <b>prebuilt quick-add list</b> grouped Account / Engagement / Billing / Users — tap to add a ready-made, editable condition.</li>
+          <li>An already-used field is hidden; “Browse all fields” opens the full categorized + searchable picker.</li>
+          <li>Flat conditions + one <code>Match all | any</code> switch.</li>
+        </ul>
+      </div>
+      <div class="card" style="border-top:3px solid var(--violet)">
+        <h3>Advanced <span class="badge b-violet">AI on-ramp + rule builder</span></h3>
+        <ul class="tick">
+          <li>A natural-language “describe your audience” box → <b>deterministic compile to editable rules</b> (never auto-commits; “always check them” honesty gate).</li>
+          <li>A nested boolean builder: Match all/any · Add condition · Add group (<b>one level only</b>).</li>
+          <li>Switching back to Simple is <b>disabled</b> when genuine nesting exists — never silently flatten/reset.</li>
+        </ul>
+      </div>
+    </div>
+    <div class="callout c-violet" style="margin-top:14px">💡 <b>The live count is a disclosure:</b> “N of your accounts match right now · <b>See who</b>” → <b>Phase 1</b> shows a plain <i>name + $/mo</i> list (no Health); <b>Phase 2</b> shows a richer preview (bands, a breadth meter, a 7-day forecast).</div>
+  </div>
+</section>
+
+<!-- Playbooks taxonomy -->
+<section id="playbooks">
+  <div class="wrap">
+    <div class="eyebrow">§5.5 · §9.C</div>
+    <h2>Playbooks: rating &amp; taxonomy</h2>
+    <p class="lead">57 seeded plays. The marketplace’s <b>Situation</b> rating (churn↔expansion) uses plain words that <b>do not reuse</b> the gated Health-band terms — so it's safe on the Phase-1 surface. Always shown with its dot + label.</p>
+    <div class="scale">
+      <span class="sb"><span class="dot" style="background:var(--crit)"></span>Critical</span>
+      <span class="sb"><span class="dot" style="background:var(--slip)"></span>Slipping</span>
+      <span class="sb"><span class="dot" style="background:var(--steady)"></span>Steady</span>
+      <span class="sb"><span class="dot" style="background:var(--strong)"></span>Strong</span>
+      <span class="sb"><span class="dot" style="background:var(--boom)"></span>Booming</span>
+    </div>
+    <p class="muted small" style="margin-top:6px">worst → best · colors <code>#c73a26 · #f97316 · #6b7280 · #2f9e1b · #137a52</code></p>
+    <h3 style="margin-top:16px">7 marketplace categories</h3>
+    <div style="display:flex;flex-wrap:wrap;gap:7px">
+      <span class="chip">Win back at-risk</span><span class="chip">Re-engage quiet</span><span class="chip">Drive adoption</span>
+      <span class="chip">Rescue revenue</span><span class="chip">Onboard faster</span><span class="chip">Grow &amp; upsell</span><span class="chip">Listen &amp; celebrate</span>
+    </div>
+    <p class="src">Also: setup <b>effort</b> = ready / quick / custom · play <b>kind</b> = save / retention / adoption / billing / onboarding / expansion · social-proof metrics (usedByAgencies, totalRuns, trending, launchedDaysAgo). Marketplace = faceted filters (Category · Situation · Effort · Highlights) with live cross-counts, search, sort, and a single AI-pick hero ranked by the agency's own at-risk MRR (E3).</p>
+  </div>
+</section>
+
+<!-- Epics -->
+<section id="epics">
+  <div class="wrap">
+    <div class="eyebrow">The build plan · §6 (44 stories · 265 ACs)</div>
+    <h2>The 7 epics — what to build</h2>
+    <p class="lead">Each epic below distills the “what”; the exhaustive Given/When/Then acceptance criteria (incl. every Phase-1/Phase-2 and error path) are in the full PRD §6.</p>
+    <div class="grid" style="gap:14px;margin-top:6px">
+
+      <div class="epic">
+        <div class="hd"><span class="eid" style="background:#475569">E1</span><span class="et">Platform foundation</span><span class="badge b-gray" style="margin-left:auto">7 stories</span></div>
+        <div class="bd">
+          <p class="goal">The substrate: agency-scoped Accounts &amp; Signals, the derived-field engine, account selectors, and the Health phase gate.</p>
+          <ul class="tick">
+            <li>Sync HL sub-accounts into the Account model; detect Signals + the sticky-reverse rule.</li>
+            <li>Serve the <b>phase-filtered criteria catalog</b>; compute every derived field server-side (activityStatus, spendTrend, sentiment, lifetimeSpend, failedPayment…).</li>
+            <li>The Health-config flag drives additive Phase-1→Phase-2; PAS/pillars never exposed; strict agency isolation.</li>
+          </ul>
+          <div class="meta"><span class="lbl">refs</span><span class="chip">§5.1–§5.2</span><span class="chip">§5.9</span><span class="lbl" style="margin-left:6px">owns</span><span class="chip">/accounts*</span><span class="chip">/criteria/catalog</span><span class="chip">/agency/health-config</span></div>
+        </div>
+      </div>
+
+      <div class="epic">
+        <div class="hd"><span class="eid" style="background:#b45309">E2</span><span class="et">Attention queue &amp; metrics</span><span class="badge b-gray" style="margin-left:auto">6 stories</span></div>
+        <div class="bd">
+          <p class="goal">The action layer: the live queue, the two hero numbers, and the “Step in” list.</p>
+          <ul class="tick">
+            <li>Queue = each AttentionSignal's <code>matchAccounts</code> → row; drop 0-match; sort priority desc; native-only in P1, +health in P2.</li>
+            <li><b>needing</b> = unique accounts across rows; <b>mrrAtRisk</b> = MRR summed over those <b>unique</b> accounts (never double-counted).</li>
+            <li>Row states (live / draft / set-up / “From Health”) + stake note “$X at risk · A, B +N more”; “Step in” surfaces Attempts with Call/Email/SMS.</li>
+          </ul>
+          <div class="meta"><span class="lbl">refs</span><span class="chip">§5.6</span><span class="lbl" style="margin-left:6px">owns</span><span class="chip">/attention/queue</span><span class="chip">/attention/stepin</span></div>
+        </div>
+      </div>
+
+      <div class="epic">
+        <div class="hd"><span class="eid" style="background:#0d9488">E3</span><span class="et">Playbooks catalog &amp; marketplace</span><span class="badge b-gray" style="margin-left:auto">8 stories</span></div>
+        <div class="bd">
+          <p class="goal">The storefront: 57 plays with faceted filters, search, sort, an AI-pick hero, and per-play impact.</p>
+          <ul class="tick">
+            <li>Four facets (Category single · Situation multi · Effort multi · Highlights multi) with <b>faceted cross-counting</b> (a facet's counts honor all other facets but not itself).</li>
+            <li>Sorts: Most used / Highest impact (agency's at-risk MRR) / Newest. AI-pick = top non-live play by at-risk MRR.</li>
+            <li>MarketCard payload + “Your playbooks” read grouping (Live / Drafts / Paused / Archived).</li>
+          </ul>
+          <div class="meta"><span class="lbl">refs</span><span class="chip">§5.5</span><span class="lbl" style="margin-left:6px">owns</span><span class="chip">/playbooks?{facets}</span><span class="chip">/playbooks/ai-pick</span><span class="chip">/:id/impact</span></div>
+        </div>
+      </div>
+
+      <div class="epic">
+        <div class="hd"><span class="eid" style="background:var(--blue)">E4</span><span class="et">Setup &amp; activation flow</span><span class="badge b-gray" style="margin-left:auto">6 stories</span></div>
+        <div class="bd">
+          <p class="goal">The unified 3-step flow → a live (or once-run) deployment, with draft autosave and idempotent publish.</p>
+          <ul class="tick">
+            <li>Step gates: <code>workflowReady</code> to leave ①; match count &gt; 0 to leave ② (unless fixed-selection).</li>
+            <li>Autopilot toggle default ON; fixed-selection runs ONCE on pre-picked accounts.</li>
+            <li>Draft saved on every change; publish idempotent; success/resume copy exact.</li>
+          </ul>
+          <div class="meta"><span class="lbl">refs</span><span class="chip">§5.4</span><span class="chip">§5.8</span><span class="lbl" style="margin-left:6px">owns</span><span class="chip">/drafts/:recipeId</span><span class="chip">/playbooks/:id/publish</span></div>
+        </div>
+      </div>
+
+      <div class="epic">
+        <div class="hd"><span class="eid" style="background:var(--violet)">E5</span><span class="et">Trigger builder &amp; matching engine</span><span class="badge b-gray" style="margin-left:auto">9 stories</span></div>
+        <div class="bd">
+          <p class="goal">The biggest epic: the catalog, the matching engine, the two modes, NL compile, restatement, and the expand-accounts preview.</p>
+          <ul class="tick">
+            <li><code>matchAccounts/matchCount/describeSet</code>; per-operator semantics; one-level nesting; unknown field ⇒ false.</li>
+            <li>Simple (no AI quick-add) + Advanced (deterministic NL → editable rules + nested builder); non-destructive toggle.</li>
+            <li>Live restatement + live count disclosure (P1 name+$, P2 bands/breadth/forecast); 6 recipes as seeds.</li>
+          </ul>
+          <div class="meta"><span class="lbl">refs</span><span class="chip">§5.2–§5.3</span><span class="lbl" style="margin-left:6px">owns</span><span class="chip">/audience/count</span><span class="chip">/audience/preview</span><span class="chip">/audience/describe</span><span class="chip">/audience/compile-nl</span></div>
+        </div>
+      </div>
+
+      <div class="epic">
+        <div class="hd"><span class="eid" style="background:#1c7c3a">E6</span><span class="et">Lifecycle &amp; autopilot</span><span class="badge b-gray" style="margin-left:auto">4 stories</span></div>
+        <div class="bd">
+          <p class="goal">The deployment state machine + the “Your playbooks” management actions and confirmations.</p>
+          <ul class="tick">
+            <li>Idempotent <code>off→on→paused→archived→paused</code>; no hard deletes; OverseeMode auto/ease/review.</li>
+            <li>Per-section actions (Edit/Pause · Resume/Archive · Restore · Discard draft) with exact toasts.</li>
+            <li>Discard clears only the draft, never the play.</li>
+          </ul>
+          <div class="meta"><span class="lbl">refs</span><span class="chip">§5.7</span><span class="lbl" style="margin-left:6px">owns</span><span class="chip">/playbooks/:id/{enable|pause|resume|archive|restore|disable}</span><span class="chip">/deployments</span></div>
+        </div>
+      </div>
+
+      <div class="epic">
+        <div class="hd"><span class="eid" style="background:#3730a3">E7</span><span class="et">HighLevel integration, the two actions &amp; embeds</span><span class="badge b-gray" style="margin-left:auto">4 stories</span></div>
+        <div class="bd">
+          <p class="goal">The handoff: arm the play's HL workflow on the resolved audience; the two actions; the nav-less embeds.</p>
+          <ul class="tick">
+            <li>GoCSM owns audience + lifecycle; HighLevel owns execution + sending; actions map to HL steps with <code>{{name}}</code>/<code>{{account}}</code> interpolation.</li>
+            <li>Request Feedback = a specialization that writes NPS back to the account over time.</li>
+            <li>Embeds <code>/embed/{attention,playbooks,outcomes}</code> render the same pages nav-less (IS_EMBED), same phase rules, no duplication.</li>
+          </ul>
+          <div class="meta"><span class="lbl">refs</span><span class="chip">§4.7</span><span class="lbl" style="margin-left:6px">depends</span><span class="chip">E4 publish</span><span class="chip">E6 lifecycle</span><span class="chip b-warn">HL = external</span></div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- API -->
+<section id="api">
+  <div class="wrap">
+    <div class="eyebrow">§8 · suggested REST surface (adapt to house conventions)</div>
+    <h2>API surface</h2>
+    <p class="lead">Every endpoint is <b>agency-scoped from auth</b> and responses are already <b>phase-filtered server-side</b>.</p>
+    <div class="grid g2" style="margin-top:6px">
+      <table>
+        <tr><th>Method · Path</th><th>Purpose</th></tr>
+        <tr><td><code>GET /accounts</code> · <code>/:id</code></td><td>Account reads (phase-filtered)</td></tr>
+        <tr><td><code>GET /accounts/:id/signals</code></td><td>Signal log, newest first</td></tr>
+        <tr><td><code>GET /accounts/selector/:name</code></td><td>failed-payments, stalled-onboarding, lost-sticky-setups, renewals</td></tr>
+        <tr><td><code>GET /agency/rollup</code></td><td>{totalAccounts, liveAccounts, mrr, mrrAtRisk}</td></tr>
+        <tr><td><code>GET /criteria/catalog</code></td><td>Phase-filtered fields + operators</td></tr>
+        <tr><td><code>POST /audience/count</code></td><td>{count} — fast path</td></tr>
+        <tr><td><code>POST /audience/preview</code></td><td>{count, accounts, composition?, forecast7d?}</td></tr>
+        <tr><td><code>POST /audience/describe</code></td><td>{sentence} — the restatement</td></tr>
+        <tr><td><code>POST /audience/compile-nl</code></td><td>{criteria, unmatched?} — deterministic</td></tr>
+      </table>
+      <table>
+        <tr><th>Method · Path</th><th>Purpose</th></tr>
+        <tr><td><code>GET /playbooks?{q,category,signal[],effort[],highlight[],sort}</code></td><td>{items, facetCounts}</td></tr>
+        <tr><td><code>GET /playbooks/ai-pick</code> · <code>/:id/impact</code></td><td>AI hero · per-play {count, mrr}</td></tr>
+        <tr><td><code>GET/PUT/DELETE /drafts/:recipeId</code></td><td>WorkflowDraft autosave/load/clear</td></tr>
+        <tr><td><code>POST /playbooks/:id/publish</code></td><td>{set, oversee, fixedAccountIds?} → deployment</td></tr>
+        <tr><td><code>POST /playbooks/:id/{enable|pause|resume|archive|restore|disable}</code></td><td>Lifecycle (idempotent)</td></tr>
+        <tr><td><code>PUT /playbooks/:id/oversee</code></td><td>auto/ease/review</td></tr>
+        <tr><td><code>GET /deployments?status=</code></td><td>on / paused / archived ids</td></tr>
+        <tr><td><code>GET /attention/queue</code> · <code>/stepin</code></td><td>Queue + metrics · the Step-in list</td></tr>
+        <tr><td><code>GET/PUT /agency/health-config</code></td><td>The phase flag</td></tr>
+      </table>
+    </div>
+    <h3 style="margin-top:16px">Non-functional must-haves (§7)</h3>
+    <div style="display:flex;flex-wrap:wrap;gap:7px">
+      <span class="chip">match p95 ≤ 300ms (~1,000 accts)</span>
+      <span class="chip">phase gate enforced server-side</span>
+      <span class="chip">strict agency isolation</span>
+      <span class="chip">idempotent publish &amp; lifecycle</span>
+      <span class="chip">no hard deletes</span>
+      <span class="chip">deterministic AI · no auto-commit</span>
+      <span class="chip">one bad criterion ⇒ no-match, not failure</span>
+      <span class="chip">auditable transitions</span>
+    </div>
+  </div>
+</section>
+
+<!-- Differentiators -->
+<section id="diff">
+  <div class="wrap">
+    <div class="eyebrow">§9.A — why this wins (unoccupied white space)</div>
+    <h2>The differentiators to protect in the build</h2>
+    <div class="grid g2">
+      <div class="callout c-violet"><b>1 · Live plain-English restatement.</b> A generated sentence of the user's own rule — <i>no competitor, not even HighLevel,</i> shows this. Don't reduce it to a query summary.</div>
+      <div class="callout c-blue"><b>2 · Live “who matches now” count + glanceable preview,</b> updating on every edit, on a non-technical surface.</div>
+      <div class="callout c-blue"><b>3 · NL → editable rules + live count.</b> The NL drafts; the user lands in an editable builder (never a black box) with the count as ground truth.</div>
+      <div class="callout c-amber"><b>4 · Point-of-use AI honesty</b> (“always check them”), where competitors bury the disclaimer.</div>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    <div class="foot">
+      <div style="font-weight:740;color:#fff;font-size:16px;margin-bottom:6px">How to use this doc</div>
+      <p class="small" style="color:#cdd9ef">This is the 15-minute orientation. For the <b>exhaustive acceptance criteria</b> (every Given/When/Then, every Phase-1/Phase-2 and error path), the full data dictionary, and the 57-play catalog with predicates, read the full PRD: <b>attention-and-playbooks-prd.md</b> (§ references throughout this page link the detail). Build order roughly E1 → {E2…E7}; E5 underlies E2/E4; E6 underlies E2/E4/E7.</p>
+      <p class="small" style="color:#9db8ec;margin:8px 0 0">Two open conventions the PRD flags for you to confirm: the <b>publish idempotency key</b> (agency · play · recipe / fixed-set) and the <b>fixed-selection draft key</b> (<code style="background:rgba(255,255,255,.12);color:#dce7ff">fixed:{playbookId}</code>).</p>
+    </div>
+    <p class="src">GoCSM · Attention &amp; Playbooks PRD v1.0 · developer quick-read · 2026-06-24 · 100% fidelity to <code>attention-and-playbooks-prd.md</code></p>
+  </div>
+</footer>
+
+</body>
+</html>
