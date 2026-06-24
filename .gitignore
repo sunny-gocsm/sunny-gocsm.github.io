@@ -24,3 +24,6 @@ npm-debug.log*
 # Playwright MCP scratch
 .playwright-mcp/
 library.png
+# Stray screenshots dropped at repo root (e.g. by Playwright agents). Intentional
+# review captures live under docs/**, which this root-only glob does not touch.
+/*.png
