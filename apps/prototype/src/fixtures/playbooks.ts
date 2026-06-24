@@ -39,24 +39,28 @@ export const EFFORT_LABEL: Record<PlaybookEffort, string> = {
   custom: "Add your wording",
 };
 
-// Churn↔expansion rating — how critical the situation is the moment a play fires,
-// from `critical` (about to lose them) to `verypositive` (thriving — grow the
-// relationship). NB: this is the play's severity BAND, distinct from the detected
-// `signals` events imported above. Ordered worst→best for filter rails.
+// Churn↔expansion rating — how the account is doing the moment a play fires, from
+// `critical` (about to lose them) to `verypositive` (booming — grow the relationship).
+// NB: this is the play's severity BAND, distinct from the detected `signals` events
+// imported above. DISPLAY LABELS are deliberately plain words that do NOT reuse the
+// coined, gated account-Health bands (Thriving/Healthy/Watch/At-Risk) — those must
+// never leak onto this Phase-1 marketplace surface. The internal value strings stay
+// fixed to avoid churn; only the labels are the customer-facing vocabulary.
+// Ordered worst→best for filter rails.
 export type PlaybookSignal = "critical" | "atrisk" | "watch" | "positive" | "verypositive";
 export const SIGNALS: { id: PlaybookSignal; label: string }[] = [
   { id: "critical", label: "Critical" },
-  { id: "atrisk", label: "At risk" },
-  { id: "watch", label: "Watch" },
-  { id: "positive", label: "Positive" },
-  { id: "verypositive", label: "Very positive" },
+  { id: "atrisk", label: "Slipping" },
+  { id: "watch", label: "Steady" },
+  { id: "positive", label: "Strong" },
+  { id: "verypositive", label: "Booming" },
 ];
 export const SIGNAL_LABEL: Record<PlaybookSignal, string> = {
   critical: "Critical",
-  atrisk: "At risk",
-  watch: "Watch",
-  positive: "Positive",
-  verypositive: "Very positive",
+  atrisk: "Slipping",
+  watch: "Steady",
+  positive: "Strong",
+  verypositive: "Booming",
 };
 
 /** One reviewable action inside a playbook. Pre-written; edited in HighLevel. */

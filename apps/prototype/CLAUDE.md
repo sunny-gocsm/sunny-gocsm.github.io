@@ -15,10 +15,17 @@ and runs **only when Karthik explicitly asks for it** by name ("run the design l
 Durable facts also auto-load from memory: `gocsm-design-language`,
 `gocsm-ds-typography-gotchas`, `gocsm-today-activation`, `gocsm-ds-architecture`.
 
-**Trigger criteria builder** (step 1 "Who it runs on"): the user-facing attribute/filter
+**Trigger criteria builder** (step "When & who it runs on"): the user-facing attribute/filter
 universe is `docs/design/gocsm-attribute-filter-catalog.md` (derived from the real GoCSM
 backend + live DBs — **PAS & raw pillar scores are internal, never filterable**); the design
-contract is `docs/design/cpdo-brief.md`; supporting research in `docs/design/research/`.
+contract is `docs/design/cpdo-brief.md` + the v2 delta `docs/design/trigger-situation-v2-brief.md`;
+supporting research in `docs/design/research/`. **Structure (v2):** `TriggerStep` is the 2-mode
+shell — a live plain-English restatement of the audience at the top (the differentiator; no
+competitor incl. HighLevel shows one) + a `Simple | Advanced` toggle; `CriteriaBuilder` is the
+mode-driven body (**Simple** = prebuilt quick-add list, NO AI; **Advanced** = NL "describe your
+audience" box → editable rules + the nested boolean builder). No separate "Runs automatically
+when…" fact card (it duplicated a seeded chip). Note `account.priority` is an Account field
+(Phase-1 safe), not `health.*`.
 
 ## Embeds (HighLevel custom-menu-links)
 Three bare, nav-less URLs render the **same** page components for embedding as separate

@@ -5,6 +5,26 @@ Durable, human- and agent-readable log of significant decisions and changes.
 
 ---
 
+## 2026-06-24 — Design-loop v2: Situation rename + two-mode trigger + top restatement
+Ran the full **design-loop** (research → CPDO synthesis → build → 5-lens review → ship) on three
+linked changes; brief at `apps/prototype/docs/design/trigger-situation-v2-brief.md`. **(1) Situation
+rename** — the Playbooks marketplace `signal` filter reused the gated, coined account-Health bands
+(At-Risk/Watch), which also leak onto a Phase-1 trial surface. Relabeled (values unchanged) to plain,
+non-colliding words **Critical · Slipping · Steady · Strong · Booming** (Karthik picked Slipping over
+his floated "Urgent", and Booming over "Surging", at the gate); diverging warm→neutral-grey→cool dots,
+label always paired. **(2) Two modes** — collapsed the old three (TriggerStep narrowing → "Customize
+advanced" → CriteriaBuilder Simple/Advanced) into **Simple** (prebuilt quick-add list, NO AI) and
+**Advanced** (NL "describe your audience" → editable rules + nested boolean builder). `TriggerStep` is
+now the 2-mode shell; `CriteriaBuilder` the mode-driven body. **(3) Restatement** — one live
+plain-English audience sentence promoted to the TOP ("Runs on accounts where …"), removed from the
+body. Review-driven fixes: **removed the "Runs automatically when…" fact card** (it duplicated a seeded
+editable chip — the panel's one major finding); de-duplicated the match count (inline band only);
+de-jargoned copy (Monthly revenue, Browse all fields, Renewing soon). Recategorized `health.priority`
+→ `account.priority` (an agency flag, not coined Health → Phase-1 available). Files: `playbooks.ts`,
+`PlaybooksPage`? (no — labels via SIGNAL_LABEL), `TriggerStep.tsx`, `CriteriaBuilder.tsx`,
+`AttentionActivation.tsx`, `criteriaCatalog.ts`, `criteriaMatch.ts`, `AttentionLab.tsx`,
+`app-overrides.css`. `bun run build` green; tsc clean; Playwright dual-lens verified on :8080.
+
 ## 2026-06-24 — Playbook "Situation" rating (churn↔expansion) on cards + left filter
 Materialized the churn↔expansion rating that was only conceptual after the 57-play expansion (plays were
 grouped by section comments; no per-play field existed). Added a **`signal: PlaybookSignal`** field

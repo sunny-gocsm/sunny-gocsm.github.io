@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { Button, Icon, Mono, Stepper, Toggle, Badge, VideoCard, AccountRow } from "@gocsm/design-system";
 import { TriggerStep } from "./TriggerStep";
 import { autopilotStore } from "@/state/autopilot";
@@ -258,16 +258,6 @@ export function AttentionActivation({
   const whenLine = fixed ? `Runs once on the ${n} account${n === 1 ? "" : "s"} you picked` : describeSet(set);
   const doesLine = playbook?.does ?? "Published in HighLevel · alerts you, sends the drafted note (your OK first), then escalates if it's still open.";
 
-  // The playbook's baked-in behavioral trigger — read-only "fact you confirm" in Step 2.
-  // (Health-stripped in Phase 1 so no coined vocab leaks.) The narrowing layers onto this.
-  const baseTrigger = useMemo(() => {
-    const b = recipe ? normalize(recipe.set) : normalize({ match: "all", criteria: [] });
-    return healthConfigured ? b : stripHealth(b);
-  }, [recipe, healthConfigured]);
-  const triggerText = useMemo(() => {
-    if (nodesOf(baseTrigger).length > 0) return describeSet(baseTrigger).replace(/^Accounts where /i, "");
-    return healthConfigured && playbook?.problem ? playbook.problem.replace(/\.$/, "") : "this playbook’s built-in signals fire";
-  }, [baseTrigger, healthConfigured, playbook]);
   // The real accounts this run touches — sorted by value, top first — for the go-live preview.
   const previewAccounts = (fixed ? fixedAccounts! : matchAccounts(set))
     .slice()
@@ -331,7 +321,7 @@ export function AttentionActivation({
             fixed ? (
               <FixedSelectionStep accounts={fixedAccounts!} healthConfigured={healthConfigured} />
             ) : (
-              <TriggerStep baseTrigger={baseTrigger} triggerText={triggerText} set={set} onChange={setSet} />
+              <TriggerStep set={set} onChange={setSet} />
             )
           ) : (
             <ReviewStep
@@ -365,14 +355,14 @@ export function AttentionActivation({
               Back
             </Button>
             <div style={{ display: "flex", alignItems: "center", gap: "var(--s-3)" }}>
+              {/* The live count lives inline under the rules (TriggerStep .ts-count); the footer
+                  only nudges when there's a problem, so the same number never shows twice. */}
               <span className="aa-foot-note">
                 {fixed ? (
                   <><Mono>{n}</Mono> account{n === 1 ? "" : "s"} selected</>
                 ) : n === 0 ? (
-                  "No accounts match yet — adjust the trigger"
-                ) : (
-                  <><Mono>{n}</Mono> account{n === 1 ? "" : "s"} match</>
-                )}
+                  "No accounts match yet — widen who it runs on"
+                ) : null}
               </span>
               <Button variant="primary" iconRight={<Icon name="arrow-right" />} disabled={!fixed && n === 0} onClick={() => setStep("review")}>
                 Continue

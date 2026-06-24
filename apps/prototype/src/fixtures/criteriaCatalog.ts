@@ -217,8 +217,12 @@ export const CATALOG: FieldDef[] = [
     get: (a) => a.lifecycle.stage,
   },
   {
-    id: "health.priority",
-    group: "health",
+    // Priority is an agency-set account FLAG (a.status.isPriority), NOT coined Health —
+    // so it lives in the Account group and stays available in Phase 1 (no health.* prefix
+    // → never stripped by the Health gate). Surfaced in the Common shortlist + Simple quick-add.
+    id: "account.priority",
+    group: "account",
+    common: true,
     label: "Priority account",
     phrase: "priority account",
     type: "boolean",

@@ -1,6 +1,5 @@
 import { useMemo, useState } from "react";
 import { Button, Icon, Card, PromptArea, SegmentedControl, RuleGroup } from "@gocsm/design-system";
-import { MatchWall } from "./MatchWall";
 import { CriterionChip, makeCriterion } from "./CriterionChip";
 import { useHealthConfigured } from "@/state/healthConfig";
 import { RECIPES, type Recipe } from "@/fixtures/recipes";
@@ -14,9 +13,6 @@ import {
   type DateRelValue,
 } from "@/fixtures/criteriaCatalog";
 import {
-  matchCount,
-  describeSet,
-  isAdvanced,
   nodesOf,
   withNodes,
   isGroup,
@@ -26,19 +22,19 @@ import {
   type CriteriaSet,
 } from "@/fixtures/criteriaMatch";
 
-// CriteriaBuilder — the "Who should this run on?" surface (CPDO §1–§4).
-//   LEFT  = build the question: NL hero (PromptArea) → Simple sentence-chips OR Advanced
-//           nested-group cards, with a categorized field picker + never-blank empty state.
-//   RIGHT = see the answer: the live "runs on N accounts" count + MatchWall, always visible.
-// Controlled: owns no criteria state (the flow/page does); a draft `compiled` map drives the
-// transient PromptArea correction copy.
+// CriteriaBuilder — the BODY of the "Who it runs on" step. The shell (header, the live
+// plain-English restatement, the Simple/Advanced toggle, and the live count) lives one level
+// up in TriggerStep; this component renders only the mode-specific body:
+//   • SIMPLE  = a curated prebuilt quick-add list (no AI) + the editable sentence-chips you've added.
+//   • ADVANCED = the NL "describe your audience" box (drafts editable rules) + the nested rule builder.
+// `mode` is controlled by the parent so the toggle can sit beside the restatement up top. Controlled:
+// owns no criteria state (the flow/page does); a little NL/picker state is transient and local.
 
 let counter = 0;
 const newId = () => `c${++counter}`;
 
 // ---- NL warm-start (PROTOTYPE: deterministic keyword compile, NOT a live LLM). ----
-// Re-pointed at the §6 fields. Honest about being a mock; names the problem and offers
-// catalog-grounded options when nothing maps (the clarify path).
+// Honest about being a mock; names the problem and offers catalog-grounded options when nothing maps.
 interface NLRule {
   test: RegExp;
   build: () => Criterion;
@@ -48,6 +44,7 @@ const NL_RULES: NLRule[] = [
   { test: /\b(quiet|no login|not logged|dormant|inactive|gone\s+quiet|haven'?t logged)\b/i, build: () => ({ id: newId(), fieldId: "engagement.lastLoginDays", op: "gt", value: 21 }) },
   { test: /\b(workflow|not using|aren'?t using|core feature)\b/i, build: () => ({ id: newId(), fieldId: "feature.inUse", op: "isNoneOf", value: ["Workflow"] }) },
   { test: /\b(big|high.?mrr|over \$?1?,?500|revenue|paying|biggest)\b/i, build: () => ({ id: newId(), fieldId: "revenue.mrr", op: "gt", value: 1500 }) },
+  { test: /\b(priority|vip|important account)\b/i, build: () => ({ id: newId(), fieldId: "account.priority", op: "is", value: true }) },
   { test: /\b(at.?risk|risky|risk)\b/i, build: () => ({ id: newId(), fieldId: "health.band", op: "isAnyOf", value: ["atrisk"] }) },
   { test: /\b(falling|downhill|declin|dropping|slipping|going down)\b/i, build: () => ({ id: newId(), fieldId: "health.trend", op: "falling" }) },
   { test: /\b(renew(s|ing|al)?|expir(e|es|ing|ation)|up\s+for\s+renewal|due\s+to\s+renew)\b/i, build: () => ({ id: newId(), fieldId: "revenue.renewsWithin", op: "inNext", value: dr("inNext", 30) }) },
@@ -60,32 +57,52 @@ function compileNL(text: string): Criterion[] {
 }
 
 const EXAMPLES = [
-  { label: "Big at-risk accounts (MRR over $1,500) renewing in the next 30 days" },
+  { label: "Priority accounts on the Pro plan" },
   { label: "Owners who haven't logged in for 21+ days and aren't using Workflows" },
-  { label: "Accounts whose health is falling fast", fill: "Accounts whose health is falling fast" },
+  { label: "Big accounts (MRR over $1,500) renewing in the next 30 days" },
 ];
 
-// Restatement: describeSet now leads "Accounts where …" (unified voice with the
-// right-rail summary), so the left restatement reuses it verbatim.
-function restate(set: CriteriaSet): string {
-  return describeSet(set); // "Accounts where X and Y" | "All accounts"
-}
+// SIMPLE-mode prebuilt quick-add list — the most-frequent narrowers, lightly grouped, ALL HL-native
+// (zero `health.*` fields → safe in Phase 1). Tapping one drops a fully-formed, editable chip.
+// NB: the exact "most important" default set is a SEPARATE exercise (per the brief) — this is a
+// sensible v1 starter. An optional op/value seeds a sensible sentence where the field's default
+// operator would otherwise be wrong (e.g. account.created defaults to the nonsensical "in the next").
+type QuickItem = { fieldId: string; label: string; op?: Criterion["op"]; value?: Criterion["value"] };
+const QUICK_ADD: { group: string; items: QuickItem[] }[] = [
+  { group: "Account", items: [
+    { fieldId: "account.priority", label: "Priority account" },
+    { fieldId: "revenue.plan", label: "Plan" },
+    { fieldId: "account.created", label: "Signed up recently", op: "inLast", value: { verb: "inLast", n: 30, unit: "days" } },
+    { fieldId: "revenue.mrr", label: "Monthly revenue" },
+  ] },
+  { group: "Engagement", items: [
+    { fieldId: "engagement.lastLoginDays", label: "Gone quiet" },
+  ] },
+  { group: "Billing", items: [
+    { fieldId: "revenue.failedPayment", label: "Payment failed" },
+    { fieldId: "revenue.renewsWithin", label: "Renewing soon" },
+  ] },
+  { group: "Users", items: [
+    { fieldId: "user.role", label: "User role" },
+    { fieldId: "user.keyOnly", label: "Key users only" },
+  ] },
+];
 
 // Health (the gated/coined system) lives in the `health.*` fields. In Phase 1 (no Health
-// configured) we strip every health signal from the trigger builder — the field picker,
-// NL examples, recipe templates, suggestions, and the right-hand accounts pane — so the
-// trial never sees coined vocab (Patterns 3 & 4). It all returns additively in Phase 2.
+// configured) we strip every health signal from the builder — picker, NL examples, recipes,
+// suggestions — so the trial never sees coined vocab (Patterns 3 & 4). Returns additively in Phase 2.
 const isHealthField = (fieldId: string): boolean => fieldId.startsWith("health.");
 const recipeHasHealth = (r: Recipe): boolean => JSON.stringify(r.set).includes("health.");
 
 export function CriteriaBuilder({
   set,
   onChange,
+  mode,
 }: {
   set: CriteriaSet;
   onChange: (s: CriteriaSet) => void;
+  mode: "simple" | "advanced";
 }) {
-  const [mode, setMode] = useState<"simple" | "advanced">(() => (isAdvanced(set) ? "advanced" : "simple"));
   const [nl, setNl] = useState("");
   const [busy, setBusy] = useState(false);
   const [clarify, setClarify] = useState(false);
@@ -99,9 +116,7 @@ export function CriteriaBuilder({
   const nodes = nodesOf(set);
   const leaves = useMemo(() => nodes.flatMap((n) => (isGroup(n) ? n.criteria : [n])), [nodes]);
   const empty = leaves.length === 0;
-  const advancedLocked = isAdvanced(set); // genuine nesting → Simple is disabled
-
-  const n = matchCount(set);
+  const usedFieldIds = useMemo(() => new Set(leaves.map((c) => c.fieldId)), [leaves]);
 
   // ---- recipe / NL application ----
   const applyRecipe = (r: Recipe) => {
@@ -111,7 +126,6 @@ export function CriteriaBuilder({
         : ({ ...node, id: newId() } as Criterion),
     ));
     onChange(fresh);
-    setMode(isAdvanced(fresh) ? "advanced" : "simple");
     setClarify(false);
     setCompiledNote(false);
     setPicker(null);
@@ -121,7 +135,7 @@ export function CriteriaBuilder({
     setBusy(true);
     setClarify(false);
     setCompiledNote(false);
-    // tiny async beat so the button reads "Compiling…" (prototype theater, deterministic).
+    // tiny async beat so the button reads "Drafting…" (prototype theater, deterministic).
     window.setTimeout(() => {
       const raw = compileNL(text);
       const compiled = healthConfigured ? raw : raw.filter((c) => !isHealthField(c.fieldId));
@@ -131,15 +145,14 @@ export function CriteriaBuilder({
         return;
       }
       onChange(withNodes({ match: "all", criteria: [] }, compiled));
-      setMode("simple");
       setNl("");
-      // Honesty: a deterministic keyword compile can silently miss a clause. Surface a
-      // soft, dismissible "check I didn't miss anything" note under the fresh chips.
+      // Honesty: a deterministic keyword compile can silently miss a clause. Surface a soft,
+      // dismissible "check I didn't miss anything" note under the fresh chips.
       setCompiledNote(true);
     }, 280);
   };
 
-  // ---- top-level node ops ----
+  // ---- node ops ----
   const setTopMatch = (match: "all" | "any") => onChange({ ...set, match });
 
   const addCriterionTo = (target: "top" | string, fieldId: string) => {
@@ -155,6 +168,13 @@ export function CriteriaBuilder({
       );
     }
     setPicker(null);
+  };
+
+  // Quick-add a fully-formed prebuilt condition (with an optional sensible op/value seed).
+  const addQuick = (item: QuickItem) => {
+    const base = makeCriterion(item.fieldId, newId());
+    const crit: Criterion = item.op ? { ...base, op: item.op, value: item.value } : base;
+    onChange(withNodes(set, [...nodes, crit]));
   };
 
   const addGroup = () => {
@@ -191,47 +211,18 @@ export function CriteriaBuilder({
       ),
     );
 
-  // ---- mode switch (lossless) ----
-  const switchMode = (next: "simple" | "advanced") => {
-    if (next === mode) return;
-    if (next === "simple") {
-      if (advancedLocked) return; // disabled — quiet note shown
-      // flatten the single-group structure back to flat criteria
-      onChange(withNodes(set, leaves));
-    }
-    setMode(next);
-    setPicker(null);
-  };
-
-  return (
-    <div className="cb-grid">
-      {/* LEFT — build the question */}
-      <div className="cb-left">
-        <div className="cb-headrow">
-          <div className="cb-head">
-            <h2 className="cb-title">When should this run — and on whom?</h2>
-            <p className="cb-sub">Pick the signal that triggers it. Describe it, or start from a template.</p>
-          </div>
-          <div className="cb-mode">
-            <SegmentedControl
-              options={[
-                { value: "simple", label: "Simple" },
-                { value: "advanced", label: "Advanced" },
-              ]}
-              value={mode}
-              onChange={(v: string) => switchMode(v as "simple" | "advanced")}
-            />
-          </div>
-        </div>
-
-        {/* NL hero */}
+  // ─────────────────────────────── ADVANCED ───────────────────────────────
+  if (mode === "advanced") {
+    return (
+      <div className="cb-body">
+        {/* NL hero — the "type your own" AI on-ramp; drafts editable rules below, never auto-commits. */}
         <PromptArea
           value={nl}
           onValueChange={setNl}
           onSubmit={runNL}
           busy={busy}
           placeholder="Describe who this should run on…"
-          submitLabel="Build rules"
+          submitLabel="Draft rules"
           hint="We'll turn this into editable rules below — always check them."
           examples={visibleExamples}
         />
@@ -240,7 +231,7 @@ export function CriteriaBuilder({
           <Card padded className="accent-t info">
             <div style={{ display: "flex", flexDirection: "column", gap: "var(--s-2)" }}>
               <span style={{ fontSize: "var(--t-body-sm)", color: "var(--text)" }}>
-                I couldn't turn that into rules. Try naming a number and a window — e.g. "MRR over $1,500,
+                I couldn't turn that into rules. Try naming a thing and a window — e.g. "priority accounts
                 renewing in 30 days" — or start from one of these:
               </span>
               <div style={{ display: "flex", flexWrap: "wrap", gap: "var(--s-2)" }}>
@@ -254,185 +245,104 @@ export function CriteriaBuilder({
           </Card>
         ) : null}
 
-        {/* restatement — always on top of the rules */}
-        {!empty ? (
-          <div className="cb-restate">
-            <span className="cb-restate-eyebrow">
-              <Icon name="list-filter" /> In plain English
-            </span>
-            <p className="cb-restate-line">{restate(set)}.</p>
-          </div>
-        ) : null}
+        <AdvancedBuilder
+          set={set}
+          nodes={nodes}
+          onTopMatch={setTopMatch}
+          onUpdateLeaf={updateLeaf}
+          onRemoveLeaf={removeLeaf}
+          onGroupMatch={setGroupMatch}
+          onRemoveGroup={removeGroup}
+          onAddGroup={addGroup}
+          picker={picker}
+          setPicker={setPicker}
+          onAddCriterion={addCriterionTo}
+        />
 
-        {/* the rules — empty state OR simple OR advanced */}
-        {empty ? (
-          <EmptyState onRecipe={applyRecipe} onSuggested={addCriterionTo} healthConfigured={healthConfigured} />
-        ) : mode === "advanced" ? (
-          <AdvancedBuilder
-            set={set}
-            nodes={nodes}
-            onTopMatch={setTopMatch}
-            onUpdateLeaf={updateLeaf}
-            onRemoveLeaf={removeLeaf}
-            onGroupMatch={setGroupMatch}
-            onRemoveGroup={removeGroup}
-            onAddGroup={addGroup}
-            picker={picker}
-            setPicker={setPicker}
-            onAddCriterion={addCriterionTo}
-          />
-        ) : (
-          <SimpleBuilder
-            set={set}
-            leaves={leaves}
-            onTopMatch={setTopMatch}
-            onUpdateLeaf={updateLeaf}
-            onRemoveLeaf={removeLeaf}
-            picker={picker}
-            setPicker={setPicker}
-            onAddCriterion={addCriterionTo}
-          />
-        )}
-
-        {/* post-compile honesty note — soft, dismissible (not an error; never blocks) */}
-        {compiledNote && !empty ? (
+        {compiledNote ? (
           <div className="cb-compiled-note" role="note">
             <Icon name="sparkles" />
             <span className="cb-compiled-note-text">
-              I turned your description into the rules below — check I didn't miss anything.
+              I turned your description into the rules above — check I didn't miss anything.
             </span>
-            <button
-              type="button"
-              className="cb-compiled-note-x"
-              aria-label="Dismiss"
-              onClick={() => setCompiledNote(false)}
-            >
+            <button type="button" className="cb-compiled-note-x" aria-label="Dismiss" onClick={() => setCompiledNote(false)}>
               <Icon name="x" />
             </button>
           </div>
         ) : null}
-
-        {/* lossless-mode note */}
-        {advancedLocked && mode === "advanced" ? (
-          <span className="cb-mode-note">
-            <Icon name="info" /> This rule has groups — editing in Advanced.
-          </span>
-        ) : null}
       </div>
+    );
+  }
 
-      {/* RIGHT — the answer */}
-      <Card padded className="cb-right">
-        <div className="cb-count" aria-live="polite">
-          <span className="cb-count-n">{n}</span>
-          <span className="cb-count-label">account{n === 1 ? "" : "s"}</span>
-          <span className="cb-count-runs">runs on</span>
-        </div>
-        {healthConfigured ? (
-          <MatchWall set={set} hideCount />
-        ) : (
-          <p style={{ margin: "var(--s-3) 0 0", fontSize: "var(--t-body-sm)", color: "var(--text-3, var(--text))" }}>
-            Accounts are matched live when the trigger fires.
-          </p>
-        )}
-      </Card>
-    </div>
-  );
-}
-
-// ─────────────────────────────────── Empty state ───────────────────────────────────
-function EmptyState({
-  onRecipe,
-  onSuggested,
-  healthConfigured,
-}: {
-  onRecipe: (r: Recipe) => void;
-  onSuggested: (target: "top", fieldId: string) => void;
-  healthConfigured: boolean;
-}) {
-  // suggested filters seed a single fully-formed condition (Totango-style)
-  const allSuggestions: { label: string; fieldId: string }[] = [
-    { label: "Health is At-risk", fieldId: "health.band" },
-    { label: "Renewing in 30 days", fieldId: "revenue.renewsWithin" },
-    { label: "Gone quiet 21+ days", fieldId: "engagement.lastLoginDays" },
-    { label: "Payment failed", fieldId: "revenue.failedPayment" },
-  ];
-  const suggestions = healthConfigured ? allSuggestions : allSuggestions.filter((s) => !isHealthField(s.fieldId));
-  const recipes = healthConfigured ? RECIPES : RECIPES.filter((r) => !recipeHasHealth(r));
+  // ─────────────────────────────── SIMPLE ───────────────────────────────
+  // Prebuilt quick-add list (no AI) + the editable chips already chosen. Never blank.
   return (
-    <div className="cb-empty">
-      <div className="cb-block">
-        <span className="cb-eyebrow">Start from a template</span>
-        <div className="cb-recipes">
-          {recipes.map((r) => (
-            <button key={r.id} type="button" className="cb-recipe" onClick={() => onRecipe(r)}>
-              <span className="cb-recipe-ico"><Icon name={r.icon} /></span>
-              <span className="cb-recipe-body">
-                <span className="cb-recipe-title">{r.label}</span>
-                <span className="cb-recipe-blurb">{r.blurb}</span>
-              </span>
-              <span className="cb-recipe-n">{matchCount(r.set)}</span>
-            </button>
-          ))}
-        </div>
-      </div>
-      <div className="cb-block">
-        <span className="cb-eyebrow">Or add a condition</span>
-        <div className="cb-suggested">
-          {suggestions.map((s) => (
-            <button key={s.fieldId} type="button" className="cb-suggested-chip" onClick={() => onSuggested("top", s.fieldId)}>
-              <Icon name="plus" /> {s.label}
-            </button>
-          ))}
-        </div>
-      </div>
-    </div>
-  );
-}
-
-// ─────────────────────────────────── Simple builder ───────────────────────────────────
-function SimpleBuilder({
-  set,
-  leaves,
-  onTopMatch,
-  onUpdateLeaf,
-  onRemoveLeaf,
-  picker,
-  setPicker,
-  onAddCriterion,
-}: {
-  set: CriteriaSet;
-  leaves: Criterion[];
-  onTopMatch: (m: "all" | "any") => void;
-  onUpdateLeaf: (id: string, c: Criterion) => void;
-  onRemoveLeaf: (id: string) => void;
-  picker: { target: "top" | string } | null;
-  setPicker: (p: { target: "top" | string } | null) => void;
-  onAddCriterion: (target: "top" | string, fieldId: string) => void;
-}) {
-  return (
-    <div className="cb-simple">
-      {leaves.length > 1 ? (
-        <div className="cb-match">
-          <span>Match</span>
-          <SegmentedControl
-            options={[
-              { value: "all", label: "all" },
-              { value: "any", label: "any" },
-            ]}
-            value={set.match}
-            onChange={(v: string) => onTopMatch(v as "all" | "any")}
-          />
-          <span>of these conditions:</span>
+    <div className="cb-body">
+      {!empty ? (
+        <div className="cb-simple">
+          {leaves.length > 1 ? (
+            <div className="cb-match">
+              <span>Match</span>
+              <SegmentedControl
+                options={[
+                  { value: "all", label: "all" },
+                  { value: "any", label: "any" },
+                ]}
+                value={set.match}
+                onChange={(v: string) => setTopMatch(v as "all" | "any")}
+              />
+              <span>of these:</span>
+            </div>
+          ) : null}
+          <div className="cb-chips">
+            {leaves.map((c) => (
+              <CriterionChip key={c.id} criterion={c} onChange={(nc) => updateLeaf(c.id, nc)} onRemove={() => removeLeaf(c.id)} />
+            ))}
+          </div>
         </div>
       ) : null}
 
-      <div className="cb-chips">
-        {leaves.map((c) => (
-          <CriterionChip key={c.id} criterion={c} onChange={(nc) => onUpdateLeaf(c.id, nc)} onRemove={() => onRemoveLeaf(c.id)} />
-        ))}
-      </div>
+      <QuickAdd usedFieldIds={usedFieldIds} healthConfigured={healthConfigured} onAdd={addQuick} empty={empty} />
 
-      <FieldPickerLauncher target="top" picker={picker} setPicker={setPicker} onAdd={onAddCriterion} label="Add condition" />
+      <FieldPickerLauncher target="top" picker={picker} setPicker={setPicker} onAdd={addCriterionTo} label="Browse all fields" />
+    </div>
+  );
+}
+
+// ─────────────────────────── Simple-mode quick-add list ───────────────────────────
+function QuickAdd({
+  usedFieldIds,
+  healthConfigured,
+  onAdd,
+  empty,
+}: {
+  usedFieldIds: Set<string>;
+  healthConfigured: boolean;
+  onAdd: (item: QuickItem) => void;
+  empty: boolean;
+}) {
+  const groups = QUICK_ADD.map((g) => ({
+    group: g.group,
+    items: g.items.filter((it) => !usedFieldIds.has(it.fieldId) && (healthConfigured || !isHealthField(it.fieldId))),
+  })).filter((g) => g.items.length > 0);
+
+  if (groups.length === 0) return null;
+
+  return (
+    <div className="cb-quick">
+      <span className="cb-quick-eyebrow">{empty ? "Pick who it runs on" : "Add another"}</span>
+      {groups.map((g) => (
+        <div key={g.group} className="cb-quick-row">
+          <span className="cb-quick-label">{g.group}</span>
+          <div className="cb-quick-chips">
+            {g.items.map((it) => (
+              <button key={it.fieldId} type="button" className="cb-suggested-chip" onClick={() => onAdd(it)}>
+                <Icon name="plus" /> {it.label}
+              </button>
+            ))}
+          </div>
+        </div>
+      ))}
     </div>
   );
 }
@@ -463,20 +373,23 @@ function AdvancedBuilder({
   setPicker: (p: { target: "top" | string } | null) => void;
   onAddCriterion: (target: "top" | string, fieldId: string) => void;
 }) {
+  const empty = nodes.length === 0;
   return (
     <div className="cb-advanced">
-      <div className="cb-match">
-        <span>Match</span>
-        <SegmentedControl
-          options={[
-            { value: "all", label: "all" },
-            { value: "any", label: "any" },
-          ]}
-          value={set.match}
-          onChange={(v: string) => onTopMatch(v as "all" | "any")}
-        />
-        <span>of these:</span>
-      </div>
+      {!empty ? (
+        <div className="cb-match">
+          <span>Match</span>
+          <SegmentedControl
+            options={[
+              { value: "all", label: "all" },
+              { value: "any", label: "any" },
+            ]}
+            value={set.match}
+            onChange={(v: string) => onTopMatch(v as "all" | "any")}
+          />
+          <span>of these:</span>
+        </div>
+      ) : null}
 
       <div className="cb-adv-nodes">
         {nodes.map((node) =>

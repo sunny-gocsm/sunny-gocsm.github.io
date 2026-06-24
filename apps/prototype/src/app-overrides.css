@@ -278,6 +278,30 @@ button {
 .cb-mode-note { display: inline-flex; align-items: center; gap: 6px; font-size: var(--t-caption); color: var(--text-3, var(--text)); }
 .cb-mode-note svg { width: 13px; height: 13px; }
 
+/* ── v2 two-mode "who it runs on" surface (TriggerStep shell + CriteriaBuilder body) ── */
+.cb-body { display: flex; flex-direction: column; gap: var(--s-3); }
+.cb-body > .rg-add { align-self: flex-start; }
+
+/* Who it runs on — quiet eyebrow label + the LIVE plain-English restatement (the hero line) + mode toggle. */
+.ts-who { display: flex; flex-direction: column; gap: var(--s-3); }
+.ts-who-head { display: flex; align-items: flex-start; justify-content: space-between; gap: var(--s-3); flex-wrap: wrap; }
+.ts-who-head-text { display: flex; flex-direction: column; gap: 3px; min-width: 0; flex: 1 1 320px; }
+.ts-who-title { display: inline-flex; align-items: center; gap: 6px; font-size: var(--t-label); text-transform: uppercase; letter-spacing: 0.05em; font-weight: 700; color: var(--text-3, var(--text)); }
+.ts-who-title svg { width: 13px; height: 13px; }
+.ts-who-restate { margin: 0; font-size: var(--t-body-lg); font-weight: 600; line-height: 1.4; color: var(--text); }
+
+/* Live audience count band. */
+.ts-count { display: flex; align-items: baseline; gap: var(--s-2); padding: var(--s-3) var(--s-4); border-radius: var(--r-md, 10px); background: var(--blue-1, #eef3fc); }
+.ts-count-n { font-size: var(--t-display-lg); font-weight: 750; color: var(--blue-7, #1558c0); line-height: 1; }
+.ts-count-label { font-size: var(--t-body); color: var(--text-2, var(--text)); }
+
+/* Simple-mode prebuilt quick-add list (chips reuse .cb-suggested-chip). */
+.cb-quick { display: flex; flex-direction: column; gap: var(--s-2); }
+.cb-quick-eyebrow { font-size: var(--t-label); text-transform: uppercase; letter-spacing: 0.05em; font-weight: 700; color: var(--text-3, var(--text)); }
+.cb-quick-row { display: flex; align-items: flex-start; gap: var(--s-3); flex-wrap: wrap; }
+.cb-quick-label { flex: 0 0 72px; font-size: var(--t-body-sm); font-weight: 600; color: var(--text-3, var(--text)); padding-top: 4px; }
+.cb-quick-chips { display: flex; flex-wrap: wrap; gap: var(--s-2); flex: 1 1 auto; min-width: 0; }
+
 /* CriterionChip editors — composed inside the DS .filter-chip shell */
 .crit-op { color: var(--text-3, var(--text)); }
 .crit-op-wrap { position: relative; display: inline-flex; }
@@ -577,16 +601,19 @@ button {
    text weight so a wall of cards reads as an urgency column, never a rainbow. */
 .mk-sig { display: inline-flex; align-items: center; gap: 5px; font-size: var(--t-caption); font-weight: 700; white-space: nowrap; }
 .mk-sig-dot { width: 8px; height: 8px; border-radius: 999px; flex: 0 0 auto; background: var(--text-3, #98a2b3); }
-.mk-sig.critical { color: #8f2719; }
+/* Diverging warm→neutral→cool scale (Critical·Slipping·Steady·Strong·Booming).
+   The middle band (Steady) is a NEUTRAL grey so it reads as "neither". The dot is
+   always paired with the text label, so the scale survives colour-blindness. */
+.mk-sig.critical { color: #a8321f; }
 .mk-sig.atrisk { color: #c2410c; }
-.mk-sig.watch { color: #9a6b08; }
+.mk-sig.watch { color: #5b6472; }
 .mk-sig.positive { color: #176b3c; }
-.mk-sig.verypositive { color: #1f6e12; }
+.mk-sig.verypositive { color: #0f5f43; }
 .mk-sig.critical .mk-sig-dot,     .mk-sig-dot.critical     { background: #c73a26; }
-.mk-sig.atrisk .mk-sig-dot,       .mk-sig-dot.atrisk       { background: #ea580c; }
-.mk-sig.watch .mk-sig-dot,        .mk-sig-dot.watch        { background: #b45309; }
+.mk-sig.atrisk .mk-sig-dot,       .mk-sig-dot.atrisk       { background: #f97316; }
+.mk-sig.watch .mk-sig-dot,        .mk-sig-dot.watch        { background: #6b7280; }
 .mk-sig.positive .mk-sig-dot,     .mk-sig-dot.positive     { background: #2f9e1b; }
-.mk-sig.verypositive .mk-sig-dot, .mk-sig-dot.verypositive { background: #1f8f3d; }
+.mk-sig.verypositive .mk-sig-dot, .mk-sig-dot.verypositive { background: #137a52; }
 
 /* AI pick hero — violet/indigo, the number does the work */
 .mk-aipick { display: flex; align-items: center; justify-content: space-between; gap: var(--s-5); flex-wrap: wrap; padding: var(--s-5) var(--s-6); border: 1px solid var(--ai-border, #ddd6fe); background: var(--ai-soft, #f5f3ff); }

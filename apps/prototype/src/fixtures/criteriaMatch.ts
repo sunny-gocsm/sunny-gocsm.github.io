@@ -383,7 +383,7 @@ function valuePhrase(c: Criterion): string {
 // Booleans read as a natural clause rather than "field = Yes".
 const BOOL_PHRASE: Record<string, { yes: string; no: string }> = {
   "revenue.failedPayment": { yes: "a payment failed", no: "no payment failed" },
-  "health.priority": { yes: "is a priority account", no: "is not a priority account" },
+  "account.priority": { yes: "is a priority account", no: "is not a priority account" },
   "feature.neverUsed": { yes: "no feature used since signup", no: "some feature used since signup" },
   "user.keyOnly": { yes: "has key users", no: "has no key users" },
 };
