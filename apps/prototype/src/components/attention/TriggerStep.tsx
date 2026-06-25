@@ -5,26 +5,27 @@ import { MatchWall } from "./MatchWall";
 import { useHealthConfigured } from "@/state/healthConfig";
 import { matchAccounts, describeSet, isAdvanced, nodesOf, type CriteriaSet } from "@/fixtures/criteriaMatch";
 
-// TriggerStep — the "When & who it runs on" step (design-loop v2, 2026-06-24).
-// ONE coherent surface with exactly TWO modes:
-//   • Who it runs on — a control row (quiet eyebrow · a collapsed "watch how triggers work"
-//     video disclosure · the Simple/Advanced toggle) over the LIVE plain-English restatement
-//     of the audience (the hero, full width below the controls). SIMPLE = prebuilt quick-add
-//     list (no AI); ADVANCED = the NL "describe your audience" box + the nested rule builder.
-//   • A live audience-count band that is itself a disclosure: "N match · See who" expands an
-//     inline list of exactly which accounts qualify right now (plain name + $ in Phase 1;
-//     the richer MatchWall once Health is configured).
-// The restatement lives here, once, at the top; the explainer video is secondary/on-demand
-// (Step 1 already carries the big "how this playbook works" hero).
+// TriggerStep — the "When & who it runs on" step (design-loop, 2026-06-25).
+//   • A distinct HERO box at the top — "WHO THIS FIRES FOR" — restates the audience in plain
+//     English and updates LIVE as the user edits the criteria (the differentiator, made the
+//     unmistakable hero of the step per Karthik's "bring back the distinct box on top").
+//   • A control row: a blue "watch how triggers work" video link + the Simple/Advanced toggle.
+//   • The builder body. SIMPLE = a PLAYBOOK-AWARE prebuilt quick-add list (account-level plays
+//     show account filters; user-activity plays layer in user filters too — see
+//     defaultFiltersFor); ADVANCED = the NL box + the nested rule builder.
+//   • A live count band that expands to show exactly which accounts match right now.
 
 const fmtMoney = (n: number) => "$" + Math.round(n).toLocaleString();
 
 export function TriggerStep({
   set,
   onChange,
+  quickAddFields,
 }: {
   set: CriteriaSet;
   onChange: (s: CriteriaSet) => void;
+  /** Playbook-aware Simple-view default filters (from `defaultFiltersFor(playbook)`). */
+  quickAddFields?: string[];
 }) {
   const healthConfigured = useHealthConfigured();
   const advancedLocked = isAdvanced(set); // genuine nesting → Simple is disabled (lossless)
@@ -37,11 +38,11 @@ export function TriggerStep({
   const n = matched.length;
   const hasFilters = nodesOf(set).length > 0;
 
-  // The live restatement: a real plain-English audience sentence when filters exist; one
-  // inviting teach line when there are none. Always leads with "Runs on" (the automation cue).
+  // The hero sentence — the actual audience, in plain English, recomputed live on every edit.
+  // The eyebrow already says "who this fires for", so the line is just the audience itself.
   const restateLine = hasFilters
-    ? "Runs on " + describeSet(set).replace(/^Accounts where /i, "accounts where ") + "."
-    : "Runs on every account — add a filter to narrow who it runs on (optional).";
+    ? describeSet(set) + "."
+    : "Every account — add a filter below to narrow who it runs on (optional).";
 
   const switchMode = (next: "simple" | "advanced") => {
     if (next === "simple" && advancedLocked) return; // disabled while genuine nesting exists
@@ -54,28 +55,31 @@ export function TriggerStep({
   return (
     <div style={{ maxWidth: 720, margin: "0 auto", display: "flex", flexDirection: "column", gap: "var(--s-4)" }}>
       <div className="ts-who">
-        {/* Control row: eyebrow · secondary video disclosure · mode toggle. */}
+        {/* HERO box — who this fires for, in plain English, updated live. */}
+        <div className="ts-fires">
+          <span className="ts-fires-eyebrow"><Icon name="filter" /> Who this fires for</span>
+          <p className="ts-fires-line" aria-live="polite">{restateLine}</p>
+        </div>
+
+        {/* Control row — a blue "how it works" video link + the Simple/Advanced toggle. */}
         <div className="ts-who-head">
-          <span className="ts-who-title"><Icon name="users" /> Who it runs on</span>
-          <div className="ts-who-head-right">
-            <button
-              type="button"
-              className="ts-video-toggle"
-              aria-expanded={videoOpen}
-              onClick={() => setVideoOpen((v) => !v)}
-            >
-              <Icon name={videoOpen ? "chevron-down" : "chevron-right"} /> Watch how triggers work
-              <span className="ts-video-dur">· 1 min</span>
-            </button>
-            <SegmentedControl
-              options={[
-                { value: "simple", label: "Simple" },
-                { value: "advanced", label: "Advanced" },
-              ]}
-              value={effectiveMode}
-              onChange={(v: string) => switchMode(v as "simple" | "advanced")}
-            />
-          </div>
+          <button
+            type="button"
+            className="ts-video-toggle"
+            aria-expanded={videoOpen}
+            onClick={() => setVideoOpen((v) => !v)}
+          >
+            <Icon name={videoOpen ? "chevron-down" : "chevron-right"} /> Watch how triggers work
+            <span className="ts-video-dur">· 1 min</span>
+          </button>
+          <SegmentedControl
+            options={[
+              { value: "simple", label: "Simple" },
+              { value: "advanced", label: "Advanced" },
+            ]}
+            value={effectiveMode}
+            onChange={(v: string) => switchMode(v as "simple" | "advanced")}
+          />
         </div>
 
         {/* On-demand explainer — width-capped so it never rivals the hero or the focal action. */}
@@ -83,14 +87,11 @@ export function TriggerStep({
           <div className="ts-video"><VideoCard title="How triggers work" duration="1 min" /></div>
         ) : null}
 
-        {/* The hero — live plain-English restatement, full width. */}
-        <p className="ts-who-restate">{restateLine}</p>
-
         {advancedLocked && effectiveMode === "advanced" ? (
           <span className="cb-mode-note"><Icon name="info" /> This rule has groups — editing in Advanced.</span>
         ) : null}
 
-        <CriteriaBuilder set={set} onChange={onChange} mode={effectiveMode} />
+        <CriteriaBuilder set={set} onChange={onChange} mode={effectiveMode} quickAddFields={quickAddFields} />
       </div>
 
       {/* Live audience count — a disclosure. Expand to see exactly who matches right now. */}

@@ -312,7 +312,7 @@ A pre-seeded starting template. **Recipe** — `{ id, icon, label, blurb, set: C
 A pre-built, pre-written automation template + a match predicate.
 
 #### 5.5.1 Fields
-`id`, `title`, `subtitle`, `icon` (lucide name), `state` (PlaybookState), `kind` (PlaybookKind), `problem` (one-sentence situation), `does` (plain-language actions), `outcome` (goal), `actions` (PlaybookAction[]), `category` (PlaybookCategory), `usedByAgencies` (number, social proof), `totalRuns` (number), `launchedDaysAgo` (number), `trending` (boolean), `effort` (PlaybookEffort), `signal` (PlaybookSignal), `videoUrl` (string; "" ⇒ coming-soon placeholder), `videoPoster?` (string), `match(account) → boolean` (the predicate; see §9.C for all 57).
+`id`, `title`, `subtitle`, `icon` (lucide name), `state` (PlaybookState), `kind` (PlaybookKind), `problem` (one-sentence situation), `does` (plain-language actions), `outcome` (goal), `actions` (PlaybookAction[]), `category` (PlaybookCategory), `usedByAgencies` (number, social proof), `totalRuns` (number), `launchedDaysAgo` (number), `trending` (boolean), `effort` (PlaybookEffort), `signal` (PlaybookSignal), `audienceKind` (`"account" | "user"` — does the trigger concern the whole account or an individual user's activity; drives the Simple-view default filters, §9.C.3), `videoUrl` (string; "" ⇒ coming-soon placeholder), `videoPoster?` (string), `match(account) → boolean` (the predicate; see §9.C for all 57).
 
 **PlaybookAction** — `type` (`customer-email|internal-email|slack|task`), `subject?` (email), `preview` (one-line peek), `body?` (fuller draft). Messages interpolate `{{name}}` and `{{account}}` per account at send time.
 
@@ -943,7 +943,8 @@ Everything above is **scoped to one agency**. An agency owns many Accounts (its 
 
 ### Story E5.3 — As Mo, I want two ways to build the audience — a simple prebuilt list or an advanced builder — and to switch without losing work, so that easy cases stay easy and hard cases are possible.
 **Acceptance criteria:**
-- **AC E5.3.1 — (Simple, no AI)** Given Simple mode, When it renders, Then it shows a **prebuilt quick-add list** grouped Account/Engagement/Billing/Users; tapping an item adds a fully-formed editable Criterion seeded by `makeCriterion` defaults (E5.7); a field already in use is hidden from the quick-add; a "Browse all fields" launcher opens the full categorized + searchable picker. **No NL/AI control appears in Simple.**
+- **AC E5.3.1 — (Simple, no AI)** Given Simple mode, When it renders, Then it shows a **prebuilt quick-add list** (the play's default filters — see E5.3.1a / §9.C.3), lightly grouped by display group (Account · Billing · Feature · Feedback · Users); tapping an item adds a fully-formed editable Criterion seeded by `makeCriterion` defaults (E5.7); a field already in use is hidden from the quick-add; a "Browse all fields" launcher opens the full categorized + searchable picker. **No NL/AI control appears in Simple.**
+- **AC E5.3.1a — (playbook-aware defaults)** Given a play with an `audienceKind` (§5.5.1), When the Simple quick-add renders, Then the offered fields = `defaultFiltersFor(playbook)` (§9.C.3): the **table-stakes** account filters **Priority account · Plan · Last login** on *every* play; the play's **domain pack** by category (winback → Renewing soon · MRR; revenue → Payment failed · MRR · Renewing soon; adoption → Feature in use · Signed up; onboard → Signed up; grow → MRR · Spend trend; reengage → Signed up; listen → Sentiment · MRR); and — **only for `audienceKind: "user"` plays** (login / individual-user-activity triggers) — the **user pack** **User role · Key users · A user gone quiet**. Account-level plays show **no** user filters. With no play context (lab / create-from-scratch), a generic default list is used.
 - **AC E5.3.2 — (Advanced)** Given Advanced mode, When it renders, Then it shows the NL "describe your audience" box (E5.4) **above** a nested boolean rule builder (top-level Match all/any; "Add condition"; "Add group" [one level only]; remove). 
 - **AC E5.3.3 — (non-destructive toggle)** Given the owner toggles Simple↔Advanced, When switched, Then existing criteria are preserved (same underlying set). 
 - **AC E5.3.4 — (Simple lock)** Given the set has genuine nesting (`isAdvanced(set) === true`), When the owner is in Advanced, Then the **Simple** option is disabled with a quiet note "This rule has groups — editing in Advanced"; the system **never** silently flattens or resets a nested rule to enable Simple (the Gainsight anti-pattern — §9.A).
@@ -962,10 +963,10 @@ Everything above is **scoped to one agency**. An agency owns many Accounts (its 
 **Edge cases & rules:** unmatched phrases may be surfaced ("I don't have a field for X") rather than invented. Recipes (E5.8) are offered as the clarify fallback.
 **Backend/API notes:** `POST /audience/compile-nl {text}` → `{ criteria: Criterion[], unmatched?: string[] }`, phase-filtered.
 
-### Story E5.5 — As Mo, I want a live plain-English sentence of who the play runs on, so that I always understand my own rule.
+### Story E5.5 — As Mo, I want who the play fires for shown as a distinct, live plain-English hero box at the top, so that I understand my own rule at a glance.
 **Acceptance criteria:**
-- **AC E5.5.1 —** Given criteria exist, When the restatement renders at the top, Then it reads "Runs on " + `describeSet(set)` (with "Accounts where …" lowercased) — e.g. "Runs on accounts where MRR over $1,500 and renews in the next 30 days."
-- **AC E5.5.2 —** Given no criteria, When it renders, Then it reads "Runs on every account — add a filter to narrow who it runs on (optional)."
+- **AC E5.5.1 — (distinct hero box)** Given the step renders, When the restatement is shown, Then it sits in a **distinct, visually prominent box at the very top** labeled **"WHO THIS FIRES FOR"** — the unmistakable hero element of the step — containing the live plain-English audience sentence `describeSet(set)` (e.g. "Accounts where MRR over $1,500 and renews in the next 30 days.").
+- **AC E5.5.2 — (empty)** Given no criteria, When the box renders, Then it reads "Every account — add a filter below to narrow who it runs on (optional)."
 - **AC E5.5.3 — (live)** Given any criteria change, When it registers, Then the restatement recomputes immediately.
 - **AC E5.5.4 — (groups in English)** Given a nested set, When restated, Then groups render with parentheses in English (§5.3.5) so the sentence stays readable even when the logic is complex.
 **Backend/API notes:** `POST /audience/describe {set}` → `{ sentence }` (= `describeSet`).
@@ -1351,6 +1352,76 @@ All endpoints are agency-scoped (agency derived from auth). `?phase` is implicit
 | pb-anniversary | 1-year anniversary | expansion | listen | Strong | ready | enabled & activeDays∈[350,380] |
 
 > **Phase-1 note:** plays whose predicate references Health (band/score/delta/lifecycle stage) only fire/show in Phase 2. Their marketplace cards still appear in Phase 1 (the Situation rating is plain-word, not Health vocab), but the live impact count is computed from HL-native data only until Health is configured.
+
+#### C.3 Simple-view default filters per playbook (the playbook-aware quick-add)
+
+The Simple-mode quick-add list (Epic **E5.3**) is **playbook-aware**, reasoned from the GoHighLevel agency-owner's chair: *"when I narrow this play, what would I slice by?"* Each play carries `Playbook.audienceKind` (§5.5.1) — **account-level** (the trigger concerns the whole account) or **user-level** (the trigger concerns an individual user's activity, e.g. "no recent login", "admin gone dark", "power user emerged"). `defaultFiltersFor(playbook)` returns the ordered field-ids to offer:
+
+- **Table stakes — on EVERY play:** `account.priority` (Priority account) · `revenue.plan` (Plan) · `engagement.lastLoginDays` (Last login). *(These three are the owner's universal slicing axes.)*
+- **Domain pack — by `category`** (the filters owners reach for most in that play's world): **winback** → Renewing soon · MRR · **reengage** → Signed up · **adoption** → Feature in use · Signed up · **revenue** → Payment failed · MRR · Renewing soon · **onboard** → Signed up · **grow** → MRR · Spend trend · **listen** → Sentiment · MRR.
+- **User pack — only when `audienceKind: "user"`:** `user.role` (User role) · `user.keyOnly` (Key users) · `user.idleDays` (A user gone quiet). **Account-level plays show no user filters.**
+
+All fields are HL-native (Phase-1 safe — no `health.*`). The builder hides any field already in the set and regroups the rest for display (**Account · Billing · Feature · Feedback · Users**); a "Browse all fields" launcher always reaches the full catalog. **11 of the 57 plays are user-level**; the rest are account-level. Full mapping (computed from the rule above — authoritative):
+
+| Playbook | Activity | Category | Default Simple-view filters |
+|---|---|---|---|
+| `pb-no-login` — No recent login | **user** | reengage | Priority account · Plan · Last login · Signed up · User role · Key users · A user gone quiet |
+| `pb-renewal-save` — Renewing soon & at risk | account | winback | Priority account · Plan · Last login · Renewing soon · MRR |
+| `pb-payment-failed` — Payment failed | account | revenue | Priority account · Plan · Last login · Payment failed · MRR · Renewing soon |
+| `pb-plan-downgrade` — Plan downgrade | account | winback | Priority account · Plan · Last login · Renewing soon · MRR |
+| `pb-feature-drop` — Usage dropping | account | adoption | Priority account · Plan · Last login · Feature in use · Signed up |
+| `pb-onboarding-stalled` — Onboarding stalled | account | onboard | Priority account · Plan · Last login · Signed up |
+| `pb-save-domain` — Website disconnected | account | winback | Priority account · Plan · Last login · Renewing soon · MRR |
+| `pb-save-integration` — Key integration removed | account | winback | Priority account · Plan · Last login · Renewing soon · MRR |
+| `pb-save-a2p` — Texting registration lost | account | winback | Priority account · Plan · Last login · Renewing soon · MRR |
+| `pb-expansion-ready` — Expansion ready | account | grow | Priority account · Plan · Last login · MRR · Spend trend |
+| `pb-quiet-renewal` — Quiet account, renewal close | **user** | winback | Priority account · Plan · Last login · Renewing soon · MRR · User role · Key users · A user gone quiet |
+| `pb-low-adoption` — Key feature never set up | account | adoption | Priority account · Plan · Last login · Feature in use · Signed up |
+| `pb-nps-detractor` — Unhappy feedback | account | listen | Priority account · Plan · Last login · Sentiment · MRR |
+| `pb-nps-promoter` — Happy customer — ask for a review | account | listen | Priority account · Plan · Last login · Sentiment · MRR |
+| `pb-milestone` — Celebrate a milestone | account | listen | Priority account · Plan · Last login · Sentiment · MRR |
+| `pb-upsell-limit` — Hitting plan limits | account | grow | Priority account · Plan · Last login · MRR · Spend trend |
+| `pb-quiet-7d` — No login — 7 days | **user** | reengage | Priority account · Plan · Last login · Signed up · User role · Key users · A user gone quiet |
+| `pb-admin-dark-30` — Admin gone dark — 30 days | **user** | reengage | Priority account · Plan · Last login · Signed up · User role · Key users · A user gone quiet |
+| `pb-all-inactive` — Whole account inactive | **user** | reengage | Priority account · Plan · Last login · Signed up · User role · Key users · A user gone quiet |
+| `pb-login-collapsed` — Login frequency collapsed | **user** | reengage | Priority account · Plan · Last login · Signed up · User role · Key users · A user gone quiet |
+| `pb-admin-removed` — Key admin removed | **user** | reengage | Priority account · Plan · Last login · Signed up · User role · Key users · A user gone quiet |
+| `pb-reengaged` — Owner re-engaged | **user** | reengage | Priority account · Plan · Last login · Signed up · User role · Key users · A user gone quiet |
+| `pb-health-atrisk` — Health dropped to at-risk | account | winback | Priority account · Plan · Last login · Renewing soon · MRR |
+| `pb-health-watch` — Slipped to watch | account | winback | Priority account · Plan · Last login · Renewing soon · MRR |
+| `pb-prolonged-decline` — Prolonged decline | account | winback | Priority account · Plan · Last login · Renewing soon · MRR |
+| `pb-save-big` — Save the big ones | account | winback | Priority account · Plan · Last login · Renewing soon · MRR |
+| `pb-renewal-dark` — Renewing in 30 days & gone dark | **user** | winback | Priority account · Plan · Last login · Renewing soon · MRR · User role · Key users · A user gone quiet |
+| `pb-annual-renewal` — Annual renewal approaching | account | winback | Priority account · Plan · Last login · Renewing soon · MRR |
+| `pb-funnel-unpublished` — Website / funnel unpublished | account | winback | Priority account · Plan · Last login · Renewing soon · MRR |
+| `pb-phone-portout` — Phone number ported out | account | winback | Priority account · Plan · Last login · Renewing soon · MRR |
+| `pb-email-disconnect` — Email sending domain disconnected | account | winback | Priority account · Plan · Last login · Renewing soon · MRR |
+| `pb-stripe-disconnect` — Payment processor disconnected | account | winback | Priority account · Plan · Last login · Renewing soon · MRR |
+| `pb-calendar-disconnect` — Calendar disconnected | account | winback | Priority account · Plan · Last login · Renewing soon · MRR |
+| `pb-workflow-off` — Published workflow turned off | account | winback | Priority account · Plan · Last login · Renewing soon · MRR |
+| `pb-payment-dunning` — Payment failing repeatedly | account | revenue | Priority account · Plan · Last login · Payment failed · MRR · Renewing soon |
+| `pb-wallet-low` — Rebilling wallet critically low | account | revenue | Priority account · Plan · Last login · Payment failed · MRR · Renewing soon |
+| `pb-spend-drop` — Spend dropping | account | revenue | Priority account · Plan · Last login · Payment failed · MRR · Renewing soon |
+| `pb-cancellation` — Cancellation requested | account | revenue | Priority account · Plan · Last login · Payment failed · MRR · Renewing soon |
+| `pb-churned-winback` — Churned — win back | account | revenue | Priority account · Plan · Last login · Payment failed · MRR · Renewing soon |
+| `pb-workflows-unpublished` — No workflow 30 days after signup | account | adoption | Priority account · Plan · Last login · Feature in use · Signed up |
+| `pb-payments-unset` — Payments never set up | account | adoption | Priority account · Plan · Last login · Feature in use · Signed up |
+| `pb-sms-unset` — Texting never sent | account | adoption | Priority account · Plan · Last login · Feature in use · Signed up |
+| `pb-reviews-unset` — Reviews never connected | account | adoption | Priority account · Plan · Last login · Feature in use · Signed up |
+| `pb-breadth-no-depth` — Breadth without depth | account | adoption | Priority account · Plan · Last login · Feature in use · Signed up |
+| `pb-day7-ghost` — Day-7 ghost | **user** | onboard | Priority account · Plan · Last login · Signed up · User role · Key users · A user gone quiet |
+| `pb-onb-day30` — Day-30 onboarding health check | account | onboard | Priority account · Plan · Last login · Signed up |
+| `pb-onb-longtail` — Long-tail onboarding | account | onboard | Priority account · Plan · Last login · Signed up |
+| `pb-welcome-day1` — Welcome — day 1 | account | onboard | Priority account · Plan · Last login · Signed up |
+| `pb-graduated` — Graduated to growth | account | onboard | Priority account · Plan · Last login · Signed up |
+| `pb-spend-surge` — Spend surging | account | grow | Priority account · Plan · Last login · MRR · Spend trend |
+| `pb-plan-upgrade` — Plan upgraded — deepen | account | grow | Priority account · Plan · Last login · MRR · Spend trend |
+| `pb-lifetime-milestone` — Lifetime spend milestone | account | grow | Priority account · Plan · Last login · MRR · Spend trend |
+| `pb-high-engage-entry` — High engagement on entry plan | account | grow | Priority account · Plan · Last login · MRR · Spend trend |
+| `pb-power-user` — Power user emerged | **user** | grow | Priority account · Plan · Last login · MRR · Spend trend · User role · Key users · A user gone quiet |
+| `pb-no-feedback` — No feedback in 60+ days | account | listen | Priority account · Plan · Last login · Sentiment · MRR |
+| `pb-health-thriving` — Health reached thriving | account | listen | Priority account · Plan · Last login · Sentiment · MRR |
+| `pb-anniversary` — 1-year anniversary | account | listen | Priority account · Plan · Last login · Sentiment · MRR |
 
 ---
 

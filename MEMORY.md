@@ -5,6 +5,24 @@ Durable, human- and agent-readable log of significant decisions and changes.
 
 ---
 
+## 2026-06-25 — Playbook-aware Simple-view filters + "Who this fires for" hero box
+Step-2 trigger builder upgrades. (1) **Playbook-aware default filters**: classified all 57 plays
+account-level vs user-level (`Playbook.audienceKind`; 11 are user-level — the login / individual-user
+triggers like pb-no-login, pb-admin-removed, pb-power-user). `defaultFiltersFor(playbook)` (playbooks.ts)
+returns the Simple-view quick-add fields: table-stakes (Priority account · Plan · Last login) on EVERY
+play + a per-category domain pack + a user pack (User role · Key users · A user gone quiet) ONLY for
+user-level plays. Threaded AttentionActivation → TriggerStep → CriteriaBuilder via `quickAddFields`;
+CriteriaBuilder's static QUICK_ADD became a field-keyed `QUICK_SPEC` + regroup-by-display-group.
+(2) **"WHO THIS FIRES FOR" hero box**: the live plain-English restatement (`describeSet`) is now a
+distinct, prominent soft-blue box at the very top of step 2 — the unmistakable hero — updating live as
+criteria change (brings back the "distinct box on top" pattern Karthik liked; replaces the quiet inline
+line). (3) **Blue video link**: "Watch how triggers work" is now hyperlink-blue so it reads as clickable.
+Files: `playbooks.ts`, `CriteriaBuilder.tsx`, `TriggerStep.tsx`, `AttentionActivation.tsx`,
+`app-overrides.css`. PRD updated: `audienceKind` in §5.5.1, **AC E5.3.1a** (playbook-aware defaults),
+**E5.5** (hero box), and a new **§9.C.3** with the classification rule + the full 57-play → default-filters
+mapping. `bun run build` green; verified on :8080 (user-level play shows the Users filter row,
+account-level shows none; hero box + blue link render). The HTML quick-read was not refreshed.
+
 ## 2026-06-24 — Backend PRD for Attention + Playbooks (+ visual HTML quick-read)
 Authored a developer-ready PRD for the Attention + Playbooks features so backend devs (and their
 Claude Code) can build the backend with the least effort. `apps/prototype/docs/prd/attention-and-playbooks-prd.md`

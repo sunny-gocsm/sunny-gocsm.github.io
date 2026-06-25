@@ -282,20 +282,22 @@ button {
 .cb-body { display: flex; flex-direction: column; gap: var(--s-3); }
 .cb-body > .rg-add { align-self: flex-start; }
 
-/* Who it runs on — a control row (eyebrow · secondary video disclosure · mode toggle) over the
-   full-width LIVE plain-English restatement (the hero line). */
+/* Who it runs on — a distinct HERO box (the live plain-English audience, the unmistakable
+   hero of the step) over a control row (a blue "how it works" link + the Simple/Advanced toggle). */
 .ts-who { display: flex; flex-direction: column; gap: var(--s-3); }
 .ts-who-head { display: flex; align-items: center; justify-content: space-between; gap: var(--s-3); flex-wrap: wrap; }
-.ts-who-head-right { display: flex; align-items: center; gap: var(--s-3); flex-wrap: wrap; }
-.ts-who-title { display: inline-flex; align-items: center; gap: 6px; font-size: var(--t-label); text-transform: uppercase; letter-spacing: 0.05em; font-weight: 700; color: var(--text-3, var(--text)); }
-.ts-who-title svg { width: 13px; height: 13px; }
-.ts-who-restate { margin: 0; font-size: var(--t-body-lg); font-weight: 600; line-height: 1.4; color: var(--text); }
 
-/* Secondary "watch how triggers work" disclosure — caption-weight, never rivals the hero. */
-.ts-video-toggle { display: inline-flex; align-items: center; gap: 5px; border: 0; background: transparent; cursor: pointer; font-size: var(--t-body-sm); font-weight: 600; color: var(--text-3, var(--text)); padding: 4px 7px; border-radius: var(--r-sm, 8px); white-space: nowrap; transition: background 120ms ease, color 120ms ease; }
-.ts-video-toggle:hover { background: var(--surface-2, #f4f6fa); color: var(--text-2, var(--text)); }
+/* HERO box — distinct, soft-blue, prominent; the sentence updates live as criteria change. */
+.ts-fires { display: flex; flex-direction: column; gap: 4px; padding: var(--s-4) var(--s-5); border-radius: var(--r-lg, 14px); background: var(--blue-1, #eef3fc); border: 1px solid var(--blue-3, #cfe3ff); }
+.ts-fires-eyebrow { display: inline-flex; align-items: center; gap: 6px; font-size: var(--t-label); text-transform: uppercase; letter-spacing: 0.05em; font-weight: 700; color: var(--blue-8, #0c5aae); }
+.ts-fires-eyebrow svg { width: 13px; height: 13px; }
+.ts-fires-line { margin: 0; font-size: var(--t-subheading); font-weight: 700; line-height: 1.4; color: var(--text); }
+
+/* "Watch how triggers work" — a blue, hyperlink-style disclosure so it reads as clickable. */
+.ts-video-toggle { display: inline-flex; align-items: center; gap: 5px; border: 0; background: transparent; cursor: pointer; font-size: var(--t-body-sm); font-weight: 600; color: var(--blue-7, #2c5cc5); padding: 4px 7px; border-radius: var(--r-sm, 8px); white-space: nowrap; transition: background 120ms ease, color 120ms ease; }
+.ts-video-toggle:hover { background: var(--blue-1, #f2f8ff); color: var(--blue-8, #0c5aae); text-decoration: underline; }
 .ts-video-toggle svg { width: 14px; height: 14px; flex: 0 0 auto; }
-.ts-video-dur { color: var(--text-3, var(--text)); font-weight: 500; }
+.ts-video-dur { color: var(--blue-7, #2c5cc5); font-weight: 500; opacity: 0.85; }
 .ts-video { max-width: 320px; }
 
 /* Live audience count band — a disclosure: tap to expand the actual matching-accounts list. */

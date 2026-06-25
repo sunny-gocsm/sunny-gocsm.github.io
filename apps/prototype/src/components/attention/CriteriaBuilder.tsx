@@ -62,31 +62,31 @@ const EXAMPLES = [
   { label: "Big accounts (MRR over $1,500) renewing in the next 30 days" },
 ];
 
-// SIMPLE-mode prebuilt quick-add list — the most-frequent narrowers, lightly grouped, ALL HL-native
-// (zero `health.*` fields → safe in Phase 1). Tapping one drops a fully-formed, editable chip.
-// NB: the exact "most important" default set is a SEPARATE exercise (per the brief) — this is a
-// sensible v1 starter. An optional op/value seeds a sensible sentence where the field's default
-// operator would otherwise be wrong (e.g. account.created defaults to the nonsensical "in the next").
-type QuickItem = { fieldId: string; label: string; op?: Criterion["op"]; value?: Criterion["value"] };
-const QUICK_ADD: { group: string; items: QuickItem[] }[] = [
-  { group: "Account", items: [
-    { fieldId: "account.priority", label: "Priority account" },
-    { fieldId: "revenue.plan", label: "Plan" },
-    { fieldId: "account.created", label: "Signed up recently", op: "inLast", value: { verb: "inLast", n: 30, unit: "days" } },
-    { fieldId: "revenue.mrr", label: "Monthly revenue" },
-  ] },
-  { group: "Engagement", items: [
-    { fieldId: "engagement.lastLoginDays", label: "Gone quiet" },
-  ] },
-  { group: "Billing", items: [
-    { fieldId: "revenue.failedPayment", label: "Payment failed" },
-    { fieldId: "revenue.renewsWithin", label: "Renewing soon" },
-  ] },
-  { group: "Users", items: [
-    { fieldId: "user.role", label: "User role" },
-    { fieldId: "user.keyOnly", label: "Key users only" },
-  ] },
-];
+// SIMPLE-mode quick-add filters. QUICK_SPEC maps a catalog field-id → its chip label,
+// display group, and (optionally) a sensible op/value seed where the field's default
+// operator would otherwise be wrong (e.g. account.created defaults to "in the next").
+// WHICH fields a given play shows comes from `defaultFiltersFor(playbook)` (passed in as
+// `quickAddFields`); this component just renders + groups them. DEFAULT_QUICK is the
+// generic fallback for the no-playbook case (e.g. the lab / create-from-scratch). All
+// fields are HL-native (Phase-1 safe; no `health.*`).
+type QuickSpec = { label: string; group: string; op?: Criterion["op"]; value?: Criterion["value"] };
+const QUICK_SPEC: Record<string, QuickSpec> = {
+  "account.priority":         { label: "Priority account", group: "Account" },
+  "revenue.plan":             { label: "Plan", group: "Account" },
+  "engagement.lastLoginDays": { label: "Gone quiet", group: "Account" },
+  "account.created":          { label: "Signed up recently", group: "Account", op: "inLast", value: { verb: "inLast", n: 30, unit: "days" } },
+  "revenue.mrr":              { label: "Monthly revenue", group: "Billing" },
+  "revenue.failedPayment":    { label: "Payment failed", group: "Billing" },
+  "revenue.renewsWithin":     { label: "Renewing soon", group: "Billing" },
+  "revenue.spendTrend":       { label: "Spend trend", group: "Billing" },
+  "feature.inUse":            { label: "Feature in use", group: "Feature" },
+  "feedback.sentiment":       { label: "Sentiment", group: "Feedback" },
+  "user.role":                { label: "User role", group: "Users" },
+  "user.keyOnly":             { label: "Key users only", group: "Users" },
+  "user.idleDays":            { label: "A user gone quiet", group: "Users" },
+};
+const QUICK_GROUP_ORDER = ["Account", "Billing", "Feature", "Feedback", "Users"];
+const DEFAULT_QUICK = ["account.priority", "revenue.plan", "engagement.lastLoginDays", "account.created", "revenue.mrr", "revenue.failedPayment", "revenue.renewsWithin", "user.role", "user.keyOnly"];
 
 // Health (the gated/coined system) lives in the `health.*` fields. In Phase 1 (no Health
 // configured) we strip every health signal from the builder — picker, NL examples, recipes,
@@ -98,10 +98,13 @@ export function CriteriaBuilder({
   set,
   onChange,
   mode,
+  quickAddFields,
 }: {
   set: CriteriaSet;
   onChange: (s: CriteriaSet) => void;
   mode: "simple" | "advanced";
+  /** Ordered field-ids to offer as Simple-view quick-add filters (playbook-aware). */
+  quickAddFields?: string[];
 }) {
   const [nl, setNl] = useState("");
   const [busy, setBusy] = useState(false);
@@ -171,9 +174,10 @@ export function CriteriaBuilder({
   };
 
   // Quick-add a fully-formed prebuilt condition (with an optional sensible op/value seed).
-  const addQuick = (item: QuickItem) => {
-    const base = makeCriterion(item.fieldId, newId());
-    const crit: Criterion = item.op ? { ...base, op: item.op, value: item.value } : base;
+  const addQuick = (fieldId: string) => {
+    const spec = QUICK_SPEC[fieldId];
+    const base = makeCriterion(fieldId, newId());
+    const crit: Criterion = spec?.op ? { ...base, op: spec.op, value: spec.value } : base;
     onChange(withNodes(set, [...nodes, crit]));
   };
 
@@ -302,7 +306,7 @@ export function CriteriaBuilder({
         </div>
       ) : null}
 
-      <QuickAdd usedFieldIds={usedFieldIds} healthConfigured={healthConfigured} onAdd={addQuick} empty={empty} />
+      <QuickAdd fields={quickAddFields ?? DEFAULT_QUICK} usedFieldIds={usedFieldIds} healthConfigured={healthConfigured} onAdd={addQuick} empty={empty} />
 
       <FieldPickerLauncher target="top" picker={picker} setPicker={setPicker} onAdd={addCriterionTo} label="Browse all fields" />
     </div>
@@ -311,20 +315,26 @@ export function CriteriaBuilder({
 
 // ─────────────────────────── Simple-mode quick-add list ───────────────────────────
 function QuickAdd({
+  fields,
   usedFieldIds,
   healthConfigured,
   onAdd,
   empty,
 }: {
+  fields: string[];
   usedFieldIds: Set<string>;
   healthConfigured: boolean;
-  onAdd: (item: QuickItem) => void;
+  onAdd: (fieldId: string) => void;
   empty: boolean;
 }) {
-  const groups = QUICK_ADD.map((g) => ({
-    group: g.group,
-    items: g.items.filter((it) => !usedFieldIds.has(it.fieldId) && (healthConfigured || !isHealthField(it.fieldId))),
-  })).filter((g) => g.items.length > 0);
+  // The play's default filters, in priority order, that have a spec, aren't already
+  // added, and (Phase 1) aren't health.* — then regrouped by display group for a clean layout.
+  const avail = fields.filter(
+    (fid) => QUICK_SPEC[fid] && !usedFieldIds.has(fid) && (healthConfigured || !isHealthField(fid)),
+  );
+  const groups = QUICK_GROUP_ORDER
+    .map((g) => ({ group: g, items: avail.filter((fid) => QUICK_SPEC[fid].group === g) }))
+    .filter((g) => g.items.length > 0);
 
   if (groups.length === 0) return null;
 
@@ -335,9 +345,9 @@ function QuickAdd({
         <div key={g.group} className="cb-quick-row">
           <span className="cb-quick-label">{g.group}</span>
           <div className="cb-quick-chips">
-            {g.items.map((it) => (
-              <button key={it.fieldId} type="button" className="cb-suggested-chip" onClick={() => onAdd(it)}>
-                <Icon name="plus" /> {it.label}
+            {g.items.map((fid) => (
+              <button key={fid} type="button" className="cb-suggested-chip" onClick={() => onAdd(fid)}>
+                <Icon name="plus" /> {QUICK_SPEC[fid].label}
               </button>
             ))}
           </div>

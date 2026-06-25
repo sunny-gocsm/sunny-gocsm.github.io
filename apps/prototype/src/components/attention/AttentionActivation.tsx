@@ -6,7 +6,7 @@ import { useHealthConfigured } from "@/state/healthConfig";
 import { saveDraft, loadDraft, clearDraft } from "@/state/workflowDrafts";
 import { toast } from "sonner";
 import { matchCount, matchAccounts, describeSet, normalize, nodesOf, isGroup, withNodes, type CriteriaSet, type Criterion } from "@/fixtures/criteriaMatch";
-import { playbookById, type Playbook } from "@/fixtures/playbooks";
+import { playbookById, defaultFiltersFor, type Playbook } from "@/fixtures/playbooks";
 import type { Recipe } from "@/fixtures/recipes";
 import type { Account } from "@/fixtures";
 
@@ -321,7 +321,7 @@ export function AttentionActivation({
             fixed ? (
               <FixedSelectionStep accounts={fixedAccounts!} healthConfigured={healthConfigured} />
             ) : (
-              <TriggerStep set={set} onChange={setSet} />
+              <TriggerStep set={set} onChange={setSet} quickAddFields={playbook ? defaultFiltersFor(playbook) : undefined} />
             )
           ) : (
             <ReviewStep

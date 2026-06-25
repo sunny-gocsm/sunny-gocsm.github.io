@@ -100,6 +100,9 @@ export interface Playbook {
   effort: PlaybookEffort;   // readiness vocabulary
   /** Churn↔expansion rating: how critical the moment is (critical → verypositive). */
   signal: PlaybookSignal;
+  /** Is this play's trigger about the whole ACCOUNT, or an individual USER's activity?
+   *  Drives the Simple-view default filters (account-only vs account + user attributes). */
+  audienceKind: "account" | "user";
   /** Pure predicate against the unified fixtures. */
   match: (a: Account) => boolean;
   /** Short explainer video for this play (~1 min). Empty string until a real
@@ -388,16 +391,16 @@ const PLAY_ACTIONS: Record<string, PlaybookAction[]> = {
 
 type PlaybookSeed = Omit<
   Playbook,
-  "videoUrl" | "actions" | "category" | "usedByAgencies" | "totalRuns" | "launchedDaysAgo" | "trending" | "effort" | "signal"
+  "videoUrl" | "actions" | "category" | "usedByAgencies" | "totalRuns" | "launchedDaysAgo" | "trending" | "effort" | "signal" | "audienceKind"
 >;
 
 // Marketplace metadata, merged into the catalog below. Prototype seed numbers —
 // the UI labels them as community/aggregate signals, never invents precision.
 const PLAY_META: Record<
   string,
-  { category: PlaybookCategory; usedByAgencies: number; totalRuns: number; launchedDaysAgo: number; trending?: boolean; effort?: PlaybookEffort; signal: PlaybookSignal }
+  { category: PlaybookCategory; usedByAgencies: number; totalRuns: number; launchedDaysAgo: number; trending?: boolean; effort?: PlaybookEffort; signal: PlaybookSignal; audienceKind?: "account" | "user" }
 > = {
-  "pb-no-login":           { category: "reengage", usedByAgencies: 2400, totalRuns: 51200, launchedDaysAgo: 210, effort: "ready", signal: "atrisk" },
+  "pb-no-login":           { category: "reengage", usedByAgencies: 2400, totalRuns: 51200, launchedDaysAgo: 210, effort: "ready", signal: "atrisk", audienceKind: "user" },
   "pb-renewal-save":       { category: "winback",  usedByAgencies: 1980, totalRuns: 38400, launchedDaysAgo: 180, trending: true, effort: "ready", signal: "atrisk" },
   "pb-payment-failed":     { category: "revenue",  usedByAgencies: 3100, totalRuns: 72500, launchedDaysAgo: 240, effort: "ready", signal: "critical" },
   "pb-plan-downgrade":     { category: "winback",  usedByAgencies: 860,  totalRuns: 12300, launchedDaysAgo: 95,  effort: "quick", signal: "atrisk" },
@@ -407,7 +410,7 @@ const PLAY_META: Record<
   "pb-save-integration":   { category: "winback",  usedByAgencies: 470,  totalRuns: 5400,  launchedDaysAgo: 64,  effort: "ready", signal: "critical" },
   "pb-save-a2p":           { category: "winback",  usedByAgencies: 390,  totalRuns: 4200,  launchedDaysAgo: 58,  effort: "quick", signal: "critical" },
   "pb-expansion-ready":    { category: "grow",     usedByAgencies: 1230, totalRuns: 19800, launchedDaysAgo: 110, trending: true, effort: "ready", signal: "positive" },
-  "pb-quiet-renewal":      { category: "winback",  usedByAgencies: 320,  totalRuns: 2100,  launchedDaysAgo: 5,   trending: true, effort: "ready", signal: "atrisk" },
+  "pb-quiet-renewal":      { category: "winback",  usedByAgencies: 320,  totalRuns: 2100,  launchedDaysAgo: 5,   trending: true, effort: "ready", signal: "atrisk", audienceKind: "user" },
   "pb-low-adoption":       { category: "adoption", usedByAgencies: 410,  totalRuns: 3300,  launchedDaysAgo: 9,   effort: "quick", signal: "watch" },
   "pb-nps-detractor":      { category: "listen",   usedByAgencies: 760,  totalRuns: 9100,  launchedDaysAgo: 30,  effort: "ready", signal: "atrisk" },
   "pb-nps-promoter":       { category: "listen",   usedByAgencies: 1120, totalRuns: 15600, launchedDaysAgo: 12,  trending: true, effort: "ready", signal: "verypositive" },
@@ -415,17 +418,17 @@ const PLAY_META: Record<
   "pb-upsell-limit":       { category: "grow",     usedByAgencies: 690,  totalRuns: 7400,  launchedDaysAgo: 18,  effort: "quick", signal: "positive" },
 
   // ----- v1 library metadata -----
-  "pb-quiet-7d":            { category: "reengage", usedByAgencies: 1680, totalRuns: 33400, launchedDaysAgo: 140, effort: "ready", signal: "watch" },
-  "pb-admin-dark-30":      { category: "reengage", usedByAgencies: 1320, totalRuns: 21800, launchedDaysAgo: 6,   trending: true, effort: "ready", signal: "atrisk" },
-  "pb-all-inactive":       { category: "reengage", usedByAgencies: 940,  totalRuns: 12600, launchedDaysAgo: 44,  effort: "ready", signal: "critical" },
-  "pb-login-collapsed":    { category: "reengage", usedByAgencies: 720,  totalRuns: 8800,  launchedDaysAgo: 33,  effort: "quick", signal: "atrisk" },
-  "pb-admin-removed":      { category: "reengage", usedByAgencies: 410,  totalRuns: 3100,  launchedDaysAgo: 21,  effort: "quick", signal: "atrisk" },
-  "pb-reengaged":          { category: "reengage", usedByAgencies: 560,  totalRuns: 6200,  launchedDaysAgo: 11,  effort: "ready", signal: "positive" },
+  "pb-quiet-7d":            { category: "reengage", usedByAgencies: 1680, totalRuns: 33400, launchedDaysAgo: 140, effort: "ready", signal: "watch", audienceKind: "user" },
+  "pb-admin-dark-30":      { category: "reengage", usedByAgencies: 1320, totalRuns: 21800, launchedDaysAgo: 6,   trending: true, effort: "ready", signal: "atrisk", audienceKind: "user" },
+  "pb-all-inactive":       { category: "reengage", usedByAgencies: 940,  totalRuns: 12600, launchedDaysAgo: 44,  effort: "ready", signal: "critical", audienceKind: "user" },
+  "pb-login-collapsed":    { category: "reengage", usedByAgencies: 720,  totalRuns: 8800,  launchedDaysAgo: 33,  effort: "quick", signal: "atrisk", audienceKind: "user" },
+  "pb-admin-removed":      { category: "reengage", usedByAgencies: 410,  totalRuns: 3100,  launchedDaysAgo: 21,  effort: "quick", signal: "atrisk", audienceKind: "user" },
+  "pb-reengaged":          { category: "reengage", usedByAgencies: 560,  totalRuns: 6200,  launchedDaysAgo: 11,  effort: "ready", signal: "positive", audienceKind: "user" },
   "pb-health-atrisk":      { category: "winback",  usedByAgencies: 2260, totalRuns: 48900, launchedDaysAgo: 150, effort: "ready", signal: "atrisk" },
   "pb-health-watch":       { category: "winback",  usedByAgencies: 1410, totalRuns: 22300, launchedDaysAgo: 88,  effort: "ready", signal: "watch" },
   "pb-prolonged-decline":  { category: "winback",  usedByAgencies: 880,  totalRuns: 11200, launchedDaysAgo: 52,  effort: "quick", signal: "atrisk" },
   "pb-save-big":           { category: "winback",  usedByAgencies: 1180, totalRuns: 9400,  launchedDaysAgo: 40,  trending: true, effort: "ready", signal: "critical" },
-  "pb-renewal-dark":       { category: "winback",  usedByAgencies: 990,  totalRuns: 13700, launchedDaysAgo: 7,   trending: true, effort: "ready", signal: "critical" },
+  "pb-renewal-dark":       { category: "winback",  usedByAgencies: 990,  totalRuns: 13700, launchedDaysAgo: 7,   trending: true, effort: "ready", signal: "critical", audienceKind: "user" },
   "pb-annual-renewal":     { category: "winback",  usedByAgencies: 760,  totalRuns: 8100,  launchedDaysAgo: 64,  effort: "quick", signal: "watch" },
   "pb-funnel-unpublished": { category: "winback",  usedByAgencies: 620,  totalRuns: 7300,  launchedDaysAgo: 16,  trending: true, effort: "ready", signal: "critical" },
   "pb-phone-portout":      { category: "winback",  usedByAgencies: 480,  totalRuns: 4900,  launchedDaysAgo: 8,   trending: true, effort: "ready", signal: "critical" },
@@ -443,7 +446,7 @@ const PLAY_META: Record<
   "pb-sms-unset":          { category: "adoption", usedByAgencies: 740,  totalRuns: 8300,  launchedDaysAgo: 48,  effort: "quick", signal: "watch" },
   "pb-reviews-unset":      { category: "adoption", usedByAgencies: 650,  totalRuns: 6900,  launchedDaysAgo: 60,  effort: "quick", signal: "watch" },
   "pb-breadth-no-depth":   { category: "adoption", usedByAgencies: 420,  totalRuns: 3600,  launchedDaysAgo: 26,  effort: "custom", signal: "watch" },
-  "pb-day7-ghost":         { category: "onboard",  usedByAgencies: 1720, totalRuns: 29800, launchedDaysAgo: 5,   trending: true, effort: "ready", signal: "atrisk" },
+  "pb-day7-ghost":         { category: "onboard",  usedByAgencies: 1720, totalRuns: 29800, launchedDaysAgo: 5,   trending: true, effort: "ready", signal: "atrisk", audienceKind: "user" },
   "pb-onb-day30":          { category: "onboard",  usedByAgencies: 1180, totalRuns: 18400, launchedDaysAgo: 36,  effort: "ready", signal: "watch" },
   "pb-onb-longtail":       { category: "onboard",  usedByAgencies: 540,  totalRuns: 5200,  launchedDaysAgo: 50,  effort: "quick", signal: "watch" },
   "pb-welcome-day1":       { category: "onboard",  usedByAgencies: 2010, totalRuns: 51800, launchedDaysAgo: 175, effort: "ready", signal: "watch" },
@@ -452,7 +455,7 @@ const PLAY_META: Record<
   "pb-plan-upgrade":       { category: "grow",     usedByAgencies: 980,  totalRuns: 11200, launchedDaysAgo: 31,  effort: "ready", signal: "verypositive" },
   "pb-lifetime-milestone": { category: "grow",     usedByAgencies: 520,  totalRuns: 4800,  launchedDaysAgo: 22,  effort: "ready", signal: "positive" },
   "pb-high-engage-entry":  { category: "grow",     usedByAgencies: 860,  totalRuns: 9700,  launchedDaysAgo: 38,  effort: "quick", signal: "positive" },
-  "pb-power-user":         { category: "grow",     usedByAgencies: 740,  totalRuns: 8200,  launchedDaysAgo: 17,  effort: "ready", signal: "verypositive" },
+  "pb-power-user":         { category: "grow",     usedByAgencies: 740,  totalRuns: 8200,  launchedDaysAgo: 17,  effort: "ready", signal: "verypositive", audienceKind: "user" },
   "pb-no-feedback":        { category: "listen",   usedByAgencies: 630,  totalRuns: 6400,  launchedDaysAgo: 45,  effort: "quick", signal: "watch" },
   "pb-health-thriving":    { category: "listen",   usedByAgencies: 910,  totalRuns: 12100, launchedDaysAgo: 13,  trending: true, effort: "ready", signal: "verypositive" },
   "pb-anniversary":        { category: "listen",   usedByAgencies: 1240, totalRuns: 21600, launchedDaysAgo: 120, effort: "ready", signal: "positive" },
@@ -1255,6 +1258,7 @@ const DEFAULT_META = {
   trending: false,
   effort: "ready" as PlaybookEffort,
   signal: "watch" as PlaybookSignal,
+  audienceKind: "account" as "account" | "user",
 };
 
 export const playbooks: Playbook[] = playbookSeeds.map((p) => {
@@ -1268,6 +1272,7 @@ export const playbooks: Playbook[] = playbookSeeds.map((p) => {
     trending: m.trending ?? false,
     effort: m.effort ?? "ready",
     signal: m.signal ?? "watch",
+    audienceKind: m.audienceKind ?? "account",
     videoUrl: PLAY_VIDEOS[p.id] ?? PLACEHOLDER_VIDEO,
     actions: PLAY_ACTIONS[p.id] ?? [],
   };
@@ -1282,6 +1287,35 @@ export const matchCount = (p: Playbook): number => matchesToday(p).length;
 
 export const playbookById = (id: string): Playbook | undefined =>
   playbooks.find((p) => p.id === id);
+
+// ----- Simple-view default filters (playbook-aware) -----
+// Reasoned as a GoHighLevel agency owner narrowing a play in step 2:
+//   • Table stakes on EVERY account play — Priority account, Plan, Time since last login.
+//   • Account plays add the filters owners reach for most in that play's domain
+//     (renewal, MRR, payment, signup recency, feature, sentiment).
+//   • USER-level plays (login / individual-user activity, e.g. "no recent login",
+//     "admin gone dark") additionally layer in the user attributes — user role,
+//     key user, and a user gone quiet — on top of the account ones.
+// All ids are HL-native (Phase-1 safe; no health.* fields). The Simple builder regroups
+// them by display group; this list defines WHICH filters and their priority order.
+const FILTER_BASE = ["account.priority", "revenue.plan", "engagement.lastLoginDays"];
+const FILTER_DOMAIN: Partial<Record<PlaybookCategory, string[]>> = {
+  winback:  ["revenue.renewsWithin", "revenue.mrr"],
+  reengage: ["account.created"],
+  adoption: ["feature.inUse", "account.created"],
+  revenue:  ["revenue.failedPayment", "revenue.mrr", "revenue.renewsWithin"],
+  onboard:  ["account.created"],
+  grow:     ["revenue.mrr", "revenue.spendTrend"],
+  listen:   ["feedback.sentiment", "revenue.mrr"],
+};
+const FILTER_USER_PACK = ["user.role", "user.keyOnly", "user.idleDays"];
+
+/** Ordered field-ids to surface as Simple-view quick-add filters for a given play. */
+export function defaultFiltersFor(p: Playbook): string[] {
+  const out = [...FILTER_BASE, ...(FILTER_DOMAIN[p.category] ?? [])];
+  if (p.audienceKind === "user") out.push(...FILTER_USER_PACK);
+  return Array.from(new Set(out));
+}
 
 /** Live impact for a playbook: matching accounts today + their MRR (the "$ it can
  *  address if enabled" the marketplace surfaces). */
