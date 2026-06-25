@@ -5,6 +5,28 @@ Durable, human- and agent-readable log of significant decisions and changes.
 
 ---
 
+## 2026-06-25 — Attention `/today` rebuilt as a calm, state-driven LIFECYCLE (design-loop pass 2–3)
+Two more design-loop passes after the activation redesign below. Pass 2 (calm): research (ui-ux-pro-max +
+frontend-design + 3 blind scouts) → Linear-style focus-order, cut density. Pass 3 (lifecycle): made the page
+**LIVE** — it pushes ONE goal per account stage. Brief: `apps/prototype/docs/attention-calm-redesign-brief.md`.
+- **Lifecycle precedence (the spec):** a *manual action the user must take* always wins; if the **daily report**
+  isn't set up, that nudge sits **above** the action list (so they never miss one); the "turn on a playbook"
+  **activation leads only while reaching 3 live**, then recedes to a standing "turn on a few more" (next 2,
+  forever). Before 3, activated plays show **✓ Live** and the solid-blue CTA moves to the next one (path-to-3
+  stack stays 3 cards). Logic is generic over `(liveCount, digestOn, failures)` so "live" mode works too.
+- **Problem-first cards (signature):** a colour-coded **urgency rail** by `mrrKind` (risk red / grow green /
+  renewal amber) + **money & accounts at stake in JetBrains Mono** as the eyebrow → the **problem** headline →
+  an always-present elaboration → one CTA. Primary card wins via DS elevation + a thicker rail; secondary cards
+  keep full details but a quiet "Turn on →" link so only ONE solid-blue action shows per screen.
+- **Dev lifecycle switcher** (footer, persisted to `gocsm.attn.sim.v1`) simulates every state — Brand new →
+  1/2 on → "an account needs you (report off)" → 3-on set-up-report → report-on issues → all caught up.
+- **DS changes (global):** UI font **Inter → Plus Jakarta Sans** (`--font-ui` + the `styles.css` `@import`;
+  JetBrains Mono kept for figures). Discovered the spacing scale **skips `--s-7`/`--s-9`** (a missing step
+  silently collapses to 0 — caused the earlier "weak spacing") and that cards must use `--sh-rest`/`--sh-hover`
+  elevation, not hand-rolled shadows (caused "card barely visible"). Saved to `gocsm-ds-spacing-elevation-gotchas` memory.
+- **Frozen on the final pass** per Karthik: card structure, contents, layout, spacing, fonts are locked — the
+  last iteration changed **only orchestration** (what shows, in what order) + the permitted "Live" state.
+
 ## 2026-06-25 — Attention `/today` redesigned via the design loop: activation, prioritization, escalation
 Ran the full **design-loop** (research → CPDO synthesis → DS-first build → 3-reviewer panel + close-out
 verifier → ship) on the Attention page. Brief: `apps/prototype/docs/design/attention-activation-brief.md`.

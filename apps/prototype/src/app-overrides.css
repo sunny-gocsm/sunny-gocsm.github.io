@@ -723,73 +723,127 @@ button {
 .pbd-signal { display: inline-flex; align-items: center; gap: 5px; font-size: var(--t-body-sm); color: var(--text-2, var(--text)); }
 .pbd-signal svg { width: 14px; height: 14px; color: var(--text-3, var(--text)); flex: 0 0 auto; }
 
-/* ─────────────── Attention · "Start here today" activation module ─────────────── */
-.sh { display: flex; flex-direction: column; gap: var(--s-4); }
-.sh-head { display: flex; flex-direction: column; gap: 4px; }
-.sh-eyebrow { display: inline-flex; align-items: center; gap: 6px; font-size: var(--t-label); text-transform: uppercase; letter-spacing: 0.05em; font-weight: 700; color: var(--blue-7, #2c5cc5); }
-.sh-eyebrow svg { width: 14px; height: 14px; }
-.sh-title { font-size: var(--t-heading); font-weight: 750; margin: 0; letter-spacing: -0.01em; }
-.sh-sub { margin: 0; font-size: var(--t-body-lg); color: var(--text-2, var(--text)); }
-/* #1 is the focal — full-width and dominant; #2/#3 sit quieter in a row beneath. */
-.sh-grid { display: flex; flex-direction: column; gap: var(--s-3); }
-.sh-grid-rest { display: grid; grid-template-columns: 1fr 1fr; gap: var(--s-3); align-items: stretch; }
-@media (max-width: 760px) { .sh-grid-rest { grid-template-columns: 1fr; } }
+/* ─────────────── Attention · lifecycle / problem-first redesign (design-loop pass 3, 2026-06-25) ───────────────
+   ui-ux-pro-max + frontend-design. Plus Jakarta Sans display weights; DS elevation tokens so cards read
+   as objects; signature = a coloured urgency rail + JetBrains-Mono money/accounts at stake, PROBLEM-first. */
+.at-page { display: flex; flex-direction: column; max-width: 660px; margin: 0 auto; padding-top: var(--s-8); color: var(--text); }
+.at-header { display: flex; flex-direction: column; gap: var(--s-3); }
+.at-h1 { font-size: var(--t-display-xl); font-weight: 800; letter-spacing: -0.025em; line-height: 1.04; margin: 0; }
+.at-goal { margin: 0; font-size: var(--t-body-lg); line-height: 1.5; color: var(--text-2); max-width: 48ch; }
 
-.sh-card { display: flex; flex-direction: column; gap: 7px; height: 100%; transition: border-color 120ms ease, box-shadow 120ms ease; }
-.sh-card[data-clickable="true"]:hover { border-color: var(--blue-5, #6f97e0); box-shadow: 0 6px 22px rgba(16, 27, 45, 0.08); }
-.sh-card.focal { border-color: var(--blue-4, #b6d2ff); background: linear-gradient(180deg, var(--blue-1, #f2f8ff), var(--card, #fff) 62%); box-shadow: 0 4px 18px rgba(20, 60, 140, 0.07); gap: 9px; }
-.sh-card-top { display: flex; align-items: center; gap: var(--s-2); }
-.sh-rank { width: 22px; height: 22px; border-radius: 999px; background: var(--ink, #0f1b2d); color: #fff; font-size: 12px; font-weight: 800; display: inline-flex; align-items: center; justify-content: center; flex: 0 0 auto; }
-.sh-card.focal .sh-rank { width: 26px; height: 26px; font-size: 13px; background: var(--blue-7, #2c5cc5); }
-.sh-stake { font-size: var(--t-body-lg); font-weight: 750; letter-spacing: -0.01em; }
-.sh-stake.risk { color: var(--neg-7); }
-.sh-stake.grow { color: var(--pos-7); }
-.sh-stake.renewal { color: var(--warn-7); }
-.sh-card.focal .sh-stake { font-size: var(--t-subheading); }
-.sh-stake-soft { font-size: var(--t-body); font-weight: 600; color: var(--text-2, var(--text)); }
-.sh-dismiss { margin-left: auto; border: 0; background: transparent; color: var(--text-3, var(--text)); font-size: var(--t-caption); font-weight: 600; cursor: pointer; padding: 2px 5px; border-radius: 6px; text-decoration-color: transparent; }
-.sh-dismiss:hover { background: var(--surface-2, #f4f6fa); color: var(--text-2, var(--text)); text-decoration: underline; }
-.sh-card-title { font-size: var(--t-body-lg); font-weight: 700; margin: 2px 0 0; color: var(--text); }
-.sh-card.focal .sh-card-title { font-size: var(--t-subheading); }
-.sh-card-reason { margin: 0; font-size: var(--t-body-sm); color: var(--text-2, var(--text)); }
-.sh-card-accts { margin: 0; display: inline-flex; align-items: center; gap: 5px; font-size: var(--t-caption); color: var(--text-3, var(--text)); }
-.sh-card-accts svg { width: 13px; height: 13px; flex: 0 0 auto; }
-.sh-why { margin: 2px 0 0; display: flex; align-items: flex-start; gap: 5px; font-size: var(--t-caption); color: var(--blue-8, #0c5aae); background: var(--blue-1, #eef3fc); border-radius: 7px; padding: 5px 8px; line-height: 1.35; }
-.sh-why svg { width: 13px; height: 13px; flex: 0 0 auto; margin-top: 1px; }
-.sh-card-foot { margin-top: auto; padding-top: var(--s-2); }
-.sh-card-foot .btn { width: 100%; justify-content: center; }
-.sh-card.focal .sh-card-foot .btn { width: auto; }
-.sh-browse { align-self: flex-start; border: 0; background: transparent; color: var(--blue-7, #2c5cc5); font-size: var(--t-body-sm); font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 4px; padding: 2px 0; }
-.sh-browse:hover { text-decoration: underline; }
-.sh-browse svg { width: 15px; height: 15px; }
+.at-stack { display: flex; flex-direction: column; gap: var(--s-12); margin-top: var(--s-8); }
+.at-mod { display: flex; flex-direction: column; gap: var(--s-4); }
+.pb-stack { display: flex; flex-direction: column; gap: var(--s-4); }
 
-/* Graduated state — Start-here recedes to a slim banner once ≥3 plays are live. */
-.sh-graduated { display: flex; align-items: center; justify-content: space-between; gap: var(--s-3); flex-wrap: wrap; padding: var(--s-3) var(--s-4); border-radius: var(--r-md, 10px); background: var(--pos-soft, #e9f8e4); border: 1px solid #bfe3b6; }
-.sh-grad-l { display: inline-flex; align-items: center; gap: 7px; font-size: var(--t-body-sm); font-weight: 600; color: #1c6b12; }
-.sh-grad-l svg { width: 16px; height: 16px; }
-.sh-grad-more { border: 0; background: transparent; color: var(--blue-7, #2c5cc5); font-size: var(--t-body-sm); font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 4px; }
-.sh-grad-more:hover { text-decoration: underline; }
-.sh-grad-more svg { width: 14px; height: 14px; }
+/* Section heading — used sparingly (secondary sections only). */
+.at-sec-head { display: flex; flex-direction: column; gap: 2px; }
+.at-sec-title { font-size: var(--t-subheading); font-weight: 700; margin: 0; letter-spacing: -0.01em; }
+.at-sec-sub { margin: 0; font-size: var(--t-body-sm); color: var(--text-3); }
 
-/* ─────────────── Notify-me / escalation config (channel × cadence + owner) ─────────────── */
-.notify { padding: 0 !important; overflow: hidden; }
-.notify-toggle { width: 100%; display: flex; align-items: center; justify-content: space-between; gap: var(--s-3); border: 0; background: transparent; cursor: pointer; padding: var(--s-3) var(--s-4); text-align: left; flex-wrap: wrap; }
-.notify-toggle:hover { background: var(--surface-2, #f7f9fc); }
-.notify-toggle-l { display: inline-flex; align-items: center; gap: 7px; font-size: var(--t-body); font-weight: 600; color: var(--text); }
-.notify-toggle-l svg { width: 16px; height: 16px; color: var(--blue-7, #2c5cc5); }
-.notify-summary { display: inline-flex; align-items: center; gap: 5px; font-size: var(--t-body-sm); color: var(--text-3, var(--text)); }
-.notify-summary svg { width: 15px; height: 15px; }
-.notify-body { display: flex; flex-direction: column; gap: var(--s-3); padding: var(--s-3) var(--s-4) var(--s-4); border-top: 1px solid var(--border); }
-.notify-row { display: flex; align-items: center; gap: var(--s-3); flex-wrap: wrap; }
-.notify-label { flex: 0 0 64px; font-size: var(--t-body-sm); font-weight: 600; color: var(--text-3, var(--text)); }
-.notify-chips { display: flex; gap: var(--s-2); flex-wrap: wrap; }
-.notify-chip { display: inline-flex; align-items: center; gap: 5px; border: 1px solid var(--border); background: var(--surface, #fff); border-radius: var(--r-pill, 999px); padding: 5px 12px; font-size: var(--t-body-sm); font-weight: 600; color: var(--text); cursor: pointer; transition: background 120ms ease, border-color 120ms ease; }
-.notify-chip svg { width: 14px; height: 14px; }
-.notify-chip:hover { border-color: var(--blue-5, #6f97e0); }
-.notify-chip.on { background: var(--blue-1, #eef3fc); border-color: var(--blue-3, #cfe3ff); color: var(--blue-8, #0c5aae); }
-.notify-chip.locked { color: var(--text-3, var(--text)); }
-.notify-connect { font-size: var(--t-caption); font-weight: 700; color: var(--blue-7, #2c5cc5); background: var(--blue-1, #eef3fc); border-radius: 5px; padding: 1px 6px; margin-left: 2px; }
-.notify-owner { display: inline-flex; align-items: center; gap: var(--s-2); font-size: var(--t-body-sm); color: var(--text-2, var(--text)); cursor: pointer; flex-wrap: wrap; }
-.notify-owner-chip { font-size: var(--t-caption); color: var(--text-3, var(--text)); }
-.notify-preview { display: inline-flex; align-items: center; gap: 6px; font-size: var(--t-caption); color: var(--text-3, var(--text)); background: var(--surface-2, #f4f6fa); border-radius: 7px; padding: 6px 9px; }
-.notify-preview svg { width: 13px; height: 13px; flex: 0 0 auto; }
+/* Problem-first card — coloured urgency rail (by stake kind) + DS resting elevation so it lifts off the canvas. */
+.pb-card { position: relative; display: flex; flex-direction: column; gap: var(--s-3); background: var(--surface); border-radius: var(--r-lg); padding: var(--s-5) var(--s-5) var(--s-5) var(--s-6); box-shadow: var(--sh-rest); border-left: 3px solid var(--n-4); transition: box-shadow 140ms ease, transform 140ms ease; cursor: pointer; }
+.pb-card.risk { border-left-color: var(--neg-7); }
+.pb-card.grow { border-left-color: var(--pos-7); }
+.pb-card.renewal { border-left-color: var(--warn-7); }
+.pb-card[data-clickable="true"]:hover { box-shadow: var(--sh-hover); transform: translateY(-1px); }
+/* Primary card wins the 3-second test: more padding, thicker rail, and an extra ambient lift step. */
+.pb-card.primary { padding: var(--s-6) var(--s-6) var(--s-6) var(--s-8); border-left-width: 4px; box-shadow: var(--sh-rest), 0 10px 30px -14px rgba(6, 35, 61, 0.20); }
+
+.pb-eyebrow { display: flex; align-items: center; gap: var(--s-2); flex-wrap: wrap; }
+.pb-ico { width: 30px; height: 30px; border-radius: var(--r-sm); background: var(--bg-element); color: var(--text-2); display: inline-flex; align-items: center; justify-content: center; flex: 0 0 auto; }
+.pb-ico svg { width: 16px; height: 16px; }
+.pb-card.primary .pb-ico { width: 34px; height: 34px; }
+.pb-ico.report { background: var(--blue-1); color: var(--blue-7); }
+.pb-stake { font-size: var(--t-body-sm); font-weight: 600; color: var(--text-2); }
+.pb-stake.report { color: var(--blue-8); }
+.pb-money { font-weight: 700; }
+.pb-money.risk { color: var(--neg-7); }
+.pb-money.grow { color: var(--pos-9); }
+.pb-money.renewal { color: var(--warn-9); }
+.pb-dot { opacity: 0.45; margin: 0 1px; }
+
+.pb-problem { margin: 0; font-size: var(--t-heading); font-weight: 700; letter-spacing: -0.015em; line-height: 1.2; color: var(--text); }
+.pb-card.primary .pb-problem { font-size: var(--t-display-lg); font-weight: 800; }
+.pb-elab { margin: 0; font-size: var(--t-body); line-height: 1.55; color: var(--text-2); max-width: 54ch; }
+.pb-card.primary .pb-elab { font-size: var(--t-body-lg); }
+.rep-count { font-weight: 600; color: var(--text); }   /* quiet motivator — red is reserved for $-at-risk */
+
+.pb-foot { display: flex; align-items: center; justify-content: space-between; gap: var(--s-3); flex-wrap: wrap; margin-top: var(--s-1); }
+.pb-foot .btn { flex: 0 0 auto; }
+/* Secondary-card action — a quiet link (not a button), so only the hero holds the solid-blue CTA. */
+.pb-go { flex: 0 0 auto; display: inline-flex; align-items: center; gap: 4px; border: 0; background: transparent; color: var(--blue-7); font-size: var(--t-body-sm); font-weight: 600; cursor: pointer; padding: 4px 2px; }
+.pb-go svg { width: 14px; height: 14px; }
+.pb-card[data-clickable="true"]:hover .pb-go { text-decoration: underline; }
+/* "Live" state — an already-activated playbook (replaces the CTA; the only card-state change). */
+.pb-live { flex: 0 0 auto; display: inline-flex; align-items: center; gap: 5px; font-size: var(--t-body-sm); font-weight: 700; color: var(--pos-9); }
+.pb-live svg { width: 15px; height: 15px; }
+
+/* Logos (identity, low-text). */
+.at-who { display: inline-flex; align-items: center; gap: var(--s-2); min-width: 0; }
+.at-logos { display: inline-flex; align-items: center; flex: 0 0 auto; }
+.at-logos > * + * { margin-left: -7px; }
+.at-logo { box-shadow: 0 0 0 2px var(--surface); }
+.at-who-names { font-size: var(--t-caption); color: var(--text-3); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+/* Daily-report hero — same card frame, blue rail. */
+.rep-card { position: relative; display: flex; flex-direction: column; gap: var(--s-3); background: var(--surface); border-radius: var(--r-lg); padding: var(--s-6) var(--s-6) var(--s-6) var(--s-8); box-shadow: var(--sh-rest); border-left: 4px solid var(--blue-7); }
+.rep-actions { display: flex; align-items: center; gap: var(--s-4); flex-wrap: wrap; }
+
+/* Report options — progressive disclosure (channels × cadence × owner). */
+.at-report-opts { display: flex; flex-direction: column; gap: var(--s-3); padding-top: var(--s-4); margin-top: var(--s-2); border-top: 1px solid var(--border); }
+.at-opt-row { display: flex; align-items: center; gap: var(--s-3); flex-wrap: wrap; }
+.at-opt-label { flex: 0 0 60px; font-size: var(--t-body-sm); font-weight: 600; color: var(--text-3); }
+.at-chips { display: flex; gap: var(--s-2); flex-wrap: wrap; }
+.at-chip { display: inline-flex; align-items: center; gap: 5px; border: 1px solid var(--border-strong); background: var(--surface); border-radius: var(--r-pill); padding: 5px 12px; font-size: var(--t-body-sm); font-weight: 600; color: var(--text); cursor: pointer; }
+.at-chip svg { width: 14px; height: 14px; }
+.at-chip:hover { border-color: var(--blue-5); }
+.at-chip.on { background: var(--blue-1); border-color: var(--blue-3); color: var(--blue-8); }
+.at-chip-connect { font-size: var(--t-caption); font-weight: 700; color: var(--blue-7); background: var(--blue-1); border-radius: 5px; padding: 1px 6px; margin-left: 2px; }
+.at-opt-owner { display: inline-flex; align-items: center; gap: var(--s-2); font-size: var(--t-body-sm); color: var(--text-2); cursor: pointer; }
+
+/* Report on — slim confirm. */
+.at-report-on { background: var(--surface); border-radius: var(--r-md); border: 1px solid var(--border); padding: var(--s-3) var(--s-4); box-shadow: var(--sh-rest); }
+.at-report-on-row { display: flex; align-items: center; justify-content: space-between; gap: var(--s-3); flex-wrap: wrap; }
+.at-report-on-l { display: inline-flex; align-items: center; gap: 7px; font-size: var(--t-body-sm); font-weight: 700; color: var(--pos-9); }
+.at-report-on-l svg { width: 16px; height: 16px; }
+.at-report-on-r { display: inline-flex; align-items: center; gap: var(--s-3); }
+
+/* Text link — quiet affordance. */
+.at-textlink { align-self: flex-start; border: 0; background: transparent; color: var(--blue-7); font-size: var(--t-body-sm); font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 4px; padding: 2px 0; }
+.at-textlink:hover { text-decoration: underline; }
+.at-textlink.quiet { color: var(--text-3); }
+.at-textlink svg { width: 14px; height: 14px; }
+
+/* Issues list — accounts a playbook couldn't fix; logo · name+status · why · call/open. */
+.iss-list { display: flex; flex-direction: column; background: var(--surface); border-radius: var(--r-lg); box-shadow: var(--sh-rest); overflow: hidden; }
+.iss-row { display: flex; align-items: center; gap: var(--s-3); padding: var(--s-4); border-bottom: 1px solid var(--border-soft); }
+.iss-row:last-child { border-bottom: 0; }
+.iss-body { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.iss-top { display: flex; align-items: center; gap: var(--s-2); min-width: 0; }
+.iss-name { font-size: var(--t-body-lg); font-weight: 700; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.iss-why { font-size: var(--t-body-sm); color: var(--text-3); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.iss-actions { display: flex; align-items: center; gap: var(--s-2); flex: 0 0 auto; }
+.iss-call { display: inline-flex; align-items: center; gap: 4px; font-size: var(--t-body-sm); font-weight: 600; color: var(--text-2); text-decoration: none; padding: 5px 10px; border-radius: var(--r-sm); border: 1px solid var(--border-strong); }
+.iss-call:hover { border-color: var(--blue-5); color: var(--blue-7); }
+.iss-call svg { width: 14px; height: 14px; }
+.at-row-act { display: inline-flex; align-items: center; gap: 3px; font-size: var(--t-body-sm); font-weight: 600; color: var(--blue-7); border: 0; background: transparent; cursor: pointer; }
+.at-row-act svg { width: 14px; height: 14px; }
+
+/* Status chip — quiet text + dot, no alarm pill. */
+.at-status { display: inline-flex; align-items: center; gap: 4px; font-size: var(--t-caption); font-weight: 700; flex: 0 0 auto; }
+.at-status::before { content: ""; width: 5px; height: 5px; border-radius: 999px; background: currentColor; opacity: 0.85; }
+.at-status.risk { color: var(--warn-7); }
+.at-status.soft { color: var(--text-3); }
+
+/* All caught up — rewarded state. */
+.at-allset { display: flex; flex-direction: column; align-items: center; text-align: center; gap: var(--s-2); background: var(--surface); border-radius: var(--r-lg); box-shadow: var(--sh-rest); padding: var(--s-12) var(--s-6); }
+.at-allset-ico { width: 46px; height: 46px; border-radius: var(--r-pill); background: var(--pos-soft); color: var(--pos-9); display: inline-flex; align-items: center; justify-content: center; }
+.at-allset-ico svg { width: 22px; height: 22px; }
+.at-allset-title { font-size: var(--t-heading); font-weight: 700; margin: 0; }
+.at-allset-sub { margin: 0; font-size: var(--t-body-sm); color: var(--text-3); }
+
+/* Dev controls — lifecycle switcher + Health phase toggle (not customer-facing). */
+.at-dev { margin-top: var(--s-16); padding-top: var(--s-4); border-top: 1px dashed var(--border-strong); display: flex; align-items: center; gap: var(--s-3); flex-wrap: wrap; }
+.at-dev-tag { font-size: var(--t-caption); text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-3); font-weight: 700; }
+.at-dev-field { display: inline-flex; align-items: center; gap: var(--s-2); font-size: var(--t-body-sm); color: var(--text-2); }
+.at-dev-select { font: inherit; font-size: var(--t-body-sm); color: var(--text); background: var(--surface); border: 1px solid var(--border-strong); border-radius: var(--r-sm); padding: 5px 8px; cursor: pointer; }

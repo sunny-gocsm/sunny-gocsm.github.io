@@ -1,6 +1,6 @@
 /* =================================================================
    GoCSM Design System v3 — Typography tokens
-   Inter for all UI text (variable, optical sizing on); JetBrains Mono
+   Plus Jakarta Sans for all UI text (Inter fallback); JetBrains Mono
    for EVERY number, score, count, currency, ID (tabular figures on by
    default). No editorial serif, ever. Webfonts are declared via the
    Google Fonts @import in the root styles.css wiring block (NON-REMOVABLE).
@@ -8,7 +8,7 @@
    ================================================================= */
 
 :root{
-  --font-ui:"Inter",-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+  --font-ui:"Plus Jakarta Sans","Inter",-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
   --font-mono:"JetBrains Mono",ui-monospace,"SF Mono",Menlo,monospace;
 
   /* Type scale (px) — documented as tokens; applied via .t-* classes */
@@ -24,4 +24,5 @@
   --fw-medium:500;   /* @kind font */
   --fw-semibold:600; /* @kind font */
   --fw-bold:700;     /* @kind font */
+  --fw-extrabold:800;/* @kind font — Jakarta hero/display weight */
 }

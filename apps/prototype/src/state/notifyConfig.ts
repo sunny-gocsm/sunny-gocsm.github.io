@@ -11,6 +11,8 @@ export type NotifyChannel = "slack" | "email" | "asana";
 export type NotifyCadence = "digest" | "each";
 
 export interface NotifyConfig {
+  configured: boolean; // has the user explicitly turned the digest ON? (the adaptive-hierarchy signal —
+  // channels is pre-filled with "email" as an endowed default, so it can't double as the on/off signal)
   channels: NotifyChannel[]; // where Step-in alerts go (multi-select)
   cadence: NotifyCadence; // "digest" = one daily summary; "each" = the moment it happens (realtime)
   digestTime: string; // e.g. "9:00am" — only meaningful when cadence === "digest"
@@ -20,6 +22,7 @@ export interface NotifyConfig {
 
 const STORE_KEY = "gocsm.notify.v1";
 const DEFAULT: NotifyConfig = {
+  configured: false,
   channels: ["email"],
   cadence: "digest",
   digestTime: "9:00am",
@@ -69,6 +72,15 @@ export const notifyStore = {
   toggleChannel(ch: NotifyChannel) {
     const on = config.channels.includes(ch);
     config = { ...config, channels: on ? config.channels.filter((c) => c !== ch) : [...config.channels, ch] };
+    emit();
+  },
+  turnOn() {
+    // One-tap enable — keep (or seed) the endowed email default, then mark configured.
+    config = { ...config, configured: true, channels: config.channels.length ? config.channels : ["email"] };
+    emit();
+  },
+  turnOff() {
+    config = { ...config, configured: false };
     emit();
   },
   connect(ch: "slack" | "asana") {

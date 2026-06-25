@@ -15,6 +15,14 @@ and runs **only when Karthik explicitly asks for it** by name ("run the design l
 Durable facts also auto-load from memory: `gocsm-design-language`,
 `gocsm-ds-typography-gotchas`, `gocsm-today-activation`, `gocsm-ds-architecture`.
 
+**Attention `/today` is a state-driven lifecycle** (`src/pages/AttentionPage.tsx`): it pushes ONE goal per
+account stage in a fixed precedence — a *manual action the user must take* always wins, and the **daily-report
+setup nudge sits above the action list** (so they never miss one); the "turn on a playbook" activation only
+leads while still reaching 3 live, after which it recedes to a standing "turn on a few more" (next 2). Cards
+are **problem-first** (coloured urgency rail by `mrrKind` + money/accounts at stake in Mono → problem headline
+→ elaboration). A **dev lifecycle switcher** (footer, persisted to `gocsm.attn.sim.v1`) simulates every state.
+The full rationale + per-state behaviour is logged in the repo-root `MEMORY.md` (2026-06-25 entries).
+
 **Backend PRD:** the full build spec for the Attention + Playbooks features lives at
 `docs/prd/attention-and-playbooks-prd.md` (canonical data model, 7 epics, 44 stories,
 265 acceptance criteria, research appendix) with a visual dev quick-read alongside it
@@ -47,9 +55,14 @@ duplication**: edits to the pages flow to the embeds automatically. To add an em
 `/embed/<x>` route inside the `AppLayout` group in `App.tsx` pointing at the same page.
 
 ## Non-negotiables
-- **Typography:** never use inline `font: var(--t-*)` (invalid → text silently 14px) — use `fontSize`.
-  `--t-h3/h4/h6` don't exist; real scale is `--t-display-xl/lg`, `--t-heading`, `--t-subheading`,
-  `--t-body(-lg/-sm)`, `--t-caption`, `--t-label`. (See the typography-gotchas memory.)
+- **Typography:** UI font is **Plus Jakarta Sans** (Inter fallback; set DS-wide via `--font-ui` +
+  the Google Fonts `@import` in `packages/design-system/src/styles.css`); **JetBrains Mono** for every
+  number/money/count via the `Mono` component. Never use inline `font: var(--t-*)` (invalid → text
+  silently 14px) — use `fontSize`. `--t-h3/h4/h6` don't exist; real scale is `--t-display-xl/lg`,
+  `--t-heading`, `--t-subheading`, `--t-body(-lg/-sm)`, `--t-caption`, `--t-label`.
+- **Spacing/elevation tokens:** spacing scale skips `--s-7`/`--s-9` (steps are 1–6, 8, 10, 12, 16, 20) —
+  using a missing step silently collapses to 0. Cards use the DS elevation tokens (`--sh-rest`/`--sh-hover`),
+  never hand-rolled shadows. (See the typography-gotchas + spacing-elevation-gotchas memories.)
 - **Design language:** bold title → quiet meta (red `$` via `.at-risk`) → clear CTA; one solid-blue
   focal action + soft-blue `.btn-accent` for the rest; cut low-value chrome; bigger/full-width.
   Reuse DS primitives (`FixItCard` title/meta + `[data-clickable]`, `.btn-accent`, `.rule-statement`).

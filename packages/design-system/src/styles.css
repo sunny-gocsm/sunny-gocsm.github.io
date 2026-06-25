@@ -8,8 +8,8 @@
    AI builders: never remove, reorder, or "optimize away" these lines.
    ================================================================= */
 
-/* ── Webfonts (Inter + JetBrains Mono) ── */
-@import url('https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400;14..32,500;14..32,600;14..32,700&family=JetBrains+Mono:wght@400;500&display=swap');
+/* ── Webfonts (Plus Jakarta Sans UI · Inter fallback · JetBrains Mono figures) ── */
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Inter:opsz,wght@14..32,400;14..32,500;14..32,600;14..32,700&family=JetBrains+Mono:wght@400;500;600&display=swap');
 
 /* ── Token layer (CSS custom properties) ── */
 @import './tokens/colors.css';
