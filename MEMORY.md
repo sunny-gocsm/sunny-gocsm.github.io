@@ -5,6 +5,35 @@ Durable, human- and agent-readable log of significant decisions and changes.
 
 ---
 
+## 2026-06-25 — Attention `/today` redesigned via the design loop: activation, prioritization, escalation
+Ran the full **design-loop** (research → CPDO synthesis → DS-first build → 3-reviewer panel + close-out
+verifier → ship) on the Attention page. Brief: `apps/prototype/docs/design/attention-activation-brief.md`.
+**The page is now ONE adaptive surface** (decided the activation-vs-ops split decisively — not a separate
+getting-started route): it drives playbook **activation** first, then **recedes** into daily triage.
+- **"Start here today"** — a deterministically-ranked top **2–3** plays to turn on now (`recommendedPlays()`
+  in `playbooks.ts`: non-live, matches accounts today, ranked at-risk MRR → count → popularity; Phase-1
+  excludes coined-Health copy). The wedge vs every CS competitor's sortable *wall*. #1 is a **full-width
+  focal** card (one solid-blue action); #2/#3 a quieter pair. Stakes on the card: $ + named accounts +
+  one-line reason + one-click "Turn it on" + quiet "Not now".
+- **Money valence** (`mrrKind`/`MRR_KIND_NOUN`) so a card never mislabels expansion/renewal as "at risk":
+  **MRR to grow** (green) / **MRR up for renewal** (amber) / **MRR at risk** (red), keyed off `signal`/copy.
+- **Honest framing (the panel's #1 fix):** the rank is **deterministic**, so the module is labeled
+  **"Recommended"** — NOT "AI pick" (stamping arithmetic as AI overclaims and erodes trust). No violet AI
+  accent anywhere on the page. The summed line reads as a **subset of the hero total** ("cover $X of your
+  $Y at risk") — fixes the "broken math" read where the dedup'd union ≈ the #1 card.
+- **Adaptive recede:** while `liveCount < 3` → full module; once ≥3 plays live → slim green graduation
+  banner ("You're live — N running. Check back here for the accounts that still need you.").
+- **"Notify me" escalation config** (`state/notifyConfig.ts`, new) on the Step-in section — operator-grade,
+  NOT a rules engine: channel chips (Slack · Email · Asana, Connect-stubbed) × cadence (Daily digest vs
+  Each one) + "Also notify the account's owner" (semantic token). So the owner is told where they work
+  (Slack/email/Asana) instead of visiting `/today` daily. No AI in routing.
+Files: `pages/AttentionPage.tsx` (full rewrite), `state/notifyConfig.ts` (new), `fixtures/playbooks.ts`
+(`recommendedPlays`, `mrrKind`/`MRR_KIND_NOUN`, `RecommendedPlay`), `app-overrides.css` (`.sh*`, `.notify*`).
+PRD updated: **E2** intro + new stories **E2.7** (Start-here ranking), **E2.8** (adaptive recede/graduation),
+**E2.9** (Notify-me escalation), **§5.5.3** (`recommendedPlays`/`mrrKind`), **§5.11** (NotifyConfig).
+`bun run build` green (DS→prototype→web); verified on :8080 (activation, graduated, expanded-notify states,
+0 console errors). HTML quick-read not refreshed.
+
 ## 2026-06-25 — Playbook-aware Simple-view filters + "Who this fires for" hero box
 Step-2 trigger builder upgrades. (1) **Playbook-aware default filters**: classified all 57 plays
 account-level vs user-level (`Playbook.audienceKind`; 11 are user-level — the login / individual-user

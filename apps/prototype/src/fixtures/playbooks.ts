@@ -1324,6 +1324,44 @@ export const playbookImpact = (p: Playbook): { count: number; mrr: number } => {
   return { count: accts.length, mrr: accts.reduce((s, a) => s + (a.revenue?.mrr ?? 0), 0) };
 };
 
+// What KIND of money a play's $ represents — so the Attention cards never call an
+// expansion/renewal play's revenue "at risk" (a milestone or a 60-day renewal isn't
+// "at risk" yet; mislabeling it dents the trust the transparent-$ moat is built on).
+// "at risk" lowercase is plain finance language, NOT the coined Health "At-Risk" band.
+export type MrrKind = "risk" | "grow" | "renewal";
+export function mrrKind(p: Playbook): MrrKind {
+  if (p.signal === "positive" || p.signal === "verypositive") return "grow";
+  if (/\brenew(al|s|ing|ed)?\b/i.test(`${p.title} ${p.problem}`)) return "renewal";
+  return "risk";
+}
+export const MRR_KIND_NOUN: Record<MrrKind, string> = {
+  risk: "MRR at risk",
+  grow: "MRR to grow",
+  renewal: "MRR up for renewal",
+};
+
+// Coined Health vocabulary that must never leak onto a Phase-1 surface — used to keep
+// health-framed plays out of the Attention recommendations until Health is configured.
+const HEALTH_COPY = /\bhealth\b|at[-\s]?risk|thriving|\bwatch\b/i;
+
+export interface RecommendedPlay {
+  p: Playbook;
+  impact: { count: number; mrr: number };
+}
+
+/** Plays to RECOMMEND activating on the Attention page, **deterministically** prioritized:
+ *  non-live plays that match accounts today, ranked by at-risk MRR → matching accounts →
+ *  popularity. The score is transparent (it IS the at-risk $ across N accounts), never a
+ *  black box. Phase 1 (no Health) excludes health-framed plays so no coined vocab leaks. */
+export function recommendedPlays(opts: { healthConfigured: boolean; isLive: (id: string) => boolean }): RecommendedPlay[] {
+  return playbooks
+    .filter((p) => !opts.isLive(p.id))
+    .filter((p) => opts.healthConfigured || !HEALTH_COPY.test(`${p.title} ${p.subtitle} ${p.problem}`))
+    .map((p) => ({ p, impact: playbookImpact(p) }))
+    .filter((x) => x.impact.count > 0)
+    .sort((a, b) => b.impact.mrr - a.impact.mrr || b.impact.count - a.impact.count || b.p.usedByAgencies - a.p.usedByAgencies);
+}
+
 export const categoryLabel = (c: PlaybookCategory): string =>
   CATEGORIES.find((x) => x.id === c)?.label ?? c;
 
