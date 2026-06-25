@@ -28,7 +28,8 @@ Reworked `apps/prototype/docs/prd/attention-and-playbooks-prd.md` (1478→1257 l
   didn't fix it" Step-in signal. Reframed fixed "57" → "growing library (~57 today)"; version → v2.0.
 - **Open item:** the founder transcript said Simple = "plan + priority only"; the shipped prototype uses
   the richer playbook-aware quick-add. Kept the shipped behavior + added an "Evolution note" reconciling
-  both (anti-overwhelm). The `quickread.html` companion is now stale vs v2.0 (not regenerated).
+  both (anti-overwhelm). The `attention-and-playbooks-quickread.html` companion was **regenerated to
+  match v2.0** (functional framing, "Capabilities" replaces the API table, catalog → JSON, "~57 growing").
 
 ## 2026-06-25 — Attention `/today` rebuilt as a calm, state-driven LIFECYCLE (design-loop pass 2–3)
 Two more design-loop passes after the activation redesign below. Pass 2 (calm): research (ui-ux-pro-max +

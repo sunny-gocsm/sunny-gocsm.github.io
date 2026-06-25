@@ -28,8 +28,8 @@ The full rationale + per-state behaviour is logged in the repo-root `MEMORY.md` 
 API/endpoint/payload/infra "how"** (don't reintroduce it). **All catalog DATA is externalized to
 `docs/prd/playbooks-catalog.json`** — the 57-play library, categories, situations, recipes, the
 field/operator/filter universe, attention-signal defs, and each play's default Simple filters; the
-PRD references it rather than inlining it. The companion `attention-and-playbooks-quickread.html` is
-**stale vs v2.0** until regenerated.
+PRD references it rather than inlining it. The companion `attention-and-playbooks-quickread.html`
+(visual 15-min quick-read) tracks v2.0 — keep it in sync when the PRD changes.
 
 **Trigger criteria builder** (step "When & who it runs on"): the user-facing attribute/filter
 universe is `docs/design/gocsm-attribute-filter-catalog.md` (derived from the real GoCSM
