@@ -2,10 +2,10 @@
 
 **Product:** GoCSM (customer-success / account-management for HighLevel agencies)
 **Scope:** The **Attention** surface (the action layer) and the **Playbooks** surface (the systems/automation library) — including the unified playbook **setup & activation flow**, the **trigger / audience criteria builder**, and the **lifecycle / autopilot** model that powers them.
-**Status:** Ready for build · **Version:** 1.0 · **Date:** 2026-06-24
-**Primary audience:** Backend engineers (and their AI coding agents) who will implement the data model, business logic, and APIs. Frontend behavior is specified where it constrains the contract.
+**Status:** Ready for build · **Version:** 2.0 · **Date:** 2026-06-25 · *functional spec; catalog data externalized to `playbooks-catalog.json`*
+**Primary audience:** The product/build team (and their AI coding agents). This document defines the **complete functional behavior** of Attention & Playbooks — what the product does and why. Frontend behavior is specified where it constrains the contract.
 
-> **How to read this document.** §1–§4 frame the product, personas, and vocabulary. **§5 is the canonical data model & business logic** — every entity, enum, operator, derivation, and state machine the backend must implement. **§6 is the epics** — each with user stories and Given/When/Then acceptance criteria; the ACs are the build checklist. §7 is non-functional requirements, §8 is the suggested API surface, §9 is the appendices (research evidence + full reference catalogs). Where an AC says "the system", read "the backend service". This PRD is self-contained: a developer should not need to read the prototype source to build the backend, though §9.B/§9.C reproduce the exact catalogs.
+> **How to read this document.** §1–§4 frame the product, personas, and vocabulary. **§5 is the canonical PRODUCT model** — every entity, enum, operator, derivation, and state machine, expressed as vocabulary and rules. **§6 is the epics** — each with user stories and Given/When/Then acceptance criteria; the ACs are the build checklist. §7 is non-functional requirements, §8 is the capabilities the product must expose, §9 is the appendices (research evidence). All catalog/reference data — the full play library, categories, situations, recipes, the field/operator universe, and attention-signal definitions — lives in `./playbooks-catalog.json`; this document references it rather than reproducing it.
 
 ---
 
@@ -16,9 +16,13 @@ GoCSM is a customer-success platform sold to **HighLevel (HL) agencies** — bus
 
 **At its core GoCSM is Playbooks** — pre-built, pre-written automations that an owner turns on in ~1 minute. GoCSM is **diagnosis-first, not prescriptive**: it surfaces *what's happening* and lets the owner run a playbook to act. There are exactly **two outward actions**, both delivered through HighLevel: **Trigger Workflow** and **Request Feedback** (see §4.7).
 
+**A playbook is a concrete, named automation for a specific problem** — not an abstract category. Each one targets one recognizable situation the owner already understands ("workflow execution dropped", "contact creation dropped", "payment failed", "no recent login"). The library starts small (the production launch seeds roughly five plays) and grows over time toward hundreds. Every playbook ships with a ~1-minute explainer video and an **editable HighLevel workflow snapshot** the agency opens, modifies, and brands — swapping in its own custom variables, logo, and colors, and enriching it (sticky notes, links, a "book a call" link) — so the automation is theirs, not a black box.
+
+**The trial wedge is activating the automation system itself**, not just selling insights. What converts a trial is the owner *turning on playbooks during the trial* — the moment a play goes live is the moment GoCSM proves its value, far more than any dashboard or report. This is why activation, not education, is the day-one job (Goal 3, §2.1) and why the headline metrics are **Time-to-first-live-play** and **Activation rate** (§2.4).
+
 ### 1.2 The four product surfaces (context)
 - **Attention** — *the action layer.* "What needs me right now?" A live queue of sub-accounts that need a play, plus a "step in" list for accounts a play already ran on but didn't fix. **This PRD covers Attention in full.**
-- **Playbooks** — *the systems layer.* A marketplace/library of 57+ pre-built plays; browse → set up → run. **This PRD covers Playbooks in full**, including the setup flow and trigger builder.
+- **Playbooks** — *the systems layer.* A marketplace/library — a growing library (~57 seeded today) of pre-built plays; browse → set up → run. **This PRD covers Playbooks in full**, including the setup flow and trigger builder.
 - **Onboarding** — client onboarding journeys. *Referenced only* (the Attention queue can surface stalled onboarding; the full Onboarding surface is out of scope here).
 - **Outcomes** — results/reporting. *Out of scope here.*
 - **Health** is a **diagnostic layer** (a gated, configured scoring system), not a surface of its own — see §4.4. **Insights** is demoted/secondary and out of scope.
@@ -29,10 +33,12 @@ GoCSM has a gated advanced system called **Health** (scores, bands, lifecycle st
 - **Phase 1 — Health NOT configured (the default / trial state).** Zero Health anywhere. Only **HL-native** signals and fields are available. This is the first-run experience and the **majority state**; it must be fully functional on its own.
 - **Phase 2 — Health configured.** Health score, bands, lifecycle stages, and Health-derived signals/fields **unlock additively** — never as a prerequisite, never retro-breaking Phase 1.
 
+**No new concepts on day one.** The Phase-1 / trial experience surfaces **only HL-native problems the owner already knows** — failed payments, no-login, lapsed setups, renewals — paired with the two actions he already understands. The coined Health vocabulary and the extra problem types it unlocks are deliberately **locked as later monetization**, so day one carries **zero learning curve**: nothing on screen asks the owner to learn a word, score, or band before he can act.
+
 This phase gate is a **cross-cutting requirement** that appears in nearly every epic (see §4.4, and the gating ACs throughout §6).
 
 ### 1.4 What this PRD delivers
-A complete, build-ready specification of: the **Account & Signal data model**; the **criteria/trigger engine** (fields, operators, matching, plain-English restatement, forecasting); the **Playbook catalog** (57 plays, taxonomy, marketplace facets); the **unified 3-step setup & activation flow** with draft persistence; the **lifecycle/autopilot** state machine; the **Attention queue** generation and metrics; and the **Phase-1/Phase-2** gating that governs all of it. Plus the supporting non-functional requirements, a suggested API surface, and the research evidence trail.
+A complete, build-ready specification of: the **Account & Signal data model**; the **criteria/trigger engine** (fields, operators, matching, plain-English restatement, forecasting); the **Playbook catalog** (a growing library — ~57 seeded today, starting small and growing to hundreds — with its taxonomy and marketplace facets; the catalog data lives in `./playbooks-catalog.json`); the **unified 3-step setup & activation flow** with draft persistence; the **lifecycle/autopilot** state machine; the **Attention queue** generation and metrics; and the **Phase-1/Phase-2** gating that governs all of it. Plus the supporting non-functional requirements, the capabilities the product must expose, and the research evidence trail.
 
 ---
 
@@ -41,7 +47,7 @@ A complete, build-ready specification of: the **Account & Signal data model**; t
 ### 2.1 Business goals
 1. **Reduce churn** of an agency's sub-accounts by catching at-risk accounts early and making the corrective play one click away.
 2. **Grow revenue** by surfacing expansion moments (upsell-ready, thriving, milestone) and making the celebratory/expansion play one click away.
-3. **Activation beats education** — a non-technical owner gets value in their first session with zero configuration (Phase 1), and is never blocked behind setup.
+3. **Activation beats education** — a non-technical owner gets value in their first session with zero configuration (Phase 1), and is never blocked behind setup. The conversion wedge is **activating the automation system itself**: a trial converts when the owner *turns on a playbook*, not when he reads an insight (§1.1). This is what the **Time-to-first-live-play** and **Activation-rate** metrics (§2.4) measure.
 
 ### 2.2 Product goals (what "good" means)
 - An owner can go from "see a problem" → "a play is running on the right accounts" in **≤ 3 clicks / ≤ 1 minute**.
@@ -50,7 +56,7 @@ A complete, build-ready specification of: the **Account & Signal data model**; t
 
 ### 2.3 Non-goals (explicitly out of scope for this build)
 - **No prescriptive "recommended action" engine** beyond surfacing the matching play (GoCSM diagnoses; the owner decides).
-- **No real LLM required** for the natural-language trigger input — the prototype uses a deterministic keyword compiler; production may swap in an LLM behind the same contract, but the NL feature MUST function with the deterministic compiler (see Epic E5).
+- **Describe-to-rules uses real AI in production** — the natural-language trigger input is powered by real AI in production (a one-time cost incurred per activation, when the owner describes an audience). The **prototype demonstrates the same behavior deterministically** behind the identical describe→editable-rules contract. The contract is fixed either way: NL text always becomes **editable rules the owner confirms**, never an auto-committed black box, and it only ever produces criteria that reference real catalog fields (see Epic E5).
 - **No second level of group nesting** in the trigger builder (one level only — see §5.3).
 - **No hard deletes** of playbooks that have ever run (soft archive only — see §5.7).
 - **No Outcomes/Insights surfaces; no full Onboarding surface** (only the onboarding *signal* feeds Attention).
@@ -63,7 +69,7 @@ A complete, build-ready specification of: the **Account & Signal data model**; t
 | Activation rate | % of agencies with ≥ 1 live play within first session | ≥ 60% |
 | Queue actionability | % of Attention queue rows that lead to a setup-flow open | tracked |
 | Draft resume rate | % of started drafts that are later resumed & published | tracked |
-| Match-count latency | p95 latency of "who matches / how many" for an audience | ≤ 300ms |
+| Match-count responsiveness | "who matches / how many" for an audience feels instant while editing | instant-feeling |
 | Phase-2 adoption | % of agencies that configure Health | tracked |
 
 ---
@@ -119,6 +125,8 @@ A complete, build-ready specification of: the **Account & Signal data model**; t
 GoCSM exposes exactly two outward actions, both executed via HighLevel workflows:
 - **Trigger Workflow** — the dominant action. Every playbook *is* an HL workflow + an audience. Setting up and publishing a play arms its workflow to run on matching accounts (continuously, or once on a fixed selection). GoCSM hands off to HighLevel to publish/execute (see Epic E4, E7).
 - **Request Feedback** — a specialization that asks a sub-account for NPS/feedback (the "Listen & celebrate" plays). It flows through the same activation model.
+
+**One playbook maps 1:1 to one HighLevel workflow.** Because the mapping is one-to-one, GoCSM can record *which workflow/condition was tried on each account* — and that record is the closed loop that powers Attention: an account a play ran on but that hasn't improved is the **"tried but didn't fix it"** signal that surfaces on the **Step-in** list (E2.4, E7.1), the moment automation hands the account back to a human.
 
 ---
 
@@ -208,74 +216,25 @@ All operate over **live accounts** unless noted. (These power Attention, the mar
 | `agencyRollup()` | `{totalAccounts, liveAccounts, mrr, mrrAtRisk}` | KPI rollup |
 | `signalsForAccount(id)` | Signal[] | all signals, newest first |
 
-**`urgencyScore(a)`** *(P2)* — blends health risk + renewal proximity:
-```
-riskWeight        = (100 − health.score) / 100            // 0..1
-renewalProximity  = max(0, 1 − daysUntil(renewalDate)/90) // 0..1
-bandFloor         = band=="atrisk" ? 0.4 : band=="watch" ? 0.2 : 0
-urgency           = max(riskWeight * renewalProximity, bandFloor)
-```
+**`byUrgency()`** *(P2)* sorts by urgency, **blending health risk and renewal proximity** — an account weighs more heavily the worse its health and the closer its renewal, and an at-risk or watch account never sorts to the very bottom even when its renewal is far out.
 
 **Time helpers:** `daysUntil(iso)` = signed (positive = future); `daysSince(iso)` = unsigned (≥ 0); `bandLabel(band)` = "At risk"/"Watch"/"Healthy"/"Thriving" (Phase 2 only).
 
 ### 5.2 Criteria catalog (the filterable field universe)
 
-A curated, read-only vocabulary of **~30 fields** the trigger builder operates over. Each **FieldDef**: `id`, `group` (one of 8 AttrGroups), `label` (UI), `phrase` (clause for restatement), `type` (FieldType), `unit?` (`$|%|d|min|users`), `options?()` (enum value provider), `common?` (in the shortlist), `get(account)` (reader). **The four `health.pillarScores` and any PAS/velocity internal are deliberately ABSENT and must never be added.**
+A curated, read-only vocabulary of **~30 fields** the trigger builder operates over. Each field is described by an `id`, the group it belongs to (one of 8 AttrGroups), a UI label, a `phrase` (the clause used in the plain-English restatement), a type (which determines its allowed operators), an optional unit (`$|%|d|min|users`), an enum value provider, a "common"-shortlist flag, and a reader that pulls the value off an account. **The four `health.pillarScores` and any PAS/velocity internal are deliberately ABSENT from this vocabulary and must never be added** — they are internal scoring math, never filterable, in either phase (§4.4 rule 3).
 
-**FieldType → allowed operators:**
-| FieldType | Operators |
-|---|---|
-| `score` (0–100) | between, gte, lte, gt, lt, eq |
-| `money` ($) | gt, lt, gte, lte, between |
-| `number` | gt, lt, gte, lte, eq |
-| `days` | gt, lt, gte, lte, eq |
-| `dateRelative` | inNext, inLast, moreThanAgo, within |
-| `enum` | isAnyOf, isNoneOf, is, isNot |
-| `band` *(P2)* | isAnyOf, is |
-| `boolean` | is |
-| `trendDir` | falling, rising |
-| *(special: `account.name`)* | contains, is, isNot, startsWith |
+The vocabulary is organized into **8 groups**: **Health & Risk** *(Phase-2 only)* · **Account** · **Engagement & Login** · **Feature adoption** · **Revenue & Billing** · **Feedback** · **Users**. The ~7 "common" fields are surfaced first in Phase 1.
 
-**Operator semantics** (evaluated by `evalCriterion`, §5.3.2): `lt/gt/gte/lte/eq` numeric; `between` = value ∈ [lo,hi]; `is` = boolean/string equality; `isNot` = string inequality; `isAnyOf` = set intersection ≠ ∅ over a CSV field; `isNoneOf` = set intersection = ∅; `contains/startsWith` = case-insensitive substring/prefix; `inNext` = `0 ≤ days ≤ N`; `inLast` = `−N ≤ days ≤ 0`; `moreThanAgo` = `days < −N`; `within` = `|days| ≤ N`; `falling` = value `< 0`; `rising` = value `> 0`. **Date N** is computed in days: `weeks→N×7`, `months→N×30`, else `N` (from a `DateRelValue {verb, n, unit}`).
+> **Multi-value fields** (e.g. features-in-use, risk tags) are stored as a comma-separated string and matched by splitting + set-intersection, so the "is any of" / "is none of" operators work. Enum value lists autocomplete from the agency's live account values. **Operator labels are always plain words, never symbols** (e.g. "is more than", "is any of"). One field (`account.priority`) reads health-ish but is **HL-native and Phase-1-filterable** — it is the account's `status.isPriority` flag, not a `health.*` field.
 
-**The 8 groups & the full field list** (★ = "common" shortlist, surfaced first in Phase 1):
-
-| Field id | Group | Type | Phrase | Notes / derivation |
-|---|---|---|---|---|
-| `health.band` ★ *(P2)* | Health & Risk | band | health | `health.band` |
-| `health.score` *(P2)* | Health & Risk | score | health score | `health.score` |
-| `health.trend` ★ *(P2)* | Health & Risk | trendDir | health | sign of `health.delta` |
-| `health.riskTags` *(P2)* | Health & Risk | enum | risk tags | CSV of `revenue.riskTags` labels |
-| `health.lifecycle` *(P2)* | Health & Risk | enum | stage | `lifecycle.stage` |
-| `health.status` *(P2)* | Health & Risk | enum | account status | derived: active / churned / cancelled |
-| `account.priority` ★ | Account | boolean | priority account | `status.isPriority` (**HL-native, Phase-1**) |
-| `account.name` | Account | enum/text | account name | `identity.name` (contains/startsWith) |
-| `account.age` | Account | days | account age | `identity.activeDays` |
-| `account.created` | Account | dateRelative | created | signup date (signed; negative = past) |
-| `engagement.lastLoginDays` ★ | Engagement & Login | days | last login | `login.lastLoginDaysAgo` |
-| `engagement.activityStatus` | Engagement & Login | enum | login activity | Active(≤7)/At-risk(8–30)/Dormant(>30) |
-| `engagement.activeUsers` | Engagement & Login | number | active users | `login.activeUsers` |
-| `engagement.timeSpent` | Engagement & Login | number | time spent | `login.totalLoggedInTime` |
-| `feature.inUse` ★ | Feature adoption | enum | features in use | CSV of features with engagement>0 |
-| `feature.engagementTrend` | Feature adoption | trendDir | feature engagement | sign of `health.delta` (proxy) |
-| `feature.neverUsed` | Feature adoption | boolean | no feature used since signup | all features engagement ≤ 0 |
-| `revenue.mrr` ★ | Revenue & Billing | money | MRR | `revenue.mrr` |
-| `revenue.spendTrend` | Revenue & Billing | enum | spend | declining(≤−10)/flat/increasing(≥10) |
-| `revenue.lifetimeSpend` | Revenue & Billing | money | lifetime spend | `mrr × max(1, activeDays/30)` |
-| `revenue.plan` | Revenue & Billing | enum | plan | `identity.plan` |
-| `revenue.planChange` | Revenue & Billing | enum | plan change | upgraded/downgraded/cancelled/reactivated/none |
-| `revenue.paymentFreq` | Revenue & Billing | enum | billing | annual(Pro plans)/monthly |
-| `revenue.failedPayment` ★ | Revenue & Billing | boolean | payment | last failed OR any failed attempt |
-| `revenue.renewsWithin` ★ | Revenue & Billing | dateRelative | renews | `daysUntil(renewalDate)` (signed; + = future) |
-| `feedback.sentiment` | Feedback | enum | sentiment | very happy(NPS≥9)/happy/neutral/unhappy |
-| `feedback.rating` | Feedback | number | rating | NPS/2 if present, else band-based |
-| `user.role` | Users | enum | user role | first user's role |
-| `user.keyOnly` | Users | boolean | key users | any `LoginUser.keyUser == true` |
-| `user.idleDays` | Users | days | days since a user logged in | `login.lastLoginDaysAgo` |
-
-> Multi-value fields (`feature.inUse`, `health.riskTags`) are stored as a CSV string and matched by splitting + set-intersection (so `isAnyOf`/`isNoneOf` work). Enum `options()` autocompletes from live account values. Plain-word operator labels (never symbols): see §9.B.
+The field universe (~30 fields: id, group, type, phase, phrase), the **FieldType → operator map**, the **operator semantics** (how each operator is evaluated, including the date-window arithmetic), and the plain-word **operator labels** all live in `./playbooks-catalog.json` (`filters.advancedGroups`, `filters.operatorsByType`, `filters.operatorSemantics`, `filters.operatorLabels`).
 
 ### 5.3 Criteria engine (the trigger / audience model)
+
+**The trigger is deliberately simple — because simplicity drives activation.** Every play ships with **default criteria, always shown in plain English**, so the owner can publish without building anything. **Simple mode** keeps a tiny, relevant default set: **plan + priority are the universal base**, and the prototype additionally surfaces the 1–2 filters most relevant to that specific play (the playbook-aware quick-add). A **"Customize"** path opens a `Simple | Advanced` choice; **Advanced** exposes the full attribute rule builder across the field groups (User · Account · Revenue & billing · Feature adoption · Sentiment). In Advanced the owner can also **describe the audience in plain words and get editable rules** (production uses real AI for this — a one-time cost per activation; the prototype demonstrates it deterministically behind the same contract). Throughout, a **live count and dollars at risk** ("$8,400 at risk · 5 accounts") give the owner instant social proof that the rule is real and worth turning on.
+
+> **Evolution note.** The founder transcript originally framed Simple as "plan + priority only." That was later refined to the **playbook-aware quick-add** now shipped (plan + priority + the 1–2 most-relevant filters per play). Both designs serve the same anti-overwhelm goal — keep the day-one trigger tiny and relevant — and the refinement simply makes the default smarter per play.
 
 #### 5.3.1 Types
 - **CriteriaSet** — `{ match: "all"|"any", criteria: Criterion[], nodes?: Node[], name?: string }`. `criteria` is the **flat mirror** (Simple mode + back-compat). `nodes` is the **Advanced structure** (groups + bare criteria). When `nodes` exists it is authoritative; `criteria` is kept in sync as the flattened leaves.
@@ -285,18 +244,15 @@ A curated, read-only vocabulary of **~30 fields** the trigger builder operates o
 - **Node** = `Criterion | Group` (a top-level element).
 - **DateRelValue** — `{ verb: "inNext"|"inLast"|"moreThanAgo"|"within", n: number, unit: "days"|"weeks"|"months" }`.
 
-#### 5.3.2 Evaluation
-- `evalCriterion(account, criterion) → boolean` — looks up the field's `get(account)` value and applies the operator per §5.2. **An unknown `fieldId` evaluates to `false` (drop, never error).**
-- `evalNode(account, node)` — bare criterion → `evalCriterion`; group with 0 criteria → `true`; group with criteria → AND if `match="all"`, OR if `match="any"`.
-- `matchAccounts(set) → Account[]` — start from **live accounts**; if no nodes → return all live; else filter: top-level `match="all"` ⇒ account passes **all** nodes; `match="any"` ⇒ passes **any** node.
-- `matchCount(set) → number` = `matchAccounts(set).length`.
+#### 5.3.2 Evaluation rules
+An audience can **mix conditions with one level of grouping** (a flat list of conditions, optionally with one layer of "any-of / all-of" groups — groups never contain groups). Evaluation is over **live accounts**: an empty audience matches all live accounts; otherwise an account matches when it passes the top-level conditions per the "all" / "any" join. Each condition applies its operator to the account's value for that field (the operator semantics live in `./playbooks-catalog.json`). **A bad or unknown condition is ignored, never an error** — a single unrecognized field (e.g. a Health field referenced in Phase 1) drops silently and never fails the whole audience. "How many match" is simply the count of matching accounts.
 
-#### 5.3.3 Structure helpers (backend must preserve these invariants)
-`flatten(set)` (all leaf criteria), `isAdvanced(set)` (true iff any node is a Group — i.e., genuine nesting), `nodesOf(set)` (nodes, or criteria-as-bare-nodes), `withNodes(set, nodes)` (rebuild + re-sync the flat `criteria` mirror), `normalize(set)` (ensure a `nodes` array exists). **Invariant:** `criteria` is always the flattened leaves of `nodes`.
+#### 5.3.3 Switching modes never loses the rule
+The audience has a simple (flat) shape and an advanced (grouped) shape that describe the **same underlying set**. Toggling between Simple and Advanced **never loses, flattens, or resets the rule**: the flat view and the grouped view stay consistent, and a rule that genuinely uses grouping cannot be silently collapsed (the Simple view is disabled rather than destroying the groups — see E5.3).
 
-#### 5.3.4 Composition & forecast
-- `composition(accounts) → bars` — two distribution bars: **Health** (by band; tones neg/warn/pos) *(P2)* and **Plan** (by tier; neutral tone). Used by the Phase-2 preview.
-- `forecast7d(set) → {account, etaDays, confidence}[]` — accounts **about to** match within 7 days: relax numeric thresholds slightly (days ±4, money ±15%, other ±8), find accounts matching the relaxed-but-not-current set whose `health.delta < 0` (falling), compute `etaDays = clamp(round(gap / (speed/4)), 1, 7)`, `confidence = "high"` if `|delta| ≥ 4 AND trend90d.length ≥ 6` else `"low"`; sort by ETA asc. *(P2 — needs Health trend.)*
+#### 5.3.4 Composition & forecast *(Phase 2)*
+- **Audience makeup** — the Phase-2 preview shows the makeup of the matching audience as two distribution bars: by Health **band** and by **plan** tier.
+- **About-to-match forecast** — the Phase-2 preview also surfaces accounts **likely to match within ~7 days** (not matching yet, but trending toward it), each with a **confidence cue** (high/low) so the owner can act before they slip. (Requires Health trend data, so Phase 2 only.)
 
 #### 5.3.5 Plain-English restatement (a differentiator — §9.A)
 - `describeCriterion(c) → string` — renders a criterion as prose: booleans use a phrase dictionary (`revenue.failedPayment → "a payment failed"`); "ago" fields (`engagement.lastLoginDays`, `user.idleDays`) render past-tense with "ago" ("last login was more than 21 days ago"); money uses "over/under"; band/enum membership reads plain "is"; default `"{phrase} {operator-word} {value}"`.
@@ -304,26 +260,23 @@ A curated, read-only vocabulary of **~30 fields** the trigger builder operates o
 - `INVENTORY_FLOOR = 5` — when a set matches ≤ 5 accounts, the UI warns that narrowing further risks an empty list.
 
 ### 5.4 Recipe
-A pre-seeded starting template. **Recipe** — `{ id, icon, label, blurb, set: CriteriaSet, playbookId: string }`. The 6 seeded recipes (full sets in §9.C):
-`rec-atrisk-renewing` → pb-renewal-save; `rec-big-downhill` → pb-renewal-save; `rec-gone-quiet` → pb-no-login; `rec-quiet-no-core` → pb-feature-drop; `rec-payment-failed` → pb-payment-failed; `rec-slipping-engagement` → pb-feature-drop. Recipes seed the builder's empty state, name a phrasing example, and link to the downstream play. **In Phase 1, any `health.*` criterion in a recipe's set is stripped before use.**
+A pre-seeded starting template. A **Recipe** pairs an id, icon, label, blurb, a criteria set, and a linked downstream playbook. Recipes seed the builder's empty state, name a phrasing example, and link to the downstream play. **In Phase 1, any `health.*` criterion in a recipe's set is stripped before use** (its HL-native parts remain). The 6 seeded recipes are in `./playbooks-catalog.json` (`recipes`).
 
 ### 5.5 Playbook
 
-A pre-built, pre-written automation template + a match predicate.
+A pre-built, pre-written automation template + a match predicate. **Each playbook is a concrete, named automation for one specific problem** the owner already recognizes (e.g. "workflow execution dropped", "contact creation dropped", "payment failed") — never an abstract category. The library **starts small** (≈5 plays at production launch) and grows toward hundreds. Every playbook ships a **~1-minute explainer video** and an **editable HighLevel workflow snapshot** the agency opens, modifies, and brands (custom variables, logo, colors) and can enrich (sticky notes, links, a "book a call" link) — so the automation is theirs to own, not a black box (§1.1).
 
 #### 5.5.1 Fields
-`id`, `title`, `subtitle`, `icon` (lucide name), `state` (PlaybookState), `kind` (PlaybookKind), `problem` (one-sentence situation), `does` (plain-language actions), `outcome` (goal), `actions` (PlaybookAction[]), `category` (PlaybookCategory), `usedByAgencies` (number, social proof), `totalRuns` (number), `launchedDaysAgo` (number), `trending` (boolean), `effort` (PlaybookEffort), `signal` (PlaybookSignal), `audienceKind` (`"account" | "user"` — does the trigger concern the whole account or an individual user's activity; drives the Simple-view default filters, §9.C.3), `videoUrl` (string; "" ⇒ coming-soon placeholder), `videoPoster?` (string), `match(account) → boolean` (the predicate; see §9.C for all 57).
+`id`, `title`, `subtitle`, `icon` (lucide name), `state` (PlaybookState), `kind` (PlaybookKind), `problem` (one-sentence situation), `does` (plain-language actions), `outcome` (goal), `actions` (PlaybookAction[]), `category` (PlaybookCategory), `usedByAgencies` (number, social proof), `totalRuns` (number), `launchedDaysAgo` (number), `trending` (boolean), `effort` (PlaybookEffort), `signal` (PlaybookSignal), `audienceKind` (`"account" | "user"` — does the trigger concern the whole account or an individual user's activity; drives the Simple-view default filters — see Appendix C), `videoUrl` (string; "" ⇒ coming-soon placeholder), `videoPoster?` (string), and a **match predicate** that decides whether a given account matches the play today (the per-play default trigger lives in `./playbooks-catalog.json`, `playbooks`).
 
 **PlaybookAction** — `type` (`customer-email|internal-email|slack|task`), `subject?` (email), `preview` (one-line peek), `body?` (fuller draft). Messages interpolate `{{name}}` and `{{account}}` per account at send time.
 
 #### 5.5.2 Enums
-- **PlaybookState** — `off` (in marketplace, not deployed) · `ranonce` · `on` · `paused`. *(Note: the live deployment state for an agency is the AutopilotStatus in §5.7; `Playbook.state` is the seed/default.)*
-- **PlaybookKind** — `save | retention | adoption | billing | onboarding | expansion`.
-- **PlaybookCategory** (7-bucket marketplace taxonomy) — `winback` ("Win back at-risk") · `reengage` ("Re-engage quiet") · `adoption` ("Drive adoption") · `revenue` ("Rescue revenue") · `onboard` ("Onboard faster") · `grow` ("Grow & upsell") · `listen` ("Listen & celebrate").
-- **PlaybookEffort** — `ready` ("Ready to go") · `quick` ("Quick setup") · `custom` ("Add your wording").
-- **PlaybookSignal** (the churn↔expansion **Situation** rating; internal value → customer-facing label via `SIGNAL_LABEL`), ordered worst→best:
-  `critical` → **"Critical"** · `atrisk` → **"Slipping"** · `watch` → **"Steady"** · `positive` → **"Strong"** · `verypositive` → **"Booming"**.
-  **HARD RULE:** the labels deliberately avoid the gated Health-band words (Thriving/Healthy/Watch/At-Risk). Diverging dot colors (always paired with the label): Critical `#c73a26` → Slipping `#f97316` → Steady `#6b7280` (neutral) → Strong `#2f9e1b` → Booming `#137a52`.
+A playbook carries a **state** (its seed/default deployment state — the live per-agency deployment state is the AutopilotStatus in §5.7), a **kind**, a marketplace **category** (the 7-bucket taxonomy), a setup **effort** rating, and a **Situation** rating.
+
+The **Situation** rating is the churn↔expansion signal shown on every play, ordered worst→best (Critical · Slipping · Steady · Strong · Booming), each paired with a colorblind-safe diverging color (warm → neutral → cool) and always shown alongside its label. **HARD RULE:** the Situation labels deliberately **avoid the gated Health-band words** (Thriving / Healthy / Watch / At-Risk) — because the marketplace is a Phase-1 surface, the Situation must read in plain language and must never leak coined Health vocabulary. The **churn↔expansion valence matters**: a play's Situation tells the owner at a glance whether it is about *saving* a slipping account or *growing* a thriving one, so a card never mislabels an expansion or renewal opportunity as a risk.
+
+Enum value sets (state · kind · effort), the 7-bucket category taxonomy, and the 5-band Situation rating (labels + descriptions + colorblind-safe colors) are in `./playbooks-catalog.json` (`enums`, `categories`, `situations`).
 
 #### 5.5.3 Playbook selectors
 `matchesToday(p) → Account[]` (live accounts where `p.match` is true); `matchCount(p) → number`; `playbookById(id)`; `playbookImpact(p) → {count, mrr}` (matching accounts + their summed MRR); `isNewPlaybook(p)` = `launchedDaysAgo ≤ 14`.
@@ -331,18 +284,10 @@ A pre-built, pre-written automation template + a match predicate.
 - **`recommendedPlays({healthConfigured, isLive}) → RecommendedPlay[]`** — the **Attention "Start here" ranking** (E2.7). `RecommendedPlay = { p: Playbook, impact: {count, mrr} }`. Non-live plays (`isLive(id) === false`) that match ≥1 account today, **Phase-1-filtered** (excludes plays whose `title|subtitle|problem` match the coined-Health regex when `healthConfigured === false`), sorted `impact.mrr` desc → `impact.count` desc → `usedByAgencies` desc. Deterministic — the rank **is** the at-risk $ across N accounts; production may add AI narrative but never reorder.
 - **`mrrKind(p) → "risk" | "grow" | "renewal"`** + **`MRR_KIND_NOUN`** — the **money valence** so a card never mislabels expansion/renewal as "at risk": `signal ∈ {positive, verypositive}` → `grow` ("MRR to grow", positive color); else copy matches `/renew(al|s|ing|ed)?/i` → `renewal` ("MRR up for renewal", warn color); else → `risk` ("MRR at risk", neg color). "at risk" lowercase is plain finance, not the gated Health "At-Risk" band (NFR-4 holds).
 
-**The catalog seeds 57 plays.** All 57 (id, title, kind, category, signal, effort, predicate) are reproduced in **§9.C**.
+**The catalog is a growing library** — ≈57 plays seeded today, starting small and growing toward hundreds over time. Every play (id, title, kind, category, situation, effort, default trigger, and per-play Simple-view filters) lives in `./playbooks-catalog.json` (`playbooks`).
 
 ### 5.6 AttentionSignal (queue definition)
-A named definition that turns a criteria query + playbook into an Attention queue row. **AttentionSignal** — `{ id, tier: "native"|"health", icon, title: (count)→string, meaning: string, set: CriteriaSet, playbookId: string, priority: number }`. The seeded definitions (extend in production):
-
-| id | tier | title(count) | criteria (`set`) | playbookId | priority |
-|---|---|---|---|---|---|
-| `sig-payment-failed` | native | "Payment failed on N sub-account(s)" | `revenue.failedPayment is true` | pb-payment-failed | 90 |
-| `sig-no-login` | native | "N sub-account(s) haven't logged in for 14 days" | `engagement.lastLoginDays gt 14` | pb-no-login | 70 |
-| `sig-health-atrisk` *(P2)* | health | "N account(s) dropped to At-Risk" | `health.band isAnyOf [atrisk]` | pb-renewal-save | 80 |
-
-Each carries a plain-English `meaning` (e.g. "A charge was declined — these accounts can lose access until billing is fixed."). **Tier-1 (native) signals are always active; Tier-2 (health) signals appear only in Phase 2.** Production will add more definitions; the model is fixed.
+A named definition that turns a criteria query + playbook into an Attention queue row. An **AttentionSignal** pairs a tier (`native` or `health`), an icon, a count-aware title, a plain-English `meaning` (e.g. "A charge was declined — these accounts can lose access until billing is fixed."), a criteria set, a linked playbook, and a priority (sort order in the queue). **Tier-1 (native) signals are always active; Tier-2 (health) signals appear only in Phase 2.** Production will add more definitions; the model is fixed. Seeded definitions are in `./playbooks-catalog.json` (`attentionSignals`).
 
 ### 5.7 Lifecycle & autopilot (state machine)
 
@@ -358,30 +303,30 @@ A playbook's per-agency deployment state.
   on|paused ──disable()──▶ off (hard remove from active; only valid from on/paused)
   ```
 - **HARD RULE — no hard deletes** of a playbook that has ever run; use pause/archive. `restore` always lands in **paused** (never auto-live).
-- **Store API the backend must expose:** `enable(id, oversee?)`, `disable(id)`, `pause(id)`, `resume(id)`, `archive(id)`, `restore(id)`, `setOversee(id, mode)`, `status(id)`, `oversee(id)`, `has(id)`, `listOn()`, `listPaused()`, `listArchived()`. (Prototype persists to `localStorage["gocsm.autopilot.v1"]`; production persists per-agency.)
+- **Capabilities:** the product can enable a play (with an oversee mode), pause, resume, archive, restore, and disable it; change a live play's oversee mode; read a play's current state and oversee mode; and list the plays that are on, paused, or archived. Deployment state is **per-agency**.
 
 ### 5.8 WorkflowDraft (setup persistence)
-Auto-saved in-progress setup. **WorkflowDraft** — `{ recipeId: string (key), match: "all"|"any", criteria: Criterion[], nodes?: Node[], step: "criteria"|"workflow"|"review", workflowReady: boolean, savedAt: number (epoch ms) }`. **API:** `saveDraft(d)`, `loadDraft(recipeId)`, `clearDraft(recipeId)`, `hasDraft(recipeId)`. Autosaves on every step/criteria/`workflowReady` change; cleared on publish or explicit discard. (Prototype key `localStorage["gocsm.workflow.drafts.v1"]`; production per-agency.)
+An auto-saved in-progress setup, keyed by recipe. A **WorkflowDraft** captures the audience-in-progress (its match join, conditions, and any groups), which step the owner is on (criteria / workflow / review), whether the HighLevel workflow has been confirmed ready, and when it was last saved. The product can **save, load, clear, and check for** a draft. It autosaves on every step / criteria / readiness change, and is cleared on publish or explicit discard. Drafts are **per-agency**.
 
 ### 5.9 Health configuration (the phase flag)
-A per-agency boolean. **API:** `isConfigured() → boolean`, `set(v)`, `toggle()`. Drives every Phase-1/Phase-2 branch in §6. (Prototype key `localStorage["gocsm.healthConfig.v1"]`; production per-agency, set when the agency completes Health setup.)
+A per-agency flag the product can **read, set, and toggle**: whether Health is configured. It drives every Phase-1 / Phase-2 branch in §6. It is set when the agency completes Health setup.
 
 ### 5.10 Multi-tenancy note
-Everything above is **scoped to one agency**. An agency owns many Accounts (its sub-accounts) and one set of deployment/draft/health-config state. Playbook *definitions* and the criteria *catalog* are global (seeded), but **autopilot status, drafts, health-config, and any saved criteria sets are per-agency.** The backend must enforce agency isolation on every read/write.
+Everything above is **scoped to one agency**. An agency owns many Accounts (its sub-accounts) and one set of deployment/draft/health-config state. Playbook *definitions* and the criteria *catalog* are global (seeded), but **autopilot status, drafts, health-config, and any saved criteria sets are per-agency.** Agency isolation is enforced in the product's data layer on every read and write — never merely hidden in the UI.
 
 ### 5.11 NotifyConfig (Step-in escalation routing)
 The agency owner's standing choice for **how/where they are told when an account needs a human** (E2.9) — so they aren't forced to open the Attention page daily. Operator-grade (channel × cadence + loop-in-owner), **not** a rules engine.
 
 - **NotifyConfig** — `{ channels: ("slack"|"email"|"asana")[], cadence: "digest"|"each", digestTime: string, notifyOwner: boolean, connected: { slack: boolean, asana: boolean } }`.
 - **Defaults (low-noise):** `{ channels: ["email"], cadence: "digest", digestTime: "9:00am", notifyOwner: false, connected: { slack:false, asana:false } }`.
-- **Semantics:** `cadence: "each"` *is* realtime (no separate setting); `notifyOwner` resolves per-account to the sub-account's personnel (a **semantic token**, never a typed field); Slack/Asana are external handoffs gated behind a **Connect** stub (Email needs none); selecting an unconnected channel connects it but does not auto-subscribe.
-- **API:** `get()`, `set(patch)`, `toggleChannel(ch)`, `connect(ch)` per-agency. (Prototype key `localStorage["gocsm.notify.v1"]`; production `GET|PUT /attention/notify-config` + real Slack/Asana/email delivery and owner-resolution.)
+- **Semantics:** `cadence: "each"` *is* realtime (no separate setting); `notifyOwner` resolves per-account to the sub-account's personnel (a **semantic token**, never a typed field); Slack/Asana are external handoffs gated behind a **Connect** step (Email needs none); selecting an unconnected channel connects it but does not auto-subscribe.
+- **Capabilities:** the product can read the agency's escalation preference, update it (including toggling a channel and connecting an external one), all per-agency. Production wires real Slack/Asana/email delivery and the owner-resolution lookup; the prototype connects via a stub and persists intent only.
 - **No AI** participates in routing (E2.9.8).
 
 ---
 ## 6. Epics, user stories & acceptance criteria
 
-> Each epic states its goal, scope, dependencies, and the §5 entities/§8 endpoints it touches, then a set of user stories (As a … I want … so that …) with **exhaustive Given/When/Then acceptance criteria** — the build checklist. Every data-rendering story carries explicit **Phase-1 vs Phase-2** ACs; negative/empty/error paths are covered. Epic order: **E1** Platform foundation → **E2** Attention queue & metrics → **E3** Playbooks catalog & marketplace → **E4** Setup & activation flow → **E5** Trigger/criteria builder & matching → **E6** Lifecycle & autopilot → **E7** HighLevel integration & embeds. Dependencies run roughly E1 → {E2…E7}; E5 underlies E2/E4; E6 underlies E2/E4/E7.
+> Each epic states its goal, scope, dependencies, and the §5 entities it touches and the §8 capabilities it relies on, then a set of user stories (As a … I want … so that …) with **exhaustive Given/When/Then acceptance criteria** — the build checklist. Every data-rendering story carries explicit **Phase-1 vs Phase-2** ACs; negative/empty/error paths are covered. Epic order: **E1** Platform foundation → **E2** Attention queue & metrics → **E3** Playbooks catalog & marketplace → **E4** Setup & activation flow → **E5** Trigger/criteria builder & matching → **E6** Lifecycle & autopilot → **E7** HighLevel integration & embeds. Dependencies run roughly E1 → {E2…E7}; E5 underlies E2/E4; E6 underlies E2/E4/E7.
 
 ## E1 — Platform foundation: accounts, signals & the Health phase gate
 
@@ -390,72 +335,71 @@ The agency owner's standing choice for **how/where they are told when an account
 **User value:** Mo (the HighLevel agency owner — §3.1) opens GoCSM on day one and immediately sees *his own* sub-accounts, his real MRR, who is failing payment, who has gone quiet, who is renewing — with zero setup and **zero customer-success jargon** (Phase 1). When he later configures Health, the richer Health/lifecycle vocabulary unlocks **additively** without breaking anything he already used (Phase 2). At no point does internal scoring math (PAS, raw pillar scores, velocity internals) leak into anything he can see or filter on.
 
 **In scope:**
-- Ingest/sync of an agency's HL sub-accounts into the **Account** model (§5.1), keeping HL-native sub-objects fresh at the NFR-2 cadence, fully agency-scoped (§5.10).
-- Detection & persistence of **Signals** (§5.1.2) from account state changes, including the **sticky-reverse rule** and the `lostStickySetups()` selector (§5.1.3).
-- All **account selectors** (§5.1.3) exposed as backend services, including the Phase-2-only ones and the `urgencyScore` blend.
-- The **phase-filtered criteria catalog** service (§5.2) backing `GET /criteria/catalog`.
-- The **Health config flag** (§5.9) and the cross-cutting **phase gate** (§4.4 / NFR-4) enforced **server-side**.
+- Keeping an agency's HL sub-accounts current in the **Account** model (§5.1), with HL-native data kept fresh (NFR-2) and fully agency-scoped (§5.10).
+- Detecting and retaining **Signals** (§5.1.2) from account state changes, including the **sticky-reverse rule** and the "actively losing a critical setup" query (§5.1.3).
+- All **account selectors** (§5.1.3), including the Phase-2-only ones and the urgency blend.
+- The **phase-filtered criteria catalog** (§5.2).
+- The **Health config flag** (§5.9) and the cross-cutting **phase gate** (§4.4 / NFR-4) enforced in the product's data layer.
 - **Multi-tenancy & isolation** (§5.10 / NFR-3) on every read/write.
-- **Server-side derived-field correctness** for every `get()` derivation in the §5.2 catalog table, kept in sync with source data.
+- **Derived-field correctness** for every derivation in the §5.2 catalog, kept in sync with source data, enforced in the data layer (not merely hidden in the UI).
 
 **Out of scope (covered by other epics or §2.3 non-goals):**
-- The criteria **evaluation engine** `evalCriterion / matchAccounts / matchCount` and restatement `describeSet` (§5.3 — Epic E2/E5 consume the catalog from this epic but own the matching logic).
-- The **NL→rules compiler** `compile-nl` (§5.3 / Epic E5).
-- The **Attention queue** generation, `mrrAtRisk` per-signal rollup, and step-in layer (§5.6 / Epic E2).
+- The criteria **evaluation/matching** and plain-English restatement (§5.3 — Epics E2/E5 consume the catalog from this epic but own the matching logic).
+- The **describe-to-rules** capability (§5.3 / Epic E5).
+- The **Attention queue** generation, the per-signal MRR-at-risk rollup, and the step-in layer (§5.6 / Epic E2).
 - The **Playbook catalog**, marketplace facets, recipes, drafts, publish, and lifecycle/autopilot state machine (§5.4–§5.8 / Epics E3, E4, E6, E7).
-- The actual **Health setup wizard UX** that computes scores/bands/pillars (this epic owns only the *flag* and the *additive gating behavior*; the scoring pipeline is upstream/assumed per NFR-2 nightly scoring family).
+- The actual **Health setup wizard UX** that computes scores/bands/pillars (this epic owns only the *flag* and the *additive gating behavior*; the scoring pipeline is upstream/assumed).
 - Exposing **PAS, raw `pillarScores`, velocity/cap internals** as filterable fields — explicitly forbidden forever (§4.4 rule 3, §2.3).
 
 **Dependencies:**
-- Upstream HL data sources per NFR-2: live Mongo sync, real-time activity materialized views, and the nightly (02:00 UTC) scoring family that produces `health.*` and `lifecycle.stage` for Phase-2 agencies.
-- Auth/tenant context: the agency id is derived from auth on every request (§8 preamble).
-- Persistence for the per-agency Health-config flag (§5.9; prototype `localStorage["gocsm.healthConfig.v1"]`, production per-agency row).
+- Upstream HL data sources kept near-real-time (NFR-2), plus the scoring pipeline that produces `health.*` and `lifecycle.stage` for Phase-2 agencies.
+- Auth/tenant context: the agency is derived from auth on every request.
+- Persistence for the per-agency Health-config flag (§5.9).
 
-**Data & services touched:** **Account** (§5.1, all 11 sub-objects), **Signal** (§5.1.2), **account selectors** (§5.1.3), **FieldDef / criteria catalog** (§5.2), **HealthConfig** (§5.9), **multi-tenancy scope** (§5.10). Endpoints (§8): `GET /accounts`, `GET /accounts/:id`, `GET /accounts/:id/signals`, `GET /accounts/selector/:name` (`failed-payments`, `stalled-onboarding`, `lost-sticky-setups`, `renewals?min=&max=`), `GET /agency/rollup`, `GET /criteria/catalog`, `GET /agency/health-config`, `PUT /agency/health-config`.
+**Data & entities touched:** **Account** (§5.1, all 11 sub-objects), **Signal** (§5.1.2), **account selectors** (§5.1.3), **criteria catalog** (§5.2), **HealthConfig** (§5.9), **multi-tenancy scope** (§5.10). Capabilities relied on (§8): list accounts and one account's detail; read an account's signals; answer the account-selector queries (failed payments, stalled onboarding, lost sticky setups, renewals in a window); read the agency rollup; read the phase-filtered criteria catalog; read and set the Health-config flag.
 
-> **Phase definitions used throughout this epic** (§1.3, §4.4). **Phase 1** = `HealthConfig.isConfigured() === false` (default / trial). **Phase 2** = `HealthConfig.isConfigured() === true`. **Live account** (§5.1 preamble) = `status.enabled === "Enabled"` AND `lifecycle.stage !== "churned"`. **TODAY** anchors fixtures to 2026-06-17; production uses the real current date.
+> **Phase definitions used throughout this epic** (§1.3, §4.4). **Phase 1** = Health not configured (default / trial). **Phase 2** = Health configured. **Live account** (§5.1 preamble) = `status.enabled === "Enabled"` AND `lifecycle.stage !== "churned"`. **TODAY** anchors fixtures to 2026-06-17; production uses the real current date.
 
 ---
 
-### Story E1.1 — As the system/backend, I want to ingest and continuously sync an agency's HL sub-accounts into the Account model, so that every other surface reads fresh, agency-scoped account data without manual setup.
+### Story E1.1 — GoCSM continuously reflects the agency's HL sub-accounts as fresh, agency-scoped account data, so that every other surface works on current data without manual setup.
 
 **Acceptance criteria:**
 
-- **AC E1.1.1 —** Given an agency authenticated on a request, When the backend ingests its HL sub-accounts, Then each sub-account is materialized as one **Account** (§5.1) with all 11 required sub-objects present (`identity, ownership, status, lifecycle, pipeline, health, login, adoption, revenue, feedback, onboarding`); a sub-account missing a sub-object is hydrated with that sub-object's documented defaults (e.g. `feedback.npsScore = 0` meaning "no feedback yet"; empty arrays for `users/responses/paymentAttempts/planChanges/features/assets`) rather than omitting the key.
-- **AC E1.1.2 —** Given an authenticated agency, When `GET /accounts` is called, Then the response contains **only** that agency's accounts (§5.10 / NFR-3) — no account belonging to any other agency may appear under any circumstance.
-- **AC E1.1.3 —** Given two distinct agencies that each manage a sub-account with the same logical id, When each calls `GET /accounts/:id`, Then each receives **its own** account; account ids are unique **within an agency** only (§5.10), and id collisions across agencies never cross tenant boundaries.
-- **AC E1.1.4 —** Given HL-native data changes upstream (a login, a payment attempt, a plan change, a renewal-date edit, workflow usage, feature usage), When the NFR-2 sync runs (live Mongo sync + real-time activity MVs; nightly 02:00 UTC for the scoring family), Then the affected Account sub-objects reflect the latest synced state, and any "matches right now" / selector / rollup read served afterward reflects that latest state (NFR-2).
-- **AC E1.1.5 —** Given an agency with **zero** sub-accounts (brand-new/trial), When `GET /accounts` is called, Then the response is an empty list (`[]`) with a 200, not an error, and downstream rollups/selectors return their documented empty values (see E1.3 ACs) rather than throwing.
-- **AC E1.1.6 —** Given `GET /accounts/:id` for an id that does not exist within the agency, When the request is served, Then the backend returns a 404 (not another agency's account, not null masquerading as 200).
-- **AC E1.1.7 —** Given `GET /accounts/:id` for a **churned** account (`lifecycle.stage === "churned"`), When requested by id, Then it **is** returned (the `accountById(id)` selector includes churned — §5.1.3), even though it is excluded from live-account selectors and the rollup's `liveAccounts`.
-- **AC E1.1.8 — (Phase 1)** Given Phase 1 (`HealthConfig.isConfigured() === false`), When any account is serialized in any `/accounts*` response, Then the `health` sub-object and `lifecycle.stage` value are **stripped server-side** (NFR-4): no `health.score`, `health.band`, `health.delta`, `health.trend90d`, `health.pillarScores`, `health.riskSignals`, `health.opportunities`, and no `lifecycle.stage` / `lifecycle.reactivated` Health-coined values appear in the payload, in any field, preview, or copy.
-- **AC E1.1.9 — (Phase 2)** Given Phase 2 (`HealthConfig.isConfigured() === true`), When any account is serialized, Then the `health` sub-object and `lifecycle` are included **additively** (score, band, delta, trend90d, riskSignals, opportunities, lifecycle.stage), and **except** `health.pillarScores`, which remains **internal/never exposed** in either phase (§4.4 rule 3, §5.1.1).
-- **AC E1.1.10 —** Given any phase, When any account is serialized in any response, Then **`health.pillarScores` (productAdoption/revenue/login/sentiment), PAS, and velocity/cap internals are never present** in the payload — this is unconditional and independent of phase (§4.4 rule 3, §2.3).
+- **AC E1.1.1 —** Given an authenticated agency, When GoCSM reflects its HL sub-accounts, Then each sub-account is represented as one **Account** (§5.1) with all 11 required sub-objects present (`identity, ownership, status, lifecycle, pipeline, health, login, adoption, revenue, feedback, onboarding`); a sub-account missing a sub-object is hydrated with that sub-object's documented defaults (e.g. `feedback.npsScore = 0` meaning "no feedback yet"; empty arrays for `users/responses/paymentAttempts/planChanges/features/assets`) rather than omitting the key.
+- **AC E1.1.2 —** Given an authenticated agency, When it views its accounts, Then it sees **only** that agency's accounts (§5.10 / NFR-3) — no account belonging to any other agency may appear under any circumstance.
+- **AC E1.1.3 —** Given two distinct agencies that each manage a sub-account with the same logical id, When each views that account, Then each sees **its own** account; account ids are unique **within an agency** only (§5.10), and id collisions across agencies never cross tenant boundaries.
+- **AC E1.1.4 —** Given HL-native data changes upstream (a login, a payment attempt, a plan change, a renewal-date edit, workflow usage, feature usage), When the data is refreshed (kept near-real-time, NFR-2), Then the affected Account sub-objects reflect the latest state, and any "matches right now" / selector / rollup read afterward reflects that latest state (NFR-2).
+- **AC E1.1.5 —** Given an agency with **zero** sub-accounts (brand-new/trial), When it views its accounts, Then it sees an empty account list (not an error), and downstream rollups/selectors return their documented empty values (see E1.3 ACs) rather than throwing.
+- **AC E1.1.6 —** Given an account id that does not exist within the agency, When it is requested, Then it resolves to "not found" — never another agency's account, never a false success.
+- **AC E1.1.7 —** Given a **churned** account (`lifecycle.stage === "churned"`), When it is requested by id, Then it **is** returned (lookup by id includes churned — §5.1.3), even though it is excluded from live-account selectors and the rollup's `liveAccounts`.
+- **AC E1.1.8 — (Phase 1)** Given Phase 1 (Health not configured), When any account is presented anywhere, Then the `health` sub-object and `lifecycle.stage` value are **stripped in the product's data layer, not merely hidden in the UI** (NFR-4): no `health.score`, `health.band`, `health.delta`, `health.trend90d`, `health.pillarScores`, `health.riskSignals`, `health.opportunities`, and no `lifecycle.stage` / `lifecycle.reactivated` Health-coined values appear in any field, preview, or copy.
+- **AC E1.1.9 — (Phase 2)** Given Phase 2 (Health configured), When any account is presented, Then the `health` sub-object and `lifecycle` are included **additively** (score, band, delta, trend90d, riskSignals, opportunities, lifecycle.stage), and **except** `health.pillarScores`, which remains **internal/never exposed** in either phase (§4.4 rule 3, §5.1.1).
+- **AC E1.1.10 —** Given any phase, When any account is presented anywhere, Then **`health.pillarScores` (productAdoption/revenue/login/sentiment), PAS, and velocity/cap internals are never present** — this is unconditional and independent of phase (§4.4 rule 3, §2.3).
 
 **Edge cases & rules:**
-- "Live account" is the universal filter for selectors/rollup but **not** for `accountById` (§5.1.3).
-- `identity.activeDays` is "days since signup − 7" (§5.1.1) and must be recomputed against the current date on each sync, never frozen at ingest.
-- `onboarding.stalled` is **derived** (`days_on_current_step > sla_days`, §5.1.1) and must be recomputed on sync, not trusted from source.
-- Stripping Health in Phase 1 is a **trust/security** requirement (NFR-4), enforced in the serializer, not the UI.
+- "Live account" is the universal filter for selectors/rollup but **not** for lookup by id (§5.1.3).
+- `identity.activeDays` is "days since signup − 7" (§5.1.1) and must be recomputed against the current date as data refreshes, never frozen.
+- `onboarding.stalled` is **derived** (`days_on_current_step > sla_days`, §5.1.1) and must be recomputed as data refreshes, not trusted from source.
+- Stripping Health in Phase 1 is a **trust/security** requirement (NFR-4), enforced in the product's data layer, not the UI.
 
-**Backend/API notes:**
-- `GET /accounts` → `Account[]` (phase-filtered serialization). `GET /accounts/:id` → `Account | 404`.
-- Agency derived from auth (§8 preamble); no agency id is accepted from the client body.
-- Serializer is the single choke point for phase-stripping (E1.4 reuses it for the catalog). The `pillarScores` exclusion is hard-coded, not phase-conditional.
+**Notes:**
+- The agency is derived from auth; no agency id is accepted from the client.
+- The Phase-1 Health strip and the `pillarScores` exclusion are enforced once, in the product's data layer (the same gate the catalog reuses in E1.4), so no internal path can leak a gated value; the `pillarScores` exclusion is unconditional, not phase-conditional.
 
 ---
 
-### Story E1.2 — As the system/backend, I want to detect and store Signals from account state changes and apply the sticky-reverse rule, so that the strongest churn predictor (a critical setup actively being lost) is captured and queryable.
+### Story E1.2 — GoCSM detects account state changes as Signals and applies the sticky-reverse rule, so that the strongest churn predictor (a critical setup actively being lost) is captured and queryable.
 
 **Acceptance criteria:**
 
 - **AC E1.2.1 —** Given an account state change in any tracked subject, When detected, Then a **Signal** (§5.1.2) is persisted with all fields: `id`, `accountId` (FK), `subject` ∈ `{Domain, Phone, A2P, Funnel, Workflow, Login, Payment, Email, Calendar, NPS}`, `type` ∈ `{setup, usage}`, `direction` ∈ `{forward, reverse}`, `sticky` (boolean), `weight` (1–10), `label` (plain-language), `detectedAt` (ISO), `source` ∈ `{ghl, billing, auth, survey}`.
-- **AC E1.2.2 —** Given `GET /accounts/:id/signals` for an account, When served, Then it returns that account's signals **newest-first** (the `signalsForAccount(id)` selector — §5.1.3), agency-scoped, including non-sticky and forward signals (the full log, not only churn signals).
+- **AC E1.2.2 —** Given an account's signals are requested, When served, Then they come back **newest-first** (the `signalsForAccount(id)` selector — §5.1.3), agency-scoped, including non-sticky and forward signals (the full log, not only churn signals).
 - **AC E1.2.3 — (sticky-reverse rule)** Given a signal where `sticky === true` AND `direction === "reverse"` AND `type === "setup"` AND `detectedAt` is within **30 days** of the current date (`daysSince(detectedAt) ≤ 30`), When evaluated, Then the account is flagged as **"actively losing a critical setup"** (the strongest churn signal — §5.1.2), the precise four-way conjunction with **all** clauses required.
 - **AC E1.2.4 —** Given a signal that satisfies only three of the four sticky-reverse clauses (e.g. `sticky` + `reverse` + `setup` but `detectedAt` is 31+ days old; or `reverse` + `setup` + recent but `sticky === false`; or `sticky` + `reverse` + recent but `type === "usage"`; or `sticky` + `setup` + recent but `direction === "forward"`), When evaluated, Then it does **not** flag the account as losing a critical setup (no clause is optional).
-- **AC E1.2.5 — (`lostStickySetups()` selector)** Given the agency's accounts, When `GET /accounts/selector/lost-sticky-setups` is called, Then it returns the **live** accounts that have at least one sticky-reverse-setup signal ≤ 30 days old (§5.1.3), and excludes accounts whose only such signals are older than 30 days or non-sticky/forward/usage.
+- **AC E1.2.5 — (`lostStickySetups()` selector)** Given the agency's accounts, When the "actively losing a critical setup" query runs, Then it returns the **live** accounts that have at least one sticky-reverse-setup signal ≤ 30 days old (§5.1.3), and excludes accounts whose only such signals are older than 30 days or non-sticky/forward/usage.
 - **AC E1.2.6 —** Given an account with **multiple** qualifying sticky-reverse signals, When `lostStickySetups()` is evaluated, Then the account appears **once** (selector returns unique accounts, not signal rows).
-- **AC E1.2.7 —** Given an account with zero signals, When `GET /accounts/:id/signals` is called, Then the response is an empty list (`[]`, 200), and the account does not appear in `lostStickySetups()`.
+- **AC E1.2.7 —** Given an account with zero signals, When its signals are requested, Then the result is an empty list (not an error), and the account does not appear in `lostStickySetups()`.
 - **AC E1.2.8 —** Given the 30-day window is measured relative to the current date (TODAY = 2026-06-17 in fixtures; real now in production), When the same signal is queried on consecutive days, Then a signal at exactly `detectedAt = now − 30d` qualifies (`≤ 30`) and at `now − 31d` does not — the boundary is inclusive at 30.
 - **AC E1.2.9 — (phase-independence)** Given either phase, When signals are detected/stored/queried, Then behavior is identical: **Signal is HL-native event data and is not gated** (it carries no coined Health vocabulary). The `subject`/`type`/`direction`/`sticky` enums and the sticky-reverse rule are available in Phase 1 and Phase 2 alike.
 - **AC E1.2.10 —** Given a malformed inbound state change (unknown subject, weight outside 1–10, missing `detectedAt`), When the detector runs, Then the malformed signal is dropped/quarantined and does **not** corrupt the account's signal log or crash the selector (NFR-9 resilience posture applied to ingest).
@@ -465,10 +409,8 @@ The agency owner's standing choice for **how/where they are told when an account
 - Signals are **distinct** from AttentionSignal definitions (§5.6, Epic E2) and from criteria — do not conflate (§4 glossary note).
 - `lostStickySetups()` operates over **live** accounts (§5.1.3 preamble: "All operate over live accounts unless noted").
 
-**Backend/API notes:**
-- `GET /accounts/:id/signals` → `Signal[]` newest-first.
-- `GET /accounts/selector/lost-sticky-setups` → `Account[]` (live, unique).
-- Sticky-reverse predicate (exact): `s.sticky === true && s.direction === "reverse" && s.type === "setup" && daysSince(s.detectedAt) <= 30`.
+**Notes:**
+- The sticky-reverse rule (exact): a signal counts when it is `sticky` AND `reverse` AND a `setup` change AND detected within the last 30 days; the "actively losing a critical setup" list returns the live, unique accounts that have at least one such signal.
 
 ---
 
@@ -477,21 +419,21 @@ The agency owner's standing choice for **how/where they are told when an account
 **Acceptance criteria:**
 
 - **AC E1.3.1 — (`allAccounts`)** Given the agency, When `allAccounts()` is invoked, Then it returns all **live** accounts (`status.enabled === "Enabled"` AND `lifecycle.stage !== "churned"`); disabled or churned accounts are excluded.
-- **AC E1.3.2 — (`failedPayments`)** Given `GET /accounts/selector/failed-payments`, When served, Then it returns live accounts where `revenue.lastPaymentStatus === "failed"` **OR** any entry in `revenue.paymentAttempts` has `status === "failed"` (§5.1.3) — the OR is required; a succeeded-latest account with a prior failed attempt still matches.
-- **AC E1.3.3 — (`stalledOnboarding`)** Given `GET /accounts/selector/stalled-onboarding`, When served, Then it returns accounts where `onboarding.stalled === true` AND `status.enabled === "Enabled"` (§5.1.3) — note this selector requires `enabled` explicitly.
-- **AC E1.3.4 — (`renewalsWindow`)** Given `GET /accounts/selector/renewals?min=M&max=X`, When served, Then it returns live accounts where `M ≤ daysUntil(renewalDate) ≤ X`, using **signed** `daysUntil` (positive = future, §5.1.3); a renewal already past (negative days) is excluded unless `min` is negative.
-- **AC E1.3.5 — (`lostStickySetups`)** Given the selector endpoint, When served, Then it matches E1.2.5–E1.2.8 exactly (sticky-reverse, ≤ 30d, live, unique).
-- **AC E1.3.6 — (`agencyRollup`)** Given `GET /agency/rollup`, When served, Then it returns `{ totalAccounts, liveAccounts, mrr, mrrAtRisk }` where: `totalAccounts` = count of **all** the agency's accounts (incl. disabled/churned); `liveAccounts` = count of live accounts; `mrr` = sum of `revenue.mrr` over **live** accounts; `mrrAtRisk` = summed MRR of the **unique** accounts currently surfaced as needing attention (§4 "MRR at risk"; the unique-account union computed by Epic E2's queue, summed here).
-- **AC E1.3.7 — (rollup, empty)** Given an agency with zero accounts, When `GET /agency/rollup` is called, Then it returns `{ totalAccounts: 0, liveAccounts: 0, mrr: 0, mrrAtRisk: 0 }` (zeros, not null, 200).
-- **AC E1.3.8 — (Phase-2-only selectors gated)** Given **Phase 1**, When any of `byBand`, `byLifecycle`, `healthDistribution`, `dormantGrowth`, `upsellReady`, `byUrgency` is requested, Then the backend treats them as **unavailable** (they reference coined Health vocabulary): the selector is not served and no Health-derived row is returned (NFR-4). Given **Phase 2**, the same selectors are available and return Health-derived results.
+- **AC E1.3.2 — (`failedPayments`)** Given the failed-payments selector, When run, Then it returns live accounts where `revenue.lastPaymentStatus === "failed"` **OR** any entry in `revenue.paymentAttempts` has `status === "failed"` (§5.1.3) — the OR is required; a succeeded-latest account with a prior failed attempt still matches.
+- **AC E1.3.3 — (`stalledOnboarding`)** Given the stalled-onboarding selector, When run, Then it returns accounts where `onboarding.stalled === true` AND `status.enabled === "Enabled"` (§5.1.3) — note this selector requires `enabled` explicitly.
+- **AC E1.3.4 — (`renewalsWindow`)** Given the renewals-window selector with a min M and max X, When run, Then it returns live accounts where `M ≤ daysUntil(renewalDate) ≤ X`, using **signed** `daysUntil` (positive = future, §5.1.3); a renewal already past (negative days) is excluded unless `min` is negative.
+- **AC E1.3.5 — (`lostStickySetups`)** Given the "actively losing a critical setup" selector, When run, Then it matches E1.2.5–E1.2.8 exactly (sticky-reverse, ≤ 30d, live, unique).
+- **AC E1.3.6 — (`agencyRollup`)** Given the agency rollup, When read, Then it returns `{ totalAccounts, liveAccounts, mrr, mrrAtRisk }` where: `totalAccounts` = count of **all** the agency's accounts (incl. disabled/churned); `liveAccounts` = count of live accounts; `mrr` = sum of `revenue.mrr` over **live** accounts; `mrrAtRisk` = summed MRR of the **unique** accounts currently surfaced as needing attention (§4 "MRR at risk"; the unique-account union computed by Epic E2's queue, summed here).
+- **AC E1.3.7 — (rollup, empty)** Given an agency with zero accounts, When the rollup is read, Then it returns `{ totalAccounts: 0, liveAccounts: 0, mrr: 0, mrrAtRisk: 0 }` (zeros, not null, not an error).
+- **AC E1.3.8 — (Phase-2-only selectors gated)** Given **Phase 1**, When any of `byBand`, `byLifecycle`, `healthDistribution`, `dormantGrowth`, `upsellReady`, `byUrgency` is requested, Then GoCSM treats them as **unavailable** (they reference coined Health vocabulary): the selector is not served and no Health-derived row is returned (NFR-4). Given **Phase 2**, the same selectors are available and return Health-derived results.
 - **AC E1.3.9 — (`byBand` / `byLifecycle` — P2)** Given Phase 2, When `byBand(band)` is called with `band` ∈ `{atrisk, watch, healthy, thriving}`, Then it returns live accounts where `health.band === band`; When `byLifecycle(stage)` with `stage` ∈ `{onboarding, activated, established, lapsing, dormant, churned}`, Then it returns accounts where `lifecycle.stage === stage` (note: `byLifecycle("churned")` may legitimately return churned accounts).
 - **AC E1.3.10 — (`healthDistribution` — P2)** Given Phase 2, When `healthDistribution()` is called, Then it returns `{ thriving, healthy, watch, atrisk: number }` as counts of live accounts per band, using the band thresholds (thriving ≥ 85, healthy 65–84, watch 50–64, atrisk 0–49, §5.1.1); the four counts sum to the live-account count.
 - **AC E1.3.11 — (`dormantGrowth` — P2)** Given Phase 2, When `dormantGrowth()` is called, Then it returns live accounts where `lifecycle.stage === "dormant"` AND `health.delta > 0` AND `login.lastLoginDaysAgo ≤ 14` (§5.1.3) — all three required.
 - **AC E1.3.12 — (`upsellReady` — P2)** Given Phase 2, When `upsellReady()` is called, Then it returns live accounts that are `health.band` ∈ {healthy, thriving} AND rising (`health.delta > 0`) AND spend-up (`revenue.spendTrend ≥ 10`) AND recently logged in (`login.lastLoginDaysAgo ≤ 14` — "recent login") (§5.1.3 "healthy/thriving + rising + spend↑ + recent login").
 - **AC E1.3.13 — (`byUrgency` + urgencyScore — P2)** Given Phase 2, When `byUrgency()` is called, Then it returns live accounts sorted by `urgencyScore` **descending**, where for each account `a`: `riskWeight = (100 − a.health.score) / 100`; `renewalProximity = max(0, 1 − daysUntil(a.revenue.renewalDate)/90)`; `bandFloor = a.health.band === "atrisk" ? 0.4 : a.health.band === "watch" ? 0.2 : 0`; `urgency = max(riskWeight * renewalProximity, bandFloor)` (§5.1.3, verbatim) — ties may be ordered stably by account id.
-- **AC E1.3.14 — (selector empties)** Given any selector with no matching accounts, When served, Then it returns an empty list `[]` (or for `healthDistribution`, all-zero counts) at 200 — never an error.
-- **AC E1.3.15 — (agency isolation on every selector)** Given any selector or the rollup, When served, Then results are strictly the calling agency's accounts (§5.10 / NFR-3); no selector may leak another agency's data even on shared/global selector names.
-- **AC E1.3.16 — (performance)** Given an agency at scale (~1,000 accounts), When any selector or `/agency/rollup` is served, Then it returns within the NFR-1 budget (matchCount/matchAccounts-class reads p95 ≤ 300ms; the queue/facet-class reads p95 ≤ 800ms).
+- **AC E1.3.14 — (selector empties)** Given any selector with no matching accounts, When run, Then it returns an empty list (or for `healthDistribution`, all-zero counts) — never an error.
+- **AC E1.3.15 — (agency isolation on every selector)** Given any selector or the rollup, When run, Then results are strictly the calling agency's accounts (§5.10 / NFR-3); no selector may leak another agency's data even on shared/global selector names.
+- **AC E1.3.16 — (performance)** Given an agency at scale (~1,000 accounts), When any selector or the rollup runs, Then it stays within the NFR-1 responsiveness budget (the "who matches / how many" answers feel instant; the queue and facet reads stay snappy).
 
 **Edge cases & rules:**
 - All selectors except `accountById` operate over **live** accounts (§5.1.3 preamble).
@@ -499,10 +441,9 @@ The agency owner's standing choice for **how/where they are told when an account
 - `spendTrend` is a signed % already on the account (§5.1.1); `≥ 10` is "increasing" per the §5.2 bucketing.
 - `bandFloor` guarantees an at-risk/watch account never sorts to zero urgency even if its renewal is far out.
 
-**Backend/API notes:**
-- `GET /accounts/selector/:name` covers `failed-payments`, `stalled-onboarding`, `lost-sticky-setups`, `renewals?min=&max=` (§8). `byBand/byLifecycle/healthDistribution/dormantGrowth/upsellReady/byUrgency` are Phase-2-gated selector services consumed internally by E2/E3 and exposed only when configured.
-- `GET /agency/rollup` → `{ totalAccounts, liveAccounts, mrr, mrrAtRisk }`.
-- Phase-2 selectors must hard-fail/omit in Phase 1 at the service layer (not just the route), so no internal caller can accidentally surface a band/lifecycle value in a Phase-1 response.
+**Notes:**
+- The Phase-1-safe selectors (failed payments, stalled onboarding, lost sticky setups, renewals window) are always available; the Phase-2-gated selectors (byBand, byLifecycle, healthDistribution, dormantGrowth, upsellReady, byUrgency) are consumed internally by E2/E3 and available only when Health is configured.
+- Phase-2 selectors must be unavailable in Phase 1 in the product's data layer (not merely hidden in the UI), so no internal caller can accidentally surface a band/lifecycle value in a Phase-1 response.
 
 ---
 
@@ -510,27 +451,25 @@ The agency owner's standing choice for **how/where they are told when an account
 
 **Acceptance criteria:**
 
-- **AC E1.4.1 —** Given `GET /criteria/catalog`, When served, Then it returns the curated FieldDef list (§5.2) where each field carries `id`, `group` (one of the 8 AttrGroups), `label`, `phrase`, `type` (FieldType), `unit?`, `options?` (enum value provider, autocompleted from **live** account values), `common?` (shortlist flag), plus the `FieldType → allowed operators` mapping (§5.2) and plain-word operator labels (never symbols — §9.B).
-- **AC E1.4.2 — (Phase 1 strips Health)** Given **Phase 1**, When `GET /criteria/catalog` is served, Then **every `health.*` field is removed** and the entire **"Health & Risk" group** is absent: `health.band`, `health.score`, `health.trend`, `health.riskTags`, `health.lifecycle`, `health.status` do not appear (NFR-4). The catalog returned contains only HL-native fields (Account, Engagement & Login, Feature adoption, Revenue & Billing, Feedback, Users groups).
+- **AC E1.4.1 —** Given the criteria catalog, When read, Then it provides the curated field list (§5.2) where each field carries `id`, `group` (one of the 8 AttrGroups), `label`, `phrase`, `type` (FieldType), `unit?`, an enum value provider (autocompleted from **live** account values), a `common?` shortlist flag, plus the `FieldType → allowed operators` mapping (see §5.2 / `./playbooks-catalog.json`) and plain-word operator labels (never symbols — see `./playbooks-catalog.json`, `filters.operatorLabels`).
+- **AC E1.4.2 — (Phase 1 strips Health)** Given **Phase 1**, When the catalog is read, Then **every `health.*` field is removed** and the entire **"Health & Risk" group** is absent: `health.band`, `health.score`, `health.trend`, `health.riskTags`, `health.lifecycle`, `health.status` do not appear (NFR-4). The catalog then contains only HL-native fields (Account, Engagement & Login, Feature adoption, Revenue & Billing, Feedback, Users groups).
 - **AC E1.4.3 — (Phase 1 keeps HL-native lookalikes)** Given Phase 1, When the catalog is served, Then `account.priority` **remains** present — it is `status.isPriority`, an **HL-native, Phase-1-filterable** Account field, *not* a `health.*` field (§5.1.1, §5.2) — and so do all other non-`health.*` fields (`revenue.failedPayment`, `engagement.lastLoginDays`, `revenue.renewsWithin`, `feature.inUse`, `revenue.mrr`, etc.).
 - **AC E1.4.4 — (Phase 2 includes Health)** Given **Phase 2**, When the catalog is served, Then the "Health & Risk" group and its fields appear **additively** alongside the Phase-1 fields, with their declared types — `health.band` (type `band`, P2 operators `isAnyOf`/`is`), `health.score` (type `score`), `health.trend` (type `trendDir`), `health.riskTags` (type `enum`), `health.lifecycle` (type `enum`), `health.status` (type `enum`) — and nothing that worked in Phase 1 is removed or changed (§4.4 rule 2).
 - **AC E1.4.5 — (always exclude internals)** Given **either** phase, When the catalog is served, Then `health.pillarScores` (productAdoption/revenue/login/sentiment), PAS, and any velocity/cap internal are **never** present as fields (§4.4 rule 3; §5.2: "deliberately ABSENT and must never be added"). This is unconditional, not phase-conditional.
 - **AC E1.4.6 — (band field never in P1)** Given Phase 1, When the catalog operator mapping is served, Then the `band` FieldType and the `health.band` field are absent (since the only band field is gated); the `band` operators (`isAnyOf`, `is`) need not be offered in Phase 1.
 - **AC E1.4.7 — (multi-value field shape)** Given the catalog, When `feature.inUse` and `health.riskTags` (P2) are served, Then they are typed `enum`, documented as CSV-backed (matched by split + set-intersection so `isAnyOf`/`isNoneOf` work — §5.2 footnote), and their `options()` autocomplete from live account values.
 - **AC E1.4.8 — (enum options come from live data)** Given a field with `options()` (e.g. `revenue.plan`, `feature.inUse`, `engagement.activityStatus`), When the catalog is served, Then the option values reflect the calling agency's **live** account values, and in Phase 1 those options never include Health-coined values (e.g. `health.status` is absent entirely, not served with empty options).
-- **AC E1.4.9 — (empty agency)** Given an agency with zero accounts, When `GET /criteria/catalog` is served, Then the field list is still returned in full (the catalog universe is global/seeded — §5.10), but `options()` providers return empty option arrays (no live values to autocomplete) without error.
-- **AC E1.4.10 — (toggle takes effect immediately)** Given an agency that toggles Health on (E1.5), When `GET /criteria/catalog` is called immediately afterward, Then the Health & Risk group appears in the very next response (the catalog is phase-filtered live off `HealthConfig.isConfigured()`, not cached across the toggle).
+- **AC E1.4.9 — (empty agency)** Given an agency with zero accounts, When the catalog is read, Then the field list is still returned in full (the catalog universe is global/seeded — §5.10), but enum value providers return empty option lists (no live values to autocomplete) without error.
+- **AC E1.4.10 — (toggle takes effect immediately)** Given an agency that toggles Health on (E1.5), When the catalog is read immediately afterward, Then the Health & Risk group appears in the very next read (the catalog is phase-filtered live off the Health-config flag, not cached across the toggle).
 
 **Edge cases & rules:**
 - The catalog is **read-only and curated** (§5.2); the field universe is fixed at ~30 fields and the four `pillarScores` are intentionally not in it.
 - `account.priority` is the canonical Phase-1 trap: it *sounds* health-ish but is HL-native (§5.1.1, prototype CLAUDE note) — it must survive Phase-1 stripping.
-- Operator labels are plain words, never symbols (§5.2 / §9.B).
+- Operator labels are plain words, never symbols (§5.2 / `./playbooks-catalog.json`, `filters.operatorLabels`).
 - An unknown `fieldId` evaluating to `false` (NFR-9, §5.3.2) is the engine's concern (Epic E2), but the catalog must never *emit* a gated field in Phase 1 that the engine would then have to drop.
 
-**Backend/API notes:**
-- `GET /criteria/catalog` → `{ fields: FieldDef[], operatorsByType: {...}, operatorLabels: {...} }`, already phase-filtered server-side.
-- Phase filter = remove every field whose `id` starts with `health.` AND remove the "Health & Risk" group when `!isConfigured()`; always remove `pillarScores`/PAS/velocity regardless.
-- Reuse the same serializer choke point as E1.1 so the gate is enforced once.
+**Notes:**
+- The Phase filter removes every `health.*` field and the "Health & Risk" group whenever Health is not configured, and always removes `pillarScores`/PAS/velocity internals regardless of phase. This is the same gate as E1.1, enforced once in the product's data layer (not merely hidden in the UI), so the catalog and the account payloads can never disagree on what is gated.
 
 ---
 
@@ -538,50 +477,48 @@ The agency owner's standing choice for **how/where they are told when an account
 
 **Acceptance criteria:**
 
-- **AC E1.5.1 —** Given `GET /agency/health-config`, When served, Then it returns the per-agency flag as `{ configured: boolean }` (§5.9 `isConfigured()`); default for a new/trial agency is `false` (Phase 1).
-- **AC E1.5.2 —** Given `PUT /agency/health-config` body `{ configured: true }`, When applied, Then the agency transitions to **Phase 2**: subsequent reads of `/accounts*`, `/criteria/catalog`, selectors, and the rollup include Health/lifecycle additively per E1.1.9, E1.3.8–E1.3.13, E1.4.4 (§5.9 drives every Phase-1/Phase-2 branch).
+- **AC E1.5.1 —** Given the Health-config flag, When read, Then it reports the per-agency flag as configured / not configured (§5.9); default for a new/trial agency is not configured (Phase 1).
+- **AC E1.5.2 —** Given the Health-config flag is set to configured, When applied, Then the agency transitions to **Phase 2**: subsequent reads of accounts, the criteria catalog, selectors, and the rollup include Health/lifecycle additively per E1.1.9, E1.3.8–E1.3.13, E1.4.4 (§5.9 drives every Phase-1/Phase-2 branch).
 - **AC E1.5.3 — (additive, non-breaking)** Given an agency that used Phase-1 audiences/fields (e.g. `revenue.failedPayment`, `engagement.lastLoginDays`, `account.priority`), When it toggles Health on, Then **every Phase-1 field, selector result, and saved criteria set continues to work unchanged** (§4.4 rule 2: "Nothing that worked in Phase 1 changes or breaks"); the change is strictly additive.
-- **AC E1.5.4 — (toggle off / Phase-1 restoration)** Given `PUT /agency/health-config` body `{ configured: false }`, When applied (or for an agency that never configured Health), Then the agency is in **Phase 1** and all Health-coined vocabulary disappears from every response again (NFR-4): catalog loses the Health & Risk group, accounts are stripped of `health`/`lifecycle.stage`, and Phase-2 selectors become unavailable — without erroring on any previously-saved Health-referencing criteria (gated fields simply drop, never throw — §5.3.2 unknown-field rule).
-- **AC E1.5.5 — (per-agency isolation of the flag)** Given two agencies, When agency A sets `configured: true` and agency B stays `false`, Then A is Phase 2 and B is Phase 1 independently (§5.10: "autopilot status, drafts, health-config … are per-agency"); one agency's toggle never affects another's phase.
-- **AC E1.5.6 — (idempotency)** Given an agency already in Phase 2, When `PUT /agency/health-config { configured: true }` is sent again, Then it is a no-op success (no duplicate state, no side effects) — consistent with NFR-6 idempotency.
-- **AC E1.5.7 — (immediate effect across surfaces)** Given the flag flips, When the very next `/criteria/catalog`, `/accounts`, selector, or `/agency/rollup` request is served, Then it already reflects the new phase (the flag is read live per request, server-side; no stale phase served — pairs with E1.4.10).
-- **AC E1.5.8 — (Health setup completeness, P2 data)** Given an agency in Phase 2 whose nightly scoring family has **not yet populated** `health.*` for some accounts, When those accounts are served, Then missing Health values are handled gracefully (account still returned; Health-dependent selectors simply exclude accounts lacking the required Health fields) rather than erroring — Phase 2 is additive, never a hard prerequisite (§1.3, §4.4 rule 2).
-- **AC E1.5.9 — (auditability)** Given any `PUT /agency/health-config`, When applied, Then the transition is timestamped and attributable (who/when — NFR-7), consistent with the auditability requirement for state changes.
+- **AC E1.5.4 — (toggle off / Phase-1 restoration)** Given the Health-config flag is set back to not configured (or for an agency that never configured Health), When applied, Then the agency is in **Phase 1** and all Health-coined vocabulary disappears from everywhere again (NFR-4): catalog loses the Health & Risk group, accounts are stripped of `health`/`lifecycle.stage`, and Phase-2 selectors become unavailable — without erroring on any previously-saved Health-referencing criteria (gated fields simply drop, never throw — §5.3.2 unknown-field rule).
+- **AC E1.5.5 — (per-agency isolation of the flag)** Given two agencies, When agency A configures Health and agency B does not, Then A is Phase 2 and B is Phase 1 independently (§5.10: "autopilot status, drafts, health-config … are per-agency"); one agency's toggle never affects another's phase.
+- **AC E1.5.6 — (idempotency)** Given an agency already in Phase 2, When Health is set to configured again, Then it is a no-op success (no duplicate state, no side effects) — consistent with NFR-6 idempotency.
+- **AC E1.5.7 — (immediate effect across surfaces)** Given the flag flips, When the very next catalog, accounts, selector, or rollup read happens, Then it already reflects the new phase (the flag is read live per request, in the product's data layer; no stale phase served — pairs with E1.4.10).
+- **AC E1.5.8 — (Health setup completeness, P2 data)** Given an agency in Phase 2 whose scoring pipeline has **not yet populated** `health.*` for some accounts, When those accounts are presented, Then missing Health values are handled gracefully (account still returned; Health-dependent selectors simply exclude accounts lacking the required Health fields) rather than erroring — Phase 2 is additive, never a hard prerequisite (§1.3, §4.4 rule 2).
+- **AC E1.5.9 — (auditability)** Given any change to the Health-config flag, When applied, Then the transition is timestamped and attributable (who/when — NFR-7), consistent with the auditability requirement for state changes.
 
 **Edge cases & rules:**
 - Phase 2 must **never** be a prerequisite for any Phase-1 capability (§1.3) — turning Health on only *adds*.
 - A saved criteria set that references a `health.*` field is valid in Phase 2 and silently drops (evaluates to no-match on those criteria) if the agency reverts to Phase 1 (§5.3.2) — it must not corrupt or error the set.
 - The flag is the single source of truth for the phase gate; no other signal (e.g. presence of a band value on an account) may be used to infer phase.
 
-**Backend/API notes:**
-- `GET /agency/health-config` → `{ configured }`. `PUT /agency/health-config` body `{ configured }` → `{ configured }`.
-- The flag must be consulted by the **serializer** (E1.1/E1.4 choke point) and by the **selector layer** (E1.3) on every request, server-side (NFR-4).
+**Notes:**
+- The Health-config flag is the single phase gate: it is consulted by the account-presentation layer (E1.1/E1.4) and the selector layer (E1.3) on every read, in the product's data layer (not merely hidden in the UI), so the phase can never be inferred from anything other than the flag.
 
 ---
 
-### Story E1.6 — As the system/backend, I want every read and write strictly agency-scoped with account ids unique within an agency, so that no agency can ever see or mutate another agency's data.
+### Story E1.6 — Every read and write is strictly agency-scoped with account ids unique within an agency, so that no agency can ever see or mutate another agency's data.
 
 **Acceptance criteria:**
 
-- **AC E1.6.1 —** Given any endpoint in this epic (`/accounts*`, `/accounts/selector/*`, `/agency/rollup`, `/criteria/catalog`, `/agency/health-config`), When served, Then the agency is derived from auth (§8 preamble) and the response is scoped to exactly that agency (§5.10 / NFR-3); an agency id supplied in the request body/query is ignored or rejected.
-- **AC E1.6.2 —** Given a request that attempts to read another agency's account by id (`GET /accounts/:id` where `:id` belongs to a different tenant), When served, Then the backend returns 404 (indistinguishable from "not found"), never that account's data.
+- **AC E1.6.1 —** Given any read or write in this epic (accounts, account selectors, the rollup, the criteria catalog, the Health-config flag), When served, Then the agency is derived from auth and the result is scoped to exactly that agency (§5.10 / NFR-3); an agency id supplied by the client is ignored or rejected.
+- **AC E1.6.2 —** Given an attempt to read another agency's account by id, When served, Then it resolves to "not found" (indistinguishable from a genuinely missing account), never that account's data.
 - **AC E1.6.3 —** Given account ids are unique **within** an agency (§5.10 / NFR-3), When two agencies coincidentally use the same id, Then each agency's reads resolve to its own account and never collide.
-- **AC E1.6.4 — (writes scoped)** Given any write in this epic (`PUT /agency/health-config`; signal ingest; account sync), When applied, Then it mutates only the calling agency's state; no write can target or affect another agency's accounts, signals, or health-config (§5.10).
+- **AC E1.6.4 — (writes scoped)** Given any write in this epic (changing the Health-config flag; signal detection; account refresh), When applied, Then it mutates only the calling agency's state; no write can target or affect another agency's accounts, signals, or health-config (§5.10).
 - **AC E1.6.5 — (selectors scoped)** Given any selector or rollup, When served, Then it computes only over the calling agency's accounts (re-asserts E1.3.15) — including the global/seeded catalog and playbook definitions, whose **instance data** (`options()`, impact counts) is still computed per-agency.
 - **AC E1.6.6 — (global vs per-agency boundary)** Given the catalog and playbook **definitions** are global/seeded (§5.10), When served, Then the *definitions* may be shared but all *derived/instance* values (autopilot status, drafts, health-config, saved criteria sets, enum options, match counts) are per-agency and never shared (§5.10).
 - **AC E1.6.7 — (no cross-tenant leakage under error)** Given an internal error while serving one agency, When the error surfaces, Then it must not include another agency's data in messages/logs returned to the client (NFR-3 isolation extends to error payloads).
 
 **Edge cases & rules:**
-- Isolation is enforced **server-side on every read/write** (§5.10 final sentence; NFR-3) — not at the UI.
+- Isolation is enforced **in the product's data layer on every read and write** (§5.10 final sentence; NFR-3) — not merely hidden in the UI.
 - The only global, shareable artifacts are **definitions** (criteria catalog universe, playbook templates, recipe templates); everything instance-level is tenant-bound.
 
-**Backend/API notes:**
-- Every endpoint resolves `agencyId` from auth before any data access; data-access layer takes `agencyId` as a mandatory parameter (no default/global scope path exists).
-- A shared composite key `(agencyId, accountId)` guarantees within-agency uniqueness and cross-agency non-collision.
+**Notes:**
+- The agency is resolved from auth before any data access; there is no path that reads or writes without an agency scope, and account ids are unique within an agency and never collide across agencies.
 
 ---
 
-### Story E1.7 — As the system/backend, I want every criteria-catalog derived field computed server-side and kept in sync with source data, so that audiences match on correct, current values and the restatement/previews never show stale or wrong numbers.
+### Story E1.7 — Every criteria-catalog derived field is computed in the product's data layer and kept in sync with source data, so that audiences match on correct, current values and the restatement/previews never show stale or wrong numbers.
 
 **Acceptance criteria:**
 
@@ -601,15 +538,14 @@ The agency owner's standing choice for **how/where they are told when an account
 - **AC E1.7.14 — (empty/zero data)** Given an account with `npsScore === 0` (no feedback), empty `paymentAttempts`, empty `features`, or `activeDays < 30`, When derivations run, Then they produce the documented empty/floor results (sentiment treats 0 as no-feedback; `failedPayment` false absent any failed attempt; `feature.neverUsed` true; `lifetimeSpend = mrr × 1`) without error.
 
 **Edge cases & rules:**
-- Derived fields are computed **server-side** and are the values the criteria engine (Epic E2) reads via `get(account)` — they must be authoritative and current (NFR-2).
+- Derived fields are computed **in the product's data layer** (not merely in the UI) and are the values the criteria engine (Epic E2) reads per account — they must be authoritative and current (NFR-2).
 - The `failedPayment` derivation and the `failedPayments()` selector share one predicate; they must not diverge.
 - Any derivation that leans on Health (`health.delta`, band-based fallbacks) is gated/omitted in Phase 1 (NFR-4) — a Phase-1 derived value may never be computed from a Health input.
-- Multi-value derived fields (`feature.inUse`, `health.riskTags`) are CSV-encoded and matched by split + set-intersection (§5.2 footnote).
+- Multi-value derived fields (`feature.inUse`, `health.riskTags`) are stored comma-separated and matched by split + set-intersection (§5.2).
 
-**Backend/API notes:**
-- Derivations back the `get(account)` readers referenced by `GET /criteria/catalog` (E1.4) and consumed by `POST /audience/*` (Epic E2).
-- Compute derivations in the sync/materialization step (or memoized per-request off fresh source), keyed `(agencyId, accountId)`, recomputed each NFR-2 cycle.
-- Exact formulas to implement verbatim: `activityStatus` (≤7/8–30/31–52/>52); `spendTrend` (≤−10 / −10<x<10 / ≥10); `sentiment` (NPS≥9 → very happy, then happy/neutral/unhappy, 0 = none); `lifetimeSpend = mrr × max(1, activeDays/30)`; `failedPayment = lastPaymentStatus === "failed" || any paymentAttempts.status === "failed"`; `renewsWithin = daysUntil(renewalDate)`; `rating = npsScore/2` (Phase-1: no band fallback); `keyOnly = any LoginUser.keyUser`; `idleDays = lastLoginDaysAgo`.
+**Notes:**
+- These derived values back the criteria catalog (E1.4) and are consumed by the audience matching (Epic E2); they are recomputed against fresh source each refresh cycle (NFR-2), never cached stale.
+- Exact rules to apply: `activityStatus` (≤7/8–30/31–52/>52); `spendTrend` (≤−10 / −10<x<10 / ≥10); `sentiment` (NPS≥9 → very happy, then happy/neutral/unhappy, 0 = none); `lifetimeSpend = mrr × max(1, activeDays/30)`; `failedPayment = lastPaymentStatus === "failed" OR any paymentAttempts.status === "failed"`; `renewsWithin = daysUntil(renewalDate)`; `rating = npsScore/2` (Phase-1: no band fallback); `keyOnly = any LoginUser.keyUser`; `idleDays = lastLoginDaysAgo`.
 
 ---
 
@@ -619,8 +555,8 @@ The agency owner's standing choice for **how/where they are told when an account
 **User value:** Mo opens GoCSM and, with zero setup, sees "N sub-accounts need attention · $X MRR at risk"; a **"Start here today"** card set telling him exactly which 2–3 plays to turn on first (with the $ and accounts each protects); a one-click-to-act queue; a short "automation couldn't fix this, reach them directly" list for the ones that need a human; and a "tell me when an account needs me" control so the work comes to his Slack/email/Asana on his cadence. As plays go live the activation module **recedes** into a calm daily-triage banner.
 **In scope:** queue derivation from AttentionSignal definitions; the two metrics (with dedup); the **Start-here recommendation module** (deterministic ranking via `recommendedPlays`, per-play valence `mrrKind`, the summed-coverage line, the adaptive recede→graduation); per-row state/copy/routing; the Job-B "Step in" layer (incl. the **Attempt** entity); the **Notify-me escalation config** (**NotifyConfig** §5.11); empty/zero states; the nav-less `/embed/attention` route's data parity.
 **Out of scope:** the AttentionSignal *catalog authoring* (definitions are seeded — §5.6; production extends them); the matching engine internals (E5); the setup flow a row opens into (E4); lifecycle transitions (E6); the embed shell mechanics (E7); **real Slack/Asana/email delivery** (the escalation config persists intent + is Connect-stubbed — production wires the actual send/handoff); any LLM in the ranking (the rank is deterministic and transparent — production may add AI *narrative* only, never the verdict).
-**Dependencies:** E1 (accounts, signals, phase gate, selectors); E5 (`matchAccounts`, `playbookImpact`, `recommendedPlays`); E4 (setup flow a row/card routes into); E6 (AutopilotStatus per play — drives both the row state and the recede→graduation); E1 `agencyRollup` reuses `mrrAtRisk`.
-**Data & services touched:** **AttentionSignal** §5.6, **Account** §5.1, **Playbook** §5.5 (`signal`, `playbookImpact`, `recommendedPlays`, `mrrKind`/`MRR_KIND_NOUN`), **AutopilotStatus** §5.7, **WorkflowDraft** §5.8, the **Attempt** entity defined in E2.4, and **NotifyConfig** §5.11. Endpoints (§8): `GET /attention/queue` → `{ items, needing, mrrAtRisk }`, `GET /attention/recommend` → `{ recommended }`, `GET /attention/stepin` → `{ attempts }`, `GET|PUT /attention/notify-config` → **NotifyConfig**.
+**Dependencies:** E1 (accounts, signals, phase gate, selectors); E5 (matching, per-play impact, the recommendation ranking); E4 (setup flow a row/card routes into); E6 (a play's deployment status — drives both the row state and the recede→graduation); E1's rollup reuses **MRR at risk**.
+**Data & entities touched:** **AttentionSignal** §5.6, **Account** §5.1, **Playbook** §5.5 (Situation, per-play impact, the recommendation ranking, the money-valence rule), **AutopilotStatus** §5.7, **WorkflowDraft** §5.8, the **Attempt** entity defined in E2.4, and **NotifyConfig** §5.11. Capabilities relied on (§8): produce the queue plus its two hero numbers (accounts needing attention + MRR at risk); produce the start-here recommendations; produce the Step-in list; read and update the escalation preference.
 
 > **QueueItem** = an AttentionSignal definition resolved against today's accounts: `{ ...AttentionSignal, count: number, accounts: Account[] }`.
 
@@ -631,10 +567,10 @@ The agency owner's standing choice for **how/where they are told when an account
 - **AC E2.1.3 — (Phase 1)** Given `health-config.isConfigured() === false`, When the queue is generated, Then only `tier === "native"` definitions are evaluated (e.g. `sig-payment-failed`, `sig-no-login`); no `tier === "health"` definition appears and no Health vocabulary leaks (NFR-4).
 - **AC E2.1.4 — (Phase 2)** Given `isConfigured() === true`, When the queue is generated, Then `tier === "native"` **and** `tier === "health"` definitions are evaluated and merged into one queue (still sorted by priority desc).
 - **AC E2.1.5 —** Given the phase flag changes, When the queue is next requested, Then it is re-derived for the new phase (no stale cross-phase queue served).
-- **AC E2.1.6 — (empty)** Given no definition matches any account, When `GET /attention/queue` is served, Then `items` is `[]` and the UI shows the empty state (E2.5).
-- **AC E2.1.7 —** Given agency isolation (§5.10), When the queue is generated, Then `matchAccounts` runs only over the calling agency's live accounts.
+- **AC E2.1.6 — (empty)** Given no definition matches any account, When the queue is produced, Then it has no items and the UI shows the empty state (E2.5).
+- **AC E2.1.7 —** Given agency isolation (§5.10), When the queue is generated, Then matching runs only over the calling agency's live accounts.
 **Edge cases & rules:** an account may match multiple definitions and therefore appear in multiple QueueItems (dedup is handled at the metric/row level, not by removing it from items). `AttentionSignal` definitions are global/seeded; their `set` is phase-evaluated like any CriteriaSet.
-**Backend/API notes:** `GET /attention/queue` → `{ items: QueueItem[], needing, mrrAtRisk }`. QueueItem serialization is phase-filtered (Phase 1 strips band/lifecycle from each `accounts[]` element, E1.1.8).
+**Notes:** each QueueItem is phase-filtered (Phase 1 strips band/lifecycle from every account it carries, E1.1.8).
 
 ### Story E2.2 — As Mo, I want two top-line numbers — how many accounts need me and how much MRR is at risk — so that I grasp the stakes in three seconds.
 **Acceptance criteria:**
@@ -642,10 +578,10 @@ The agency owner's standing choice for **how/where they are told when an account
 - **AC E2.2.2 — (`mrrAtRisk`)** Given the queue, When `mrrAtRisk` is computed, Then it equals the sum of `revenue.mrr` over those **unique** accounts (never double-counted): iterate items, track seen account ids in a set, add `mrr` once per first-seen account.
 - **AC E2.2.3 —** Given `needing === 0`, When the hero renders, Then the two metrics are **not shown** (the empty state E2.5 renders instead); Given `needing ≥ 1`, Then both metrics render.
 - **AC E2.2.4 — (Pattern 1: no naked numbers)** Given the metrics render, When displayed, Then each carries a plain-language subtext — `needing` → "sub-accounts need attention"; `mrrAtRisk` → "MRR at risk" — and the `$` figure is styled in the at-risk/red treatment.
-- **AC E2.2.5 —** Given `mrrAtRisk` is reused by `GET /agency/rollup` (E1.3.6), When both are computed for the same agency at the same time, Then they are equal (single source of truth for the unique-account union).
+- **AC E2.2.5 —** Given `mrrAtRisk` is also reported in the agency rollup (E1.3.6), When both are computed for the same agency at the same time, Then they are equal (single source of truth for the unique-account union).
 - **AC E2.2.6 — (Phase parity)** Given either phase, When the metrics compute, Then they use only the accounts surfaced by that phase's queue (Phase 1 = native-only union; Phase 2 = native+health union).
 **Edge cases & rules:** the union/sum operate on the same QueueItems the rows render from (consistency). An account with `mrr = 0` still counts toward `needing` but adds 0 to `mrrAtRisk`.
-**Backend/API notes:** both numbers are part of `GET /attention/queue`'s response so the hero and queue never disagree.
+**Notes:** the hero numbers and the queue are produced together, so they never disagree.
 
 ### Story E2.3 — As Mo, I want each queue row to tell me the event, what it means, the stakes, and a one-click action, so that I can act without thinking.
 **Acceptance criteria:**
@@ -655,10 +591,10 @@ The agency owner's standing choice for **how/where they are told when an account
 - **AC E2.3.4 — (state: draft)** Given the play is not live but a WorkflowDraft exists for it, When the row renders, Then it shows a "Draft" badge and the action is **Resume setup** → reopens the flow restoring the draft (E4.5).
 - **AC E2.3.5 — (state: set-up, native)** Given the play is off, has no draft, and the signal is `tier === "native"`, When the row renders, Then no badge shows and the action is **Set up playbook**.
 - **AC E2.3.6 — (state: set-up, health)** Given the play is off, has no draft, and the signal is `tier === "health"` (Phase 2 only), When the row renders, Then it shows a "From Health" badge and the action is **Set up playbook**.
-- **AC E2.3.7 — (routing)** Given the owner clicks anywhere on the row or its action, When it activates, Then it navigates to `/playbooks/{signal.playbookId}` (the setup flow, E4); if a draft exists for that play, the flow opens resuming the draft.
+- **AC E2.3.7 — (routing)** Given the owner clicks anywhere on the row or its action, When it activates, Then it opens the setup flow for that signal's play (E4); if a draft exists for that play, the flow opens resuming the draft.
 - **AC E2.3.8 — (Phase 1)** Given Phase 1, When a row renders, Then neither the title, meaning, stake note, nor badge contains any Health-coined word; the "From Health" badge never appears (only native signals are present).
 **Edge cases & rules:** the stake `mrr` is the **per-item** sum (not the global dedup), so two rows may each include the same account's MRR — that is correct at the row level (the dedup applies only to the hero `mrrAtRisk`). `fmtMoney` = "$" + rounded, thousands-separated.
-**Backend/API notes:** the row's state derives from `AutopilotStatus.status(playbookId)` (§5.7) + `hasDraft(recipeId)` (§5.8). The queue endpoint may include per-item `mrr` + `names` precomputed, or the client derives them from `accounts[]`.
+**Notes:** the row's state derives from the play's deployment status (§5.7) plus whether a draft exists (§5.8).
 
 ### Story E2.4 — As Mo, I want a "Step in" list of accounts a play ran on but didn't fix, so that I personally reach the ones automation couldn't save.
 **Acceptance criteria:**
@@ -670,23 +606,21 @@ The agency owner's standing choice for **how/where they are told when an account
 - **AC E2.4.6 — (contact actions)** Given a Step-in row, When it renders, Then it offers direct contact actions — **Call** (`tel:`), **Email** (`mailto:`), **SMS** (`sms:`) — plus a **"Why"** link to `/accounts/{accountId}`.
 - **AC E2.4.7 — (empty)** Given no Attempt qualifies for either group, When the page renders, Then the entire "Step in" section is **omitted** (not an empty card).
 - **AC E2.4.8 —** Given the section renders, When grouped, Then high-confidence failures appear above low-confidence/unconfirmed.
-**Edge cases & rules:** an Attempt that `improved` never appears in Step-in. `ranDaysAgo ≥ 1` excludes same-day runs from the high-confidence group. Agency-scoped (§5.10).
-**Backend/API notes:** `GET /attention/stepin` → `{ attempts: Attempt[] }` already phase-filtered (P1 strips pillar/score fields). The two groups can be computed client-side from `status`/`confidence`/`ranDaysAgo` or returned pre-grouped.
+**Edge cases & rules:** an Attempt that `improved` never appears in Step-in. `ranDaysAgo ≥ 1` excludes same-day runs from the high-confidence group. The Step-in list is phase-filtered (Phase 1 strips the pillar/score fields). Agency-scoped (§5.10).
 
 ### Story E2.5 — As Mo, I want a calm, reassuring state when nothing needs me, so that an empty queue reads as "you're covered", not "broken".
 **Acceptance criteria:**
 - **AC E2.5.1 —** Given `needing === 0` (no QueueItems), When the page renders, Then it shows "Nothing needs attention right now — GoCSM is watching your sub-accounts." and does not render the two hero metrics.
 - **AC E2.5.2 —** Given no qualifying Attempts, When the page renders, Then the "Step in" section is omitted (E2.4.7).
 - **AC E2.5.3 —** Given an agency with zero accounts at all, When the page renders, Then it shows the same calm empty state (no error), consistent with E1.1.5.
-**Backend/API notes:** the empty state is driven purely by `items.length === 0` / `attempts.length === 0`.
 
 ### Story E2.6 — As Mo, I want the Attention page inside my HighLevel menu, so that I act without leaving HighLevel.
 **Acceptance criteria:**
 - **AC E2.6.1 —** Given `/embed/attention`, When loaded as a HighLevel custom-menu-link iframe, Then it renders the same queue/metrics/Step-in content **nav-less** (per E7.3) with identical data and phase behavior.
 - **AC E2.6.2 —** Given a row is clicked inside the embed, When it routes to the setup flow, Then navigation stays nav-less within the iframe (E7.3.3).
-**Backend/API notes:** no new endpoints — same agency-scoped `GET /attention/queue` + `GET /attention/stepin`; the nav-less shell is the E7 `IS_EMBED` mechanism.
+**Notes:** the embed serves the same agency-scoped queue and Step-in content as the full page; only the nav-less shell differs (the E7 embed mechanism).
 
-### Story E2.7 — As Mo, I want the page to tell me exactly which 2–3 playbooks to turn on first, so that I activate the highest-value automation today instead of drowning in 57 choices.
+### Story E2.7 — As Mo, I want the page to tell me exactly which 2–3 playbooks to turn on first, so that I activate the highest-value automation today instead of drowning in dozens of choices.
 **Context:** Activation is the page's day-one job. The competitor pattern is a sortable *wall*; GoCSM's wedge is a **hard top 2–3** with the stakes on the card and a one-click turn-on. The ranking is **deterministic and transparent** (it *is* the at-risk $ across N accounts), never a black box — AI may later write the narrative, never decide the order.
 **Acceptance criteria:**
 - **AC E2.7.1 — (`recommendedPlays` selector)** Given the play catalog, When recommendations are computed, Then `recommendedPlays({healthConfigured, isLive})` returns non-live plays (`isLive(id) === false`) that match ≥1 account today (`playbookImpact(p).count > 0`), each as `{ p, impact: {count, mrr} }`, sorted by `impact.mrr` desc → `impact.count` desc → `usedByAgencies` desc.
@@ -697,8 +631,7 @@ The agency owner's standing choice for **how/where they are told when an account
 - **AC E2.7.6 — (focal #1 + summed coverage)** Given ≥1 recommendation, When the module renders, Then the **#1** card is visually dominant (full-width, one solid-blue focal action) and the others are a quieter secondary set (soft-blue actions) — exactly one solid focal per screen; and a summed line states coverage as a **subset of the hero total**: "they cover `{fmtMoney(covered)}` of your `{fmtMoney(mrrAtRisk)}` at risk" where `covered` = summed `revenue.mrr` over the **unique** accounts across the top cards (each counted once). When `covered ≥ mrrAtRisk`, the copy collapses to "cover all `{mrrAtRisk}` at risk." The #1 card carries a transparent **"why it's #1"** basis (it is the largest single block of revenue any one play can act on) — stated as fact, **not** as an "AI pick."
 - **AC E2.7.7 — (More playbooks, receded)** Given recommendations beyond the top 3, When the "More playbooks for your accounts" list renders (activation phase only), Then it shows the next ~6 as quiet, account-led rows (`{count} accounts · {fmtMoney(mrr)} {valence noun}`) with a plain "Set up" action and a "Browse all {N} playbooks" link — depth without a wall, never out-competing the focal cards.
 - **AC E2.7.8 — (one-click routing)** Given any card or its action is activated, When it fires, Then it routes to the play's setup flow (E4), resuming a draft if one exists (E4.5).
-**Edge cases & rules:** ranking ties fall through `mrr → count → usedByAgencies` deterministically (stable order across reloads). A play going live mid-session drops out of recommendations on next derivation (E2.8). The summed `covered` uses the **unique-account union** (same discipline as `mrrAtRisk`, E2.2) so it is always ≤ the hero total.
-**Backend/API notes:** `GET /attention/recommend` → `{ recommended: RecommendedPlay[] }` (phase-filtered like the queue). `RecommendedPlay = { p: Playbook, impact: {count, mrr} }`. `mrrKind`/`MRR_KIND_NOUN` live with the Playbook model (§5.5). Production may attach an AI-generated `whyNow` string per card, but the **order and the $ remain server-deterministic**.
+**Edge cases & rules:** ranking ties fall through `mrr → count → usedByAgencies` deterministically (stable order across reloads). A play going live mid-session drops out of recommendations on next derivation (E2.8). The summed `covered` uses the **unique-account union** (same discipline as `mrrAtRisk`, E2.2) so it is always ≤ the hero total. The recommendation list is phase-filtered like the queue; production may attach an AI-generated "why now" line per card, but the **order and the $ stay deterministic** (AI narrative only, never the verdict).
 
 ### Story E2.8 — As Mo, I want the activation push to fade as I turn plays on, so that the page graduates from "set this up" to "here's today's work" without me ever configuring a mode.
 **Acceptance criteria:**
@@ -707,8 +640,7 @@ The agency owner's standing choice for **how/where they are told when an account
 - **AC E2.8.3 — (ops phase / graduation)** Given the ops phase, When the page renders, Then "Start here" collapses to a slim banner — "You're live — `{liveCount}` playbooks running. Check back here for the accounts that still need you." — with a quiet "`{N}` more playbooks ready when you are" link; "Step in" and the queue lead; the "More playbooks" wall is **not** shown.
 - **AC E2.8.4 — (copy heading shifts)** Given the activation module renders with `liveCount === 0` vs `liveCount` 1–2, When the heading renders, Then it reads "Start here today" vs "Turn on a couple more" (eyebrow "Recommended · activate first" vs "Recommended · next best") — never AI-framed.
 - **AC E2.8.5 — (no jarring reset)** Given a play is turned on, When the page re-derives, Then the transition is additive (recommendations recompute, the live count rises) with no full-page reset or lost scroll context.
-**Edge cases & rules:** the threshold `< 3` matches the top-N cap (E2.7.3) — once the owner has turned on the recommended set, the push is done. If recommendations are exhausted before 3 are live, the page still graduates (no empty activation module).
-**Backend/API notes:** derived purely from `AutopilotStatus.listOn()` (§5.7) + the recommendation count; no new endpoint. A one-time "you're live" graduation cue may be tracked client-side.
+**Edge cases & rules:** the threshold `< 3` matches the top-N cap (E2.7.3) — once the owner has turned on the recommended set, the push is done. If recommendations are exhausted before 3 are live, the page still graduates (no empty activation module). The phase is derived purely from the count of live plays plus the recommendation count — never a stored setting.
 
 ### Story E2.9 — As Mo, I want to tell GoCSM where and how often to alert me when an account needs a human, so that the work comes to me (Slack/email/Asana) and I'm not forced to open this page every day.
 **Context:** Modeled operator-grade (Linear channel-toggles + GitHub scheduled-reminder), **not** a rules engine. One card, one sentence: channel × cadence + loop-in-owner. Lives inline on the "Step in" section.
@@ -719,29 +651,27 @@ The agency owner's standing choice for **how/where they are told when an account
 - **AC E2.9.4 — (owner is a semantic token)** Given "Also notify the account's owner" is on, When it renders, Then "the account's owner" is a **semantic token** (resolves per-account to the sub-account's personnel) shown as a preview chip "→ the account's owner" — never a typed email field. Off by default (at ~1,000 accounts, realtime + owner would flood the owner).
 - **AC E2.9.5 — (collapsed summary)** Given the config is collapsed, When it renders, Then a one-line summary states the current state, e.g. "Daily digest at 9:00am → Email" (channels joined), "· owner looped in" appended when on, or "Off — you'll only see these here" when no channel is selected.
 - **AC E2.9.6 — (digest preview, scoped)** Given `cadence === "digest"` and ≥1 channel, When the preview renders, Then it shows a sample scoped to the Step-in set: "Your daily Step-in digest — `{stepInCount}` accounts automation couldn't fix." (the count is the Step-in/Attempt set, **distinct** from the hero `needing`).
-- **AC E2.9.7 — (persistence)** Given any control changes, When updated, Then NotifyConfig persists immediately (prototype: localStorage `gocsm.notify.v1`; production: `PUT /attention/notify-config`) and the summary reflects it.
+- **AC E2.9.7 — (persistence)** Given any control changes, When updated, Then NotifyConfig persists immediately (per agency) and the summary reflects it.
 - **AC E2.9.8 — (no AI)** Given the config, When it renders, Then **no AI** is involved (no "smart routing"/suggested cadence) — alert routing the owner can't predict is untrustworthy; the violet AI accent never appears here.
-**Edge cases & rules:** selecting an unconnected channel connects it but does not auto-enable delivery (connect ≠ subscribe). Digest vs realtime is the only timing control; production batches the digest at `digestTime` in the agency's timezone. Agency-scoped (§5.10).
-**Backend/API notes:** `GET|PUT /attention/notify-config` → **NotifyConfig**. Production wires actual delivery (Slack app / Asana API / transactional email) and the owner-resolution lookup; the prototype stubs Connect + delivery and persists intent only.
+**Edge cases & rules:** selecting an unconnected channel connects it but does not auto-enable delivery (connect ≠ subscribe). Digest vs realtime is the only timing control; production batches the digest at `digestTime` in the agency's timezone. Production wires the actual delivery (Slack / Asana / email) and the owner-resolution lookup; the prototype persists intent only. Agency-scoped (§5.10).
 
 ---
 
 ## E3 — Playbooks catalog & marketplace (the Library)
 
-**Goal:** Serve the 57-play catalog as a browsable storefront — a faceted filter rail (Category · Situation · Setup effort · Highlights), full-text search, sort, an AI-pick hero, and rich cards — plus the read side of "Your playbooks" (Live/Drafts/Paused/Archived grouping).
+**Goal:** Serve the play catalog — a growing library (~57 seeded today) — as a browsable storefront — a faceted filter rail (Category · Situation · Setup effort · Highlights), full-text search, sort, an AI-pick hero, and rich cards — plus the read side of "Your playbooks" (Live/Drafts/Paused/Archived grouping).
 **User value:** Mo finds the right play in seconds — filtered by what's happening ("Slipping"), by outcome ("Win back at-risk"), or by effort ("Ready to go") — sees real social proof and *his own* at-risk $ on each card, and gets one AI-recommended place to start.
 **In scope:** catalog serving + per-play impact; the four facets with **faceted cross-counting**; search; the three sorts; the AI-pick hero selection; the MarketCard payload; the read-side grouping of Your-playbooks; the empty state.
-**Out of scope:** the lifecycle *actions* (Pause/Resume/Archive/Restore/Discard) and the state machine (**E6**); the setup flow a card opens (**E4**); the Situation rating *definition* (§5.5.2); the catalog seed authoring (§9.C).
+**Out of scope:** the lifecycle *actions* (Pause/Resume/Archive/Restore/Discard) and the state machine (**E6**); the setup flow a card opens (**E4**); the Situation rating *definition* (§5.5.2); the catalog data itself (now in `./playbooks-catalog.json`).
 **Dependencies:** E1 (accounts → impact, phase gate); E5 (`matchesToday`/`playbookImpact`); E6 (AutopilotStatus drives Live/Paused/Archived + the card status pill); E4 (Resume/Set up routing).
-**Data & services touched:** **Playbook** §5.5 (+ enums, `playbookImpact`, `isNewPlaybook`), **AutopilotStatus** §5.7, **WorkflowDraft** §5.8. Endpoints (§8): `GET /playbooks?{q,category,signal[],effort[],highlight[],sort}` → `{ items, facetCounts }`, `GET /playbooks/:id/impact`, `GET /playbooks/ai-pick`, `GET /deployments?status=`.
+**Data & services touched:** **Playbook** §5.5 (+ enums, `playbookImpact`, `isNewPlaybook`), **AutopilotStatus** §5.7, **WorkflowDraft** §5.8.
 
 ### Story E3.1 — As Mo, I want the full play library with real popularity and my own at-risk $, so that I can judge each play at a glance.
 **Acceptance criteria:**
-- **AC E3.1.1 —** Given `GET /playbooks`, When served, Then each play carries its marketplace metadata (`usedByAgencies`, `totalRuns`, `launchedDaysAgo`, `trending`, `effort`, `signal`/Situation, `category`, `title`, `subtitle`, `icon`, `problem`) plus `impact = playbookImpact(p) = { count, mrr }` computed from `matchesToday(p)` over the agency's live accounts.
+- **AC E3.1.1 —** Given the library, When served, Then each play carries its marketplace metadata (`usedByAgencies`, `totalRuns`, `launchedDaysAgo`, `trending`, `effort`, `signal`/Situation, `category`, `title`, `subtitle`, `icon`, `problem`) plus `impact = playbookImpact(p) = { count, mrr }` computed from `matchesToday(p)` over the agency's live accounts.
 - **AC E3.1.2 — (Phase 1)** Given Phase 1, When `impact` is computed for a play whose predicate references Health, Then it is computed from HL-native data only (Health-dependent predicates contribute no matches until Phase 2); the card still appears (its Situation label is plain-word, not Health vocab — §5.5.2 note).
 - **AC E3.1.3 — (Phase 2)** Given Phase 2, When `impact` is computed, Then Health-dependent predicates participate and `impact.count`/`mrr` may increase additively.
 - **AC E3.1.4 —** Given agency isolation, When impact is computed, Then it uses only the calling agency's accounts (§5.10).
-**Backend/API notes:** `playbookImpact` = `{ count: matchesToday(p).length, mrr: Σ revenue.mrr over matchesToday(p) }`. `GET /playbooks/:id/impact` → `{count, mrr}` for a single play.
 
 ### Story E3.2 — As Mo, I want to narrow the library by category, situation, effort, and highlights with live counts, so that I can find the right play fast and always see how many fit.
 **Acceptance criteria:**
@@ -753,14 +683,12 @@ The agency owner's standing choice for **how/where they are told when an account
 - **AC E3.2.6 — (Phase 1)** Given Phase 1, When facets render, Then the Situation facet uses the plain-word labels (no Health-band words); no facet exposes Health vocabulary.
 - **AC E3.2.7 — (clear)** Given any facet/search active, When the owner clicks "Clear all filters", Then all facets + search reset and the full catalog shows.
 **Edge cases & rules:** the cross-counting rule is the standard faceted-search one: a facet's own selection is excluded from its own counts so options never drop to 0 just because they're selected. A facet with nothing checked imposes no filter.
-**Backend/API notes:** `GET /playbooks` returns `{ items, facetCounts: { category: {id→n, all:n}, signal: {band→n}, effort: {key→n}, highlight: {new:n, trending:n} } }`. Compute each facet's counts against the result set filtered by *all other* facets + q.
 
 ### Story E3.3 — As Mo, I want to search the library in plain words, so that I can jump straight to a play I have in mind.
 **Acceptance criteria:**
 - **AC E3.3.1 —** Given a search query `q`, When applied, Then results keep plays where the lowercased concatenation of `title + " " + subtitle + " " + problem + " " + categoryLabel(category)` **includes** `q.trim().toLowerCase()` (case-insensitive substring).
 - **AC E3.3.2 —** Given `q` is empty/whitespace, When applied, Then search imposes no filter.
 - **AC E3.3.3 —** Given `q` is active, When facet counts compute, Then they honor `q` (search is part of "all other facets" for cross-counting, E3.2).
-**Backend/API notes:** `?q=` on `GET /playbooks`; matched fields fixed as above.
 
 ### Story E3.4 — As Mo, I want to sort the library by what matters, so that the most relevant plays are first.
 **Acceptance criteria:**
@@ -768,7 +696,6 @@ The agency owner's standing choice for **how/where they are told when an account
 - **AC E3.4.2 — (Highest impact)** Given sort = "impact", When applied, Then results sort by `playbookImpact(p).mrr` desc, then `playbookImpact(p).count` desc, then `usedByAgencies` desc (exact tie-break chain).
 - **AC E3.4.3 — (Newest)** Given sort = "new", When applied, Then results sort by `launchedDaysAgo` **ascending** (freshest first).
 - **AC E3.4.4 —** Given any sort, When results render, Then the active sort persists across facet/search changes until the owner changes it; default is "used".
-**Backend/API notes:** `?sort=used|impact|new`. "impact" requires per-play impact (agency-scoped), so sort runs after impact is computed.
 
 ### Story E3.5 — As Mo, I want one AI-recommended play to start with, so that I'm never paralyzed by choice.
 **Acceptance criteria:**
@@ -777,7 +704,7 @@ The agency owner's standing choice for **how/where they are told when an account
 - **AC E3.5.3 — (copy)** Given the pick has `impact.mrr > 0`, When the hero renders, Then it reads "Turn this on first — it works on ${impact.mrr} at risk across {impact.count} of your accounts today." + "Picked because it covers the most at-risk revenue across your accounts right now."; given `mrr === 0`, Then "A popular place to start — used by {usedByAgencies} agencies." + "Picked because nothing's at risk today — this is the most-trusted way to get ahead."
 - **AC E3.5.4 — (de-dup)** Given the AI pick is shown, When the grid renders, Then the picked play is **removed** from the grid below (no duplicate card).
 - **AC E3.5.5 —** Given the hero CTA "Set up", When clicked, Then it opens the setup flow for the picked play (E4).
-**Backend/API notes:** `GET /playbooks/ai-pick` → the single play + the computed copy fields. Selection is agency-scoped (impact depends on the agency's accounts).
+**Notes:** the AI-pick selection is agency-scoped (the impact it ranks on depends on the agency's own accounts).
 
 ### Story E3.6 — As Mo, I want each play card to show its status, situation, social proof, and my at-risk $, so that I can decide in three seconds.
 **Acceptance criteria:**
@@ -786,19 +713,16 @@ The agency owner's standing choice for **how/where they are told when an account
 - **AC E3.6.3 — (footer)** Given the card footer, When it renders, Then it shows the effort label (Ready to go / Quick setup / Add your wording) and a quiet CTA: "Manage" if Live, "Resume" if a draft exists, else "Set up".
 - **AC E3.6.4 — (whole-card click)** Given the card, When clicked anywhere, Then it opens the setup/detail flow for that play (E4) — the CTA is a visual affordance, not the only target.
 - **AC E3.6.5 — (Phase 1)** Given Phase 1, When a card renders, Then the Situation pill + all copy avoid Health-band words; `impact` reflects HL-native matches only.
-**Backend/API notes:** card status derives from `AutopilotStatus.status(id)` + `hasDraft(recipeId)`; `isNewPlaybook` = `launchedDaysAgo ≤ 14`.
 
 ### Story E3.7 — As Mo, I want a "Your playbooks" tab grouping what I've deployed, so that I can see and manage my live, draft, paused, and archived plays.
 **Acceptance criteria:**
 - **AC E3.7.1 —** Given the "Your playbooks" tab, When it renders, Then it groups into four ordered sections: **Live** (`status==="on"`; "Running on N clients · next run tonight"), **Drafts** (a saved WorkflowDraft whose play isn't already live; "Draft · {recipe blurb}"), **Paused** (`status==="paused"`; "Paused · would run on N accounts"), **Archived** (`status==="archived"`; "Archived · history kept").
 - **AC E3.7.2 —** Given each row, When it renders, Then it exposes the management actions owned by **E6** (Live: Edit/Pause; Drafts: Resume setup/Discard; Paused: Resume/Archive; Archived: Restore).
 - **AC E3.7.3 — (empty)** Given no live, paused, draft, or archived plays, When the tab renders, Then it shows "No live playbooks yet" + a "Browse the library" button.
-**Backend/API notes:** `GET /deployments?status=on|paused|archived` + `GET /drafts` feed the four sections. The *read* grouping is E3; the *actions* are E6.
 
 ### Story E3.8 — As Mo, I want a clear empty result when my filters match nothing, so that I'm never stuck on a blank grid.
 **Acceptance criteria:**
 - **AC E3.8.1 —** Given active facets/search that match zero plays, When the grid renders, Then it shows "Nothing matches these filters" + a "Clear all" action that resets facets + search.
-**Backend/API notes:** driven by `items.length === 0` with any facet/search active.
 
 ---
 
@@ -807,6 +731,8 @@ The agency owner's standing choice for **how/where they are told when an account
 **Goal:** Provide one reusable, full-page **3-step setup & activation flow** that takes an owner from a chosen play (from the marketplace, the Attention queue, or the Accounts table) to a **live or once-run deployment** in ≤ 1 minute, with draft autosave/resume and idempotent publishing. The flow renders identically regardless of entry point; only its seed (recipe vs. fixed-selection) differs.
 
 **User value:** Mo ("see a problem → a play running on the right accounts in ≤ 3 clicks / ≤ 1 minute") gets a guided, no-jargon path: watch what the play does, confirm he's edited it in HighLevel, see who it'll run on in plain English with a live count, and publish — never losing work if he steps away, never double-deploying if he taps Publish twice.
+
+**Why the sequence is ordered and gated.** Activation is deliberately staged in a fixed order — **Action (set up & publish the workflow) → Trigger (who it runs on) → Review → only then does it fire**. Nothing runs on a single account until Review & publish; the workflow must be set up and the audience chosen first, and the owner himself **acknowledges completion** ("I've completed this", which we verify against the workflow being published) rather than GoCSM polling HighLevel to detect it. This is the *same* sequence the three steps already present to the owner ("What it does → When & who → Review"), simply stated here as the gating rule: each step's gate must pass before the next, and publish is the single moment of arming.
 
 **In scope:**
 - The persistent flow **header** (back · problem title · "Draft saved" indicator), the 3-step **Stepper**, and the sticky **footer** with context-aware CTAs.
@@ -829,13 +755,12 @@ The agency owner's standing choice for **how/where they are told when an account
 - **Epic E7** (HL integration) owns the handoff that arms the workflow.
 - §5.4 **Recipe** (seed sets + Phase-1 strip rule), §5.5 **Playbook** (`does`, `actions`, `videoUrl`, `usedByAgencies`, `totalRuns`), §5.8 **WorkflowDraft**, §5.9 **Health config** (`isConfigured()`), §5.3.5 `describeSet`.
 
-**Data & services touched** (per §8; HL integration is **external** — see E7):
-- `GET /drafts/:recipeId` · `PUT /drafts/:recipeId` · `DELETE /drafts/:recipeId` (§5.8 autosave/load/clear; `GET /drafts` for any "resume your setups" surface).
-- `POST /audience/count` and `POST /audience/preview` (live count in ②, phase-gated preview rows in ③) · `POST /audience/describe` (the ③ "When & who" card).
-- `POST /playbooks/:id/publish` body `{ set, oversee, fixedAccountIds? }` → `{ deploymentId, status }`.
-- `POST /playbooks/:id/enable` (lifecycle off→on with `oversee`) — invoked **by** publish for ongoing/autopilot-ON deployments; idempotent (§5.7, §8).
-- `GET /playbooks/:id` (header title, `does`, video, social proof), `GET /criteria/catalog` (phase-filtered; consumed by E5 inside ②).
-- `GET /agency/health-config` (drives the Phase-1 strip and the ③ preview branch).
+**§5 entities & capabilities touched** (HL integration is **external** — see E7):
+- **WorkflowDraft** §5.8 — autosave/load/clear keyed by recipe, plus a "resume your setups" listing.
+- Audience capabilities (§8) — the live match count in ②, the phase-gated account preview in ③, and the plain-English audience restatement on the ③ "When & who" card.
+- The **publish** capability — arms a play on the chosen audience with the selected oversight, and (ongoing / autopilot-ON) drives the lifecycle off→on transition (§5.7), idempotently.
+- **Playbook** §5.5 — header title, `does`, video, and social proof — and the phase-filtered **criteria catalog** §5.2 (consumed by E5 inside ②).
+- The **Health-config flag** §5.9 — drives the Phase-1 strip and the ③ preview branch.
 
 ---
 
@@ -853,8 +778,7 @@ The agency owner's standing choice for **how/where they are told when an account
 - Entry without a `recipeId` (a bare play with no seeded recipe) ⇒ Step ② seeds an **empty** `CriteriaSet` (`{match:"all", criteria:[]}`).
 - A `playbookId` that does not resolve ⇒ flow does not open; the entry surface shows a "play unavailable" error (no blank shell).
 - Fixed-selection and recipe-seed are mutually exclusive at open: if both `fixedAccountIds` and a `recipeId` are supplied, **`fixedAccountIds` wins** (fixed mode).
-
-**Backend/API notes:** The flow is keyed by `recipeId` for drafts (§5.8). In fixed-selection mode there is typically **no recipe**, so use a synthetic, stable draft key (e.g. `fixed:{playbookId}`) **or** skip draft persistence entirely (fixed runs are short, single-session) — the chosen convention must be deterministic so a resume maps to the same key. `GET /playbooks/:id` supplies header/social-proof/video/`does`.
+- Drafts are keyed per recipe (§5.8). Fixed-selection runs typically have no recipe, so they may either be persisted under a stable per-play key or skip draft persistence entirely (fixed runs are short and single-session) — whichever convention is chosen, a resume must always map deterministically back to the same in-progress setup.
 
 ---
 
@@ -872,8 +796,7 @@ The agency owner's standing choice for **how/where they are told when an account
 - `workflowReady` is **per-draft** (lives in the WorkflowDraft, §5.8), not global — switching plays resets it.
 - The "Open & modify it" deep link targets the play's HL workflow editor (URL contract owned by E7); if the link is unavailable, the action still renders but surfaces an "open HighLevel" fallback — it must never silently no-op while leaving Continue gated with no path forward.
 - Social-proof numbers come straight from the playbook record; if `usedByAgencies`/`totalRuns` are 0, show the literal "Used by 0 agencies · 0 runs" (do not hide — honesty over polish) OR a neutral "New play" treatment, per copy spec; default is the literal counts.
-
-**Backend/API notes:** `workflowReady` is a boolean field on the WorkflowDraft payload; setting it is an autosave (`PUT /drafts/:recipeId`). No HL state is read back to verify the edit — the confirm is the source of truth (the handoff contract, E7, is **trust-the-owner**). Video/`does`/social proof are read-only from `GET /playbooks/:id`.
+- The owner's "I've completed this" confirm is the **source of truth** for the HighLevel edit — GoCSM never reads HL state back to verify it (the E7 handoff is **trust-the-owner**); the confirm setting `workflowReady` is itself an autosave.
 
 ---
 
@@ -893,8 +816,7 @@ The agency owner's standing choice for **how/where they are told when an account
 - If, after stripping, the set still yields count 0 (e.g., the only Phase-1-safe criterion matches nobody today), Continue stays disabled with the standard count-0 messaging — not an error.
 - Fixed list of accounts that have since become non-live (disabled/churned) between selection and setup: filter to live accounts for the run; if all selected went non-live, treat as empty and block publish with a clear "no eligible accounts" message.
 - This story's contract is the **step**, not the builder; all field/operator/NL/group behavior is deferred to Epic E5.
-
-**Backend/API notes:** Live count via `POST /audience/count {set}`; phase-gated preview rows via `POST /audience/preview` (band/composition only in Phase 2). Phase strip is enforced **server-side** when returning the seeded catalog/set (NFR-4) — the UI also strips, but server is authoritative. Fixed-selection carries `fixedAccountIds[]` straight through to publish (no `set` semantics needed for the run, though a descriptive set may be stored for display).
+- The phase strip is authoritative in the data layer, not merely in the UI (NFR-4): the seeded catalog/set arrives already phase-filtered. The fixed selection is carried straight through to publish (the run needs no criteria query; a descriptive set may be stored only for display).
 
 ---
 
@@ -914,8 +836,7 @@ The agency owner's standing choice for **how/where they are told when an account
 - In Phase 2, if the match count is ≤ 5, show all rows and no "+N more"; if exactly 5, show 5 rows and "+0 more" is suppressed.
 - `INVENTORY_FLOOR = 5` (§5.3.5): in ongoing mode, when the set matches ≤ 5 accounts, surface the narrow-audience caution (carried from E5's builder) but **do not block** publish at ③.
 - The Autopilot toggle's value is what determines whether publish enables autopilot (E4.5); toggling it OFF in ongoing mode publishes a one-time run over the **current** matches without arming future matching.
-
-**Backend/API notes:** `describeSet` via `POST /audience/describe {set}` → `{ sentence }`. Preview rows via `POST /audience/preview {set}` → `{ count, accounts:[{id,name,mrr,band?}] }` — `band` and any `composition` are present **only in Phase 2**; in Phase 1 the UI uses only `count` even if the endpoint returns more (server must phase-filter regardless). The Autopilot toggle maps to the publish payload's `oversee` activation path (E4.5).
+- The preview's band/composition fields exist **only in Phase 2**; in Phase 1 only the count is available, and that gating happens in the data layer (NFR-4), not merely in the UI. The Autopilot toggle drives the oversight chosen at publish (E4.5).
 
 ---
 
@@ -927,23 +848,21 @@ The agency owner's standing choice for **how/where they are told when an account
 - **AC E4.5.3 —** Given the owner reopens the flow for a `recipeId` that **has a saved draft**, When the flow opens, Then it **restores** the saved `step`, `criteria`/`nodes`, and `workflowReady`, and notifies the owner **"Picked up where you left off"**.
 - **AC E4.5.4 —** Given the owner reopens the flow for a `recipeId` with **no** saved draft, When the flow opens, Then it starts fresh at Step ① with the recipe/empty seed and **no** resume notice.
 - **AC E4.5.5 —** Given a draft is restored in **Phase 1**, When Step ② re-seeds from the restored set, Then any `health.*` criteria in the restored draft are **stripped** on display (the Phase-1 rule applies to restored drafts too, not just fresh recipe seeds).
-- **AC E4.5.6 —** Given the owner explicitly **discards** the setup (e.g., a "discard draft" affordance) or **publishes**, When that completes, Then the draft is **cleared** (`DELETE /drafts/:recipeId`).
+- **AC E4.5.6 —** Given the owner explicitly **discards** the setup (e.g., a "discard draft" affordance) or **publishes**, When that completes, Then the draft is **cleared**.
 
 **Edge cases & rules:**
-- Autosave is **per change**, so rapid edits should be coalesced/debounced server-side; the latest write wins and `savedAt` advances monotonically.
+- Autosave is **per change**, so rapid edits should be coalesced/debounced; the latest write wins and `savedAt` advances monotonically.
 - A resumed draft whose `workflowReady === false` restores to its saved step but keeps the Step-① gate unsatisfied (resume does not fabricate readiness).
 - Drafts are **per-agency** (§5.10) — agency isolation enforced on every draft read/write.
-- Fixed-selection runs may opt out of draft persistence (E4.1 note); if they do persist, the same restore/clear rules apply under the synthetic key.
-
-**Backend/API notes:** `PUT /drafts/:recipeId` (upsert, body = the WorkflowDraft minus the key) on every step/criteria/`workflowReady` change; `GET /drafts/:recipeId` on open (404/empty ⇒ fresh start, present ⇒ restore + notice); `DELETE /drafts/:recipeId` on publish or discard. `savedAt` is epoch ms, server-set on write. The Phase-1 `health.*` strip on restore is applied at read/seed time (server-filtered per NFR-4).
+- Fixed-selection runs may opt out of draft persistence (E4.1 note); if they do persist, the same restore/clear rules apply.
 
 ---
 
 ### Story E4.6 — As Mo, I want to publish and have the play go live (or run once) immediately, so that the right accounts get handled without further setup.
 
 **Acceptance criteria:**
-- **AC E4.6.1 —** Given Step ③ in **ongoing mode with Autopilot ON**, When the owner clicks **Publish**, Then the system calls `POST /playbooks/:id/publish` with `{ set, oversee }`, the play's **AutopilotStatus transitions off→on** with the chosen **OverseeMode** (default `auto`), the draft is **cleared**, and a calm success state/toast shows **"Your playbook is now live"** with the sub-line **"{title} — first check runs tonight"**.
-- **AC E4.6.2 —** Given Step ③ in **fixed-selection mode**, When the owner clicks **Publish on N accounts**, Then the system calls `POST /playbooks/:id/publish` with `{ set?, fixedAccountIds }` (no autopilot armed), the play runs **once on exactly those N accounts**, the draft (if any) is cleared, and the success state shows **"{title} — running on N accounts now"**.
+- **AC E4.6.1 —** Given Step ③ in **ongoing mode with Autopilot ON**, When the owner clicks **Publish**, Then the play goes live on the chosen audience with the selected oversight — its **AutopilotStatus transitions off→on** with the chosen **OverseeMode** (default `auto`) — the draft is **cleared**, and a calm success state/toast shows **"Your playbook is now live"** with the sub-line **"{title} — first check runs tonight"**.
+- **AC E4.6.2 —** Given Step ③ in **fixed-selection mode**, When the owner clicks **Publish on N accounts**, Then the play runs **once on exactly those N accounts** (no autopilot armed), the draft (if any) is cleared, and the success state shows **"{title} — running on N accounts now"**.
 - **AC E4.6.3 —** Given Step ③ in **ongoing mode with Autopilot OFF**, When the owner publishes, Then the play runs once over the **current** matching accounts **without** transitioning AutopilotStatus to `on` (no future matches are handled), the draft is cleared, and a success state confirms the one-time run.
 - **AC E4.6.4 —** Given the owner clicks Publish **twice** on the same draft (double-tap, retry, or re-open-and-republish of an already-published draft), When the second publish is received, Then it is **idempotent** — **no duplicate live deployment** is created and AutopilotStatus is not toggled again (enabling an already-on play is a no-op, NFR-6, §5.7).
 - **AC E4.6.5 —** Given a publish succeeds, When the success state is shown, Then the flow is in a terminal published state (no stale "Continue"/"Publish" CTA that could re-fire), and the entry surface reflects the new live/once-run deployment.
@@ -951,12 +870,10 @@ The agency owner's standing choice for **how/where they are told when an account
 - **AC E4.6.7 —** Given the audience match count is **0** at the moment of publish in ongoing mode (e.g., accounts changed since Step ②), When Publish is attempted, Then publish is **blocked** with the count-0 messaging (consistent with the E4.3.5 gate) — no empty deployment is armed.
 
 **Edge cases & rules:**
-- **Idempotency key:** the publish is keyed by `(agencyId, playbookId, recipeId)` for ongoing, or `(agencyId, playbookId, fixedAccountIds-set)` for fixed; a repeat with the same key returns the **existing** `deploymentId` rather than creating a new one.
-- A play that is **already `on`** for this agency being re-published: the publish updates the audience/oversee on the existing deployment rather than creating a second (no duplicate active deployment per play+agency).
+- **Idempotency:** a repeat publish of the same setup resolves to the **existing** deployment rather than creating a new one — the same play + agency + audience never produces two live deployments.
+- A play that is **already `on`** for this agency being re-published: the publish updates the audience/oversight on the existing deployment rather than creating a second (no duplicate active deployment per play+agency).
 - Success copy is exact: ongoing → "Your playbook is now live" / "{title} — first check runs tonight"; fixed → "{title} — running on N accounts now". The resume notice is exactly "Picked up where you left off" (E4.5.3).
 - Publishing does **not** wait on HL execution — it arms the workflow and returns; actual sends happen in HighLevel (E7).
-
-**Backend/API notes:** `POST /playbooks/:id/publish` body `{ set, oversee, fixedAccountIds? }` → `{ deploymentId, status }`. Ongoing+autopilot-ON ⇒ server invokes the lifecycle `enable(id, oversee)` (off→on, §5.7) as part of publish; fixed/autopilot-OFF ⇒ a once-run deployment that does **not** call `enable`. Idempotency enforced via the key above; a duplicate returns the prior `{deploymentId}` with `status` unchanged. Draft cleared with `DELETE /drafts/:recipeId` **only** on success. Every publish is timestamped/attributable (NFR-7). The HL arming itself is the **external** handoff specified in Epic E7.
 
 ---
 
@@ -964,54 +881,55 @@ The agency owner's standing choice for **how/where they are told when an account
 
 ## E5 — Trigger / audience criteria builder & matching engine
 
-**Goal:** The engine and UX that let an owner define "who a play runs on" — the phase-filtered field catalog (30 fields), the matching engine (count / preview / plain-English restatement / forecast), and the two-mode builder (Simple prebuilt quick-add with no AI; Advanced natural-language compile + a one-level boolean rule builder), with a live count that expands to the actual matching accounts.
+**Goal:** The engine and UX that let an owner define "who a play runs on" — the phase-filtered field catalog (30 fields), the matching engine (count / preview / plain-English restatement / forecast), and the two-mode builder (Simple prebuilt quick-add with no AI; Advanced natural-language describe-to-rules + a one-level boolean rule builder), with a live count that expands to the actual matching accounts.
 **User value:** Mo narrows a play to exactly the right accounts in plain English — tapping prebuilt filters or describing his audience in a sentence — always seeing the rule restated plainly and exactly who matches right now, never touching a boolean string or a coined term.
-**In scope:** the catalog service; `evalCriterion`/`matchAccounts`/`matchCount`/`describeSet`/`forecast7d`/`composition`; the two modes + the non-destructive toggle; deterministic NL compile; the live restatement; the live count + expand-accounts disclosure; per-type value contracts + `makeCriterion` defaults; recipes as seeds.
-**Out of scope:** a real LLM (deterministic compiler only — production may swap behind the same contract); a second nesting level; exposing PAS/pillar scores; the setup-flow chrome around the builder (E4); persisting the resulting set as a deployment (E4/E7).
+
+**Why the trigger is built this way (the activation rationale).** The trigger is deliberately **simple for activation** (§5.3). **Simple mode** keeps a tiny, relevant default — **plan + priority are the universal base**, and the shipped prototype additionally surfaces the **1–2 most relevant filters per play** (the playbook-aware quick-add). A **"Customize"** path opens a **Simple | Advanced** choice; **Advanced** exposes the full attribute rule builder across the field groups (User · Account · Revenue & billing · Feature adoption · Sentiment). In Advanced the owner can also **describe the audience in plain words and get editable rules** — production uses **real AI** for this (a one-time cost incurred per activation), and the prototype demonstrates it **deterministically** behind the *same* describe→editable-rules contract. Every play ships **default criteria, always shown in plain English**, and a **live count + $ at risk** ("$8,400 at risk · 5 accounts") gives the owner immediate social proof that the rule is real. (The founder's original "Simple = plan + priority only" was later refined to this playbook-aware quick-add — both serve the same anti-overwhelm goal of keeping the day-one trigger tiny and relevant.)
+
+**In scope:** the catalog service; `evalCriterion`/`matchAccounts`/`matchCount`/`describeSet`/`forecast7d`/`composition`; the two modes + the non-destructive toggle; describe-to-rules (real AI in production, deterministic in the prototype, same contract); the live restatement; the live count + expand-accounts disclosure; per-type value contracts + `makeCriterion` defaults; recipes as seeds.
+**Out of scope:** describe-to-rules **uses real AI in production** (the prototype demonstrates it deterministically behind the same contract — not a separate behavior); a second nesting level; exposing PAS/pillar scores; the setup-flow chrome around the builder (E4); persisting the resulting set as a deployment (E4/E7).
 **Dependencies:** E1 (phase-filtered catalog, accounts, derived fields).
-**Data & services touched:** **CriteriaSet/Criterion/Group/Node** §5.3, **criteria catalog** §5.2, **Recipe** §5.4. Endpoints (§8): `GET /criteria/catalog`, `POST /audience/count`, `POST /audience/preview`, `POST /audience/describe`, `POST /audience/compile-nl`.
+**§5 entities touched:** **CriteriaSet/Criterion/Group/Node** §5.3, **criteria catalog** §5.2, **Recipe** §5.4. Capabilities relied on (§8): serve the phase-filtered field catalog; answer the live match count and the account preview; restate an audience in plain English; turn a plain-words description into editable rules.
 
 ### Story E5.1 — As Mo, I want only the filters I'm allowed to use, organized the way I think, so that I'm never shown jargon or internal scores.
 **Acceptance criteria:**
-- **AC E5.1.1 —** Given `GET /criteria/catalog`, When served, Then it returns the **30** FieldDefs (§5.2) grouped into the 8 AttrGroups, each with `id, group, label, phrase, type, unit?, options?, common?`, plus the `FieldType→operators` map and the plain-word operator labels (§9.B). The ~7 `common` fields are flagged for the "Common" shortlist surfaced first.
+- **AC E5.1.1 —** Given the criteria catalog, When served, Then it returns the **30** FieldDefs (§5.2) grouped into the 8 AttrGroups, each with `id, group, label, phrase, type, unit?, options?, common?`, plus the `FieldType→operators` map and the plain-word operator labels (§9.B). The ~7 `common` fields are flagged for the "Common" shortlist surfaced first.
 - **AC E5.1.2 — (Phase 1)** Given Phase 1, When served, Then the "Health & Risk" group and every `health.*` field are absent (E1.4.2); `account.priority` (HL-native) **remains**.
 - **AC E5.1.3 — (Phase 2)** Given Phase 2, When served, Then Health & Risk fields appear additively with their types/operators (E1.4.4).
 - **AC E5.1.4 — (always excluded)** Given either phase, When served, Then `pillarScores`/PAS/velocity internals are never present (E1.4.5).
 - **AC E5.1.5 — (enum options)** Given a field with `options?()`, When served, Then options autocomplete from the agency's live account values; empty agency → empty options, no error.
-**Backend/API notes:** `GET /criteria/catalog` is the E1.4 service; this story consumes it.
+**Notes:** the catalog this story consumes is the same phase-filtered catalog produced in E1.4.
 
-### Story E5.2 — As the system, I want to evaluate any criteria set against accounts deterministically, so that "who matches / how many" is always correct.
+### Story E5.2 — As Mo, I want "who matches / how many" to always be exactly right for any audience I build, so that I can trust the rule before I publish it.
 **Acceptance criteria:**
 - **AC E5.2.1 — (set semantics)** Given a CriteriaSet, When `matchAccounts(set)` runs, Then it starts from **live** accounts; if `nodesOf(set)` is empty it returns all live; else with `set.match==="all"` an account must pass **all** top-level nodes, with `"any"` **any** node. `matchCount(set) = matchAccounts(set).length`.
 - **AC E5.2.2 — (group semantics, one level)** Given a Group node, When evaluated, Then 0 criteria → true; else AND if `group.match==="all"`, OR if `"any"`. Groups never contain groups (one level only) — a set with deeper nesting is invalid input.
 - **AC E5.2.3 — (operators)** Given `evalCriterion`, When applied, Then each operator behaves exactly: `lt/gt/gte/lte/eq` numeric; `between` ⇒ value ∈ [lo,hi]; `is` ⇒ boolean/string equality; `isNot` ⇒ string inequality; `isAnyOf` ⇒ set-intersection ≠ ∅ over the CSV field; `isNoneOf` ⇒ set-intersection = ∅; `contains/startsWith` ⇒ case-insensitive substring/prefix; `inNext` ⇒ `0 ≤ days ≤ N`; `inLast` ⇒ `−N ≤ days ≤ 0`; `moreThanAgo` ⇒ `days < −N`; `within` ⇒ `|days| ≤ N`; `falling` ⇒ value `< 0`; `rising` ⇒ value `> 0`. `N` from DateRelValue: `weeks→×7, months→×30, else n`.
 - **AC E5.2.4 — (unknown field)** Given a criterion whose `fieldId` is not in the (phase-filtered) catalog, When evaluated, Then it returns **false** (drop, never error) — a single bad criterion never fails the whole evaluation (NFR-9). A health.* criterion in Phase 1 therefore drops silently.
-- **AC E5.2.5 — (live count contract)** Given the builder, When criteria change, Then `POST /audience/count` returns the new count (debounced server-side ~150–250ms ok), at p95 ≤ 300ms over ~1,000 accounts (NFR-1).
-- **AC E5.2.6 — (preview, phase-gated)** Given `POST /audience/preview`, When served, Then it returns `{ count, accounts: [{id,name,mrr, band?}], composition?, forecast7d? }` where `band`/`composition`/`forecast7d` are present **only in Phase 2** (NFR-4).
+- **AC E5.2.5 — (live count contract)** Given the builder, When criteria change, Then the new match count is returned and the update **feels instant** over an agency's full account set (~1,000) (NFR-1).
+- **AC E5.2.6 — (preview, phase-gated)** Given the account preview, When served, Then it returns the count, the matching accounts (name + monthly $, plus band in Phase 2), and — **only in Phase 2** — the audience composition and the about-to-match forecast (NFR-4).
 - **AC E5.2.7 —** Given agency isolation, When any match runs, Then only the calling agency's live accounts are considered.
-**Backend/API notes:** `POST /audience/count {set}`→`{count}`; `POST /audience/preview {set}`→ as above. Invariant: `criteria` is always the flattened leaves of `nodes` (§5.3.3).
+**Edge cases & rules:** the flat `criteria` mirror is always the flattened leaves of `nodes` (§5.3.3), so count and preview agree no matter which view the rule was built in.
 
 ### Story E5.3 — As Mo, I want two ways to build the audience — a simple prebuilt list or an advanced builder — and to switch without losing work, so that easy cases stay easy and hard cases are possible.
 **Acceptance criteria:**
-- **AC E5.3.1 — (Simple, no AI)** Given Simple mode, When it renders, Then it shows a **prebuilt quick-add list** (the play's default filters — see E5.3.1a / §9.C.3), lightly grouped by display group (Account · Billing · Feature · Feedback · Users); tapping an item adds a fully-formed editable Criterion seeded by `makeCriterion` defaults (E5.7); a field already in use is hidden from the quick-add; a "Browse all fields" launcher opens the full categorized + searchable picker. **No NL/AI control appears in Simple.**
-- **AC E5.3.1a — (playbook-aware defaults)** Given a play with an `audienceKind` (§5.5.1), When the Simple quick-add renders, Then the offered fields = `defaultFiltersFor(playbook)` (§9.C.3): the **table-stakes** account filters **Priority account · Plan · Last login** on *every* play; the play's **domain pack** by category (winback → Renewing soon · MRR; revenue → Payment failed · MRR · Renewing soon; adoption → Feature in use · Signed up; onboard → Signed up; grow → MRR · Spend trend; reengage → Signed up; listen → Sentiment · MRR); and — **only for `audienceKind: "user"` plays** (login / individual-user-activity triggers) — the **user pack** **User role · Key users · A user gone quiet**. Account-level plays show **no** user filters. With no play context (lab / create-from-scratch), a generic default list is used.
+- **AC E5.3.1 — (Simple, no AI)** Given Simple mode, When it renders, Then it shows a **prebuilt quick-add list** (the play's default filters — see E5.3.1a / `./playbooks-catalog.json`), lightly grouped by display group (Account · Billing · Feature · Feedback · Users); tapping an item adds a fully-formed editable Criterion seeded by `makeCriterion` defaults (E5.7); a field already in use is hidden from the quick-add; a "Browse all fields" launcher opens the full categorized + searchable picker. **No NL/AI control appears in Simple.**
+- **AC E5.3.1a — (playbook-aware defaults)** Given a play with an `audienceKind` (§5.5.1), When the Simple quick-add renders, Then the offered fields = `defaultFiltersFor(playbook)` (materialized per play in `./playbooks-catalog.json`, `playbooks[].defaultSimpleFilters`): the **table-stakes** account filters **Priority account · Plan · Last login** on *every* play; the play's **domain pack** by category (winback → Renewing soon · MRR; revenue → Payment failed · MRR · Renewing soon; adoption → Feature in use · Signed up; onboard → Signed up; grow → MRR · Spend trend; reengage → Signed up; listen → Sentiment · MRR); and — **only for `audienceKind: "user"` plays** (login / individual-user-activity triggers) — the **user pack** **User role · Key users · A user gone quiet**. Account-level plays show **no** user filters. With no play context (lab / create-from-scratch), a generic default list is used.
 - **AC E5.3.2 — (Advanced)** Given Advanced mode, When it renders, Then it shows the NL "describe your audience" box (E5.4) **above** a nested boolean rule builder (top-level Match all/any; "Add condition"; "Add group" [one level only]; remove). 
 - **AC E5.3.3 — (non-destructive toggle)** Given the owner toggles Simple↔Advanced, When switched, Then existing criteria are preserved (same underlying set). 
 - **AC E5.3.4 — (Simple lock)** Given the set has genuine nesting (`isAdvanced(set) === true`), When the owner is in Advanced, Then the **Simple** option is disabled with a quiet note "This rule has groups — editing in Advanced"; the system **never** silently flattens or resets a nested rule to enable Simple (the Gainsight anti-pattern — §9.A).
 - **AC E5.3.5 —** Given a flat set (no groups), When toggling to Simple, Then it renders as flat chips with the Match all/any switch (shown only when ≥2 conditions).
-**Edge cases & rules:** quick-add items are HL-native in Phase 1 (no health.* fields). "Browse all fields" uses the phase-filtered catalog (E5.1).
-**Backend/API notes:** modes are a client concern over one CriteriaSet; the backend only needs `isAdvanced(set)` semantics (any Group present) to gate the lock.
+**Edge cases & rules:** quick-add items are HL-native in Phase 1 (no health.* fields). "Browse all fields" uses the phase-filtered catalog (E5.1). The two modes are two views of one audience; whether a rule "has groups" (and so locks Simple) is the only thing the toggle needs to know.
 
 ### Story E5.4 — As Mo, I want to describe my audience in a sentence and get editable rules, so that I can express a complex audience without building it by hand.
 **Acceptance criteria:**
-- **AC E5.4.1 — (deterministic compile)** Given Advanced NL text and the owner submits ("Draft rules"), When `POST /audience/compile-nl {text}` runs, Then it deterministically maps keywords to Criteria that reference **only real catalog fields**, returning `{ criteria, unmatched? }`. (Production may swap an LLM behind this contract, but it MUST function deterministically.)
+- **AC E5.4.1 — (describe → editable rules)** Given Advanced NL text and the owner submits ("Draft rules"), When the description is turned into rules, Then it produces Criteria that reference **only real catalog fields** (plus any phrases it couldn't match). **Production uses real AI** for this (a one-time cost per activation); the **prototype demonstrates it deterministically** behind the *same* describe→editable-rules contract. Either way the output is editable rules the owner confirms — never an invented field, never auto-committed.
 - **AC E5.4.2 — (Phase 1 strip)** Given Phase 1, When compile produces any `health.*` criterion, Then those are stripped from the result before returning (NFR-4).
 - **AC E5.4.3 — (0 matches → clarify)** Given the compile yields **no** criteria, When returned, Then the builder shows a "couldn't turn that into rules" clarify state offering recipe shortcuts (E5.8) — never a dead end, never an invented field.
 - **AC E5.4.4 — (success → editable + note)** Given the compile yields ≥1 criterion, When returned, Then those drop into the builder as **editable** chips and a soft, dismissible note appears ("I turned your description into the rules above — check I didn't miss anything"). The NL box clears.
 - **AC E5.4.5 — (never auto-commit; honesty gate)** Given any compile, When it completes, Then it **never** auto-applies/publishes; the persistent point-of-use helper "We'll turn this into editable rules below — always check them" is shown under the box.
 - **AC E5.4.6 — (two correction paths)** Given compiled rules, When the owner re-runs the NL box, Then it overwrites the set; When the owner hand-edits a chip, Then only that chip changes (surgical) and the AI does not re-run.
-**Edge cases & rules:** unmatched phrases may be surfaced ("I don't have a field for X") rather than invented. Recipes (E5.8) are offered as the clarify fallback.
-**Backend/API notes:** `POST /audience/compile-nl {text}` → `{ criteria: Criterion[], unmatched?: string[] }`, phase-filtered.
+**Edge cases & rules:** unmatched phrases may be surfaced ("I don't have a field for X") rather than invented. Recipes (E5.8) are offered as the clarify fallback. The result is phase-filtered (Phase-1 `health.*` criteria are stripped before it reaches the builder).
 
 ### Story E5.5 — As Mo, I want who the play fires for shown as a distinct, live plain-English hero box at the top, so that I understand my own rule at a glance.
 **Acceptance criteria:**
@@ -1019,7 +937,6 @@ The agency owner's standing choice for **how/where they are told when an account
 - **AC E5.5.2 — (empty)** Given no criteria, When the box renders, Then it reads "Every account — add a filter below to narrow who it runs on (optional)."
 - **AC E5.5.3 — (live)** Given any criteria change, When it registers, Then the restatement recomputes immediately.
 - **AC E5.5.4 — (groups in English)** Given a nested set, When restated, Then groups render with parentheses in English (§5.3.5) so the sentence stays readable even when the logic is complex.
-**Backend/API notes:** `POST /audience/describe {set}` → `{ sentence }` (= `describeSet`).
 
 ### Story E5.6 — As Mo, I want to expand the live count and see exactly which accounts match, so that I can trust the rule.
 **Acceptance criteria:**
@@ -1028,29 +945,25 @@ The agency owner's standing choice for **how/where they are told when an account
 - **AC E5.6.3 — (Phase 2)** Given Phase 2, When expanded, Then it shows the richer preview: rows with `health.band`, a breadth meter (Too narrow/Focused/Too broad/Empty vs total live), the `forecast7d` "likely to qualify this week" ghost rows, and the health composition bar.
 - **AC E5.6.4 — (narrow warning)** Given the set matches `≤ INVENTORY_FLOOR (5)` accounts, When shown, Then a caution indicates narrowing further risks an empty list.
 - **AC E5.6.5 — (zero)** Given N = 0 with conditions present, When shown, Then a calm "No accounts match yet — loosen a condition" message (not an error).
-**Backend/API notes:** uses `POST /audience/preview`; the response's `band`/`composition`/`forecast7d` are present only in Phase 2.
 
 ### Story E5.7 — As Mo, I want each condition to be a complete, sensible sentence I can tweak, so that I never face an empty or confusing control.
 **Acceptance criteria:**
 - **AC E5.7.1 — (value contracts)** Given a Criterion, When its value is set/validated, Then the shape matches the FieldType: Boolean → `true|false`; Number/days/score → number (+unit); Range(`between`) → `[from|null,to|null]` (empty bound degrades to at-least/at-most); DateRelative → `{verb,n,unit}`; Enum single(`is|isNot`) → string; Enum multi(`isAnyOf|isNoneOf`) → string[] (CSV-matched); Band(P2) → one of atrisk/watch/healthy/thriving; Text(`account.name`) → string with contains/startsWith/is/isNot.
 - **AC E5.7.2 — (makeCriterion defaults)** Given a fresh criterion via quick-add/picker, When created, Then it gets sensible defaults so it's a valid sentence immediately: `engagement.lastLoginDays`/`user.idleDays`=21; `revenue.mrr`=1500; `health.score`=60 (P2); range days `[0,30]`, scores `[0,60]`, money `[500,2000]`; dateRelative `inNext`=30d / `inLast`=90d / `moreThanAgo`=21d / `within`=30d; enum=first option; boolean=true; generic numeric default=0, `number`-type default=1; the first operator for the field's type is chosen.
 - **AC E5.7.3 — (operator words)** Given any operator shown, When rendered, Then it is a plain word (§9.B), never a symbol; money restates `gt/lt` as over/under; "ago" fields restate past-tense.
-- **AC E5.7.4 — (invalid value)** Given an out-of-shape value submitted, When validated, Then the backend rejects it with a clear field-level error (or coerces partial numeric input forgivingly) and never crashes the evaluation (NFR-9).
-**Backend/API notes:** value validation per FieldType; the API accepts the CriterionValue union (§5.3.1).
+- **AC E5.7.4 — (invalid value)** Given an out-of-shape value submitted, When validated, Then the product rejects it with a clear field-level error (or coerces partial numeric input forgivingly) and never crashes the evaluation (NFR-9).
 
 ### Story E5.8 — As Mo, I want one-tap starting templates, so that I never face a blank builder.
 **Acceptance criteria:**
-- **AC E5.8.1 —** Given the 6 recipes (§5.4 / §9.C.1), When the builder is empty or NL fails, Then they appear as one-tap templates that seed a fully-formed editable set and link a downstream play.
+- **AC E5.8.1 —** Given the 6 recipes (§5.4 / `./playbooks-catalog.json`, `recipes`), When the builder is empty or NL fails, Then they appear as one-tap templates that seed a fully-formed editable set and link a downstream play.
 - **AC E5.8.2 — (Phase 1 strip)** Given Phase 1, When a recipe with `health.*` criteria is applied, Then its `health.*` criteria are stripped, leaving its HL-native parts.
 - **AC E5.8.3 —** Given a recipe is applied, When seeded, Then the set is fully editable (it's a starting point, not a lock).
-**Backend/API notes:** recipes are seeded templates (§5.4); applying one sets the CriteriaSet.
 
 ### Story E5.9 — As Mo (Phase 2), I want to see who's about to match and the makeup of the audience, so that I can act before accounts slip and gauge breadth.
 **Acceptance criteria:**
-- **AC E5.9.1 — (forecast)** Given Phase 2, When `forecast7d(set)` runs, Then it returns accounts about to match within 7 days: relax numeric thresholds (days ±4, money ±15%, other ±8), keep accounts matching the relaxed-but-not-current set with `health.delta < 0`, ETA = `clamp(round(gap/(speed/4)),1,7)`, confidence "high" if `|delta|≥4 && trend90d.length≥6` else "low", sorted by ETA asc.
-- **AC E5.9.2 — (composition)** Given Phase 2, When `composition(accounts)` runs, Then it returns a Health distribution bar (by band, tones neg/warn/pos) and a Plan distribution bar (neutral).
-- **AC E5.9.3 — (Phase 1)** Given Phase 1, When preview is requested, Then `forecast7d` and `composition` are **absent** (they require Health) — only count + name/$ list are returned (NFR-4).
-**Backend/API notes:** part of `POST /audience/preview`'s Phase-2 response.
+- **AC E5.9.1 — (forecast)** Given Phase 2, When the about-to-match forecast runs, Then it surfaces accounts **likely to match within ~7 days** — not matching yet, but trending toward it — each carrying a **confidence cue** (high/low) so the owner can act before they slip, ordered soonest-likely first.
+- **AC E5.9.2 — (composition)** Given Phase 2, When the audience makeup is shown, Then it gives the breakdown of the matching audience by Health **band** and by **plan** tier.
+- **AC E5.9.3 — (Phase 1)** Given Phase 1, When preview is requested, Then the forecast and the makeup are **absent** (they require Health) — only the count + name/$ list are returned (NFR-4).
 
 ---
 
@@ -1059,21 +972,20 @@ The agency owner's standing choice for **how/where they are told when an account
 **Goal:** Implement the per-agency playbook deployment state machine (`off → on → paused → archived`) with its governance modes, and the "Your playbooks" management actions (Edit/Pause/Resume/Archive/Restore/Discard) with their confirmations — so a play can be turned on, paused, soft-archived, and restored without ever losing history.
 **User value:** Mo controls every play he's deployed — pause one that's noisy, resume it later, archive what he's done with (history kept), restore anytime — with clear one-line confirmations and zero risk of a destructive delete.
 **In scope:** the AutopilotStatus state machine + OverseeMode; idempotent transitions; the four "Your playbooks" sections' actions + exact toasts; draft discard; the listing services. 
-**Out of scope:** the *read-side grouping* of Your-playbooks (E3.7); enabling-at-publish (E4.6 calls `enable`); propagating a lifecycle change to the armed HL workflow (E7.1.7); the catalog/marketplace (E3).
+**Out of scope:** the *read-side grouping* of Your-playbooks (E3.7); enabling-at-publish (E4.6 turns a play on); propagating a lifecycle change to the armed HL workflow (E7.1.7); the catalog/marketplace (E3).
 **Dependencies:** E4 (publish enables a play); E3 (the management tab surfaces these actions); E7 (lifecycle changes propagate to HighLevel); §5.8 drafts.
-**Data & services touched:** **AutopilotStatus / OverseeMode** §5.7, **WorkflowDraft** §5.8. Endpoints (§8): `POST /playbooks/:id/{enable|pause|resume|archive|restore|disable}`, `PUT /playbooks/:id/oversee`, `GET /deployments?status=`, `DELETE /drafts/:recipeId`.
+**§5 entities & capabilities touched:** **AutopilotStatus / OverseeMode** §5.7, **WorkflowDraft** §5.8. Capabilities relied on (§8): enable / pause / resume / archive / restore / disable a play; change a live play's oversight; list plays by state; clear a draft.
 
-### Story E6.1 — As the system, I want a correct, idempotent lifecycle state machine, so that a play's deployment state is always valid and never destructive.
+### Story E6.1 — As Mo, I want my plays to move through a small set of safe, predictable states, so that turning one on, pausing it, or putting it away never loses history or breaks anything.
 **Acceptance criteria:**
 - **AC E6.1.1 — (transitions)** Given a play, When transitions fire, Then exactly these are valid: `off ──enable(oversee)──▶ on`; `on ──pause──▶ paused`; `paused ──resume──▶ on`; `on|paused ──archive──▶ archived`; `archived ──restore──▶ paused`; `on|paused ──disable──▶ off`. Any other transition is rejected (no-op + safe error).
 - **AC E6.1.2 — (restore lands in paused)** Given an archived play, When `restore` is applied, Then it becomes **paused** (never directly `on`) — the owner must explicitly resume to go live.
 - **AC E6.1.3 — (no hard delete of run history)** Given a play that has ever run (was `on`/`ranonce`), When the owner removes it from view, Then only **archive** (soft) is available — there is no hard delete; history is retained (§5.7 HARD RULE).
 - **AC E6.1.4 — (idempotency)** Given a play already in a target state, When the same transition is requested again (e.g. `enable` on an already-`on` play; `pause` on a paused play), Then it is a no-op success — no duplicate deployment, no side effects (NFR-6).
-- **AC E6.1.5 — (OverseeMode)** Given `enable(id, oversee)`, When applied, Then the play's governance is set: `auto` (fire automatically; default), `ease` (delay before first run, then auto), or `review` (manual approval before each run). `PUT /playbooks/:id/oversee {mode}` changes it after deployment.
+- **AC E6.1.5 — (OverseeMode)** Given a play is enabled with an oversight mode, When applied, Then the play's governance is set: `auto` (fire automatically; default), `ease` (delay before first run, then auto), or `review` (manual approval before each run); the owner can change the oversight on a live play after deployment.
 - **AC E6.1.6 — (per-agency)** Given two agencies, When each manages the same play, Then their deployment states are independent (§5.10) — one agency's transition never affects another's.
 - **AC E6.1.7 — (auditability)** Given any transition, When applied, Then it is timestamped and attributable (who/when — NFR-7).
-**Edge cases & rules:** `disable` is only valid from `on`/`paused` (hard-remove from active) and is distinct from archive; it is not exposed for plays with run history (archive instead). `ranonce` is a historical paused variant for once-run deployments.
-**Backend/API notes:** `POST /playbooks/:id/{enable|pause|resume|archive|restore|disable}` (idempotent), `PUT /playbooks/:id/oversee {mode}`. State is per-agency (prototype `localStorage["gocsm.autopilot.v1"]`; production a per-agency deployment row).
+**Edge cases & rules:** `disable` is only valid from `on`/`paused` (hard-remove from active) and is distinct from archive; it is not exposed for plays with run history (archive instead). `ranonce` is a historical paused variant for once-run deployments. Deployment state is **per-agency** (§5.10) and every transition is idempotent (§5.7, NFR-6).
 
 ### Story E6.2 — As Mo, I want to manage each deployed play from one place with clear confirmations, so that I always know what happened.
 **Acceptance criteria:**
@@ -1083,21 +995,21 @@ The agency owner's standing choice for **how/where they are told when an account
 - **AC E6.2.4 — (meta lines)** Given each section's rows, When rendered, Then Live shows "Running on N clients · next run tonight"; Paused shows "Paused · would run on N accounts"; Archived shows "Archived · history kept" (the read-side from E3.7).
 - **AC E6.2.5 — (after action, re-group)** Given any action transitions a play, When it completes, Then the play moves to the correct section on next render and the toast confirms.
 - **AC E6.2.6 — (Phase parity)** Given either phase, When managing plays, Then the lifecycle actions behave identically (lifecycle is HL-native; no Health dependency).
-**Backend/API notes:** each action calls the corresponding §8 endpoint; toasts are exact strings above. "Edit" routes to the setup flow (E4); a live edit republishes onto the existing deployment (no duplicate, E4.6.4).
+**Notes:** "Edit" routes to the setup flow (E4); a live edit **republishes onto the existing deployment** (no duplicate — E4.6.4); the toasts are the exact strings above.
 
 ### Story E6.3 — As Mo, I want to discard a draft I no longer want, so that my Drafts list stays clean — without affecting the play itself.
 **Acceptance criteria:**
-- **AC E6.3.1 —** Given a Draft row, When the owner clicks **Discard**, Then the WorkflowDraft is cleared (`DELETE /drafts/:recipeId`) and the toast "Draft discarded — {title} setup removed." shows.
+- **AC E6.3.1 —** Given a Draft row, When the owner clicks **Discard**, Then the WorkflowDraft is cleared and the toast "Draft discarded — {title} setup removed." shows.
 - **AC E6.3.2 — (draft-only)** Given Discard, When applied, Then it removes **only** the draft — it does **not** archive/disable the underlying play or touch any live deployment.
 - **AC E6.3.3 — (Resume)** Given a Draft row, When the owner clicks **Resume setup**, Then the setup flow reopens restoring the draft (E4.5.3).
-**Backend/API notes:** `DELETE /drafts/:recipeId`; drafts are per-agency (§5.10).
+**Notes:** discard removes the draft only; drafts are per-agency (§5.10).
 
-### Story E6.4 — As the system, I want to list deployments by state, so that the management tab and other surfaces can render accurate sections.
+### Story E6.4 — As Mo, I want my plays listed by state, so that the management tab and the surfaces that show my live plays are always accurate.
 **Acceptance criteria:**
-- **AC E6.4.1 —** Given `GET /deployments?status=on|paused|archived`, When served, Then it returns the agency's play ids in that state (`listOn`/`listPaused`/`listArchived` — §5.7), agency-scoped.
-- **AC E6.4.2 —** Given `GET /deployments` with no status, When served, Then it returns all deployment states for the agency.
-- **AC E6.4.3 — (empty)** Given no deployments in a state, When served, Then an empty list (200), not an error.
-**Backend/API notes:** these listings feed E3.7's four sections and the Attention row's "On · autopilot"/"Draft" state derivation (E2.3).
+- **AC E6.4.1 —** Given a requested state (on / paused / archived), When the plays in that state are listed, Then it returns the agency's play ids in that state (`listOn`/`listPaused`/`listArchived` — §5.7), agency-scoped.
+- **AC E6.4.2 —** Given no state is specified, When listed, Then it returns all deployment states for the agency.
+- **AC E6.4.3 — (empty)** Given no deployments in a state, When listed, Then an empty list, not an error.
+**Notes:** these listings feed E3.7's four sections and the Attention row's "On · autopilot"/"Draft" state derivation (E2.3).
 
 ---
 
@@ -1122,18 +1034,17 @@ The agency owner's standing choice for **how/where they are told when an account
 - Any OAuth/marketplace-app provisioning detail beyond the behavioral contract (house auth conventions apply).
 
 **Dependencies:**
-- **Epic E4** publishes the deployment that this handoff arms; the publish payload (`{ set, oversee, fixedAccountIds? }`) is the input to the Trigger Workflow handoff.
+- **Epic E4** publishes the deployment that this handoff arms; what publish hands over — the chosen audience, the oversight mode, and any fixed-account selection — is the input to the Trigger Workflow handoff.
 - **Epic E6** owns the lifecycle states (`on`/`paused`/`archived`) whose changes propagate to the armed HL workflow.
 - §5.5.1 **PlaybookAction** (the four action types + interpolation), §4.7 (the two actions), §5.1 `feedback` (Request Feedback target), §5.9 Health config (phase boundary).
 - The prototype embed mechanism (`AppLayout` `IS_EMBED`, the `/embed/*` routes) — `apps/prototype/CLAUDE.md` "Embeds".
 
-**Data & services touched** (per §8; **HL integration is external** — GoCSM calls out to HighLevel, it does not own HL's APIs):
-- `POST /playbooks/:id/publish` `{ set, oversee, fixedAccountIds? }` → `{ deploymentId, status }` — the moment GoCSM arms the HL workflow.
-- `POST /playbooks/:id/enable|pause|resume|archive|restore|disable` · `PUT /playbooks/:id/oversee` — lifecycle changes that GoCSM propagates to the armed HL workflow (§5.7; detail in E6).
-- `POST /audience/preview` / `POST /audience/count` — the audience GoCSM resolves and hands HighLevel.
-- `GET /accounts` / `GET /accounts/:id` (HL-native account data is synced from HighLevel, NFR-2); `GET /accounts/:id/signals`.
-- `GET /agency/health-config` (the phase boundary that decides whether Health-derived targeting augments the audience).
-- The three embed routes are **frontend** (same page components, nav-less) — no new backend endpoints; data is the same agency-scoped reads (NFR-3).
+**§5 entities & capabilities touched** (**HL integration is external** — GoCSM calls out to HighLevel, it does not own HL's workflow engine):
+- The **publish** capability is the moment GoCSM arms the HL workflow; the **lifecycle** changes (pause/resume/archive/restore/disable, oversight) propagate to the armed workflow (§5.7; detail in E6).
+- The **audience** GoCSM resolves (its match count + preview) is what it hands HighLevel.
+- **Account** data §5.1 (HL-native, synced from HighLevel and kept fresh, NFR-2) and the per-account **Signal** log §5.1.2.
+- The **Health-config flag** §5.9 — the phase boundary that decides whether Health-derived targeting augments the audience.
+- The three embed routes are a **frontend** concern (same page components, nav-less); data is the same agency-scoped reads (NFR-3).
 
 ---
 
@@ -1153,8 +1064,8 @@ The agency owner's standing choice for **how/where they are told when an account
 - An account that **leaves** the audience (no longer matches) on an ongoing deployment should stop being newly-fed; already-in-flight HL executions are HighLevel's to complete (GoCSM does not retroactively cancel a send mid-flight).
 - If the HL handoff/arming **fails** at publish, the publish surfaces a recoverable error and does **not** clear the draft or toggle autopilot (consistent with AC E4.6.6); re-publish is idempotent (no duplicate armed workflow per play+agency, NFR-6).
 - Empty audience at arm time ⇒ no workflow is armed (consistent with the count-0 publish block, AC E4.6.7).
-
-**Backend/API notes:** Input is the E4 publish payload `{ set, oversee, fixedAccountIds? }`. GoCSM resolves the audience via `matchAccounts(set)` / `fixedAccountIds` and calls the **external** HighLevel workflow-arm API (house-defined adapter; not a GoCSM `/playbooks` endpoint). The handoff is **idempotent** keyed by `(agencyId, playbookId, deploymentId)` — re-arming an already-armed deployment is a no-op. Lifecycle propagation rides the §5.7 store transitions (E6). Interpolation (`{{name}}`/`{{account}}`) is performed **by HighLevel at send time**, not pre-rendered by GoCSM (GoCSM hands over templates + audience, not baked messages).
+- Re-arming an already-armed deployment is a **no-op** (idempotent — NFR-6); no play+agency ever ends up with two armed workflows.
+- **One playbook maps 1:1 to one HighLevel workflow.** GoCSM hands over the audience + the owner-edited message templates (not pre-baked messages — interpolation happens in HighLevel at send time, AC E7.1.6), and **records which workflow/condition was tried on each account**. That record is the closed-loop **"tried but didn't fix it"** signal — an account a play ran on but that hasn't improved — which is exactly what feeds the Attention **Step-in** list (the Attempt entity, E2.4). The handoff is *write-only* into HighLevel: GoCSM never reads HL workflow contents back (the owner's confirm is the trust boundary, above).
 
 ---
 
@@ -1171,8 +1082,7 @@ The agency owner's standing choice for **how/where they are told when an account
 - Request Feedback is still a **Trigger Workflow** under the hood — it does not bypass the owner-edits-in-HL gate (E4.2) or the audience/lifecycle ownership (E7.1.4).
 - Feedback updates are **per sub-account and cumulative** (`responses[]` grows; `lastFeedbackDate` advances); a re-request to an account that already responded appends a new response rather than overwriting.
 - `widgetEnabled`/raw NPS remain HL-native, Phase-1-safe; no coined Health sentiment leaks (NFR-4).
-
-**Backend/API notes:** Same publish/handoff endpoints as E7.1. The feedback **ingestion** path writes back to the account's `feedback` sub-object (responses appended, derived fields recomputed) and is reflected on the next `GET /accounts/:id`. Sentiment/rating fields used for targeting are the §5.2 `feedback.sentiment` / `feedback.rating` definitions (phase-filtered server-side). The actual feedback collection is executed by **HighLevel** (external); GoCSM owns the audience and the resulting data update.
+- Request Feedback uses the **same** handoff as E7.1. The actual collection runs in **HighLevel** (external); GoCSM owns the audience and the resulting feedback update — incoming responses write back to the account's `feedback` (appended + derived fields recomputed) and are reflected on the next account read. Targeting uses the §5.2 `feedback.sentiment` / `feedback.rating` definitions, phase-filtered in the data layer.
 
 ---
 
@@ -1189,77 +1099,77 @@ The agency owner's standing choice for **how/where they are told when an account
 **Edge cases & rules:**
 - To add an embed, add a `/embed/<x>` route inside the `AppLayout` group pointing at the **same** page component — no new page is created (no-duplication rule).
 - The two outward actions and the setup flow work **identically** inside an embed (Trigger Workflow / Request Feedback / publish all function in-iframe); "Open & modify it" (E4.2) opens HighLevel in a new tab as usual.
-- The embed shell is purely a layout concern (drop nav); it changes **no** data, no API, no phase logic, no agency scoping.
-
-**Backend/API notes:** Embeds are a **frontend** concern — no new backend endpoints; the same agency-scoped reads serve embed and non-embed alike (agency from auth, NFR-3). `IS_EMBED` is evaluated once at load from the path prefix and is **immutable** for the iframe's lifetime, guaranteeing in-iframe nav-less navigation (AC E7.3.3). Outcomes content is out of scope; only its `/embed/outcomes` route shell is in scope here.
+- The embed shell is purely a layout concern (drop nav); it changes **no** data, no phase logic, no agency scoping — the same agency-scoped reads serve embed and non-embed alike (NFR-3). `IS_EMBED` is fixed once at load for the iframe's lifetime (AC E7.3.3). Outcomes content is out of scope; only its `/embed/outcomes` route shell is in scope here.
 
 ---
 
-### Story E7.4 — As an engineer, I want the handoff and actions to work fully on HL-native data in Phase 1 and only augment with Health in Phase 2, so that the integration never depends on Health being configured.
+### Story E7.4 — GoCSM's actions work fully on day-one HighLevel data and only gain power once Health is configured — so the integration never depends on Health being set up.
 
 **Acceptance criteria:**
 - **AC E7.4.1 —** Given **Phase 1** (`health-config.isConfigured() === false`), When a play is published and handed off, Then the entire Trigger-Workflow path — audience resolution, arming, the four action types, interpolation, Request Feedback — works **fully on HL-native data** with **zero** Health dependency.
 - **AC E7.4.2 —** Given **Phase 1**, When the audience for a play is resolved, Then it references only HL-native fields (logins, payments, workflow usage, plan, renewal, raw NPS, priority flag, MRR — §4.4), and any `health.*` criteria are stripped upstream (E4.3.2) before the handoff sees them.
 - **AC E7.4.3 —** Given **Phase 2** (`isConfigured() === true`), When Health is configured, Then Health-derived targeting (bands, lifecycle, health trend) **augments** audiences **additively** — a play that worked in Phase 1 continues to work unchanged; Health only adds new targeting power (§4.4 hard rule 2).
-- **AC E7.4.4 —** Given the phase boundary, When responses/previews cross the handoff, Then no `health.*` field, band, lifecycle stage, pillar, or PAS appears in any **Phase-1** path (audience, action templates, feedback updates) — enforced **server-side** (NFR-4), not only in UI.
+- **AC E7.4.4 —** Given the phase boundary, When responses/previews cross the handoff, Then no `health.*` field, band, lifecycle stage, pillar, or PAS appears in any **Phase-1** path (audience, action templates, feedback updates) — enforced in the product's data layer (NFR-4), not only in the UI.
 
 **Edge cases & rules:**
 - Turning Health **on** (Phase 1 → Phase 2) must **not** retro-break any already-live Phase-1 deployment — armed HL workflows keep running on their HL-native audiences; Health targeting is opt-in on new/edited audiences.
 - The handoff itself is phase-agnostic in mechanism (it arms a workflow on an audience); only the **audience's available fields** differ by phase.
 - PAS and raw pillar scores are never filterable in either phase (§4.4 hard rule 3) — they can never enter an audience handed to HighLevel.
+- The phase is applied in the data layer (NFR-4) to every audience before the handoff; the handoff consumes an already-phase-filtered audience and does not itself branch on phase beyond the fields present. No HL-native action or interpolation depends on any Health value.
 
-**Backend/API notes:** Phase is implicit from `GET /agency/health-config` and applied **server-side** to every audience/catalog response (NFR-4) before the handoff. The handoff consumes an already-phase-filtered `set`; it does not itself branch on phase beyond the fields present in the set. No HL-native action or interpolation depends on any Health value.
 ---
 
 ## 7. Non-functional requirements
 
-- **NFR-1 Performance.** `matchCount`/`matchAccounts` for an audience must return at p95 ≤ 300ms over an agency's full account set (~1,000). The Attention queue (all signal definitions × accounts) and marketplace facet counts must render at p95 ≤ 800ms. Live count updates during editing should feel instant (debounce input ~150–250ms server-side acceptable).
-- **NFR-2 Data freshness.** HL-native account data (logins, payments, workflow usage, plan, renewal) syncs continuously/near-real-time; the documented source cadence is live Mongo sync + real-time activity MVs + nightly (02:00 UTC) for any scoring family. The "matches right now" answer must reflect the latest synced state.
-- **NFR-3 Multi-tenancy & isolation.** Every query is agency-scoped; no cross-agency data access. Account IDs are unique within an agency.
-- **NFR-4 Phase-gating correctness.** No `health.*` field, band, lifecycle stage, pillar, or PAS value may appear in any Phase-1 response (fields list, queue signals, previews, restatement, copy). This is a security/trust requirement, not cosmetic — enforce server-side, not only in UI.
-- **NFR-5 Determinism & honesty.** The NL→rules compiler must be deterministic and only ever produce criteria that reference **real catalog fields**; if input can't be compiled, return an explicit "couldn't parse" result (never invent a field). All AI output is a draft the user confirms — no auto-commit path.
+- **NFR-1 Performance.** Answering "who matches / how many" for an audience must **feel instant** over an agency's full account set (~1,000), and the Attention queue and marketplace facet counts must render fast enough to never make the owner wait. Live count updates while editing feel immediate.
+- **NFR-2 Data freshness.** HL-native account data (logins, payments, workflow usage, plan, renewal) stays **near-real-time fresh**. The "matches right now" answer must reflect the latest state.
+- **NFR-3 Multi-tenancy & isolation.** Every query is agency-scoped; no cross-agency data access — enforced in the product's data layer, not merely hidden in the UI. Account IDs are unique within an agency.
+- **NFR-4 Phase-gating correctness.** No `health.*` field, band, lifecycle stage, pillar, or PAS value may appear in any Phase-1 response (fields list, queue signals, previews, restatement, copy). This is a security/trust requirement, not cosmetic — enforced in the product's data layer, not merely hidden in the UI.
+- **NFR-5 Determinism & honesty.** Describe-to-rules only ever produces criteria that reference **real catalog fields**; if the input can't be turned into rules, it says so explicitly (never invents a field). **Production uses real AI** for this (a one-time cost per activation); the **prototype demonstrates it deterministically** behind the same contract. Either way, all AI output is a **draft the owner confirms** — there is no auto-commit path.
 - **NFR-6 Idempotency & safety.** Publishing the same draft twice must not create duplicate live deployments. Lifecycle transitions are idempotent (enabling an already-on play is a no-op). No hard deletes of run history.
-- **NFR-7 Auditability.** Every lifecycle transition and publish is timestamped and attributable (who/when/from-where). Draft autosaves carry `savedAt`.
-- **NFR-8 Accessibility & i18n (frontend contract).** Counts are `aria-live`; controls meet 44×44px and ARIA combobox/radiogroup/slider semantics; money/number formatting localizable. (Listed because the API must return raw values + units, not pre-baked display strings, except the restatement sentence.)
+- **NFR-7 Auditability.** Every lifecycle transition and publish is timestamped and attributable (who/when/from-where). Draft autosaves record when they were last saved.
+- **NFR-8 Accessibility & i18n.** Counts announce changes to assistive tech; controls meet the 44×44px touch-target minimum and expose proper combobox/radiogroup/slider semantics; money/number formatting is localizable.
 - **NFR-9 Resilience.** A single malformed criterion (unknown field, bad value) drops to no-match rather than failing the whole evaluation.
 
 ---
 
-## 8. Suggested API surface (REST sketch — adapt to house conventions)
+## 8. Capabilities the product must expose
 
-All endpoints are agency-scoped (agency derived from auth). `?phase` is implicit from the agency's health-config; responses MUST already be phase-filtered server-side.
+Everything below is **agency-scoped** (the agency is derived from auth) and **phase-filtered** before it reaches the owner — no `health.*` value ever surfaces in Phase 1 (NFR-3, NFR-4). This is a list of *what the product can do*, not how it is wired.
 
 **Accounts & signals**
-- `GET /accounts` · `GET /accounts/:id` · `GET /accounts/:id/signals`
-- `GET /accounts/selector/:name` (e.g. `failed-payments`, `stalled-onboarding`, `lost-sticky-setups`, `renewals?min=&max=`)
-- `GET /agency/rollup` → `{ totalAccounts, liveAccounts, mrr, mrrAtRisk }`
+- List the agency's accounts, and show the full detail of any one account (including a churned account by id).
+- Show an account's signal history (the detected state changes), newest first.
+- Answer the standing account-selector questions: who has a failed payment, whose onboarding is stalled, who is actively losing a critical setup, and who renews within a given window.
+- Give the agency its top-line rollup: total accounts, live accounts, total MRR, and MRR at risk.
 
-**Criteria / audience**
-- `POST /audience/preview` body `{ set }` → `{ count, accounts: [{id,name,mrr, band?}], composition?, forecast7d? }` (band/composition/forecast only in Phase 2)
-- `POST /audience/count` body `{ set }` → `{ count }` (fast path)
-- `POST /audience/describe` body `{ set }` → `{ sentence }` (the restatement)
-- `POST /audience/compile-nl` body `{ text }` → `{ criteria: Criterion[], unmatched?: string[] }` (deterministic; phase-filtered)
-- `GET /criteria/catalog` → the phase-filtered field list (§5.2) + operators + enum options
+**Audiences (who matches)**
+- For any audience definition, answer **"who matches right now"** and **"how many"**.
+- Restate any audience as a **plain-English sentence**.
+- Turn a plain-words audience **description into editable rules** (only ever referencing real catalog fields; production uses real AI, the prototype is deterministic — both behind the same describe→editable-rules contract).
+- Offer the curated, phase-filtered **field/operator vocabulary** the builder works over.
+- *(Phase 2)* Also answer **"who is likely to match within ~7 days"** (with a confidence cue) and the audience makeup by band and plan.
 
-**Playbooks catalog**
-- `GET /playbooks` query `{ q?, category?, signal[]?, effort[]?, highlight[]?, sort? }` → `{ items, facetCounts: { category, signal, effort, highlight } }` (faceted; see Epic E3 for cross-counting)
-- `GET /playbooks/:id` · `GET /playbooks/:id/impact` → `{ count, mrr }`
-- `GET /playbooks/ai-pick` → the single recommended play (Epic E3)
+**Playbook library**
+- Browse the play library with faceted filtering (category · situation · effort · highlights), full-text search, and sorting, with live facet counts.
+- Show one play's detail and **its own impact** for the agency (how many accounts it acts on and the MRR involved).
+- Surface a single recommended "start here" play.
 
-**Setup / drafts / publish**
-- `GET /drafts` · `GET /drafts/:recipeId` · `PUT /drafts/:recipeId` · `DELETE /drafts/:recipeId`
-- `POST /playbooks/:id/publish` body `{ set, oversee, fixedAccountIds? }` → `{ deploymentId, status }`
+**Setup, drafts & publish**
+- **Save and resume** an in-progress setup, and discard it.
+- **Publish** a play either **ongoing** (handles new matches over time) or **run-once** (a fixed set of accounts) — idempotently (publishing twice never double-deploys).
 
-**Lifecycle / autopilot**
-- `POST /playbooks/:id/enable|pause|resume|archive|restore|disable` · `PUT /playbooks/:id/oversee` body `{ mode }`
-- `GET /deployments?status=on|paused|archived`
+**Lifecycle**
+- **Pause / resume / archive / restore** a deployment, and change its oversee mode — all idempotent, never destructive (history is always kept).
+- List the agency's deployments by state (on / paused / archived).
 
 **Attention**
-- `GET /attention/queue` → `{ items: QueueItem[], needing, mrrAtRisk }` (Epic E2)
-- `GET /attention/stepin` → `{ attempts: Attempt[] }` (Epic E2, the Job-B layer)
+- Produce the live Attention **queue** (what needs attention now) and its two hero numbers — accounts needing attention and MRR at risk — which never disagree with the rollup.
+- Produce the **"Step in"** list of accounts a play ran on but didn't fix.
+- **Record and read** the agency's escalation preference (where/how often to be told when an account needs a human).
 
 **Config**
-- `GET /agency/health-config` · `PUT /agency/health-config` body `{ configured }`
+- Read and set the agency's **Health-configured** flag (the phase switch).
 
 ---
 
@@ -1274,7 +1184,7 @@ All endpoints are agency-scoped (agency derived from auth). `?phase` is implicit
 #### A.1 Internal design & spec documents
 | Doc | Covers | Grounds |
 |---|---|---|
-| `gocsm-attribute-filter-catalog.md` | The user-facing attribute/filter universe, derived from the real GoCSM backend (`csm-super-logger`) + live MongoDB (`prod_v2`) + ClickHouse (`prod`). | The ~30-field criteria catalog (§5.2); the **"only expose what the customer already sees; never expose PAS / raw pillar scores / healthScore proxy / velocity-cap internals"** rule; six control types; relative-date as non-negotiable for renewal/last-login; data freshness cadence (Mongo live + activity MVs real-time + scoring nightly 02:00 UTC, NFR-2). |
+| `gocsm-attribute-filter-catalog.md` | The user-facing attribute/filter universe, derived from the real GoCSM backend (`csm-super-logger`) + live MongoDB (`prod_v2`) + ClickHouse (`prod`). | The ~30-field criteria catalog (§5.2); the **"only expose what the customer already sees; never expose PAS / raw pillar scores / healthScore proxy / velocity-cap internals"** rule; six control types; relative-date as non-negotiable for renewal/last-login; the near-real-time data-freshness expectation (NFR-2). |
 | `cpdo-brief.md` | The shipped fidelity contract for the trigger criteria builder ("who it runs on"). | The two-mode model (Simple flat AND/ANY + Advanced one-level visual groups, **never a typed boolean string**); NL→editable-chips; live "runs on N" count + preview always visible; per-type controls; the ~24-field "common-first" set; recipes re-seeded from real fields. |
 | `trigger-situation-v2-brief.md` | The v2 delta: Situation rename + two-mode collapse + top restatement. | The Situation labels (Critical/Slipping/Steady/Strong/Booming) that **avoid the gated Health-band words**; the diverging colorblind-safe scale; Simple = prebuilt picks (no AI), Advanced = NL + builder; the **non-destructive** toggle; the live plain-English restatement promoted to the top (the differentiator). |
 | `cpdo-brief-activation-steps-2-3.md` | The fidelity contract for setup steps "What it does" + "Review & publish". | Step ① demote the video to optional, make the action list the hero, reframe publish as "switch it on in HighLevel"; Step ③ hero audience **count**, glanceable real-account preview, explicit **now-vs-future** split (run = these N now; autopilot = new matches), autopilot **default ON** with one-line consequence, calm in-flow success state (not a corner toast). |
@@ -1320,158 +1230,27 @@ All endpoints are agency-scoped (agency derived from auth). `?phase` is implicit
 
 ### Appendix B — Operator labels & value-control reference
 
+> The machine-readable operator map, operator semantics, and plain-word operator labels also live in `./playbooks-catalog.json` (`filters.operatorsByType`, `filters.operatorSemantics`, `filters.operatorLabels`). This appendix is the human-readable companion.
+
 **Plain-word operator labels** (never symbols): `lt`→"is less than", `gt`→"is more than", `gte`→"is at least", `lte`→"is at most", `eq`→"is exactly", `between`→"is between", `is`→"is", `isNot`→"is not", `isAnyOf`→"is any of", `isNoneOf`→"is none of", `contains`→"contains", `startsWith`→"starts with", `inNext`→"in the next", `inLast`→"in the last", `moreThanAgo`→"more than … ago", `within`→"within", `falling`→"is falling", `rising`→"is rising". Money fields restate `gt/lt` as "over/under". "Ago" fields (`engagement.lastLoginDays`, `user.idleDays`) restate in past tense ("was more than … ago").
 
-**Value-control contract per FieldType** (the shapes the API must accept/validate; UI rendering is the frontend's, but the data contract is fixed): Boolean → `true|false` (rendered Yes/No segmented). Number/days/score → a number + unit (`$|%|d|min|users`); operators are plain words. Range (`between`) → `[from|null, to|null]` — an empty bound degrades to "at least"/"at most". DateRelative → `{verb, n, unit}`. Enum single (`is|isNot`) → one string. Enum multi (`isAnyOf|isNoneOf`) → string[]; stored/matched over CSV fields by set intersection. Band (P2) → one of `atrisk|watch|healthy|thriving`. Text (`account.name`) → string with `contains|startsWith|is|isNot`. **makeCriterion defaults** (every fresh criterion is a complete sentence): `engagement.lastLoginDays`/`user.idleDays`=21; `revenue.mrr`=1500; `health.score`=60; range days `[0,30]`, scores `[0,60]`, money `[500,2000]`; `inNext`=30d, `inLast`=90d, `moreThanAgo`=21d, `within`=30d; enum=first option; boolean=true.
+**Value-control contract per FieldType** (the value shapes the product accepts/validates; the data contract is fixed regardless of how it is rendered): Boolean → `true|false` (rendered Yes/No segmented). Number/days/score → a number + unit (`$|%|d|min|users`); operators are plain words. Range (`between`) → `[from|null, to|null]` — an empty bound degrades to "at least"/"at most". DateRelative → `{verb, n, unit}`. Enum single (`is|isNot`) → one string. Enum multi (`isAnyOf|isNoneOf`) → a list of strings; stored/matched over multi-value fields by set intersection. Band (P2) → one of `atrisk|watch|healthy|thriving`. Text (`account.name`) → string with `contains|startsWith|is|isNot`. **Fresh-criterion defaults** (so every fresh criterion is a complete sentence): `engagement.lastLoginDays`/`user.idleDays`=21; `revenue.mrr`=1500; `health.score`=60 (P2); range days `[0,30]`, scores `[0,60]`, money `[500,2000]`; `inNext`=30d, `inLast`=90d, `moreThanAgo`=21d, `within`=30d; enum=first option; boolean=true.
 
 ### Appendix C — Catalog reference
 
-#### C.1 The 6 seeded recipes
-| id | label | blurb | criteria (`set`) | → playbook |
-|---|---|---|---|---|
-| `rec-atrisk-renewing` | At-risk & renewing soon | Shaky accounts with a renewal inside the next month. | `health.band isAnyOf [atrisk,watch]` AND `revenue.renewsWithin inNext 30d` | pb-renewal-save |
-| `rec-big-downhill` | Big accounts going downhill | Your biggest accounts whose health is falling. | `revenue.mrr gt 1500` AND `health.trend falling` | pb-renewal-save |
-| `rec-gone-quiet` | Gone quiet | Owners who haven't logged in for 21+ days. | `engagement.lastLoginDays gt 21` | pb-no-login |
-| `rec-quiet-no-core` | Quiet and not using Workflows | Gone quiet and never turned on Workflows. | `engagement.lastLoginDays gt 21` AND `feature.inUse isNoneOf [Workflow]` | pb-feature-drop |
-| `rec-payment-failed` | Payment failed | A charge was declined or failed. | `revenue.failedPayment is true` | pb-payment-failed |
-| `rec-slipping-engagement` | Slipping engagement | Feature use is falling and health is shaky. | `feature.engagementTrend falling` AND `health.band isAnyOf [watch,atrisk]` | pb-feature-drop |
+> The full catalog — plays, categories, situations, recipes, the field/operator universe, attention-signal definitions, and each play's default Simple-view filters — lives in `./playbooks-catalog.json`. This appendix keeps only the **rules** that govern how that data is used.
 
-> Recipes with `health.*` criteria (`rec-atrisk-renewing`, `rec-big-downhill`, `rec-slipping-engagement`) are **health-stripped in Phase 1** before seeding the builder (their HL-native parts remain).
+#### C.1 Phase-1 behavior of Health-predicated plays
+Plays whose match predicate references Health (band/score/delta/lifecycle stage) only **fire/compute fully in Phase 2**. Their marketplace cards **still appear in Phase 1** (the Situation rating is plain-word, not Health vocab — §5.5.2), but their live impact count is computed **HL-native only** until Health is configured. Recipes that carry `health.*` criteria are **health-stripped in Phase 1** before seeding the builder (their HL-native parts remain).
 
-#### C.2 The 57 seeded playbooks (id · title · kind · category · Situation · effort · match predicate)
-> Predicates read against the Account model (§5.1). `notOnboardingLive` = enabled & stage∉{onboarding,churned}. `stickyReverse(subjects)` = a sticky+reverse+setup Signal on those subjects ≤30d old. `hasFeature(x)` = an adoption feature `x` with engagement>0. `recentPlanChange(type, days)`/`failedAttempts`/`lifetimeSpendOf` per §5.1/§5.2.
+#### C.2 The playbook-aware Simple-view defaults — `defaultFiltersFor(playbook)`
+The Simple-mode quick-add list (Epic **E5.3**) is **playbook-aware**, reasoned from the GoHighLevel agency-owner's chair: *"when I narrow this play, what would I slice by?"* Each play carries `Playbook.audienceKind` (§5.5.1) — **account-level** (the trigger concerns the whole account) or **user-level** (the trigger concerns an individual user's activity, e.g. "no recent login", "admin gone dark", "power user emerged"). The default filters offered for a play are computed as:
 
-| id | title | kind | category | Situation | effort | match predicate |
-|---|---|---|---|---|---|---|
-| pb-no-login | No recent login | retention | reengage | Slipping | ready | notOnboardingLive & lastLoginDaysAgo ≥ 21 |
-| pb-renewal-save | Renewing soon & at risk | retention | winback | Slipping | ready | renewsWithin(0,30) & band∈{atrisk,watch} |
-| pb-payment-failed | Payment failed | billing | revenue | Critical | ready | failedPayments() |
-| pb-plan-downgrade | Plan downgrade | retention | winback | Slipping | quick | recentPlanChange(downgrade,60) OR recentPlanChange(churn,60) |
-| pb-feature-drop | Usage dropping | adoption | adoption | Slipping | ready | usageReverse([Workflow],30) OR underutilizedFeatures>0 |
-| pb-onboarding-stalled | Onboarding stalled | onboarding | onboard | Steady | ready | stalledOnboarding() |
-| pb-save-domain | Website disconnected | save | winback | Critical | ready | stickyReverse([Domain]) |
-| pb-save-integration | Key integration removed | save | winback | Critical | ready | stickyReverse([Funnel,Workflow]) |
-| pb-save-a2p | Texting registration lost | save | winback | Critical | quick | stickyReverse([A2P,Phone]) |
-| pb-expansion-ready | Expansion ready | expansion | grow | Strong | ready | enabled & stage=established & band=thriving |
-| pb-quiet-renewal | Quiet account, renewal close | retention | winback | Slipping | ready | enabled & lastLoginDaysAgo ≥ 14 & renewsWithin(0,45) |
-| pb-low-adoption | Key feature never set up | adoption | adoption | Steady | quick | underutilizedFeatures ≥ 2 |
-| pb-nps-detractor | Unhappy feedback | retention | listen | Slipping | ready | enabled & (sentiment=negative OR (npsScore>0 & ≤6)) |
-| pb-nps-promoter | Happy customer — review | expansion | listen | Booming | ready | enabled & stage=established & band=thriving |
-| pb-milestone | Celebrate milestone | expansion | listen | Strong | ready | enabled & activeDays∈[350,380]∪[705,740] |
-| pb-upsell-limit | Hitting plan limits | expansion | grow | Strong | quick | enabled & band∈{thriving,healthy} & activeUsers ≥ 5 & plan∌"Pro+" |
-| pb-quiet-7d | No login — 7 days | retention | reengage | Steady | ready | notOnboardingLive & 7 ≤ lastLoginDaysAgo < 21 |
-| pb-admin-dark-30 | Admin gone dark — 30 days | retention | reengage | Slipping | ready | notOnboardingLive & lastLoginDaysAgo ≥ 30 |
-| pb-all-inactive | Whole account inactive | retention | reengage | Critical | ready | notOnboardingLive & lastLoginDaysAgo ≥ 30 & activityStatus=ghosting |
-| pb-login-collapsed | Login frequency collapsed | retention | reengage | Slipping | quick | enabled & usageReverse([Login],90) |
-| pb-admin-removed | Key admin removed | retention | reengage | Slipping | quick | enabled & a user (role≠owner) is inactive |
-| pb-reengaged | Owner re-engaged | expansion | expansion | Strong | ready | enabled & (reactivated OR (delta>0 & lastLoginDaysAgo ≤ 7 & stage=activated)) |
-| pb-health-atrisk | Health dropped to at-risk | retention | winback | Slipping | ready | enabled & band=atrisk & delta<0 |
-| pb-health-watch | Slipped to watch | retention | winback | Steady | ready | enabled & band=watch & delta<0 |
-| pb-prolonged-decline | Prolonged decline | retention | winback | Slipping | quick | enabled & delta ≤ −7 |
-| pb-save-big | Save the big ones | save | winback | Critical | ready | enabled & band=atrisk & mrr ≥ 2000 |
-| pb-renewal-dark | Renewing in 30 days & gone dark | retention | winback | Critical | ready | enabled & lastLoginDaysAgo ≥ 30 & renewsWithin(0,30) |
-| pb-annual-renewal | Annual renewal approaching | retention | winback | Steady | quick | enabled & plan⊇"Pro" & renewsWithin(0,60) |
-| pb-funnel-unpublished | Website unpublished | save | winback | Critical | ready | stickyReverse([Funnel]) |
-| pb-phone-portout | Phone ported out | save | winback | Critical | ready | stickyReverse([Phone]) |
-| pb-email-disconnect | Email sending disconnected | save | winback | Critical | ready | stickyReverse([Email]) |
-| pb-stripe-disconnect | Payment processor disconnected | save | winback | Critical | ready | stickyReverse([Payment]) |
-| pb-calendar-disconnect | Calendar disconnected | save | winback | Critical | quick | stickyReverse([Calendar]) |
-| pb-workflow-off | Published workflow turned off | save | winback | Slipping | ready | stickyReverse([Workflow]) |
-| pb-payment-dunning | Payment failing repeatedly | billing | revenue | Critical | ready | enabled & failedAttempts ≥ 2 |
-| pb-wallet-low | Rebilling wallet critically low | billing | revenue | Critical | ready | enabled & mrr>0 & walletBalance<250 & walletSpend30d>walletBalance |
-| pb-spend-drop | Spend dropping | billing | revenue | Slipping | quick | enabled & spendTrend ≤ −15 |
-| pb-cancellation | Cancellation requested | retention | winback | Critical | ready | enabled & pendingStop=true |
-| pb-churned-winback | Churned — win back | retention | winback | Critical | custom | stage=churned OR recentPlanChange(churn,90) |
-| pb-workflows-unpublished | No workflow 30d after signup | adoption | adoption | Slipping | ready | notOnboardingLive & activeDays ≥ 30 & ¬hasFeature(Workflow) |
-| pb-payments-unset | Payments never set up | adoption | adoption | Steady | quick | notOnboardingLive & mrr>0 & ¬isNonSaaS & ¬hasFeature(Payment) |
-| pb-sms-unset | Texting never sent | adoption | adoption | Steady | quick | enabled & hasFeature(Phone) & ¬hasFeature(SMS) |
-| pb-reviews-unset | Reviews never connected | adoption | adoption | Steady | quick | enabled & industry∈{Healthcare,Fitness,Wellness,Legal} & ¬hasFeature(Reputation) |
-| pb-breadth-no-depth | Breadth without depth | adoption | adoption | Steady | custom | enabled & features ≥ 2 & all features 0<engagement≤40 |
-| pb-day7-ghost | Day-7 ghost | onboarding | onboard | Slipping | ready | enabled & stage=onboarding & activeDays ≤ 14 & activityStatus=ghosting |
-| pb-onb-day30 | Day-30 onboarding check | onboarding | onboard | Steady | ready | enabled & stage=onboarding & score < 60 |
-| pb-onb-longtail | Long-tail onboarding | onboarding | onboard | Steady | quick | enabled & stage=onboarding & activeDays ≥ 85 |
-| pb-welcome-day1 | Welcome — day 1 | onboarding | onboard | Steady | ready | enabled & stage=onboarding & daysSince(clientSince) ≤ 2 |
-| pb-graduated | Graduated to growth | expansion | expansion | Strong | ready | enabled & stage=activated & delta>0 |
-| pb-spend-surge | Spend surging | expansion | grow | Booming | ready | enabled & band∈{thriving,healthy} & spendTrend ≥ 12 |
-| pb-plan-upgrade | Plan upgraded | expansion | grow | Booming | ready | enabled & recentPlanChange(upgrade,30) |
-| pb-lifetime-milestone | Lifetime spend milestone | expansion | grow | Strong | ready | enabled & lifetimeSpendOf ≥ 30000 |
-| pb-high-engage-entry | High engagement on entry plan | expansion | grow | Strong | quick | enabled & plan⊇"Starter" & activityStatus=highly |
-| pb-power-user | Power user emerged | expansion | grow | Booming | ready | enabled & activityStatus=highly & lastLoginDaysAgo ≤ 2 & band∈{thriving,healthy} |
-| pb-no-feedback | No feedback in 60+ days | retention | listen | Steady | quick | enabled & stage=established & lastFeedbackDate=null |
-| pb-health-thriving | Health reached thriving | expansion | listen | Booming | ready | enabled & band=thriving & delta>0 |
-| pb-anniversary | 1-year anniversary | expansion | listen | Strong | ready | enabled & activeDays∈[350,380] |
-
-> **Phase-1 note:** plays whose predicate references Health (band/score/delta/lifecycle stage) only fire/show in Phase 2. Their marketplace cards still appear in Phase 1 (the Situation rating is plain-word, not Health vocab), but the live impact count is computed from HL-native data only until Health is configured.
-
-#### C.3 Simple-view default filters per playbook (the playbook-aware quick-add)
-
-The Simple-mode quick-add list (Epic **E5.3**) is **playbook-aware**, reasoned from the GoHighLevel agency-owner's chair: *"when I narrow this play, what would I slice by?"* Each play carries `Playbook.audienceKind` (§5.5.1) — **account-level** (the trigger concerns the whole account) or **user-level** (the trigger concerns an individual user's activity, e.g. "no recent login", "admin gone dark", "power user emerged"). `defaultFiltersFor(playbook)` returns the ordered field-ids to offer:
-
-- **Table stakes — on EVERY play:** `account.priority` (Priority account) · `revenue.plan` (Plan) · `engagement.lastLoginDays` (Last login). *(These three are the owner's universal slicing axes.)*
+- **Table stakes — on EVERY play:** `account.priority` (Priority account) · `revenue.plan` (Plan) · `engagement.lastLoginDays` (Last login). *(The owner's three universal slicing axes.)*
 - **Domain pack — by `category`** (the filters owners reach for most in that play's world): **winback** → Renewing soon · MRR · **reengage** → Signed up · **adoption** → Feature in use · Signed up · **revenue** → Payment failed · MRR · Renewing soon · **onboard** → Signed up · **grow** → MRR · Spend trend · **listen** → Sentiment · MRR.
 - **User pack — only when `audienceKind: "user"`:** `user.role` (User role) · `user.keyOnly` (Key users) · `user.idleDays` (A user gone quiet). **Account-level plays show no user filters.**
 
-All fields are HL-native (Phase-1 safe — no `health.*`). The builder hides any field already in the set and regroups the rest for display (**Account · Billing · Feature · Feedback · Users**); a "Browse all fields" launcher always reaches the full catalog. **11 of the 57 plays are user-level**; the rest are account-level. Full mapping (computed from the rule above — authoritative):
-
-| Playbook | Activity | Category | Default Simple-view filters |
-|---|---|---|---|
-| `pb-no-login` — No recent login | **user** | reengage | Priority account · Plan · Last login · Signed up · User role · Key users · A user gone quiet |
-| `pb-renewal-save` — Renewing soon & at risk | account | winback | Priority account · Plan · Last login · Renewing soon · MRR |
-| `pb-payment-failed` — Payment failed | account | revenue | Priority account · Plan · Last login · Payment failed · MRR · Renewing soon |
-| `pb-plan-downgrade` — Plan downgrade | account | winback | Priority account · Plan · Last login · Renewing soon · MRR |
-| `pb-feature-drop` — Usage dropping | account | adoption | Priority account · Plan · Last login · Feature in use · Signed up |
-| `pb-onboarding-stalled` — Onboarding stalled | account | onboard | Priority account · Plan · Last login · Signed up |
-| `pb-save-domain` — Website disconnected | account | winback | Priority account · Plan · Last login · Renewing soon · MRR |
-| `pb-save-integration` — Key integration removed | account | winback | Priority account · Plan · Last login · Renewing soon · MRR |
-| `pb-save-a2p` — Texting registration lost | account | winback | Priority account · Plan · Last login · Renewing soon · MRR |
-| `pb-expansion-ready` — Expansion ready | account | grow | Priority account · Plan · Last login · MRR · Spend trend |
-| `pb-quiet-renewal` — Quiet account, renewal close | **user** | winback | Priority account · Plan · Last login · Renewing soon · MRR · User role · Key users · A user gone quiet |
-| `pb-low-adoption` — Key feature never set up | account | adoption | Priority account · Plan · Last login · Feature in use · Signed up |
-| `pb-nps-detractor` — Unhappy feedback | account | listen | Priority account · Plan · Last login · Sentiment · MRR |
-| `pb-nps-promoter` — Happy customer — ask for a review | account | listen | Priority account · Plan · Last login · Sentiment · MRR |
-| `pb-milestone` — Celebrate a milestone | account | listen | Priority account · Plan · Last login · Sentiment · MRR |
-| `pb-upsell-limit` — Hitting plan limits | account | grow | Priority account · Plan · Last login · MRR · Spend trend |
-| `pb-quiet-7d` — No login — 7 days | **user** | reengage | Priority account · Plan · Last login · Signed up · User role · Key users · A user gone quiet |
-| `pb-admin-dark-30` — Admin gone dark — 30 days | **user** | reengage | Priority account · Plan · Last login · Signed up · User role · Key users · A user gone quiet |
-| `pb-all-inactive` — Whole account inactive | **user** | reengage | Priority account · Plan · Last login · Signed up · User role · Key users · A user gone quiet |
-| `pb-login-collapsed` — Login frequency collapsed | **user** | reengage | Priority account · Plan · Last login · Signed up · User role · Key users · A user gone quiet |
-| `pb-admin-removed` — Key admin removed | **user** | reengage | Priority account · Plan · Last login · Signed up · User role · Key users · A user gone quiet |
-| `pb-reengaged` — Owner re-engaged | **user** | reengage | Priority account · Plan · Last login · Signed up · User role · Key users · A user gone quiet |
-| `pb-health-atrisk` — Health dropped to at-risk | account | winback | Priority account · Plan · Last login · Renewing soon · MRR |
-| `pb-health-watch` — Slipped to watch | account | winback | Priority account · Plan · Last login · Renewing soon · MRR |
-| `pb-prolonged-decline` — Prolonged decline | account | winback | Priority account · Plan · Last login · Renewing soon · MRR |
-| `pb-save-big` — Save the big ones | account | winback | Priority account · Plan · Last login · Renewing soon · MRR |
-| `pb-renewal-dark` — Renewing in 30 days & gone dark | **user** | winback | Priority account · Plan · Last login · Renewing soon · MRR · User role · Key users · A user gone quiet |
-| `pb-annual-renewal` — Annual renewal approaching | account | winback | Priority account · Plan · Last login · Renewing soon · MRR |
-| `pb-funnel-unpublished` — Website / funnel unpublished | account | winback | Priority account · Plan · Last login · Renewing soon · MRR |
-| `pb-phone-portout` — Phone number ported out | account | winback | Priority account · Plan · Last login · Renewing soon · MRR |
-| `pb-email-disconnect` — Email sending domain disconnected | account | winback | Priority account · Plan · Last login · Renewing soon · MRR |
-| `pb-stripe-disconnect` — Payment processor disconnected | account | winback | Priority account · Plan · Last login · Renewing soon · MRR |
-| `pb-calendar-disconnect` — Calendar disconnected | account | winback | Priority account · Plan · Last login · Renewing soon · MRR |
-| `pb-workflow-off` — Published workflow turned off | account | winback | Priority account · Plan · Last login · Renewing soon · MRR |
-| `pb-payment-dunning` — Payment failing repeatedly | account | revenue | Priority account · Plan · Last login · Payment failed · MRR · Renewing soon |
-| `pb-wallet-low` — Rebilling wallet critically low | account | revenue | Priority account · Plan · Last login · Payment failed · MRR · Renewing soon |
-| `pb-spend-drop` — Spend dropping | account | revenue | Priority account · Plan · Last login · Payment failed · MRR · Renewing soon |
-| `pb-cancellation` — Cancellation requested | account | revenue | Priority account · Plan · Last login · Payment failed · MRR · Renewing soon |
-| `pb-churned-winback` — Churned — win back | account | revenue | Priority account · Plan · Last login · Payment failed · MRR · Renewing soon |
-| `pb-workflows-unpublished` — No workflow 30 days after signup | account | adoption | Priority account · Plan · Last login · Feature in use · Signed up |
-| `pb-payments-unset` — Payments never set up | account | adoption | Priority account · Plan · Last login · Feature in use · Signed up |
-| `pb-sms-unset` — Texting never sent | account | adoption | Priority account · Plan · Last login · Feature in use · Signed up |
-| `pb-reviews-unset` — Reviews never connected | account | adoption | Priority account · Plan · Last login · Feature in use · Signed up |
-| `pb-breadth-no-depth` — Breadth without depth | account | adoption | Priority account · Plan · Last login · Feature in use · Signed up |
-| `pb-day7-ghost` — Day-7 ghost | **user** | onboard | Priority account · Plan · Last login · Signed up · User role · Key users · A user gone quiet |
-| `pb-onb-day30` — Day-30 onboarding health check | account | onboard | Priority account · Plan · Last login · Signed up |
-| `pb-onb-longtail` — Long-tail onboarding | account | onboard | Priority account · Plan · Last login · Signed up |
-| `pb-welcome-day1` — Welcome — day 1 | account | onboard | Priority account · Plan · Last login · Signed up |
-| `pb-graduated` — Graduated to growth | account | onboard | Priority account · Plan · Last login · Signed up |
-| `pb-spend-surge` — Spend surging | account | grow | Priority account · Plan · Last login · MRR · Spend trend |
-| `pb-plan-upgrade` — Plan upgraded — deepen | account | grow | Priority account · Plan · Last login · MRR · Spend trend |
-| `pb-lifetime-milestone` — Lifetime spend milestone | account | grow | Priority account · Plan · Last login · MRR · Spend trend |
-| `pb-high-engage-entry` — High engagement on entry plan | account | grow | Priority account · Plan · Last login · MRR · Spend trend |
-| `pb-power-user` — Power user emerged | **user** | grow | Priority account · Plan · Last login · MRR · Spend trend · User role · Key users · A user gone quiet |
-| `pb-no-feedback` — No feedback in 60+ days | account | listen | Priority account · Plan · Last login · Sentiment · MRR |
-| `pb-health-thriving` — Health reached thriving | account | listen | Priority account · Plan · Last login · Sentiment · MRR |
-| `pb-anniversary` — 1-year anniversary | account | listen | Priority account · Plan · Last login · Sentiment · MRR |
+With no play context (lab / create-from-scratch), a generic default list is used. All offered fields are HL-native (Phase-1 safe — no `health.*`). The builder hides any field already in the set and regroups the rest for display (**Account · Billing · Feature · Feedback · Users**); a "Browse all fields" launcher always reaches the full catalog. (Of the seeded plays today, 11 are user-level and the rest account-level.) Each play's resolved default filters live in `./playbooks-catalog.json` (`playbooks[].defaultSimpleFilters`), with the quick-add picks and full field universe in `filters.simpleQuickAdd` / `filters.advancedGroups`.
 
 ---
 

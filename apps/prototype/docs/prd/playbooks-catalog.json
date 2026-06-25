@@ -1,0 +1,929 @@
+{
+  "meta": {
+    "note": "Product catalog data extracted from the PRD so the PRD stays narrative. The catalog GROWS over time — production starts with a small curated set (~5) and expands to hundreds; the prototype currently seeds 57. Severity 'situation' bands and 'effort' are product taxonomy, not internal scores.",
+    "playbookCount": 57,
+    "source": "apps/prototype/src/fixtures/playbooks.ts"
+  },
+  "categories": [
+    {
+      "id": "winback",
+      "label": "Win back at-risk",
+      "description": "Save accounts that are slipping or about to leave — health drops, renewals at risk, and key setups coming undone."
+    },
+    {
+      "id": "reengage",
+      "label": "Re-engage quiet",
+      "description": "Bring owners and admins back into the workspace after they go quiet or stop logging in."
+    },
+    {
+      "id": "adoption",
+      "label": "Drive adoption",
+      "description": "Get accounts to switch on and stick with the features they're paying for."
+    },
+    {
+      "id": "revenue",
+      "label": "Rescue revenue",
+      "description": "Protect the money — failed payments, dunning, low wallets, falling spend, and cancellation requests."
+    },
+    {
+      "id": "onboard",
+      "label": "Onboard faster",
+      "description": "Move new accounts to their first win before early momentum dies."
+    },
+    {
+      "id": "grow",
+      "label": "Grow & upsell",
+      "description": "Act on the happy signals — heavy usage, upgrades, and surging spend — to expand the relationship."
+    },
+    {
+      "id": "listen",
+      "label": "Listen & celebrate",
+      "description": "Catch feedback early and mark the milestones that build loyalty and social proof."
+    }
+  ],
+  "situations": [
+    {
+      "id": "critical",
+      "label": "Critical",
+      "description": "About to lose them — act today."
+    },
+    {
+      "id": "atrisk",
+      "label": "Slipping",
+      "description": "Warning signs are showing — intervene before it gets worse."
+    },
+    {
+      "id": "watch",
+      "label": "Steady",
+      "description": "Stable, but worth a light-touch nudge to keep on track."
+    },
+    {
+      "id": "positive",
+      "label": "Strong",
+      "description": "Doing well — a good moment to deepen the relationship."
+    },
+    {
+      "id": "verypositive",
+      "label": "Booming",
+      "description": "Thriving and growing fast — grow the relationship now."
+    }
+  ],
+  "playbooks": [
+    {
+      "id": "pb-no-login",
+      "title": "No recent login",
+      "problem": "The owner hasn't logged in for 21+ days.",
+      "category": "reengage",
+      "situation": "atrisk",
+      "effort": "ready",
+      "audience": "user",
+      "defaultTrigger": "Live account where the owner hasn't logged in for 21 days or more (excludes accounts still onboarding or already churned).",
+      "defaultSimpleFilters": ["account.priority", "revenue.plan", "engagement.lastLoginDays", "account.created", "user.role", "user.keyOnly", "user.idleDays"]
+    },
+    {
+      "id": "pb-renewal-save",
+      "title": "Renewing soon & at risk",
+      "problem": "Renews within 30 days and showing warning signs.",
+      "category": "winback",
+      "situation": "atrisk",
+      "effort": "ready",
+      "audience": "account",
+      "defaultTrigger": "Renewal coming up within the next 30 days while the account is showing warning signs.",
+      "defaultSimpleFilters": ["account.priority", "revenue.plan", "engagement.lastLoginDays", "revenue.renewsWithin", "revenue.mrr"]
+    },
+    {
+      "id": "pb-payment-failed",
+      "title": "Payment failed",
+      "problem": "A recent payment failed or the card was declined.",
+      "category": "revenue",
+      "situation": "critical",
+      "effort": "ready",
+      "audience": "account",
+      "defaultTrigger": "A recent payment failed or the card was declined.",
+      "defaultSimpleFilters": ["account.priority", "revenue.plan", "engagement.lastLoginDays", "revenue.failedPayment", "revenue.mrr", "revenue.renewsWithin"]
+    },
+    {
+      "id": "pb-plan-downgrade",
+      "title": "Plan downgrade",
+      "problem": "The account just downgraded or dropped a paid add-on.",
+      "category": "winback",
+      "situation": "atrisk",
+      "effort": "quick",
+      "audience": "account",
+      "defaultTrigger": "The account downgraded its plan or dropped a paid add-on in the last 60 days.",
+      "defaultSimpleFilters": ["account.priority", "revenue.plan", "engagement.lastLoginDays", "revenue.renewsWithin", "revenue.mrr"]
+    },
+    {
+      "id": "pb-feature-drop",
+      "title": "Usage dropping",
+      "problem": "A key feature's usage fell 30%+ this month.",
+      "category": "adoption",
+      "situation": "atrisk",
+      "effort": "ready",
+      "audience": "account",
+      "defaultTrigger": "Usage of a key feature has fallen sharply this month, or the account has features it's barely using.",
+      "defaultSimpleFilters": ["account.priority", "revenue.plan", "engagement.lastLoginDays", "feature.inUse", "account.created"]
+    },
+    {
+      "id": "pb-onboarding-stalled",
+      "title": "Onboarding stalled",
+      "problem": "The account has been stuck on the same setup step too long.",
+      "category": "onboard",
+      "situation": "watch",
+      "effort": "ready",
+      "audience": "account",
+      "defaultTrigger": "The account has been stuck on the same setup step too long while still enabled.",
+      "defaultSimpleFilters": ["account.priority", "revenue.plan", "engagement.lastLoginDays", "account.created"]
+    },
+    {
+      "id": "pb-save-domain",
+      "title": "Website disconnected — win them back",
+      "problem": "Their website is no longer connected — a strong sign they're leaving.",
+      "category": "winback",
+      "situation": "critical",
+      "effort": "ready",
+      "audience": "account",
+      "defaultTrigger": "Their website got disconnected in the last 30 days — a strong sign they're leaving.",
+      "defaultSimpleFilters": ["account.priority", "revenue.plan", "engagement.lastLoginDays", "revenue.renewsWithin", "revenue.mrr"]
+    },
+    {
+      "id": "pb-save-integration",
+      "title": "Key integration removed",
+      "problem": "A page, automation, or other key setup was removed.",
+      "category": "winback",
+      "situation": "critical",
+      "effort": "ready",
+      "audience": "account",
+      "defaultTrigger": "A funnel, workflow, or other key setup was removed in the last 30 days.",
+      "defaultSimpleFilters": ["account.priority", "revenue.plan", "engagement.lastLoginDays", "revenue.renewsWithin", "revenue.mrr"]
+    },
+    {
+      "id": "pb-save-a2p",
+      "title": "Texting registration lost — win them back",
+      "problem": "Their phone-texting registration lapsed — texts are about to stop.",
+      "category": "winback",
+      "situation": "critical",
+      "effort": "quick",
+      "audience": "account",
+      "defaultTrigger": "Their phone-texting registration lapsed in the last 30 days — texts are about to stop.",
+      "defaultSimpleFilters": ["account.priority", "revenue.plan", "engagement.lastLoginDays", "revenue.renewsWithin", "revenue.mrr"]
+    },
+    {
+      "id": "pb-expansion-ready",
+      "title": "Expansion ready",
+      "problem": "Doing great, healthy, and trending up.",
+      "category": "grow",
+      "situation": "positive",
+      "effort": "ready",
+      "audience": "account",
+      "defaultTrigger": "An established account that's healthy and trending up.",
+      "defaultSimpleFilters": ["account.priority", "revenue.plan", "engagement.lastLoginDays", "revenue.mrr", "revenue.spendTrend"]
+    },
+    {
+      "id": "pb-quiet-renewal",
+      "title": "Quiet account, renewal close",
+      "problem": "Hasn't logged in lately and renews within 45 days.",
+      "category": "winback",
+      "situation": "atrisk",
+      "effort": "ready",
+      "audience": "user",
+      "defaultTrigger": "Hasn't logged in for at least 14 days and renews within the next 45 days.",
+      "defaultSimpleFilters": ["account.priority", "revenue.plan", "engagement.lastLoginDays", "revenue.renewsWithin", "revenue.mrr", "user.role", "user.keyOnly", "user.idleDays"]
+    },
+    {
+      "id": "pb-low-adoption",
+      "title": "Key feature never set up",
+      "problem": "Paying, but two or more core features were never switched on.",
+      "category": "adoption",
+      "situation": "watch",
+      "effort": "quick",
+      "audience": "account",
+      "defaultTrigger": "A paying account that never switched on two or more core features.",
+      "defaultSimpleFilters": ["account.priority", "revenue.plan", "engagement.lastLoginDays", "feature.inUse", "account.created"]
+    },
+    {
+      "id": "pb-nps-detractor",
+      "title": "Unhappy feedback — make it right",
+      "problem": "Left low or negative feedback recently.",
+      "category": "listen",
+      "situation": "atrisk",
+      "effort": "ready",
+      "audience": "account",
+      "defaultTrigger": "Left negative or low feedback recently while still enabled.",
+      "defaultSimpleFilters": ["account.priority", "revenue.plan", "engagement.lastLoginDays", "feedback.sentiment", "revenue.mrr"]
+    },
+    {
+      "id": "pb-nps-promoter",
+      "title": "Happy customer — ask for a review",
+      "problem": "Healthy, established, and clearly happy.",
+      "category": "listen",
+      "situation": "verypositive",
+      "effort": "ready",
+      "audience": "account",
+      "defaultTrigger": "An established account that's healthy and clearly happy.",
+      "defaultSimpleFilters": ["account.priority", "revenue.plan", "engagement.lastLoginDays", "feedback.sentiment", "revenue.mrr"]
+    },
+    {
+      "id": "pb-milestone",
+      "title": "Celebrate a milestone",
+      "problem": "Hit a meaningful milestone (anniversary, usage high, first result).",
+      "category": "listen",
+      "situation": "positive",
+      "effort": "ready",
+      "audience": "account",
+      "defaultTrigger": "The account just hit a meaningful milestone, such as a one- or two-year anniversary.",
+      "defaultSimpleFilters": ["account.priority", "revenue.plan", "engagement.lastLoginDays", "feedback.sentiment", "revenue.mrr"]
+    },
+    {
+      "id": "pb-upsell-limit",
+      "title": "Hitting plan limits",
+      "problem": "Bumping against the ceiling of their current plan.",
+      "category": "grow",
+      "situation": "positive",
+      "effort": "quick",
+      "audience": "account",
+      "defaultTrigger": "A healthy account with 5 or more active users that's bumping against the ceiling of its current plan and isn't already on the top tier.",
+      "defaultSimpleFilters": ["account.priority", "revenue.plan", "engagement.lastLoginDays", "revenue.mrr", "revenue.spendTrend"]
+    },
+    {
+      "id": "pb-quiet-7d",
+      "title": "No login — 7 days",
+      "problem": "The owner hasn't logged in for a week.",
+      "category": "reengage",
+      "situation": "watch",
+      "effort": "ready",
+      "audience": "user",
+      "defaultTrigger": "A live account where the owner hasn't logged in for 7 to 20 days.",
+      "defaultSimpleFilters": ["account.priority", "revenue.plan", "engagement.lastLoginDays", "account.created", "user.role", "user.keyOnly", "user.idleDays"]
+    },
+    {
+      "id": "pb-admin-dark-30",
+      "title": "Admin gone dark — 30 days",
+      "problem": "The account admin hasn't logged in for 30+ days.",
+      "category": "reengage",
+      "situation": "atrisk",
+      "effort": "ready",
+      "audience": "user",
+      "defaultTrigger": "A live account where the admin hasn't logged in for 30 days or more.",
+      "defaultSimpleFilters": ["account.priority", "revenue.plan", "engagement.lastLoginDays", "account.created", "user.role", "user.keyOnly", "user.idleDays"]
+    },
+    {
+      "id": "pb-all-inactive",
+      "title": "Whole account inactive",
+      "problem": "Every user has been idle for 30+ days — the account is going dark.",
+      "category": "reengage",
+      "situation": "critical",
+      "effort": "ready",
+      "audience": "user",
+      "defaultTrigger": "Every user has been idle for 30 days or more and the account has gone dark.",
+      "defaultSimpleFilters": ["account.priority", "revenue.plan", "engagement.lastLoginDays", "account.created", "user.role", "user.keyOnly", "user.idleDays"]
+    },
+    {
+      "id": "pb-login-collapsed",
+      "title": "Login frequency collapsed",
+      "problem": "They were logging in regularly and have suddenly dropped off.",
+      "category": "reengage",
+      "situation": "atrisk",
+      "effort": "quick",
+      "audience": "user",
+      "defaultTrigger": "They were logging in regularly and have suddenly dropped off over the last 90 days.",
+      "defaultSimpleFilters": ["account.priority", "revenue.plan", "engagement.lastLoginDays", "account.created", "user.role", "user.keyOnly", "user.idleDays"]
+    },
+    {
+      "id": "pb-admin-removed",
+      "title": "Key admin removed",
+      "problem": "An admin user was deactivated or removed from the account.",
+      "category": "reengage",
+      "situation": "atrisk",
+      "effort": "quick",
+      "audience": "user",
+      "defaultTrigger": "An admin user was deactivated or removed from the account.",
+      "defaultSimpleFilters": ["account.priority", "revenue.plan", "engagement.lastLoginDays", "account.created", "user.role", "user.keyOnly", "user.idleDays"]
+    },
+    {
+      "id": "pb-reengaged",
+      "title": "Owner re-engaged",
+      "problem": "An account that had gone quiet is active again.",
+      "category": "reengage",
+      "situation": "positive",
+      "effort": "ready",
+      "audience": "user",
+      "defaultTrigger": "An account that had gone quiet is logging in and active again.",
+      "defaultSimpleFilters": ["account.priority", "revenue.plan", "engagement.lastLoginDays", "account.created", "user.role", "user.keyOnly", "user.idleDays"]
+    },
+    {
+      "id": "pb-health-atrisk",
+      "title": "Health dropped to at-risk",
+      "problem": "Overall health just fell into the at-risk band.",
+      "category": "winback",
+      "situation": "atrisk",
+      "effort": "ready",
+      "audience": "account",
+      "defaultTrigger": "Overall health just fell into the at-risk band.",
+      "defaultSimpleFilters": ["account.priority", "revenue.plan", "engagement.lastLoginDays", "revenue.renewsWithin", "revenue.mrr"]
+    },
+    {
+      "id": "pb-health-watch",
+      "title": "Slipped to watch",
+      "problem": "Health softened from healthy into the watch band.",
+      "category": "winback",
+      "situation": "watch",
+      "effort": "ready",
+      "audience": "account",
+      "defaultTrigger": "Health softened from healthy into the watch band.",
+      "defaultSimpleFilters": ["account.priority", "revenue.plan", "engagement.lastLoginDays", "revenue.renewsWithin", "revenue.mrr"]
+    },
+    {
+      "id": "pb-prolonged-decline",
+      "title": "Prolonged decline",
+      "problem": "Health has been falling steadily — a sustained downward trend.",
+      "category": "winback",
+      "situation": "atrisk",
+      "effort": "quick",
+      "audience": "account",
+      "defaultTrigger": "Health has been falling steadily over a sustained period.",
+      "defaultSimpleFilters": ["account.priority", "revenue.plan", "engagement.lastLoginDays", "revenue.renewsWithin", "revenue.mrr"]
+    },
+    {
+      "id": "pb-save-big",
+      "title": "Save the big ones",
+      "problem": "A high-MRR account is at-risk — the most expensive churn you can have.",
+      "category": "winback",
+      "situation": "critical",
+      "effort": "ready",
+      "audience": "account",
+      "defaultTrigger": "A high-value account (MRR of $2,000 or more) is at risk.",
+      "defaultSimpleFilters": ["account.priority", "revenue.plan", "engagement.lastLoginDays", "revenue.renewsWithin", "revenue.mrr"]
+    },
+    {
+      "id": "pb-renewal-dark",
+      "title": "Renewing in 30 days & gone dark",
+      "problem": "Renews within 30 days and hasn't logged in for a month.",
+      "category": "winback",
+      "situation": "critical",
+      "effort": "ready",
+      "audience": "user",
+      "defaultTrigger": "Renews within the next 30 days and hasn't logged in for a month.",
+      "defaultSimpleFilters": ["account.priority", "revenue.plan", "engagement.lastLoginDays", "revenue.renewsWithin", "revenue.mrr", "user.role", "user.keyOnly", "user.idleDays"]
+    },
+    {
+      "id": "pb-annual-renewal",
+      "title": "Annual renewal approaching",
+      "problem": "An annual account is coming up for renewal in the next 60 days.",
+      "category": "winback",
+      "situation": "watch",
+      "effort": "quick",
+      "audience": "account",
+      "defaultTrigger": "An annual (Pro-plan) account is coming up for renewal within the next 60 days.",
+      "defaultSimpleFilters": ["account.priority", "revenue.plan", "engagement.lastLoginDays", "revenue.renewsWithin", "revenue.mrr"]
+    },
+    {
+      "id": "pb-funnel-unpublished",
+      "title": "Website / funnel unpublished",
+      "problem": "A funnel that was live has been unpublished — a strong leaving signal.",
+      "category": "winback",
+      "situation": "critical",
+      "effort": "ready",
+      "audience": "account",
+      "defaultTrigger": "A funnel that was live has been unpublished in the last 30 days — a strong leaving signal.",
+      "defaultSimpleFilters": ["account.priority", "revenue.plan", "engagement.lastLoginDays", "revenue.renewsWithin", "revenue.mrr"]
+    },
+    {
+      "id": "pb-phone-portout",
+      "title": "Phone number ported out",
+      "problem": "They ported their phone number off the platform — one of the strongest exit signals.",
+      "category": "winback",
+      "situation": "critical",
+      "effort": "ready",
+      "audience": "account",
+      "defaultTrigger": "They ported their phone number off the platform in the last 30 days — one of the strongest exit signals.",
+      "defaultSimpleFilters": ["account.priority", "revenue.plan", "engagement.lastLoginDays", "revenue.renewsWithin", "revenue.mrr"]
+    },
+    {
+      "id": "pb-email-disconnect",
+      "title": "Email sending domain disconnected",
+      "problem": "Their email sending domain was disconnected — campaigns will stop landing.",
+      "category": "winback",
+      "situation": "critical",
+      "effort": "ready",
+      "audience": "account",
+      "defaultTrigger": "Their email sending domain was disconnected in the last 30 days — campaigns will stop landing.",
+      "defaultSimpleFilters": ["account.priority", "revenue.plan", "engagement.lastLoginDays", "revenue.renewsWithin", "revenue.mrr"]
+    },
+    {
+      "id": "pb-stripe-disconnect",
+      "title": "Payment processor disconnected",
+      "problem": "Their Stripe/payment processor was disconnected — they can't take payments.",
+      "category": "winback",
+      "situation": "critical",
+      "effort": "ready",
+      "audience": "account",
+      "defaultTrigger": "Their payment processor was disconnected in the last 30 days — they can't take payments.",
+      "defaultSimpleFilters": ["account.priority", "revenue.plan", "engagement.lastLoginDays", "revenue.renewsWithin", "revenue.mrr"]
+    },
+    {
+      "id": "pb-calendar-disconnect",
+      "title": "Calendar disconnected",
+      "problem": "Their calendar integration was disconnected — bookings will fail.",
+      "category": "winback",
+      "situation": "critical",
+      "effort": "quick",
+      "audience": "account",
+      "defaultTrigger": "Their calendar integration was disconnected in the last 30 days — bookings will fail.",
+      "defaultSimpleFilters": ["account.priority", "revenue.plan", "engagement.lastLoginDays", "revenue.renewsWithin", "revenue.mrr"]
+    },
+    {
+      "id": "pb-workflow-off",
+      "title": "Published workflow turned off",
+      "problem": "A live, published workflow was turned off or deleted.",
+      "category": "winback",
+      "situation": "atrisk",
+      "effort": "ready",
+      "audience": "account",
+      "defaultTrigger": "A live, published workflow was turned off or deleted in the last 30 days.",
+      "defaultSimpleFilters": ["account.priority", "revenue.plan", "engagement.lastLoginDays", "revenue.renewsWithin", "revenue.mrr"]
+    },
+    {
+      "id": "pb-payment-dunning",
+      "title": "Payment failing repeatedly",
+      "problem": "A card has failed two or more times in a row.",
+      "category": "revenue",
+      "situation": "critical",
+      "effort": "ready",
+      "audience": "account",
+      "defaultTrigger": "A card has failed two or more times in a row.",
+      "defaultSimpleFilters": ["account.priority", "revenue.plan", "engagement.lastLoginDays", "revenue.failedPayment", "revenue.mrr", "revenue.renewsWithin"]
+    },
+    {
+      "id": "pb-wallet-low",
+      "title": "Rebilling wallet critically low",
+      "problem": "The rebilling wallet is nearly empty while usage keeps drawing it down.",
+      "category": "revenue",
+      "situation": "critical",
+      "effort": "ready",
+      "audience": "account",
+      "defaultTrigger": "The rebilling wallet is below $250 while monthly usage is drawing it down faster than the remaining balance.",
+      "defaultSimpleFilters": ["account.priority", "revenue.plan", "engagement.lastLoginDays", "revenue.failedPayment", "revenue.mrr", "revenue.renewsWithin"]
+    },
+    {
+      "id": "pb-spend-drop",
+      "title": "Spend dropping",
+      "problem": "Their rebilling spend has fallen sharply — usage is pulling back.",
+      "category": "revenue",
+      "situation": "atrisk",
+      "effort": "quick",
+      "audience": "account",
+      "defaultTrigger": "Their rebilling spend has fallen sharply (down 15% or more) — usage is pulling back.",
+      "defaultSimpleFilters": ["account.priority", "revenue.plan", "engagement.lastLoginDays", "revenue.failedPayment", "revenue.mrr", "revenue.renewsWithin"]
+    },
+    {
+      "id": "pb-cancellation",
+      "title": "Cancellation requested",
+      "problem": "They've signaled intent to cancel.",
+      "category": "revenue",
+      "situation": "critical",
+      "effort": "ready",
+      "audience": "account",
+      "defaultTrigger": "They've signaled intent to cancel and a stop is pending.",
+      "defaultSimpleFilters": ["account.priority", "revenue.plan", "engagement.lastLoginDays", "revenue.failedPayment", "revenue.mrr", "revenue.renewsWithin"]
+    },
+    {
+      "id": "pb-churned-winback",
+      "title": "Churned — win back",
+      "problem": "An account cancelled recently.",
+      "category": "revenue",
+      "situation": "critical",
+      "effort": "custom",
+      "audience": "account",
+      "defaultTrigger": "An account churned or cancelled in the last 90 days.",
+      "defaultSimpleFilters": ["account.priority", "revenue.plan", "engagement.lastLoginDays", "revenue.failedPayment", "revenue.mrr", "revenue.renewsWithin"]
+    },
+    {
+      "id": "pb-workflows-unpublished",
+      "title": "No workflow 30 days after signup",
+      "problem": "A month in and they still haven't published a single automation.",
+      "category": "adoption",
+      "situation": "atrisk",
+      "effort": "ready",
+      "audience": "account",
+      "defaultTrigger": "Live for 30 days or more and still hasn't published a single automation.",
+      "defaultSimpleFilters": ["account.priority", "revenue.plan", "engagement.lastLoginDays", "feature.inUse", "account.created"]
+    },
+    {
+      "id": "pb-payments-unset",
+      "title": "Payments never set up",
+      "problem": "A paying account never switched on payments — money they could be collecting.",
+      "category": "adoption",
+      "situation": "watch",
+      "effort": "quick",
+      "audience": "account",
+      "defaultTrigger": "A live, paying SaaS account that never switched on payments.",
+      "defaultSimpleFilters": ["account.priority", "revenue.plan", "engagement.lastLoginDays", "feature.inUse", "account.created"]
+    },
+    {
+      "id": "pb-sms-unset",
+      "title": "Texting never sent",
+      "problem": "They have phone capability but haven't sent any texts.",
+      "category": "adoption",
+      "situation": "watch",
+      "effort": "quick",
+      "audience": "account",
+      "defaultTrigger": "They have phone capability switched on but haven't sent any texts.",
+      "defaultSimpleFilters": ["account.priority", "revenue.plan", "engagement.lastLoginDays", "feature.inUse", "account.created"]
+    },
+    {
+      "id": "pb-reviews-unset",
+      "title": "Reviews never connected",
+      "problem": "A local-service account hasn't connected review/reputation tools.",
+      "category": "adoption",
+      "situation": "watch",
+      "effort": "quick",
+      "audience": "account",
+      "defaultTrigger": "A local-service account (such as healthcare, fitness, wellness, or legal) hasn't connected its review and reputation tools.",
+      "defaultSimpleFilters": ["account.priority", "revenue.plan", "engagement.lastLoginDays", "feature.inUse", "account.created"]
+    },
+    {
+      "id": "pb-breadth-no-depth",
+      "title": "Breadth without depth",
+      "problem": "They've touched several features but go deep on none of them.",
+      "category": "adoption",
+      "situation": "watch",
+      "effort": "custom",
+      "audience": "account",
+      "defaultTrigger": "They've touched two or more features but use every one of them only lightly.",
+      "defaultSimpleFilters": ["account.priority", "revenue.plan", "engagement.lastLoginDays", "feature.inUse", "account.created"]
+    },
+    {
+      "id": "pb-day7-ghost",
+      "title": "Day-7 ghost",
+      "problem": "A new account hasn't logged in at all in its first week.",
+      "category": "onboard",
+      "situation": "atrisk",
+      "effort": "ready",
+      "audience": "user",
+      "defaultTrigger": "A new account (in its first two weeks, still onboarding) that hasn't logged in at all.",
+      "defaultSimpleFilters": ["account.priority", "revenue.plan", "engagement.lastLoginDays", "account.created", "user.role", "user.keyOnly", "user.idleDays"]
+    },
+    {
+      "id": "pb-onb-day30",
+      "title": "Day-30 onboarding health check",
+      "problem": "An onboarding account is past the first weeks but health is still low.",
+      "category": "onboard",
+      "situation": "watch",
+      "effort": "ready",
+      "audience": "account",
+      "defaultTrigger": "An account still in onboarding whose health score is below 60.",
+      "defaultSimpleFilters": ["account.priority", "revenue.plan", "engagement.lastLoginDays", "account.created"]
+    },
+    {
+      "id": "pb-onb-longtail",
+      "title": "Long-tail onboarding",
+      "problem": "The account is 90+ days old but never finished onboarding.",
+      "category": "onboard",
+      "situation": "watch",
+      "effort": "quick",
+      "audience": "account",
+      "defaultTrigger": "Still in onboarding 85 or more days after signing up.",
+      "defaultSimpleFilters": ["account.priority", "revenue.plan", "engagement.lastLoginDays", "account.created"]
+    },
+    {
+      "id": "pb-welcome-day1",
+      "title": "Welcome — day 1",
+      "problem": "A brand-new account just came on board.",
+      "category": "onboard",
+      "situation": "watch",
+      "effort": "ready",
+      "audience": "account",
+      "defaultTrigger": "A brand-new account that signed up within the last 2 days.",
+      "defaultSimpleFilters": ["account.priority", "revenue.plan", "engagement.lastLoginDays", "account.created"]
+    },
+    {
+      "id": "pb-graduated",
+      "title": "Graduated to growth",
+      "problem": "An account just moved from onboarding into active growth.",
+      "category": "onboard",
+      "situation": "positive",
+      "effort": "ready",
+      "audience": "account",
+      "defaultTrigger": "An account that just moved from onboarding into active use with health trending up.",
+      "defaultSimpleFilters": ["account.priority", "revenue.plan", "engagement.lastLoginDays", "account.created"]
+    },
+    {
+      "id": "pb-spend-surge",
+      "title": "Spend surging",
+      "problem": "Their rebilling spend is climbing fast — they're scaling.",
+      "category": "grow",
+      "situation": "verypositive",
+      "effort": "ready",
+      "audience": "account",
+      "defaultTrigger": "A healthy account whose rebilling spend is climbing fast (up 12% or more) — they're scaling.",
+      "defaultSimpleFilters": ["account.priority", "revenue.plan", "engagement.lastLoginDays", "revenue.mrr", "revenue.spendTrend"]
+    },
+    {
+      "id": "pb-plan-upgrade",
+      "title": "Plan upgraded — deepen",
+      "problem": "They recently upgraded to a higher plan.",
+      "category": "grow",
+      "situation": "verypositive",
+      "effort": "ready",
+      "audience": "account",
+      "defaultTrigger": "They upgraded to a higher plan in the last 30 days.",
+      "defaultSimpleFilters": ["account.priority", "revenue.plan", "engagement.lastLoginDays", "revenue.mrr", "revenue.spendTrend"]
+    },
+    {
+      "id": "pb-lifetime-milestone",
+      "title": "Lifetime spend milestone",
+      "problem": "Their total spend with you has crossed a meaningful threshold.",
+      "category": "grow",
+      "situation": "positive",
+      "effort": "ready",
+      "audience": "account",
+      "defaultTrigger": "Their total lifetime spend with you has crossed a meaningful threshold (around $30,000).",
+      "defaultSimpleFilters": ["account.priority", "revenue.plan", "engagement.lastLoginDays", "revenue.mrr", "revenue.spendTrend"]
+    },
+    {
+      "id": "pb-high-engage-entry",
+      "title": "High engagement on entry plan",
+      "problem": "They're using the product heavily while still on an entry plan.",
+      "category": "grow",
+      "situation": "positive",
+      "effort": "quick",
+      "audience": "account",
+      "defaultTrigger": "They're using the product heavily while still on an entry (Starter) plan.",
+      "defaultSimpleFilters": ["account.priority", "revenue.plan", "engagement.lastLoginDays", "revenue.mrr", "revenue.spendTrend"]
+    },
+    {
+      "id": "pb-power-user",
+      "title": "Power user emerged",
+      "problem": "Someone is in the product daily — a clear champion.",
+      "category": "grow",
+      "situation": "verypositive",
+      "effort": "ready",
+      "audience": "user",
+      "defaultTrigger": "Someone is in the product daily on a healthy account — a clear champion.",
+      "defaultSimpleFilters": ["account.priority", "revenue.plan", "engagement.lastLoginDays", "revenue.mrr", "revenue.spendTrend", "user.role", "user.keyOnly", "user.idleDays"]
+    },
+    {
+      "id": "pb-no-feedback",
+      "title": "No feedback in 60+ days",
+      "problem": "An established account hasn't given any feedback in a long time.",
+      "category": "listen",
+      "situation": "watch",
+      "effort": "quick",
+      "audience": "account",
+      "defaultTrigger": "An established account that has never given any feedback.",
+      "defaultSimpleFilters": ["account.priority", "revenue.plan", "engagement.lastLoginDays", "feedback.sentiment", "revenue.mrr"]
+    },
+    {
+      "id": "pb-health-thriving",
+      "title": "Health reached thriving",
+      "problem": "Their health just climbed into the thriving band.",
+      "category": "listen",
+      "situation": "verypositive",
+      "effort": "ready",
+      "audience": "account",
+      "defaultTrigger": "Their health just climbed into the thriving band.",
+      "defaultSimpleFilters": ["account.priority", "revenue.plan", "engagement.lastLoginDays", "feedback.sentiment", "revenue.mrr"]
+    },
+    {
+      "id": "pb-anniversary",
+      "title": "1-year anniversary",
+      "problem": "An account is hitting its one-year mark with you.",
+      "category": "listen",
+      "situation": "positive",
+      "effort": "ready",
+      "audience": "account",
+      "defaultTrigger": "An account hitting its one-year mark with you (active 350 to 380 days).",
+      "defaultSimpleFilters": ["account.priority", "revenue.plan", "engagement.lastLoginDays", "feedback.sentiment", "revenue.mrr"]
+    }
+  ],
+  "enums": {
+    "state": [
+      { "id": "off", "label": "Off", "description": "In the marketplace, not deployed." },
+      { "id": "ranonce", "label": "Ran once", "description": "A historical run-once deployment (a variant of paused)." },
+      { "id": "on", "label": "On", "description": "Live; auto-runs on matching accounts." },
+      { "id": "paused", "label": "Paused", "description": "Deployed but suspended." }
+    ],
+    "stateNote": "Playbook.state is the seed/default; the live per-agency deployment state is AutopilotStatus (off | on | paused | archived). 'archived' = soft-removed with history kept; 'ranonce' is a historical paused variant for run-once deployments.",
+    "kind": [
+      { "id": "save", "label": "Save" },
+      { "id": "retention", "label": "Retention" },
+      { "id": "adoption", "label": "Adoption" },
+      { "id": "billing", "label": "Billing" },
+      { "id": "onboarding", "label": "Onboarding" },
+      { "id": "expansion", "label": "Expansion" }
+    ],
+    "effort": [
+      { "id": "ready", "label": "Ready to go" },
+      { "id": "quick", "label": "Quick setup" },
+      { "id": "custom", "label": "Add your wording" }
+    ]
+  },
+  "recipes": [
+    {
+      "id": "rec-atrisk-renewing",
+      "icon": "calendar-clock",
+      "label": "At-risk & renewing soon",
+      "blurb": "Shaky accounts with a renewal inside the next month.",
+      "set": "health.band isAnyOf [atrisk,watch] AND revenue.renewsWithin inNext 30d",
+      "playbookId": "pb-renewal-save"
+    },
+    {
+      "id": "rec-big-downhill",
+      "icon": "trending-down",
+      "label": "Big accounts going downhill",
+      "blurb": "Your biggest accounts whose health is falling.",
+      "set": "revenue.mrr gt 1500 AND health.trend falling",
+      "playbookId": "pb-renewal-save"
+    },
+    {
+      "id": "rec-gone-quiet",
+      "icon": "moon",
+      "label": "Gone quiet",
+      "blurb": "Owners who haven't logged in for 21+ days.",
+      "set": "engagement.lastLoginDays gt 21",
+      "playbookId": "pb-no-login"
+    },
+    {
+      "id": "rec-quiet-no-core",
+      "icon": "zap-off",
+      "label": "Quiet and not using Workflows",
+      "blurb": "Gone quiet and never turned on Workflows.",
+      "set": "engagement.lastLoginDays gt 21 AND feature.inUse isNoneOf [Workflow]",
+      "playbookId": "pb-feature-drop"
+    },
+    {
+      "id": "rec-payment-failed",
+      "icon": "credit-card",
+      "label": "Payment failed",
+      "blurb": "A charge was declined or failed.",
+      "set": "revenue.failedPayment is true",
+      "playbookId": "pb-payment-failed"
+    },
+    {
+      "id": "rec-slipping-engagement",
+      "icon": "activity",
+      "label": "Slipping engagement",
+      "blurb": "Feature use is falling and health is shaky.",
+      "set": "feature.engagementTrend falling AND health.band isAnyOf [watch,atrisk]",
+      "playbookId": "pb-feature-drop"
+    }
+  ],
+  "recipesNote": "Recipes seed the builder's empty state, name a phrasing example, and link to the downstream play. In Phase 1, any health.* criterion in a recipe's set is stripped before use (rec-atrisk-renewing, rec-big-downhill, rec-slipping-engagement keep only their HL-native parts).",
+  "attentionSignals": [
+    {
+      "id": "sig-payment-failed",
+      "tier": "native",
+      "icon": "credit-card",
+      "title": "Payment failed on N sub-account(s)",
+      "set": "revenue.failedPayment is true",
+      "playbookId": "pb-payment-failed",
+      "priority": 90,
+      "meaning": "A charge was declined — these accounts can lose access until billing is fixed."
+    },
+    {
+      "id": "sig-no-login",
+      "tier": "native",
+      "icon": "moon",
+      "title": "N sub-account(s) haven't logged in for 14 days",
+      "set": "engagement.lastLoginDays gt 14",
+      "playbookId": "pb-no-login",
+      "priority": 70,
+      "meaning": "These owners have gone quiet — a leading sign of disengagement."
+    },
+    {
+      "id": "sig-health-atrisk",
+      "tier": "health",
+      "phase": 2,
+      "icon": "alert-triangle",
+      "title": "N account(s) dropped to At-Risk",
+      "set": "health.band isAnyOf [atrisk]",
+      "playbookId": "pb-renewal-save",
+      "priority": 80,
+      "meaning": "Overall health just fell into the at-risk band — intervene before renewal."
+    }
+  ],
+  "attentionSignalsNote": "Tier-1 (native) signals are always active; Tier-2 (health) signals appear only in Phase 2. Production will add more definitions; the model is fixed.",
+  "predicateHelpers": {
+    "notOnboardingLive": "Account is enabled and its lifecycle stage is neither onboarding nor churned.",
+    "stickyReverse": "A sticky + reverse + setup Signal on the given subject(s), detected within the last 30 days (the strongest churn signal — a critical setup actively being lost).",
+    "hasFeature": "The account has an adoption feature x with engagement greater than 0.",
+    "recentPlanChange": "A plan change of the given type (upgrade/downgrade/reactivation/churn) within the given number of days.",
+    "failedAttempts": "The count of payment attempts whose status is failed.",
+    "lifetimeSpendOf": "The account's lifetime spend = MRR x max(1, activeDays / 30).",
+    "usageReverse": "A reverse usage Signal on the given subject(s) within the given number of days.",
+    "underutilizedFeatures": "The count of features the account has barely used (paid for but low engagement).",
+    "failedPayments": "Live accounts where the last payment failed OR any payment attempt failed.",
+    "stalledOnboarding": "Accounts where onboarding is stalled (days on current step exceed the step SLA) and the account is enabled.",
+    "renewsWithin": "daysUntil(renewalDate) falls inside the given (min, max) day window."
+  },
+  "filters": {
+    "operatorsByType": {
+      "score": ["between", "gte", "lte", "gt", "lt", "eq"],
+      "money": ["gt", "lt", "gte", "lte", "between"],
+      "number": ["gt", "lt", "gte", "lte", "eq"],
+      "days": ["gt", "lt", "gte", "lte", "eq"],
+      "dateRelative": ["inNext", "inLast", "moreThanAgo", "within"],
+      "enum": ["isAnyOf", "isNoneOf", "is", "isNot"],
+      "band": ["isAnyOf", "is"],
+      "boolean": ["is"],
+      "trendDir": ["falling", "rising"],
+      "accountName": ["contains", "is", "isNot", "startsWith"]
+    },
+    "operatorSemantics": "lt/gt/gte/lte/eq are numeric; between = value within [lo,hi]; is = boolean/string equality; isNot = string inequality; isAnyOf = set intersection non-empty over a CSV field; isNoneOf = set intersection empty; contains/startsWith = case-insensitive substring/prefix; inNext = 0<=days<=N; inLast = -N<=days<=0; moreThanAgo = days<-N; within = |days|<=N; falling = value<0; rising = value>0. Date N in days: weeks->Nx7, months->Nx30, else N. band operators are Phase-2 only. Operator labels are always plain words, never symbols (see filters.operatorLabels).",
+    "operatorLabels": {
+      "lt": "is less than",
+      "gt": "is more than",
+      "gte": "is at least",
+      "lte": "is at most",
+      "eq": "is exactly",
+      "between": "is between",
+      "is": "is",
+      "isNot": "is not",
+      "isAnyOf": "is any of",
+      "isNoneOf": "is none of",
+      "contains": "contains",
+      "startsWith": "starts with",
+      "inNext": "in the next",
+      "inLast": "in the last",
+      "moreThanAgo": "more than ... ago",
+      "within": "within",
+      "falling": "is falling",
+      "rising": "is rising",
+      "_moneyNote": "Money fields restate gt/lt as 'over'/'under'.",
+      "_agoNote": "'Ago' fields (engagement.lastLoginDays, user.idleDays) restate in past tense ('was more than ... ago')."
+    },
+    "simpleQuickAdd": [
+      { "id": "account.priority", "label": "Priority account", "phase": 1 },
+      { "id": "revenue.plan", "label": "Plan", "phase": 1 },
+      { "id": "engagement.lastLoginDays", "label": "Time since last login", "phase": 1 },
+      { "id": "account.created", "label": "Signup date", "phase": 1 },
+      { "id": "revenue.renewsWithin", "label": "Renews within", "phase": 1 },
+      { "id": "revenue.mrr", "label": "MRR", "phase": 1 },
+      { "id": "revenue.failedPayment", "label": "Failed payment", "phase": 1 },
+      { "id": "revenue.spendTrend", "label": "Spend trend", "phase": 1 },
+      { "id": "feature.inUse", "label": "Features in use", "phase": 1 },
+      { "id": "feedback.sentiment", "label": "Customer sentiment", "phase": 1 },
+      { "id": "user.role", "label": "User role", "phase": 1 },
+      { "id": "user.keyOnly", "label": "Key users only", "phase": 1 },
+      { "id": "user.idleDays", "label": "Days since a user logged in", "phase": 1 }
+    ],
+    "advancedGroups": [
+      {
+        "group": "User",
+        "fields": [
+          { "id": "user.role", "label": "User role", "phase": 1, "type": "enum" },
+          { "id": "user.keyOnly", "label": "Key users only", "phase": 1, "type": "boolean" },
+          { "id": "user.idleDays", "label": "Days since a user logged in", "phase": 1, "type": "number" }
+        ]
+      },
+      {
+        "group": "Account",
+        "fields": [
+          { "id": "account.priority", "label": "Priority account", "phase": 1, "type": "boolean" },
+          { "id": "account.name", "label": "Account name", "phase": 1, "type": "enum" },
+          { "id": "account.age", "label": "Account age", "phase": 1, "type": "number" },
+          { "id": "account.created", "label": "Created", "phase": 1, "type": "date" },
+          { "id": "engagement.lastLoginDays", "label": "Last login", "phase": 1, "type": "number" },
+          { "id": "engagement.activityStatus", "label": "Login activity status", "phase": 1, "type": "enum" },
+          { "id": "engagement.activeUsers", "label": "Active users", "phase": 1, "type": "number" },
+          { "id": "engagement.timeSpent", "label": "Time spent", "phase": 1, "type": "number" },
+          { "id": "health.band", "label": "Health band", "phase": 2, "type": "enum" },
+          { "id": "health.score", "label": "Health score", "phase": 2, "type": "number" },
+          { "id": "health.trend", "label": "Health trend", "phase": 2, "type": "enum" },
+          { "id": "health.riskTags", "label": "Risk tags", "phase": 2, "type": "enum" },
+          { "id": "health.lifecycle", "label": "Lifecycle stage", "phase": 2, "type": "enum" },
+          { "id": "health.status", "label": "Account status", "phase": 2, "type": "enum" }
+        ]
+      },
+      {
+        "group": "Revenue & billing",
+        "fields": [
+          { "id": "revenue.mrr", "label": "MRR", "phase": 1, "type": "number" },
+          { "id": "revenue.spendTrend", "label": "Spend trend", "phase": 1, "type": "enum" },
+          { "id": "revenue.lifetimeSpend", "label": "Lifetime spend", "phase": 1, "type": "number" },
+          { "id": "revenue.plan", "label": "Plan", "phase": 1, "type": "enum" },
+          { "id": "revenue.planChange", "label": "Plan change", "phase": 1, "type": "enum" },
+          { "id": "revenue.paymentFreq", "label": "Billing frequency", "phase": 1, "type": "enum" },
+          { "id": "revenue.failedPayment", "label": "Failed payment", "phase": 1, "type": "boolean" },
+          { "id": "revenue.renewsWithin", "label": "Renews within", "phase": 1, "type": "date" }
+        ]
+      },
+      {
+        "group": "Feature adoption",
+        "fields": [
+          { "id": "feature.inUse", "label": "Features in use", "phase": 1, "type": "enum" },
+          { "id": "feature.engagementTrend", "label": "Feature engagement trend", "phase": 1, "type": "enum" },
+          { "id": "feature.neverUsed", "label": "No feature used since signup", "phase": 1, "type": "boolean" }
+        ]
+      },
+      {
+        "group": "Sentiment",
+        "fields": [
+          { "id": "feedback.sentiment", "label": "Customer sentiment", "phase": 1, "type": "enum" },
+          { "id": "feedback.rating", "label": "Rating", "phase": 1, "type": "number" }
+        ]
+      }
+    ]
+  }
+}

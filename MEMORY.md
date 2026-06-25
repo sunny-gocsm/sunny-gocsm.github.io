@@ -5,6 +5,31 @@ Durable, human- and agent-readable log of significant decisions and changes.
 
 ---
 
+## 2026-06-25 — PRD v2.0: made functional, catalog externalized to JSON, founder-transcript rationale folded in
+Reworked `apps/prototype/docs/prd/attention-and-playbooks-prd.md` (1478→1257 lines) per Karthik.
+- **Catalog → JSON.** New `apps/prototype/docs/prd/playbooks-catalog.json` is the single source for all
+  catalog DATA: 57 playbooks (each with a plain-English `defaultTrigger` + `defaultSimpleFilters`), 7
+  categories, 5 situations, the filter universe (13 Simple quick-adds + 5 Advanced groups / 30 fields),
+  6 recipes, enums, the operator map, attention-signal defs, predicate helpers. The PRD references it
+  instead of inlining ~600 lines of tables (also fixed pre-existing C.2↔C.3 title drift).
+- **Functional only (no eng "how").** Deleted §8's REST sketch → "§8 Capabilities the product must
+  expose" (verb-free); scrubbed ~64 endpoint / "Backend/API notes" blocks across E1–E7 (gate grep for
+  HTTP verbs/payloads = **0**); removed Mongo/MVs/cron, p95, serializer/idempotency-key/adapter
+  mechanics; refunctionalized "As the system/backend / As an engineer" stories + engine internals +
+  NFRs to product/behavior voice. Functional completeness preserved (9 sections, 7 epics, all ACs).
+- **Transcript rationale folded in:** trial wedge = activating the automation SYSTEM (not selling
+  insights); "no new concepts on day 1" (HL-native problems + the two actions; Health gated as later
+  monetization); playbooks = concrete automations in a **growing library** (~57 today → hundreds),
+  each a ~1-min video + an editable/brandable HL workflow snapshot; the **Action → Trigger → Review →
+  *then* fires** sequence (owner acknowledges completion, no polling); deliberately-simple trigger
+  (Simple = plan+priority base + playbook-aware quick-add; Customize → Simple|Advanced; describe→AI
+  rules at a one-time per-activation cost; default criteria in plain English; live count + $ at risk);
+  **one playbook = one HL workflow (1:1)** recording what was *tried* per account → the "tried but
+  didn't fix it" Step-in signal. Reframed fixed "57" → "growing library (~57 today)"; version → v2.0.
+- **Open item:** the founder transcript said Simple = "plan + priority only"; the shipped prototype uses
+  the richer playbook-aware quick-add. Kept the shipped behavior + added an "Evolution note" reconciling
+  both (anti-overwhelm). The `quickread.html` companion is now stale vs v2.0 (not regenerated).
+
 ## 2026-06-25 — Attention `/today` rebuilt as a calm, state-driven LIFECYCLE (design-loop pass 2–3)
 Two more design-loop passes after the activation redesign below. Pass 2 (calm): research (ui-ux-pro-max +
 frontend-design + 3 blind scouts) → Linear-style focus-order, cut density. Pass 3 (lifecycle): made the page

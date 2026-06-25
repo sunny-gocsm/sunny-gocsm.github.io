@@ -23,11 +23,13 @@ are **problem-first** (coloured urgency rail by `mrrKind` + money/accounts at st
 → elaboration). A **dev lifecycle switcher** (footer, persisted to `gocsm.attn.sim.v1`) simulates every state.
 The full rationale + per-state behaviour is logged in the repo-root `MEMORY.md` (2026-06-25 entries).
 
-**Backend PRD:** the full build spec for the Attention + Playbooks features lives at
-`docs/prd/attention-and-playbooks-prd.md` (canonical data model, 7 epics, 44 stories,
-265 acceptance criteria, research appendix) with a visual dev quick-read alongside it
-(`docs/prd/attention-and-playbooks-quickread.html`). It's a self-contained handoff for
-backend devs — grounded in this prototype's fixtures/state but written to stand alone.
+**PRD (v2.0, functional):** `docs/prd/attention-and-playbooks-prd.md` is a **functional** spec
+(the *what* & *why* — 9 sections, 7 epics, Given/When/Then ACs); it deliberately carries **no
+API/endpoint/payload/infra "how"** (don't reintroduce it). **All catalog DATA is externalized to
+`docs/prd/playbooks-catalog.json`** — the 57-play library, categories, situations, recipes, the
+field/operator/filter universe, attention-signal defs, and each play's default Simple filters; the
+PRD references it rather than inlining it. The companion `attention-and-playbooks-quickread.html` is
+**stale vs v2.0** until regenerated.
 
 **Trigger criteria builder** (step "When & who it runs on"): the user-facing attribute/filter
 universe is `docs/design/gocsm-attribute-filter-catalog.md` (derived from the real GoCSM
