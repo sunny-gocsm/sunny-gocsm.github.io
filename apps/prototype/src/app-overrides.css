@@ -492,18 +492,106 @@ button {
 .ai-act:hover { border-color: var(--blue-5, #6f97e0); background: var(--blue-1, #f3f7ff); }
 
 /* ===== Outcomes page ===== */
-/* AI-summary click-to-source bullets */
-.oc-bullet { display: flex; align-items: center; gap: var(--s-2); width: 100%; text-align: left; border: 1px solid var(--border); border-radius: var(--r-md, 10px); background: var(--surface, #fff); padding: 9px 12px; cursor: pointer; transition: border-color 120ms ease, background 120ms ease; }
-.oc-bullet:hover { border-color: var(--blue-5, #6cb4fb); background: var(--blue-1, #f2f8ff); }
-.oc-dot { display: inline-flex; align-items: center; justify-content: center; width: 20px; height: 20px; border-radius: 6px; flex: 0 0 auto; }
-.oc-dot svg { width: 13px; height: 13px; }
-.oc-dot.pos { background: var(--pos-soft, #e8f8e3); color: var(--pos-9, #1f6e12); }
-.oc-dot.warn { background: var(--warn-soft, #fef0d6); color: var(--warn-7, #b45309); }
-.oc-bullet-text { flex: 1; min-width: 0; font-size: var(--t-body-sm); color: var(--text); }
-.oc-bullet-go { width: 15px; height: 15px; color: var(--text-3, #6a7689); flex: 0 0 auto; }
+/* page shell — three rungs (impact → effectiveness → audit), generous gaps between them */
+.oc-main { padding: var(--s-8) var(--s-6); max-width: 1140px; margin: 0 auto; color: var(--text); display: flex; flex-direction: column; gap: var(--s-10); }
+.oc-rung { display: flex; flex-direction: column; gap: var(--s-4); }
+.oc-rung-head { display: flex; flex-direction: column; gap: 2px; }
+.oc-rung-q { font-size: var(--t-heading); font-weight: 800; margin: 0; letter-spacing: -0.01em; }
+.oc-rung-sub { font-size: var(--t-body-sm); color: var(--text-3, #6a7689); margin: 0; }
 
-/* report-card active (drilled) category */
-.stat-card.is-active { border-color: var(--blue-7, #0f6fd6); box-shadow: 0 0 0 1px var(--blue-7, #0f6fd6); }
+/* shared AI affordances */
+.oc-ai-eyebrow { display: inline-flex; align-items: center; gap: 6px; font-size: var(--t-caption); font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: var(--blue-8, #0c5aae); }
+.oc-ai-ico { display: inline-flex; align-items: center; justify-content: center; width: 22px; height: 22px; border-radius: 6px; background: var(--blue-2, #e5f1fe); color: var(--blue-8, #0c5aae); flex: 0 0 auto; }
+.oc-ai-ico svg { width: 13px; height: 13px; }
+.oc-stamp { font-size: var(--t-caption); color: var(--text-3, #6a7689); }
+
+/* Rung 1 — impact hero */
+.oc-impact { display: flex; flex-direction: column; gap: var(--s-2); }
+.oc-impact-top { display: flex; align-items: center; justify-content: space-between; gap: var(--s-2); }
+.oc-impact-figure { display: flex; align-items: baseline; gap: var(--s-3); flex-wrap: wrap; margin-top: var(--s-1); }
+.oc-impact-num { font-size: clamp(40px, 6vw, 56px); font-weight: 800; line-height: 1; letter-spacing: -0.02em; color: var(--blue-8, #0c5aae); }
+.oc-roi { align-self: center; font-size: var(--t-body-sm); }
+.oc-impact-cap { margin: 0; font-size: var(--t-body); color: var(--text-2, #46536b); }
+.oc-stamp-inline { display: block; margin-top: 2px; }
+.oc-impact-roi { margin: var(--s-2) 0 0; font-size: var(--t-body); color: var(--text-2, #46536b); line-height: 1.5; }
+.oc-impact-roi strong { color: var(--pos-9, #1f6e12); font-weight: 700; }
+.oc-impact-line { margin: var(--s-1) 0 0; font-size: var(--t-body); color: var(--text-2, #46536b); line-height: 1.5; }
+.oc-impact-line strong { color: var(--text); font-weight: 700; }
+.oc-impact.light { gap: var(--s-2); }
+.oc-impact-quiet { margin: 0; font-size: var(--t-subheading); font-weight: 650; color: var(--text); line-height: 1.35; }
+.oc-impact-quiet-sub { margin: 0; font-size: var(--t-body-sm); color: var(--text-3, #6a7689); }
+
+/* "how is this counted?" disclosure + mechanism breakdown (drills to receipts) */
+.oc-disc { margin-top: var(--s-2); border-top: 1px solid var(--border); padding-top: var(--s-3); }
+.oc-disc > summary { display: flex; align-items: center; gap: 6px; cursor: pointer; list-style: none; font-size: var(--t-body-sm); font-weight: 600; color: var(--blue-7, #2c5cc5); }
+.oc-disc > summary::-webkit-details-marker { display: none; }
+.oc-disc-caret { width: 15px; height: 15px; transition: transform 140ms ease; flex: 0 0 auto; }
+.oc-disc[open] .oc-disc-caret { transform: rotate(90deg); }
+.oc-disc-body { margin-top: var(--s-3); display: flex; flex-direction: column; gap: var(--s-3); }
+.oc-disc-body > p { margin: 0; font-size: var(--t-body-sm); color: var(--text-2, #46536b); line-height: 1.55; }
+.oc-disc-body > p strong { color: var(--text); }
+.oc-mech-list { display: flex; flex-direction: column; gap: 6px; }
+.oc-mech { display: flex; align-items: center; gap: var(--s-2); width: 100%; text-align: left; border: 1px solid var(--border); border-radius: var(--r-md, 10px); background: var(--surface, #fff); padding: 8px 12px; cursor: pointer; transition: border-color 120ms ease, background 120ms ease; }
+.oc-mech:hover { border-color: var(--blue-5, #6cb4fb); background: var(--blue-1, #f2f8ff); }
+.oc-mech-ico { display: inline-flex; align-items: center; justify-content: center; width: 24px; height: 24px; border-radius: 7px; background: var(--blue-2, #e5f1fe); color: var(--blue-8, #0c5aae); flex: 0 0 auto; }
+.oc-mech-ico svg { width: 13px; height: 13px; }
+.oc-mech-label { font-size: var(--t-body-sm); font-weight: 600; color: var(--text); }
+.oc-mech-tag { flex: 0 0 auto; font-size: 10px; text-transform: uppercase; letter-spacing: 0.04em; padding: 1px 7px; }
+.oc-mech-val { margin-left: auto; font-size: var(--t-caption); color: var(--text-3, #6a7689); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.oc-mech-go { width: 15px; height: 15px; color: var(--text-3, #6a7689); flex: 0 0 auto; }
+.oc-disc-roi { margin: var(--s-1) 0 0; font-size: var(--t-body-sm); color: var(--text-2, #46536b); font-variant-numeric: tabular-nums; }
+.oc-disc-roi strong { color: var(--pos-9, #1f6e12); }
+
+/* Rung 2 — effectiveness: AI lead line + playbook scorecard */
+.oc-ai-line { display: flex; align-items: center; gap: var(--s-2); margin: 0; font-size: var(--t-body); color: var(--text); background: var(--blue-1, #f2f8ff); border: 1px solid var(--blue-2, #e0edff); border-radius: var(--r-md, 10px); padding: 10px 14px; }
+.oc-ai-line > span:nth-child(2) { flex: 1; min-width: 0; }
+.oc-ai-stamp { margin-left: auto; font-size: var(--t-caption); color: var(--text-3, #6a7689); white-space: nowrap; flex: 0 0 auto; }
+.oc-scorecard { display: flex; flex-direction: column; gap: var(--s-2); }
+.oc-score { display: flex; align-items: flex-start; gap: var(--s-3); width: 100%; text-align: left; border: 1px solid var(--border); border-radius: var(--r-lg, 14px); background: var(--surface, #fff); padding: var(--s-4); cursor: pointer; transition: border-color 120ms ease, box-shadow 120ms ease; box-shadow: var(--sh-rest); }
+.oc-score:hover { border-color: var(--blue-5, #6cb4fb); box-shadow: var(--sh-hover); }
+.oc-score.is-active { border-color: var(--blue-7, #0f6fd6); box-shadow: 0 0 0 1px var(--blue-7, #0f6fd6); }
+.oc-score-ico { display: inline-flex; align-items: center; justify-content: center; width: 40px; height: 40px; border-radius: 11px; background: var(--blue-1, #f2f8ff); color: var(--blue-7, #2c5cc5); flex: 0 0 auto; margin-top: 2px; }
+.oc-score-ico svg { width: 19px; height: 19px; }
+.oc-score-body { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 6px; }
+.oc-score-head { display: flex; align-items: center; gap: var(--s-2); }
+.oc-score-title { font-size: var(--t-body-lg); font-weight: 700; color: var(--text); }
+.oc-score-head .badge { margin-left: auto; flex: 0 0 auto; }
+.oc-score-obj { margin: 0; font-size: var(--t-body-sm); color: var(--text-3, #6a7689); }
+.oc-score-meter { margin: 2px 0; max-width: 480px; border-radius: 999px; overflow: hidden; }
+/* Retone the outcome meter so "no change" is a TRUE grey (not blue — keeps the one-blue-focal
+   discipline) and worked/didn't-land separate cleanly for color-blind legibility. Scoped to
+   the scorecard so the shared StackedBar elsewhere is untouched. */
+.oc-score-meter .sbar-seg.tone-pos { background: var(--pos-7, #2f9e57); }
+.oc-score-meter .sbar-seg.tone-warn { background: var(--warn-6, #d99a2b); }
+.oc-score-meter .sbar-seg.tone-neutral { background: var(--border-strong, #c2ccdb); }
+.oc-score-meter .sbar-seg.tone-neg { background: var(--neg-7, #d6553f); }
+/* meter colour key — explains the bar once, so a red segment never reads as "something's wrong" */
+.oc-meter-legend { display: flex; align-items: center; gap: var(--s-3); flex-wrap: wrap; font-size: var(--t-caption); color: var(--text-3, #6a7689); }
+.oc-meter-legend > span { display: inline-flex; align-items: center; gap: 5px; }
+.oc-legend-lead { font-weight: 600; color: var(--text-3, #6a7689); }
+.oc-key { width: 10px; height: 10px; border-radius: 3px; display: inline-block; flex: 0 0 auto; }
+.oc-key.pos { background: var(--pos-7, #2f9e57); }
+.oc-key.warn { background: var(--warn-6, #d99a2b); }
+.oc-key.neutral { background: var(--border-strong, #c2ccdb); }
+.oc-key.neg { background: var(--neg-7, #d6553f); }
+.oc-score-nums { margin: 0; font-size: var(--t-body-sm); color: var(--text-2, #46536b); font-variant-numeric: tabular-nums; }
+.oc-score-nums strong { color: var(--text); font-weight: 700; }
+.oc-score-go { width: 16px; height: 16px; color: var(--text-3, #6a7689); flex: 0 0 auto; margin-top: var(--s-2); transition: transform 140ms ease, color 140ms ease; }
+.oc-score:hover .oc-score-go { transform: translateX(2px); color: var(--blue-7, #2c5cc5); }
+
+/* Rung 3 — log controls */
+.oc-log-controls { display: flex; align-items: center; gap: var(--s-3); flex-wrap: wrap; }
+
+/* Mobile: keep the action text (the whole point of the log) readable — let the row body wrap
+   so the summary drops to its own line instead of truncating to one letter. Scoped to the
+   Outcomes log so other EventRow usages are untouched. */
+@media (max-width: 560px) {
+  .oc-log .event-row .er-body { flex-wrap: wrap; row-gap: 2px; }
+  .oc-log .event-row .er-summary { flex-basis: 100%; white-space: normal; }
+  .oc-ai-line { flex-wrap: wrap; align-items: flex-start; }
+  .oc-ai-stamp { flex-basis: 100%; margin-left: 0; margin-top: 4px; }
+  .oc-impact-num { font-size: clamp(34px, 11vw, 44px); }
+}
 
 /* filter bar + active chips */
 .oc-filterbar { display: grid; grid-template-columns: minmax(200px, 1fr) 13rem 9.5rem 10rem; gap: var(--s-2); align-items: center; }

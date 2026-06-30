@@ -5,6 +5,40 @@ Durable, human- and agent-readable log of significant decisions and changes.
 
 ---
 
+## 2026-06-30 (design-loop) — Outcomes page rebuilt as a three-question ladder (impact → effectiveness → audit)
+Ran the full `design-loop` on the **Outcomes** page (`apps/prototype/src/pages/OutcomesPage.tsx` +
+`fixtures/outcomeLog.ts`) so a non-technical agency owner can answer three escalating questions, outcome-first:
+**"Is GoCSM worth it?"** (Rung 1 impact/ROI) → **"Are the playbooks working?"** (Rung 2 per-playbook
+effectiveness) → **"What exactly happened?"** (Rung 3 sliceable audit log). Brief: `docs/design/outcomes-redesign-brief.md`.
+4 blind research dossiers (CS competitors · marketing-automation/HighLevel · audit-log/ROI/causality · AI dosage)
+→ CPDO brief → DS-first build → 5-persona review panel, looped twice to converge.
+
+- **Rung 1 (impact):** the big `$` appears **once** (killed the old triple-restatement of the total). An
+  **un-invertible ROI** shows BOTH sides — `$14,299` protected AND `$4,770` paid → "about 3.0× its cost" (a bare
+  multiple could be falsified by an owner who knows their bill). The **"How is this counted?"** disclosure carries
+  the honest method, an **EXACT vs ESTIMATED** confidence gradient per playbook (payment/renewal = exact dollars;
+  win-back/usage/expansion = estimated share of MRR), and the cost denominator. AI eyebrow + trust stamp
+  **"Calculated from your data · wording is AI"** (NOT "Numbers exact" — that collided with the estimated tags).
+- **Rung 2 (effectiveness):** one `playbookScorecard()` row per activated playbook (objective + a `StackedBar`
+  outcome meter + honest numbers + a verdict chip), sorted by $. **3-state verdict whose color maps to meaning:**
+  **Working** (green, proven: resolved≥3 & majority landed) · **Early days** (grey, a win but small sample) ·
+  **Needs a look** (amber, mostly missing) — derived in `verdictFor()`, never hardcoded; success % suppressed
+  below n=3. A meter colour **legend** sits above the cards.
+- **Rung 3 (audit):** the receipts. ONE "Slice by" switcher — **Timeline · By playbook · By customer · By
+  channel** (the **channel** lens is the differentiator HighLevel's email-only stats can't do); grouped views
+  collapse to countable header rows; no-change rows drop their redundant pill. Every claim above **drills down**
+  into this log filtered (`drillTo`).
+- **Data honesty (the core fix):** rewrote `outcomeLog.ts` so each account maps to **one** primary situation
+  (`primaryCategoryFor`) → retention categories are mutually exclusive → **each saved customer's MRR is counted
+  once** (the old page double-counted: Win-backs `$12,360` == Renewals `$12,360` were the same 8 accounts). New
+  episode-level aggregations: `impactSummary` (ROI, autopilot share, in-progress $), `playbookScorecard`,
+  `channelBreakdown`, `impactVerdict`, `effectivenessLead`. Attribution corrected: automated sends
+  (email/SMS/card-retry/alert) = **autopilot**; call/task = **you & your team**. Test (`outcomeLog.test.ts`)
+  gained an honesty invariant (no account counted in >1 category) — 8 tests green.
+- **Copy/Phase-1 safety:** removed coined/jargon leaks — "thriving"→"happiest, fastest-growing", "dunning"→
+  "card retry", "Renewing & at-risk"→"Renewing soon", "Adoption slipping"→"Cooling off", "MRR"→"/mo".
+- Build green (DS→prototype→web). No DS source change — the meter retone is scoped in `app-overrides.css`.
+
 ## 2026-06-30 (docs) — Onboarding & Activation broken out into its own developer-ready PRD (v1.12) + two visual quick-reads
 Split onboarding into a **standalone PRD** living with the other PRDs under `apps/prototype/docs/prd/`. Three files:
 - **`onboarding-and-activation-prd.md`** — the canonical, full Onboarding & Activation PRD, transcribed from the
