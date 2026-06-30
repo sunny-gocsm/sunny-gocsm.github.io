@@ -5,6 +5,31 @@ Durable, human- and agent-readable log of significant decisions and changes.
 
 ---
 
+## 2026-06-30 (docs) — Onboarding & Activation broken out into its own developer-ready PRD (v1.12) + two visual quick-reads
+Split onboarding into a **standalone PRD** living with the other PRDs under `apps/prototype/docs/prd/`. Three files:
+- **`onboarding-and-activation-prd.md`** — the canonical, full Onboarding & Activation PRD, transcribed from the
+  v1.11 source into clean markdown and bumped to **v1.12**. Spec changes fold in **TWO** 30 June design-loop
+  redesigns: **Layer A — the Journey Builder (§6, the new `SetupWizard`)** and **Layer C — the Overview "tracker"
+  (§8)**; the **Doer (§7) is unchanged** (reused as the wizard's live preview). New decision-log subsection
+  **§11.1k** (Part A Builder + Part B Overview) and a top-of-document **"Changes made on 30 June 2026"** section
+  (Part A: 8 builder changes — template-first 6-step two-pane wizard with live preview, auto-verify locked = the
+  wedge, progressive-depth Customize, any/specific assets, arrows not drag, JourneySummary; Part B: 10 overview
+  changes — triage-axis lead, dollar-led verdict, money-ranked queue + `ActionReceipt` undo, all-clear, relief
+  strip, one AI surface, etc.). Key reversals recorded: v1.7 "full-width wizard, no preview rail" and "population-
+  first cards as the lead".
+- **`onboarding-and-activation-quickread.html`** — a **visual** whole-product tour (3-layer arch, personas, data
+  spine + 9-state chips, detector tiers, 15-step catalog table, the new builder wizard, doer states, the overview
+  tracker, metrics, phasing). House style of the attention quickread.
+- **`onboarding-changes-2026-06-30.html`** — a **visual** dev change brief, changes-first: scope map (Builder +
+  Overview redesigned, Doer unchanged) → Part A Builder (before→after, wizard spine, 8 change cards) → Part B
+  Overview (before→after, anatomy, 10 change cards, queue-row + ActionReceipt mocks) → Phase-4 fixes → build
+  checklist. Both HTML files are **hand-authored** (not generated) — the earlier 172 KB full-text render +
+  `build-prd-html.mjs` generator were **retired** (a faithful full render is the wrong format for a dev quick-read;
+  Karthik asked for two short visual files, changes-first).
+**Correction note:** the first draft of these docs wrongly scoped 30 June as "Overview only / Builder unchanged."
+Karthik flagged it — the journey **builder was also heavily simplified** that day (the `SetupWizard`). Corrected
+across all three files. No code/product changes here — documentation only. Files in the working tree; not committed.
+
 ## 2026-06-30 (design-loop) — Onboarding Overview "tracker" Phase 4 review + 5 fixes shipped
 Closed the design loop for the Onboarding Overview page (`src/onboarding/pages/OnboardingIndexPage.tsx`, route
 `/onboarding`). Phase 4 = a live multi-persona review on `:8080` (agency-owner · CDO · CPO/CEO · PMM · AI-readiness)
