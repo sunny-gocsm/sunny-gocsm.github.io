@@ -1,0 +1,596 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>GoCSM Onboarding — Changes made on 30 June 2026 (dev brief)</title>
+<style>
+  :root{
+    --ink:#0f1b2d;--ink2:#3c4a63;--ink3:#6b7686;--line:#e4e9f1;--line2:#eef2f8;
+    --bg:#f6f8fc;--card:#fff;--blue:#1558c0;--blue7:#2c5cc5;--blue-soft:#eef3fc;--blue-bd:#cfe0f7;
+    --violet:#6d4bd8;--violet-soft:#f5f3ff;--violet-bd:#e4ddff;
+    --pos:#2f9e1b;--pos-soft:#e9f8e4;--pos-bd:#bfe3b6;--neg:#c73a26;--neg-soft:#fdeae6;--neg-bd:#f3c9c0;
+    --warn:#b45309;--warn-soft:#fff5e6;--warn-bd:#f3dcae;--gray-soft:#eef1f6;
+    --r:13px;--r2:9px;--sh:0 1px 2px rgba(16,27,45,.05),0 8px 24px rgba(16,27,45,.06);
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{margin:0;background:var(--bg);color:var(--ink);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    font-size:15px;line-height:1.55;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:1080px;margin:0 auto;padding:0 22px}
+  .mono{font-family:"SF Mono",ui-monospace,Menlo,Consolas,monospace}
+  a{color:var(--blue);text-decoration:none}
+  a:hover{text-decoration:underline}
+  code{font-family:"SF Mono",ui-monospace,Menlo,Consolas,monospace;font-size:.85em;background:var(--line2);
+    padding:1px 5px;border-radius:5px;color:#243a5e}
+  h2{font-size:22px;letter-spacing:-.01em;margin:0 0 4px;display:flex;align-items:center;gap:9px}
+  h2 .n{display:inline-flex;align-items:center;justify-content:center;width:26px;height:26px;border-radius:8px;
+    background:var(--blue);color:#fff;font-size:13px;font-weight:800;flex:0 0 auto}
+  h3{font-size:15.5px;margin:0 0 8px}
+  p{margin:0 0 10px;color:var(--ink2)}
+  .muted{color:var(--ink3)}.tiny{font-size:12px}
+  .eyebrow{font-size:11.5px;font-weight:800;text-transform:uppercase;letter-spacing:.09em;color:var(--blue7)}
+
+  header.top{background:linear-gradient(135deg,#0f2a55,#16409a);color:#fff;padding:38px 0 30px}
+  header.top .eyebrow{color:#9db8ec}
+  header.top h1{margin:8px 0 8px;font-size:31px;letter-spacing:-.02em;font-weight:780;line-height:1.12}
+  header.top p{color:#d2def4;max-width:780px;margin:0}
+  .pills{display:flex;flex-wrap:wrap;gap:8px;margin-top:16px}
+  .pill{background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.2);border-radius:999px;
+    padding:5px 12px;font-size:12.5px;font-weight:600;color:#eaf1ff}
+  .pill b{color:#fff}
+  .pill.hot{background:rgba(120,170,255,.2);border-color:rgba(150,190,255,.5)}
+  .pill.good{background:rgba(120,220,150,.16);border-color:rgba(120,220,150,.4)}
+
+  nav.toc{position:sticky;top:0;z-index:20;background:rgba(255,255,255,.93);backdrop-filter:blur(8px);
+    border-bottom:1px solid var(--line);overflow-x:auto;white-space:nowrap}
+  nav.toc .wrap{display:flex;gap:4px;padding:8px 22px}
+  nav.toc a{color:var(--ink2);font-size:12.5px;font-weight:600;padding:6px 11px;border-radius:8px;flex:0 0 auto}
+  nav.toc a:hover{background:var(--blue-soft);text-decoration:none;color:var(--blue)}
+  nav.toc a.part{color:var(--blue7);font-weight:800}
+
+  section{padding:30px 0;border-bottom:1px solid var(--line)}
+  .lead{font-size:15.5px;color:var(--ink2);max-width:880px}
+  .part-band{background:linear-gradient(135deg,#13367e,#1f57c4);color:#fff;padding:20px 0}
+  .part-band .wrap{display:flex;align-items:center;gap:14px}
+  .part-band .pn{font-size:30px;font-weight:800;opacity:.5}
+  .part-band h2{color:#fff;margin:0;font-size:23px}
+  .part-band .sub{color:#cfe0ff;font-size:13px;margin-top:2px}
+
+  .grid{display:grid;gap:14px}
+  .g2{grid-template-columns:1fr 1fr}.g3{grid-template-columns:repeat(3,1fr)}
+  @media(max-width:860px){.g2,.g3{grid-template-columns:1fr}}
+
+  .card{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:16px 18px;box-shadow:var(--sh)}
+
+  .badge{display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:800;border-radius:999px;padding:3px 10px;line-height:1.6;letter-spacing:.01em}
+  .b-blue{background:var(--blue-soft);color:var(--blue);border:1px solid var(--blue-bd)}
+  .b-violet{background:var(--violet-soft);color:var(--violet);border:1px solid var(--violet-bd)}
+  .b-pos{background:var(--pos-soft);color:#1c6b12;border:1px solid var(--pos-bd)}
+  .b-neg{background:var(--neg-soft);color:#9a2c1c;border:1px solid var(--neg-bd)}
+  .b-warn{background:var(--warn-soft);color:#8a4708;border:1px solid var(--warn-bd)}
+  .b-gray{background:var(--gray-soft);color:#516079;border:1px solid #dde3ec}
+  .ref{font-family:"SF Mono",ui-monospace,Menlo,monospace;font-size:11px;font-weight:700;color:var(--blue7);
+    background:var(--blue-soft);border:1px solid var(--blue-bd);border-radius:6px;padding:2px 7px;white-space:nowrap}
+
+  .callout{border-radius:var(--r);padding:16px 18px;border:1px solid;display:flex;gap:13px;align-items:flex-start}
+  .callout .ic{font-size:20px;line-height:1.1;flex:0 0 auto}
+  .c-blue{background:var(--blue-soft);border-color:var(--blue-bd)}
+  .c-amber{background:var(--warn-soft);border-color:var(--warn-bd)}
+  .c-green{background:var(--pos-soft);border-color:var(--pos-bd)}
+  .c-violet{background:var(--violet-soft);border-color:var(--violet-bd)}
+  .callout p{margin:0;color:var(--ink2)}.callout b{color:var(--ink)}
+
+  /* scope map */
+  .scope{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+  @media(max-width:860px){.scope{grid-template-columns:1fr}}
+  .layer{border:1px solid var(--line);border-radius:var(--r2);padding:14px 16px;background:#fbfcfe;position:relative}
+  .layer .lt{font-weight:800;font-size:14px}.layer .ld{font-size:12.5px;color:var(--ink3);margin-top:3px}
+  .layer.dim{opacity:.6}
+  .layer.hot{background:#fff;border:2px solid var(--blue);box-shadow:var(--sh)}
+  .layer .tag{position:absolute;top:-10px;right:12px;font-size:10.5px;font-weight:800;letter-spacing:.04em;
+    text-transform:uppercase;padding:2px 8px;border-radius:999px}
+  .layer.dim .tag{background:var(--gray-soft);color:#6b7686;border:1px solid #dde3ec}
+  .layer.hot .tag{background:var(--blue);color:#fff}
+
+  /* before / after */
+  .ba{display:grid;grid-template-columns:1fr 1fr;gap:16px;align-items:start}
+  @media(max-width:860px){.ba{grid-template-columns:1fr}}
+  .ba-col{border-radius:var(--r);padding:14px;border:1px solid}
+  .ba-before{background:#fbfbfc;border-color:var(--line)}
+  .ba-after{background:#f3f8ff;border-color:var(--blue-bd)}
+  .ba-h{font-weight:800;font-size:13px;text-transform:uppercase;letter-spacing:.05em;margin-bottom:10px;display:flex;align-items:center;gap:8px}
+  .ba-before .ba-h{color:#8b94a4}.ba-after .ba-h{color:var(--blue7)}
+
+  /* mock UI primitives */
+  .mock{display:flex;flex-direction:column;gap:8px}
+  .row-cards{display:grid;grid-template-columns:repeat(3,1fr);gap:7px}
+  .mc{border:1px solid var(--line);border-radius:8px;padding:8px 10px;background:#fff;text-align:center}
+  .mc .k{font-size:18px;font-weight:800}.mc .l{font-size:10.5px;color:var(--ink3);font-weight:600}
+  .mc.lead{outline:2px dashed #c7d3e6}
+  .tile{border-radius:9px;padding:9px 11px;border:1px solid;display:flex;align-items:center;justify-content:space-between}
+  .tile .l{font-size:12.5px;font-weight:700}.tile .k{font-size:18px;font-weight:800}
+  .t-need{background:var(--neg-soft);border-color:var(--neg-bd);color:#9a2c1c}
+  .t-wait{background:var(--gray-soft);border-color:#dde3ec;color:#516079}
+  .t-pace{background:var(--pos-soft);border-color:var(--pos-bd);color:#1c6b12}
+  .vbar{border:1px solid var(--blue-bd);background:var(--blue-soft);border-radius:9px;padding:10px 12px;border-left:4px solid var(--blue)}
+  .vbar .vt{font-size:13.5px;color:#15346f;font-weight:600}
+  .vbar .vm{font-size:11px;color:#5e76a3;margin-top:4px;display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+  .qmock{border:1px solid var(--line);border-radius:9px;padding:10px 12px;background:#fff;display:flex;
+    align-items:center;gap:10px;flex-wrap:wrap}
+  .qmock .nm{font-weight:800;font-size:13.5px}
+  .qmock .stp{font-weight:700;font-size:12.5px;color:var(--ink)}
+  .qmock .rsn{font-size:11.5px;color:var(--ink3)}
+  .qmock .grow{flex:1}
+  .btn{font-size:12px;font-weight:700;border-radius:7px;padding:6px 11px;border:1px solid;white-space:nowrap}
+  .btn-pri{background:var(--blue);color:#fff;border-color:var(--blue)}
+  .btn-q{background:#fff;color:var(--ink3);border-color:var(--line);font-weight:800}
+  .relief{border:1px dashed #d6dde8;background:#fafbfd;border-radius:9px;
+    padding:9px 12px;color:#516079;font-size:12.5px;font-weight:600;display:flex;gap:8px;align-items:center}
+
+  /* list-y mocks (builder) */
+  .lst{border:1px solid var(--line);border-radius:8px;background:#fff;overflow:hidden}
+  .lst .li{padding:7px 11px;border-bottom:1px solid var(--line2);font-size:12.5px;color:var(--ink2);display:flex;gap:8px;align-items:center}
+  .lst .li:last-child{border-bottom:0}
+  .lst .li .av{margin-left:auto;font-size:10px;font-weight:800;color:#1c6b12;background:var(--pos-soft);border:1px solid var(--pos-bd);border-radius:999px;padding:1px 7px}
+  .twopane{display:grid;grid-template-columns:1.3fr 1fr;gap:8px}
+  @media(max-width:560px){.twopane{grid-template-columns:1fr}}
+  .pane{border:1px solid var(--line);border-radius:8px;background:#fff;padding:9px 10px}
+  .pane .ph{font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.04em;color:var(--ink3);margin-bottom:6px}
+  .phone{border:1px solid var(--blue-bd);border-radius:10px;background:#f7faff;padding:8px}
+  .phone .pt{font-size:11px;font-weight:800;color:#15346f}
+  .phone .pl{height:6px;border-radius:99px;background:#dbe7fb;margin:6px 0}
+  .phone .pl>i{display:block;height:100%;width:38%;background:var(--blue);border-radius:99px}
+  .phone .pr{font-size:10.5px;color:#5e76a3}
+  .wstep{border:1px solid var(--blue-bd);background:#fff;border-radius:8px;padding:8px 10px;font-size:12px}
+  .wstep .cz{margin-top:6px;border-top:1px dashed var(--line);padding-top:6px;color:var(--ink3);font-size:11px}
+
+  /* stepper */
+  .stepper{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px;align-items:center}
+  .stp2{border:1px solid var(--line);background:#fff;border-radius:999px;padding:6px 12px;font-size:12.5px;font-weight:700;color:var(--ink2);
+    display:flex;align-items:center;gap:6px}
+  .stp2 .i{width:18px;height:18px;border-radius:50%;background:var(--blue-soft);color:var(--blue);font-size:10.5px;font-weight:800;
+    display:flex;align-items:center;justify-content:center;border:1px solid var(--blue-bd)}
+  .stepper .sep{color:var(--blue-bd);font-weight:800}
+
+  /* anatomy vertical flow */
+  .flow{display:flex;flex-direction:column;gap:0}
+  .frow{display:flex;gap:14px;align-items:flex-start;padding:0 0 4px}
+  .fnum{flex:0 0 30px;display:flex;flex-direction:column;align-items:center}
+  .fnum .b{width:28px;height:28px;border-radius:8px;background:var(--blue);color:#fff;font-weight:800;
+    display:flex;align-items:center;justify-content:center;font-size:13px}
+  .fnum .ln{flex:1;width:2px;background:var(--blue-bd);margin:3px 0}
+  .fbody{flex:1;padding-bottom:16px}
+  .fbody .ft{font-weight:800;font-size:14px}.fbody .fd{font-size:12.5px;color:var(--ink3);margin:2px 0 8px}
+
+  /* numbered change cards */
+  .changes{display:grid;grid-template-columns:1fr 1fr;gap:13px}
+  @media(max-width:860px){.changes{grid-template-columns:1fr}}
+  .ch{background:#fff;border:1px solid var(--line);border-radius:var(--r);padding:14px 16px 14px 15px;
+    box-shadow:var(--sh);border-left:4px solid var(--blue);position:relative}
+  .ch.wedge{border-left-color:var(--violet)}
+  .ch .hd{display:flex;align-items:center;gap:9px;margin-bottom:6px}
+  .ch .num{flex:0 0 auto;width:24px;height:24px;border-radius:7px;background:var(--blue-soft);color:var(--blue);
+    border:1px solid var(--blue-bd);font-weight:800;font-size:12.5px;display:flex;align-items:center;justify-content:center}
+  .ch.wedge .num{background:var(--violet-soft);color:var(--violet);border-color:var(--violet-bd)}
+  .ch .ti{font-weight:800;font-size:14px;line-height:1.25}
+  .ch p{font-size:13px;margin:0 0 6px}
+  .ch .rev{font-size:11.5px;color:#8a4708;background:var(--warn-soft);border:1px solid var(--warn-bd);
+    border-radius:6px;padding:2px 7px;display:inline-block;font-weight:700}
+
+  table{width:100%;border-collapse:collapse;font-size:13px;background:var(--card);border:1px solid var(--line);
+    border-radius:var(--r2);overflow:hidden}
+  th,td{text-align:left;padding:9px 12px;border-bottom:1px solid var(--line2);vertical-align:top}
+  th{background:#f3f6fb;font-size:11px;text-transform:uppercase;letter-spacing:.04em;color:var(--ink3);font-weight:800}
+  tr:last-child td{border-bottom:0}
+  td .ok{color:var(--pos);font-weight:800}
+
+  ul.check{list-style:none;padding:0;margin:6px 0 0}
+  ul.check li{position:relative;padding:7px 0 7px 30px;font-size:13.5px;color:var(--ink2);border-bottom:1px solid var(--line2)}
+  ul.check li:last-child{border-bottom:0}
+  ul.check li::before{content:"";position:absolute;left:2px;top:9px;width:16px;height:16px;border-radius:5px;
+    border:2px solid var(--blue);background:var(--blue-soft)}
+  ul.check li b{color:var(--ink)}
+
+  footer{padding:26px 0 56px;color:var(--ink3);font-size:12.5px}
+  footer .wrap{border-top:1px solid var(--line);padding-top:18px}
+</style>
+</head>
+<body>
+<header class="top"><div class="wrap">
+  <div class="eyebrow">GoCSM · Sub-Account Onboarding &amp; Activation · Developer change brief</div>
+  <h1>Changes made on 30 June 2026</h1>
+  <p>Two design-loop redesigns shipped today: the agency <b style="color:#fff">Journey Builder</b> was simplified, and
+  the agency <b style="color:#fff">Overview ("tracker")</b> was rebuilt. This is the pickup list — PRD <b style="color:#fff">v1.11 → v1.12</b>.</p>
+  <div class="pills">
+    <span class="pill hot"><b>A · Builder §6</b>&nbsp;redesigned</span>
+    <span class="pill hot"><b>C · Overview §8</b>&nbsp;redesigned</span>
+    <span class="pill good"><b>B · Doer §7</b>&nbsp;unchanged</span>
+    <span class="pill"><b>Status:</b>&nbsp;final → in dev</span>
+  </div>
+</div></header>
+
+<nav class="toc"><div class="wrap">
+  <a href="#tldr">TL;DR</a>
+  <a href="#scope">What to touch</a>
+  <a href="#builder" class="part">A · Builder</a>
+  <a href="#b-ba">Before→After</a>
+  <a href="#b-wizard">The wizard</a>
+  <a href="#b-list">Builder changes</a>
+  <a href="#overview" class="part">C · Overview</a>
+  <a href="#o-ba">Before→After</a>
+  <a href="#o-anatomy">New layout</a>
+  <a href="#o-list">Overview changes</a>
+  <a href="#o-row">Queue row</a>
+  <a href="#fixes">Phase-4 fixes</a>
+  <a href="#pickup">Build checklist</a>
+</div></nav>
+
+<!-- TLDR -->
+<section id="tldr"><div class="wrap">
+  <div class="callout c-blue">
+    <div class="ic">🎯</div>
+    <div>
+      <p style="font-size:16px;color:var(--ink)"><b>Two redesigns, one north star:</b> make onboarding effortless for a non-technical agency owner — <b>build a journey they actually like in minutes</b> (Builder), then <b>see who's stuck and unblock them in one move</b> (Overview).</p>
+      <p class="tiny" style="margin-top:8px">Work lives in the <b>Journey Builder (§6)</b> and the <b>Overview / Dashboard (§8)</b>. The client <b>Doer (§7) is unchanged</b> today. Full spec: <code>onboarding-and-activation-prd.md</code> · whole-product tour: <a href="onboarding-and-activation-quickread.html">onboarding-and-activation-quickread.html</a>.</p>
+    </div>
+  </div>
+</div></section>
+
+<!-- SCOPE -->
+<section id="scope"><div class="wrap">
+  <div class="eyebrow">Where the work is</div>
+  <h2><span class="n">▦</span>Two of the three layers changed today</h2>
+  <p class="lead" style="margin-bottom:16px">The product is three layers on one shared data spine. Today's work is in Layer A and Layer C.</p>
+  <div class="scope">
+    <div class="layer hot"><span class="tag">redesigned</span><div class="lt">A · Journey Builder</div><div class="ld">The agency composes the journey. <b>Rebuilt as a guided wizard.</b> §6 — today's work.</div></div>
+    <div class="layer dim"><span class="tag">unchanged</span><div class="lt">B · Doer</div><div class="ld">The client's in-HighLevel checklist. §7 — no changes today (used as the wizard's live preview).</div></div>
+    <div class="layer hot"><span class="tag">redesigned</span><div class="lt">C · Overview / Dashboard</div><div class="ld">The agency "who's stuck" tracker. <b>Rebuilt around triage.</b> §8 — today's work.</div></div>
+  </div>
+</div></section>
+
+<!-- ===================== PART A : BUILDER ===================== -->
+<div class="part-band"><div class="wrap"><div class="pn">A</div><div><h2 id="builder">Journey Builder — the guided wizard <span class="ref" style="vertical-align:middle">§6</span></h2><div class="sub">The old 9-step builder + gated per-step editor → a template-first, two-pane <code>SetupWizard</code>. Simplicity via smart defaults — capability restored as progressive depth.</div></div></div></div>
+
+<!-- BUILDER BEFORE/AFTER -->
+<section id="b-ba"><div class="wrap">
+  <div class="eyebrow">The headline change</div>
+  <h2><span class="n">A1</span>Blank 9-step builder → guided wizard with a live preview</h2>
+  <p class="lead" style="margin-bottom:18px">A first-time, non-technical agency owner used to land in a dense 9-step builder, then a per-step editor (webhooks, deep-links, plan variants), gated by a publish check that could <b>block on operator jargon</b> — a completion-killer. Now they're guided through one calm decision per page and <b>watch the client experience build live beside them.</b></p>
+  <div class="ba">
+    <div class="ba-col ba-before">
+      <div class="ba-h">⨯ Before</div>
+      <div class="mock">
+        <div class="lst">
+          <div class="li">1 · Phone number</div>
+          <div class="li">2 · A2P brand registration</div>
+          <div class="li">3 · A2P campaign approval</div>
+          <div class="li muted">…steps 4–9 + per-step editor</div>
+          <div class="li" style="color:#9a2c1c;background:var(--neg-soft)">⚠ Publish blocked: fix A2P operator config</div>
+        </div>
+      </div>
+      <p class="tiny muted" style="margin:10px 0 0">9-step canvas · drag reorder · plan/timing/branding as separate steps · blocking publish gate. Powerful, but overwhelming.</p>
+    </div>
+    <div class="ba-col ba-after">
+      <div class="ba-h">✓ After · the SetupWizard</div>
+      <div class="mock">
+        <div class="stepper" style="margin-top:0">
+          <span class="stp2"><span class="i">1</span>Template</span><span class="sep">·</span>
+          <span class="stp2"><span class="i">2</span>Steps</span><span class="sep">·</span>
+          <span class="stp2"><span class="i">3</span>Order</span>
+          <span class="tiny muted">· Experience · Look &amp; feel · Review</span>
+        </div>
+        <div class="twopane" style="margin-top:4px">
+          <div class="pane"><div class="ph">Step 2 · Steps</div>
+            <div class="wstep">☑ Connect your phone <span class="av" style="float:right;font-size:9px;font-weight:800;color:#1c6b12">Auto-verified</span>
+              <div class="cz">Customize ▾ · title · what they see · completion · video · sub-steps</div></div>
+          </div>
+          <div class="pane"><div class="ph">Live client preview</div>
+            <div class="phone"><div class="pt">Your setup checklist</div><div class="pl"><i></i></div><div class="pr">3 steps · GoCSM auto-verifies</div></div>
+          </div>
+        </div>
+      </div>
+      <p class="tiny muted" style="margin:10px 0 0">Template-first · one decision/page · persistent live preview · power behind "Customize" · publish-then-refine.</p>
+    </div>
+  </div>
+</div></section>
+
+<!-- BUILDER WIZARD ANATOMY -->
+<section id="b-wizard"><div class="wrap">
+  <div class="eyebrow">The new wizard, step by step</div>
+  <h2><span class="n">▤</span>Six steps, two panes, one decision each</h2>
+  <div class="stepper" style="margin-bottom:16px">
+    <span class="stp2"><span class="i">1</span>Template</span><span class="sep">›</span>
+    <span class="stp2"><span class="i">2</span>Steps</span><span class="sep">›</span>
+    <span class="stp2"><span class="i">3</span>Order</span><span class="sep">›</span>
+    <span class="stp2"><span class="i">4</span>Experience</span><span class="sep">›</span>
+    <span class="stp2"><span class="i">5</span>Look &amp; feel</span><span class="sep">›</span>
+    <span class="stp2"><span class="i">6</span>Review</span>
+  </div>
+  <div class="flow">
+    <div class="frow"><div class="fnum"><div class="b">1</div><div class="ln"></div></div><div class="fbody">
+      <div class="ft">Template — start from a real subset, or blank</div>
+      <div class="fd">3 outcome-framed templates (Standard 15 · Fast-track 7 · Local services 9), Standard pre-selected; a quiet dashed "Start from blank". (The old one-click SimpleSetup dissolved into this.)</div>
+    </div></div>
+    <div class="frow"><div class="fnum"><div class="b">2</div><div class="ln"></div></div><div class="fbody">
+      <div class="ft">Steps — pre-checked, plain titles, power behind "Customize"</div>
+      <div class="fd">Outcome-grouped, add/remove. Each row's <b>Customize</b> expands inline (single-open accordion): title · "what your client sees" copy · completion method · video · <b>per-asset sub-steps</b> ("activate THESE 3 workflows" → independently-verified tasks).</div>
+    </div></div>
+    <div class="frow"><div class="fnum"><div class="b">3</div><div class="ln"></div></div><div class="fbody">
+      <div class="ft">Order — up/down arrows, not drag</div>
+      <div class="fd">Dependency-guarded. Arrows over drag because drag is unsafe for novices / a11y (NN/g).</div>
+    </div></div>
+    <div class="frow"><div class="fnum"><div class="b">4</div><div class="ln"></div></div><div class="fbody">
+      <div class="ft">Experience — guided checklist vs tracking-only</div>
+      <div class="fd">One choice; tracking-only still runs detection/stalls/queue/automations with no client widget.</div>
+    </div></div>
+    <div class="frow"><div class="fnum"><div class="b">5</div><div class="ln"></div></div><div class="fbody">
+      <div class="ft">Look &amp; feel — placement + brand colour</div>
+      <div class="fd">Visual placement mockups (Floating · Banner · Menu · Embedded) + brand colour <b>auto-detected</b> and pre-selected with a "✦ Pulled from your brand" pill.</div>
+    </div></div>
+    <div class="frow"><div class="fnum"><div class="b">6</div></div><div class="fbody" style="padding-bottom:0">
+      <div class="ft">Review — section summary + pristine preview + one Publish</div>
+      <div class="fd">Edit-jumps back to any step; a blue verification note ("GoCSM checks each step automatically … flags anyone stuck"); publish-then-refine (no blocking jargon gate).</div>
+    </div></div>
+  </div>
+  <div class="callout c-blue" style="margin-top:8px"><div class="ic">🔁</div><div><p><b>Returning agency → <code>JourneySummary</code>.</b> A calm "Live" overview; each row's "Edit ›" jumps into the wizard at the right step; a quiet "advanced editor" escape opens <code>JourneyEditor</code> for deep-links, plan variants and granular per-step config. A dev toggle flips Brand-new ⇄ Configured.</p></div></div>
+</div></section>
+
+<!-- BUILDER CHANGES -->
+<section id="b-list"><div class="wrap">
+  <div class="eyebrow">The delta, itemised</div>
+  <h2><span class="n">✦</span>Builder changes to pick up</h2>
+  <p class="lead" style="margin-bottom:18px">Purple = the wedge (auto-verify). Orange = reverses an earlier decision.</p>
+  <div class="changes">
+    <div class="ch"><div class="hd"><span class="num">1</span><span class="ti">Template-first start</span><span class="ref">§6.2/§6.3</span></div>
+      <p>Land on 3 real templates (genuine catalog subsets) + "Start from blank" — never a blank 9-step canvas. Publish disabled at 0 steps.</p></div>
+
+    <div class="ch"><div class="hd"><span class="num">2</span><span class="ti">Two-pane wizard + persistent live preview</span><span class="ref">§6.3</span></div>
+      <p>6 steps, one decision per page, smart default pre-selected, jumpable nav, sticky in-flow footer. A live client preview is pinned right (its "X of Y done" count suppressed so it can't contradict the builder).</p>
+      <span class="rev">↩ reverses v1.7 "full-width wizard, NO live-preview rail (preview only post-Finish)"</span></div>
+
+    <div class="ch wedge"><div class="hd"><span class="num">3</span><span class="ti">Auto-verify is locked for catalog steps — the wedge</span><span class="ref">§6.4c</span></div>
+      <p>Out-of-the-box HighLevel steps are <b>always GoCSM-auto-verified and locked</b> (no picker — agencies can't downgrade our tracking). The completion picker (auto / client-confirms / web-event / for-reference) appears <b>only for custom steps</b>. Every row carries a recessive "Auto-verified" badge; exceptions pop.</p></div>
+
+    <div class="ch"><div class="hd"><span class="num">4</span><span class="ti">Progressive depth, not stripped capability</span><span class="ref">§6.3c</span></div>
+      <p>Per-step inline Customize restores title, client-facing copy, completion method, video and per-asset sub-steps — full agency power, hidden until asked for. (Karthik's correction: simplify via defaults, never by removing capability.)</p></div>
+
+    <div class="ch"><div class="hd"><span class="num">5</span><span class="ti">Asset steps: any vs specific, snapshot-driven</span><span class="ref">§6.4b</span></div>
+      <p>Asset steps (workflows · funnels · forms · pipelines) default to <b>"any"</b>; "specific" = pick a snapshot sub-account (remembered) + <b>one named asset</b> via a searchable dropdown. Re-addable, so 3 workflows = 3 steps.</p></div>
+
+    <div class="ch"><div class="hd"><span class="num">6</span><span class="ti">Order = arrows, not drag</span><span class="ref">§6.3</span></div>
+      <p>Dependency-guarded up/down arrows. Drag is unsafe for novices &amp; a11y (NN/g).</p>
+      <span class="rev">↩ reverses the v1.7 draggable-list order step</span></div>
+
+    <div class="ch"><div class="hd"><span class="num">7</span><span class="ti">Look &amp; feel: placement + auto brand colour</span><span class="ref">§6.6</span></div>
+      <p>Visual placement mockups; brand colour auto-detected and pre-selected ("✦ Pulled from your brand"). Plans/Timing/Branding/Videos fold into the wizard tail &amp; Customize as progressive depth, not separate top-level steps.</p></div>
+
+    <div class="ch"><div class="hd"><span class="num">8</span><span class="ti">Returning user → calm summary; old builder retired</span><span class="ref">§6.1/§6.3</span></div>
+      <p><code>JourneySummary</code> overview with Edit-jumps + an advanced-editor escape. <code>SimpleSetup</code> deleted; the old 9-step <code>JourneyBuilder</code> is no longer routed (deep editing = <code>JourneyEditor</code>). Publish-then-refine — no blocking jargon gate.</p></div>
+  </div>
+  <div class="callout c-violet" style="margin-top:16px"><div class="ic">⭐</div><div><p><b>Keep the wedge visible.</b> "Other tools mark a step done when your client watches a video — GoCSM auto-verifies it by watching their HighLevel, and shows you who's stuck." The auto-verify USP must stay positioned, not buried — it's the reason this beats a checklist.</p></div></div>
+</div></section>
+
+<!-- ===================== PART C : OVERVIEW ===================== -->
+<div class="part-band"><div class="wrap"><div class="pn">C</div><div><h2 id="overview">Overview "tracker" — triage-first <span class="ref" style="vertical-align:middle">§8</span></h2><div class="sub">Rebuilt for the ADHD agency owner: "show me who's stuck and let me unblock them in one move, at a glance."</div></div></div></div>
+
+<!-- OVERVIEW BEFORE/AFTER -->
+<section id="o-ba"><div class="wrap">
+  <div class="eyebrow">The headline change</div>
+  <h2><span class="n">C1</span>The lead flips: lifecycle census → triage axis</h2>
+  <p class="lead" style="margin-bottom:18px">The Overview used to open with three <b>lifecycle population cards</b> (how many in each bucket). It now opens with the
+  <b>triage axis</b> — who needs me <i>right now</i> — because that's the question an overwhelmed owner asks first. The lifecycle census is demoted into the full list.</p>
+  <div class="ba">
+    <div class="ba-col ba-before">
+      <div class="ba-h">⨯ Before</div>
+      <div class="mock">
+        <div class="row-cards">
+          <div class="mc lead"><div class="k mono">9</div><div class="l">Onboarded</div></div>
+          <div class="mc lead"><div class="k mono">14</div><div class="l">Onboarding now</div></div>
+          <div class="mc lead"><div class="k mono">3</div><div class="l">Not started</div></div>
+        </div>
+        <div class="vbar" style="opacity:.85"><div class="vt">2 clients stuck on "email domain"</div></div>
+        <div class="qmock" style="opacity:.85"><span class="nm">Queue…</span></div>
+      </div>
+      <p class="tiny muted" style="margin:10px 0 0">Lead = lifecycle counts. Answers "how many in each bucket", not "who needs me".</p>
+    </div>
+    <div class="ba-col ba-after">
+      <div class="ba-h">✓ After</div>
+      <div class="mock">
+        <div class="vbar">
+          <div class="vt">2 clients are stuck on "email sending domain" — that's most of your onboarding pain. <b class="mono" style="color:#b00020">$1,180/mo</b> is behind it.</div>
+          <div class="vm"><span class="badge b-violet">GoCSM Analysis</span><span>Numbers exact · wording is AI</span><span>▾ Where clients get stuck</span></div>
+        </div>
+        <div class="row-cards">
+          <div class="tile t-need"><span class="l">🔴 Needs you</span><span class="k mono">3</span></div>
+          <div class="tile t-wait"><span class="l">⏳ Waiting</span><span class="k mono">1</span></div>
+          <div class="tile t-pace"><span class="l">✅ On pace</span><span class="k mono">10</span></div>
+        </div>
+        <div class="qmock">
+          <span class="nm">Bloom Dental</span>
+          <span><span class="stp">Email domain</span> · <span class="rsn">duplicate DKIM</span></span>
+          <span class="mono tiny muted">$480/mo</span>
+          <span class="badge b-warn">client</span>
+          <span class="mono tiny" style="color:#b00020">Stuck 6d</span>
+          <span class="grow"></span>
+          <span class="btn btn-pri">Trigger workflow</span><span class="btn btn-q">⋯</span>
+        </div>
+        <div class="relief">✓ Waiting on others — 1 client on carrier/DNS review · no action needed</div>
+      </div>
+      <p class="tiny muted" style="margin:10px 0 0">Lead = triage. Each tile filters the surface below; the money-ranked queue is the hero.</p>
+    </div>
+  </div>
+</div></section>
+
+<!-- OVERVIEW ANATOMY -->
+<section id="o-anatomy"><div class="wrap">
+  <div class="eyebrow">The new Overview, top to bottom</div>
+  <h2><span class="n">▤</span>One calm scan: verdict → triage → act → reward</h2>
+  <p class="lead" style="margin-bottom:18px">Read it once, top to bottom. "Needs me" is loud and first; "in flight" is calm and below. One open disclosure at a time; no naked numbers (every number carries a target / trend / $).</p>
+  <div class="flow">
+    <div class="frow"><div class="fnum"><div class="b">1</div><div class="ln"></div></div><div class="fbody">
+      <div class="ft">AI Verdict — dollar-led <span class="badge b-violet" style="vertical-align:middle">the only AI surface</span></div>
+      <div class="fd">One plain sentence naming the dominant bottleneck <b>and the $/mo behind it</b>. Attribution "GoCSM Analysis"; stamp "Numbers exact · wording is AI". The "Where clients get stuck" funnel hides behind one disclosure.</div>
+    </div></div>
+    <div class="frow"><div class="fnum"><div class="b">2</div><div class="ln"></div></div><div class="fbody">
+      <div class="ft">Triage strip — the 3-second answer</div>
+      <div class="fd">🔴 Needs you (the only red tile) · ⏳ Waiting on review · ✅ On pace. Each tile <b>filters</b> the queue below.</div>
+    </div></div>
+    <div class="frow"><div class="fnum"><div class="b">3</div><div class="ln"></div></div><div class="fbody">
+      <div class="ft">"Needs help today" queue — the hero, money-ranked</div>
+      <div class="fd">Sorted by <code>mrr × days_on_current_step</code>. One reason-appropriate primary button per row; the top row + its button is the page's one focal action.</div>
+    </div></div>
+    <div class="frow"><div class="fnum"><div class="b">4</div><div class="ln"></div></div><div class="fbody">
+      <div class="ft">All-clear reward (when Needs-you = 0)</div>
+      <div class="fd">A designed calm payoff — "You're all caught up" — not a blank table. (Sparse week-1: "Nothing needs you yet.")</div>
+    </div></div>
+    <div class="frow"><div class="fnum"><div class="b">5</div><div class="ln"></div></div><div class="fbody">
+      <div class="ft">"Waiting on others — nothing for you" relief strip</div>
+      <div class="fd">Carrier/DNS waits, collapsed + counted (not enumerated). Stays out of the action queue.</div>
+    </div></div>
+    <div class="frow"><div class="fnum"><div class="b">6</div></div><div class="fbody" style="padding-bottom:0">
+      <div class="ft">Calm drill-downs, below the fold</div>
+      <div class="fd">"Where clients get stuck" funnel (click a step → filter queue) and the full account list (the demoted lifecycle census lives here as pills).</div>
+    </div></div>
+  </div>
+</div></section>
+
+<!-- OVERVIEW CHANGES -->
+<section id="o-list"><div class="wrap">
+  <div class="eyebrow">The delta, itemised</div>
+  <h2><span class="n">✦</span>Overview changes to pick up</h2>
+  <p class="lead" style="margin-bottom:18px">Each maps to a §8 subsection. Orange = reverses an earlier decision.</p>
+  <div class="changes">
+    <div class="ch"><div class="hd"><span class="num">1</span><span class="ti">Triage strip is the lead</span><span class="ref">§8.1</span></div>
+      <p>Three triage tiles (Needs you / Waiting / On pace) replace the lifecycle cards as primary orientation; each filters the surface. Only "Needs you" is saturated. No 4th counter row.</p>
+      <span class="rev">↩ reverses v1.7 "population-first cards as the lead"</span></div>
+
+    <div class="ch"><div class="hd"><span class="num">2</span><span class="ti">Verdict is dollar-led</span><span class="ref">§8.2</span></div>
+      <p>Names the dominant bottleneck <b>and the $/mo behind it</b>. Attribution "GoCSM Analysis"; trust stamp compressed to "Numbers exact · wording is AI".</p></div>
+
+    <div class="ch"><div class="hd"><span class="num">3</span><span class="ti">Agency-bottleneck verdict is data-derived</span><span class="ref">§8.2</span></div>
+      <p>The "waiting on your team" line is computed from the real <code>blocked_by==="agency"</code> set — never hardcoded. Headline, CTA and queue can't disagree.</p></div>
+
+    <div class="ch"><div class="hd"><span class="num">4</span><span class="ti">Money-ranked hero queue</span><span class="ref">§8.3</span></div>
+      <p>"Needs help today" sorted by <code>mrr × days_on_current_step</code>. Money is the sort key, shown as a quiet Mono <code>$/mo</code> eyebrow — never a wide ARR column. Cap ~5, "show all".</p></div>
+
+    <div class="ch"><div class="hd"><span class="num">5</span><span class="ti">Undoable action receipt</span><span class="ref">§8.3</span></div>
+      <p>The primary row action fires <code>ActionReceipt</code> — scope + blast-radius + ~5s grace countdown + <b>Undo</b>. The receipt persists as intervention memory.</p></div>
+
+    <div class="ch"><div class="hd"><span class="num">6</span><span class="ti">All-clear reward state</span><span class="ref">§8.6</span></div>
+      <p>Needs-you = 0 → a calm designed payoff, not a blank table. Copy adapts to "Nothing needs you yet" for sparse week-1 accounts. No competing CTA.</p></div>
+
+    <div class="ch"><div class="hd"><span class="num">7</span><span class="ti">Relief strip for external waits</span><span class="ref">§8.3</span></div>
+      <p>Carrier/DNS "pending" clients sit in a subordinate, collapsed "nothing for you" lane — counted, not enumerated. Pending ≠ stuck.</p></div>
+
+    <div class="ch"><div class="hd"><span class="num">8</span><span class="ti">One visible AI surface</span><span class="ref">§8.2</span></div>
+      <p>Only the Verdict is AI-marked. The queue ranking is arithmetic — <b>not</b> labelled AI. No Ask box, no recommended-action menu, no generated prose. <code>ConfTag</code> → plain data-sourcing label.</p></div>
+
+    <div class="ch"><div class="hd"><span class="num">9</span><span class="ti">One velocity number, never a chart</span><span class="ref">§8.1</span></div>
+      <p>"X finished this week · avg N days ({delta} vs prior)", green/red arrow. A regression renders <b>calm-neutral</b>, not alarm-amber.</p></div>
+
+    <div class="ch"><div class="hd"><span class="num">10</span><span class="ti">Calm drill-downs below the fold</span><span class="ref">§8.4/§8.5</span></div>
+      <p>Funnel + full account list collapsed. One open disclosure at a time; <b>no naked numbers</b> — every number carries a target / trend / $.</p></div>
+  </div>
+</div></section>
+
+<!-- QUEUE ROW + RECEIPT -->
+<section id="o-row"><div class="wrap">
+  <div class="eyebrow">Build spec</div>
+  <h2><span class="n">▸</span>Queue row anatomy &amp; the undo receipt</h2>
+  <p class="lead" style="margin-bottom:16px">Reading order left → right. The step name is the anchor; MRR and the whose-move pill are quiet context; timing is a single token; the primary button is always visible (touch / non-technical operators — never hover-revealed).</p>
+  <div class="card">
+    <div class="qmock" style="font-size:14px">
+      <span class="nm">Maple Street Dental</span>
+      <span><span class="stp">Google Business Profile</span> · <span class="rsn">contributor-only access — reviews won't sync</span></span>
+      <span class="mono tiny muted">$650/mo</span>
+      <span class="badge b-blue">your team</span>
+      <span class="mono tiny" style="color:#b00020">Stuck 15d</span>
+      <span class="grow"></span>
+      <span class="btn btn-pri">Assign</span><span class="btn btn-q">⋯</span>
+    </div>
+    <div class="grid g3" style="margin-top:14px">
+      <div><div class="badge b-gray">anchor</div><p class="tiny" style="margin:6px 0 0"><b>Client → step + one-clause reason.</b> Tool names &amp; record detail live behind the ⋯, never on the row.</p></div>
+      <div><div class="badge b-gray">quiet context</div><p class="tiny" style="margin:6px 0 0"><b>$/mo</b> is the sort key (Mono eyebrow). <span class="badge b-blue">your team</span> / <span class="badge b-warn">client</span> / <span class="badge b-gray">external</span> = whose move is it.</p></div>
+      <div><div class="badge b-gray">action</div><p class="tiny" style="margin:6px 0 0"><b>One owner-aware button</b> (client→Trigger workflow · agency→Assign · external→Check status) + contextual ⋯. Row click → timeline drawer.</p></div>
+    </div>
+  </div>
+  <div class="g2 grid" style="margin-top:14px">
+    <div class="card" style="border-left:4px solid var(--blue)">
+      <div class="badge b-blue" style="margin-bottom:8px">ActionReceipt · after firing</div>
+      <p style="font-weight:700;color:var(--ink);margin-bottom:6px">✓ Sent: "A2P registration help" workflow</p>
+      <p class="tiny" style="margin:0 0 4px"><b>Scope:</b> Bloom Dental only · <b>Blast radius:</b> 1 client, 1 SMS+email</p>
+      <p class="tiny" style="margin:0 0 10px"><b>Undo in <span class="mono">4s…</span></b> &nbsp; <span class="btn btn-q" style="padding:3px 9px">Undo</span></p>
+      <p class="tiny muted" style="margin:0">Then: "GoCSM will report back when the step completes." Receipt persists in the row.</p>
+    </div>
+    <div class="card">
+      <h3>Action rules</h3>
+      <ul class="check">
+        <li><b>Visible scope + blast radius</b> before anything happens.</li>
+        <li><b>Grace countdown</b> (~5s) with a live Undo.</li>
+        <li><b>Trigger Workflow = chosen, not auto-fired</b> — picker of the client's real GHL workflows, smart-defaulted by stuck step.</li>
+        <li><b>One timing token</b> ("Stuck N days") — a fact, not a scold; "Day N of 14" lives in the timeline drawer.</li>
+      </ul>
+    </div>
+  </div>
+</div></section>
+
+<!-- PHASE 4 FIXES -->
+<section id="fixes"><div class="wrap">
+  <div class="eyebrow">Already fixed in the prototype — carry into the build</div>
+  <h2><span class="n">✓</span>The 5 Overview Phase-4 review fixes</h2>
+  <table>
+    <thead><tr><th style="width:34%">Issue found</th><th>Fix</th><th style="width:80px">Status</th></tr></thead>
+    <tbody>
+      <tr><td>Agency-bottleneck verdict was <b>lying</b> — hardcoded "5 clients · kickoff call" vs the real 3 agency-blocked accounts</td><td>Derive from <code>blocked_by==="agency"</code> (count + longest-parked client) so headline / CTA / queue agree</td><td><span class="ok">Fixed ✓</span></td></tr>
+      <tr><td>Console error on <b>every triage-tile click</b> — <code>StatusCard</code> mixed the <code>border</code> shorthand with the <code>borderLeft</code> accent</td><td>Switched to <b>per-side borders</b>; 0 console errors on previously-throwing paths</td><td><span class="ok">Fixed ✓</span></td></tr>
+      <tr><td>Trust stamp was a generic "Confirmed" pill</td><td>Compressed to the prescribed <b>"Numbers exact · wording is AI"</b> (provenance kept in tooltip)</td><td><span class="ok">Fixed ✓</span></td></tr>
+      <tr><td>All-clear copy was <b>false for brand-new accounts</b></td><td>Sparse week-1 reads "Nothing needs you yet"; zero-stalls keeps "all caught up"</td><td><span class="ok">Fixed ✓</span></td></tr>
+      <tr><td>Velocity slip rendered in <b>alarm amber</b> daily</td><td>Regression stays honest (↑ + number) but <b>calm-neutral</b>; genuine improvement still pops green</td><td><span class="ok">Fixed ✓</span></td></tr>
+    </tbody>
+  </table>
+  <p class="tiny muted" style="margin-top:10px"><code>tsc</code> clean · <code>bun run build</code> (DS → prototype → web) green. Files: Builder → <code>src/onboarding/components/onboarding/{SetupWizard,JourneySummary}.tsx</code> · Overview → <code>src/onboarding/pages/OnboardingIndexPage.tsx</code> (route <code>/onboarding</code>, <code>.onb-root</code> scope).</p>
+</div></section>
+
+<!-- DEV PICKUP -->
+<section id="pickup"><div class="wrap">
+  <div class="eyebrow">Bring it home</div>
+  <h2><span class="n">☑</span>Developer pickup checklist</h2>
+  <div class="g2 grid">
+    <div class="card">
+      <h3>A · Journey Builder (§6)</h3>
+      <ul class="check">
+        <li>Template-first Step 1 (3 templates + "start from blank").</li>
+        <li>6-step two-pane wizard with persistent live preview.</li>
+        <li>Auto-verify <b>locked</b> for catalog steps; picker only for custom steps.</li>
+        <li>Per-step Customize: title · client copy · completion · video · sub-steps.</li>
+        <li>Asset steps: any/specific scope via remembered snapshot picker.</li>
+        <li>Order via arrows; publish-then-refine (no blocking jargon gate).</li>
+        <li>Returning user → <code>JourneySummary</code>; advanced = <code>JourneyEditor</code>.</li>
+        <li><b>Keep the auto-verify wedge visible</b> on every row + the Step-2 header.</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h3>C · Overview (§8)</h3>
+      <ul class="check">
+        <li>Triage strip leads; tiles filter the one client table.</li>
+        <li>Lifecycle census demoted to the full list (no 4th counter row).</li>
+        <li>Verdict dollar-led + "GoCSM Analysis" + "Numbers exact · wording is AI".</li>
+        <li>Agency verdict derives from <code>blocked_by</code>; queue ranked by <code>mrr × days</code>.</li>
+        <li><code>ActionReceipt</code> with scope + grace + Undo on the primary action.</li>
+        <li>All-clear + sparse-aware copy; relief strip subordinate &amp; collapsed.</li>
+        <li>One velocity number, calm-neutral on regression; no naked numbers.</li>
+        <li><code>StatusCard</code> per-side borders; every verdict derives from the seed.</li>
+      </ul>
+    </div>
+  </div>
+  <div class="callout c-amber" style="margin-top:16px"><div class="ic">🚧</div><div><p><b>Guardrails.</b> Don't re-open the <b>Doer (§7)</b> — unchanged today. Keep <b>one visible AI surface</b> (don't label the ranking "AI"). Keep onboarding detection <b>isolated</b> from the Health-Score path (§4.1). <b>Pending ≠ stuck</b> — external-review clients stay out of the queue.</p></div></div>
+  <div class="callout c-green" style="margin-top:12px"><div class="ic">📎</div><div>
+    <p><b>References.</b> Full spec → <code>onboarding-and-activation-prd.md</code> (today's decisions in §11.1k). Whole-product visual tour → <a href="onboarding-and-activation-quickread.html">onboarding-and-activation-quickread.html</a>. Design briefs → <code>docs/design/onboarding-overview-brief.md</code> + the 2026-06-30 builder design-loop entries in <code>MEMORY.md</code>.</p>
+  </div></div>
+</div></section>
+
+<footer><div class="wrap">GoCSM — Sub-Account Onboarding &amp; Activation · Developer change brief · 30 June 2026 · PRD v1.12 · Confidential. Mockups are illustrative; live data comes from the seed.</div></footer>
+</body>
+</html>

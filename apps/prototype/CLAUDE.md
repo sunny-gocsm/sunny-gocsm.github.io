@@ -56,6 +56,15 @@ disclosure — expand to see the matching accounts (Phase 1 = plain name + month
 vocab; Phase 2 = the richer `MatchWall`).
 
 ## Onboarding feature — imported from a Lovable export (self-contained module)
+**PRD (v1.12, the dev contract):** `docs/prd/onboarding-and-activation-prd.md` is the standalone, canonical
+Onboarding & Activation spec. Its top **"Changes made on 30 June 2026"** section + the **§11.1k** decision-log
+entry are the developer's pickup list for the **two** 30 June design-loop redesigns: **Layer A — the Journey
+Builder (§6, the `SetupWizard`)** and **Layer C — the Overview tracker (§8)**. The **Doer (§7) was unchanged** that
+day. Two **hand-authored visual** companions sit beside the .md: `docs/prd/onboarding-changes-2026-06-30.html`
+(the changes-first dev brief — read this to know what to build) and `docs/prd/onboarding-and-activation-quickread.html`
+(the whole-product visual tour). Edit the .md as the source of truth, then update the two HTML quick-reads by hand
+to match (there is no generator — a faithful full-text render was tried and retired as the wrong format).
+
 The `/onboarding` surface is **not** built like the rest of the prototype. It was imported wholesale
 from a separate Lovable app (TanStack Start + React 19 + Tailwind v4) and grafted in with **zero product
 changes** — only integration plumbing. It lives, fully self-contained, under **`src/onboarding/`** and is

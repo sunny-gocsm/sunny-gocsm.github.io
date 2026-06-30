@@ -1,0 +1,383 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>GoCSM — Sub-Account Onboarding &amp; Activation · Visual Quick-Read (PRD v1.12)</title>
+<style>
+  :root{
+    --ink:#0f1b2d;--ink2:#3c4a63;--ink3:#6b7686;--line:#e4e9f1;--line2:#eef2f8;
+    --bg:#f6f8fc;--card:#fff;--blue:#1558c0;--blue7:#2c5cc5;--blue-soft:#eef3fc;--blue-bd:#cfe0f7;
+    --violet:#6d4bd8;--violet-soft:#f5f3ff;--violet-bd:#e4ddff;
+    --pos:#2f9e1b;--pos-soft:#e9f8e4;--pos-bd:#bfe3b6;--neg:#c73a26;--neg-soft:#fdeae6;--neg-bd:#f3c9c0;
+    --warn:#b45309;--warn-soft:#fff5e6;--warn-bd:#f3dcae;--gray-soft:#eef1f6;
+    --r:13px;--r2:9px;--sh:0 1px 2px rgba(16,27,45,.05),0 8px 24px rgba(16,27,45,.06);
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{margin:0;background:var(--bg);color:var(--ink);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    font-size:15px;line-height:1.55;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:1080px;margin:0 auto;padding:0 22px}
+  .mono{font-family:"SF Mono",ui-monospace,Menlo,Consolas,monospace}
+  a{color:var(--blue);text-decoration:none}a:hover{text-decoration:underline}
+  code{font-family:"SF Mono",ui-monospace,Menlo,Consolas,monospace;font-size:.85em;background:var(--line2);
+    padding:1px 5px;border-radius:5px;color:#243a5e}
+  h2{font-size:22px;letter-spacing:-.01em;margin:0 0 4px;display:flex;align-items:center;gap:9px}
+  h2 .n{display:inline-flex;align-items:center;justify-content:center;width:26px;height:26px;border-radius:8px;
+    background:var(--blue);color:#fff;font-size:13px;font-weight:800;flex:0 0 auto}
+  h3{font-size:15.5px;margin:0 0 8px}
+  p{margin:0 0 10px;color:var(--ink2)}
+  .muted{color:var(--ink3)}.tiny{font-size:12px}
+  .eyebrow{font-size:11.5px;font-weight:800;text-transform:uppercase;letter-spacing:.09em;color:var(--blue7)}
+
+  header.top{background:linear-gradient(135deg,#0f2a55,#14377a);color:#fff;padding:40px 0 32px}
+  header.top .eyebrow{color:#9db8ec}
+  header.top h1{margin:8px 0 8px;font-size:32px;letter-spacing:-.02em;font-weight:780;line-height:1.12}
+  header.top p{color:#d2def4;max-width:780px;margin:0}
+  .pills{display:flex;flex-wrap:wrap;gap:8px;margin-top:16px}
+  .pill{background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.2);border-radius:999px;
+    padding:5px 12px;font-size:12.5px;font-weight:600;color:#eaf1ff}.pill b{color:#fff}
+
+  nav.toc{position:sticky;top:0;z-index:20;background:rgba(255,255,255,.93);backdrop-filter:blur(8px);
+    border-bottom:1px solid var(--line);overflow-x:auto;white-space:nowrap}
+  nav.toc .wrap{display:flex;gap:4px;padding:8px 22px}
+  nav.toc a{color:var(--ink2);font-size:12.5px;font-weight:600;padding:6px 11px;border-radius:8px;flex:0 0 auto}
+  nav.toc a:hover{background:var(--blue-soft);text-decoration:none;color:var(--blue)}
+
+  section{padding:30px 0;border-bottom:1px solid var(--line)}
+  .lead{font-size:15.5px;color:var(--ink2);max-width:880px}
+
+  .grid{display:grid;gap:14px}
+  .g2{grid-template-columns:1fr 1fr}.g3{grid-template-columns:repeat(3,1fr)}.g4{grid-template-columns:repeat(4,1fr)}
+  @media(max-width:860px){.g2,.g3,.g4{grid-template-columns:1fr}}
+
+  .card{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:16px 18px;box-shadow:var(--sh)}
+  .card h3{display:flex;align-items:center;gap:8px}
+  .kcard{background:#fbfcfe;border:1px solid var(--line);border-radius:var(--r2);padding:13px 15px}
+  .kcard .t{font-weight:800;font-size:13.5px}.kcard .d{font-size:12.5px;color:var(--ink3);margin-top:3px}
+
+  .badge{display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:800;border-radius:999px;padding:3px 9px;line-height:1.6}
+  .b-blue{background:var(--blue-soft);color:var(--blue);border:1px solid var(--blue-bd)}
+  .b-violet{background:var(--violet-soft);color:var(--violet);border:1px solid var(--violet-bd)}
+  .b-pos{background:var(--pos-soft);color:#1c6b12;border:1px solid var(--pos-bd)}
+  .b-neg{background:var(--neg-soft);color:#9a2c1c;border:1px solid var(--neg-bd)}
+  .b-warn{background:var(--warn-soft);color:#8a4708;border:1px solid var(--warn-bd)}
+  .b-gray{background:var(--gray-soft);color:#516079;border:1px solid #dde3ec}
+  .tier{display:inline-flex;width:20px;height:20px;border-radius:6px;align-items:center;justify-content:center;font-weight:800;font-size:11px}
+  .tA{background:var(--pos-soft);color:#1c6b12;border:1px solid var(--pos-bd)}
+  .tB{background:var(--warn-soft);color:#8a4708;border:1px solid var(--warn-bd)}
+  .tC{background:var(--gray-soft);color:#516079;border:1px solid #dde3ec}
+
+  .callout{border-radius:var(--r);padding:16px 18px;border:1px solid;display:flex;gap:13px;align-items:flex-start}
+  .callout .ic{font-size:20px;line-height:1.1;flex:0 0 auto}
+  .c-blue{background:var(--blue-soft);border-color:var(--blue-bd)}
+  .c-amber{background:var(--warn-soft);border-color:var(--warn-bd)}
+  .c-violet{background:var(--violet-soft);border-color:var(--violet-bd)}
+  .callout p{margin:0;color:var(--ink2)}.callout b{color:var(--ink)}
+
+  /* architecture */
+  .arch{display:flex;flex-direction:column;gap:0;margin-top:6px}
+  .layer{background:var(--card);border:1px solid var(--line);border-left:4px solid var(--blue7);border-radius:var(--r2);
+    padding:12px 16px;box-shadow:var(--sh);display:flex;gap:12px;align-items:baseline}
+  .layer .lk{font-weight:800;font-size:13.5px;color:var(--blue7);flex:0 0 92px}
+  .layer .ln{font-weight:700;font-size:13.5px}.layer .ld{font-size:12.5px;color:var(--ink3)}
+  .arrow-d{align-self:center;color:var(--blue7);font-size:18px;line-height:1;margin:4px 0}
+  .spine{margin-top:8px;border:1px dashed var(--blue-bd);background:var(--blue-soft);border-radius:var(--r2);
+    padding:10px 14px;font-size:12.5px;color:#15346f}
+
+  /* stepper */
+  .stepper{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
+  .step{border:1px solid var(--line);background:#fff;border-radius:999px;padding:6px 12px;font-size:12.5px;font-weight:700;color:var(--ink2);
+    display:flex;align-items:center;gap:6px}
+  .step .i{width:18px;height:18px;border-radius:50%;background:var(--blue-soft);color:var(--blue);font-size:10.5px;font-weight:800;
+    display:flex;align-items:center;justify-content:center;border:1px solid var(--blue-bd)}
+  .step.tail{background:#fbfcff;border-style:dashed}
+  .stepper .sep{align-self:center;color:var(--blue-bd);font-weight:800}
+
+  /* state chips */
+  .states{display:flex;flex-wrap:wrap;gap:7px;margin-top:6px}
+  .st{border:1.5px solid var(--line);border-radius:999px;padding:5px 12px;font-weight:700;font-size:12.5px;background:#fff;color:var(--ink2)}
+  .st.neu{border-color:#d7dde7;color:#516079}
+  .st.lock{border-color:#d7dde7;background:#f4f6fa;color:#6b7686}
+  .st.go{border-color:var(--blue-bd);background:var(--blue-soft);color:var(--blue)}
+  .st.ver{border-color:var(--warn-bd);background:var(--warn-soft);color:#8a4708}
+  .st.wait{border-color:#cfe0f7;background:#f3f8ff;color:#15346f}
+  .st.att{border-color:var(--neg-bd);background:var(--neg-soft);color:#9a2c1c}
+  .st.done{border-color:var(--pos-bd);background:var(--pos-soft);color:#1c6b12}
+  .st.skip{border-color:#d7dde7;color:#8b94a4;text-decoration:line-through}
+  .st.lens{border-style:dashed;border-color:#d7dde7;color:#6b7686}
+
+  table{width:100%;border-collapse:collapse;font-size:13px;background:var(--card);border:1px solid var(--line);
+    border-radius:var(--r2);overflow:hidden}
+  th,td{text-align:left;padding:8px 11px;border-bottom:1px solid var(--line2);vertical-align:top}
+  th{background:#f3f6fb;font-size:11px;text-transform:uppercase;letter-spacing:.04em;color:var(--ink3);font-weight:800}
+  tr:last-child td{border-bottom:0}
+  td code{white-space:nowrap}
+  .wave td:first-child{font-weight:800;color:var(--blue7);background:#f7faff}
+
+  ul.tick{list-style:none;padding:0;margin:6px 0 0}
+  ul.tick li{position:relative;padding:4px 0 4px 22px;font-size:13.5px;color:var(--ink2)}
+  ul.tick li::before{content:"\203A";position:absolute;left:4px;color:var(--blue7);font-weight:800}
+
+  /* metric bars (mini chart) */
+  .bar{height:8px;border-radius:999px;background:var(--line2);overflow:hidden}
+  .bar>i{display:block;height:100%;background:var(--blue)}
+  .funnel td{vertical-align:middle}
+
+  /* phase cards */
+  .phases{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+  @media(max-width:860px){.phases{grid-template-columns:1fr 1fr}}
+  @media(max-width:560px){.phases{grid-template-columns:1fr}}
+  .ph{border:1px solid var(--line);border-radius:var(--r);padding:13px 15px;background:#fff;border-top:3px solid var(--blue)}
+  .ph .pk{font-size:11px;font-weight:800;color:var(--blue7);letter-spacing:.04em}
+  .ph .pt{font-weight:800;font-size:14px;margin:3px 0 6px}
+  .ph.ship{border-top-color:var(--pos);background:#fbfffb}
+  .ph.ship .pk{color:#1c6b12}
+
+  footer{padding:26px 0 56px;color:var(--ink3);font-size:12.5px}
+  footer .wrap{border-top:1px solid var(--line);padding-top:18px}
+</style>
+</head>
+<body>
+<header class="top"><div class="wrap">
+  <div class="eyebrow">GoCSM · Product Requirements · Visual Quick-Read</div>
+  <h1>Sub-Account Onboarding &amp; Activation</h1>
+  <p>Agency-built guided onboarding, in-context activation, and proactive stall analytics for HighLevel sub-accounts. The 10-minute visual tour of the product — full detail lives in the markdown PRD.</p>
+  <div class="pills">
+    <span class="pill"><b>PRD v1.12</b></span>
+    <span class="pill"><b>Surface:</b>&nbsp;HighLevel Marketplace · Custom JS</span>
+    <span class="pill"><b>3 layers</b>&nbsp;· 1 data spine</span>
+    <span class="pill"><b>15-step</b>&nbsp;v1 catalog</span>
+    <span class="pill"><b>Status:</b>&nbsp;final → in dev</span>
+  </div>
+</div></header>
+
+<nav class="toc"><div class="wrap">
+  <a href="#why">Why</a>
+  <a href="#arch">Architecture</a>
+  <a href="#personas">Personas</a>
+  <a href="#spine">Data spine</a>
+  <a href="#tiers">Detectors</a>
+  <a href="#catalog">15-step catalog</a>
+  <a href="#builder">Builder</a>
+  <a href="#doer">Doer</a>
+  <a href="#overview">Overview</a>
+  <a href="#metrics">Metrics</a>
+  <a href="#phasing">Phasing</a>
+</div></nav>
+
+<!-- updated banner -->
+<section style="padding:18px 0;background:#f3f8ff;border-bottom:1px solid var(--blue-bd)"><div class="wrap">
+  <div class="callout c-blue" style="box-shadow:var(--sh)"><div class="ic">🆕</div><div>
+    <p><b>Updated 30 June 2026 (v1.11 → v1.12).</b> The agency Overview was redesigned. For exactly what changed and what to build today, read the companion <a href="onboarding-changes-2026-06-30.html"><b>Changes made on 30 June →</b></a>. This page is the whole-product tour.</p>
+  </div></div>
+</div></section>
+
+<!-- WHY -->
+<section id="why"><div class="wrap">
+  <div class="eyebrow">The problem &amp; the wedge</div>
+  <h2><span class="n">①</span>Onboarding is where agencies silently bleed revenue</h2>
+  <div class="g3 grid" style="margin:6px 0 16px">
+    <div class="kcard"><div class="t mono" style="font-size:20px;color:var(--neg)">63%</div><div class="d">of buyers weigh onboarding in the purchase decision — and poor onboarding is the #1 churn driver.</div></div>
+    <div class="kcard"><div class="t">Spreadsheets &amp; Slack</div><div class="d">No shared source of truth for "fully onboarded", no visibility into where a client is stuck.</div></div>
+    <div class="kcard"><div class="t">Margin loss</div><div class="d">An unactivated sub-account is pure loss — the agency pays HighLevel and collects nothing.</div></div>
+  </div>
+  <div class="callout c-violet"><div class="ic">⚡</div><div>
+    <p><b>Why GoCSM, why now.</b> DAPs (Userpilot/Pendo) do in-app guidance but no accountability; onboarding platforms (Rocketlane/GUIDEcx) do accountability but live outside the product. GoCSM does both — because it already runs <b>inside</b> HighLevel via Custom-JS injection, which is exactly what makes <b>automatic step-completion detection</b> ("I did it and GoCSM just knew") feasible. A category we can own.</p>
+  </div></div>
+</div></section>
+
+<!-- ARCHITECTURE -->
+<section id="arch"><div class="wrap">
+  <div class="eyebrow">Solution architecture</div>
+  <h2><span class="n">②</span>Three layers on one shared data spine</h2>
+  <p class="lead" style="margin-bottom:14px">Each layer is a distinct surface and user, but all three read/write the same per-step completion record.</p>
+  <div class="arch">
+    <div class="layer"><span class="lk">A · Builder</span><span><span class="ln">Agency app →</span> <span class="ld">compose &amp; template the journey: steps, owners, detectors, videos, kickoff. (§6)</span></span></div>
+    <div class="arrow-d">↓</div>
+    <div class="layer"><span class="lk">B · Doer</span><span><span class="ln">Injected in the sub-account →</span> <span class="ld">guide the client, deep-link to each HL screen, auto-verify completion. (§7)</span></span></div>
+    <div class="arrow-d">↓</div>
+    <div class="layer"><span class="lk">C · Overview</span><span><span class="ln">Agency app →</span> <span class="ld">portfolio tracker, stall queue, one-click outreach + SLA-driven HL triggers. (§8)</span></span></div>
+    <div class="spine"><b>Shared data spine:</b> <code>Journey</code> (template, versioned) → <code>Assignment</code> (instance, version-pinned) → <code>OnboardingStep</code> (per-step state + detector + timestamps + owner). One object powers the doer UI, the funnel, and the SLA trigger alike.</div>
+  </div>
+</div></section>
+
+<!-- PERSONAS -->
+<section id="personas"><div class="wrap">
+  <div class="eyebrow">Who we serve</div>
+  <h2><span class="n">③</span>Three personas, one north star</h2>
+  <div class="g3 grid">
+    <div class="card"><h3>🏢 Agency owner/operator</h3><p class="tiny">Runs a HighLevel agency; resells sub-accounts. <b>Non-technical, easily overwhelmed.</b></p><p class="tiny" style="color:var(--ink)"><b>JTBD:</b> "Make every client activate fast — without chasing them one by one."</p></div>
+    <div class="card"><h3>🎧 Agency CSM / onboarder</h3><p class="tiny">Owns day-to-day onboarding of new clients.</p><p class="tiny" style="color:var(--ink)"><b>JTBD:</b> "Show me exactly who's stuck, where, and for how long — before they churn."</p></div>
+    <div class="card"><h3>🔧 End client (sub-account)</h3><p class="tiny">Local business owner. Non-technical. Now must operate HighLevel.</p><p class="tiny" style="color:var(--ink)"><b>JTBD:</b> "Tell me what to do next and take me there — no docs, no tickets."</p></div>
+  </div>
+  <div class="callout c-blue" style="margin-top:14px"><div class="ic">⭐</div><div><p><b>North-star JTBD.</b> Client: "Get me to my first real outcome (first lead / first message / first booking) as fast as possible." Agency: "Get every client activated and keep none silently stuck."</p></div></div>
+</div></section>
+
+<!-- DATA SPINE -->
+<section id="spine"><div class="wrap">
+  <div class="eyebrow">The contract</div>
+  <h2><span class="n">④</span>One step, nine states — rendered identically everywhere</h2>
+  <p class="lead" style="margin-bottom:12px">All three surfaces render the same state grammar. <code>stalled</code> is a <b>computed agency-side lens</b>, never stored, never shown to the client.</p>
+  <div class="states">
+    <span class="st neu">not_started</span>
+    <span class="st lock">🔒 locked</span>
+    <span class="st go">in_progress</span>
+    <span class="st ver">verifying</span>
+    <span class="st wait">waiting_on_agency</span>
+    <span class="st att">needs_attention</span>
+    <span class="st done">✓ done</span>
+    <span class="st skip">skipped</span>
+    <span class="st lens">stalled · lens</span>
+  </div>
+  <div class="g2 grid" style="margin-top:16px">
+    <div class="card"><h3>Versioned by design</h3><p class="tiny">Editing a published journey creates a new draft version; <b>clients are pinned to the version they started on</b>. Publishing affects new assignments only; migrating in-flight clients is an explicit action with stated blast radius. (Agencies never see version numbers — just Draft / Live / Editing.)</p></div>
+    <div class="card"><h3>Pluggable detector per step</h3><p class="tiny"><code>detector.type ∈ {auto_signal, manual_confirm, inbound_webhook}</code>. Never a generic boolean. Every detector ships a confidence model + an obvious manual override — <b>auto-detection that's wrong is worse than manual.</b> <code>last_intervention</code> closes the loop ("Nudged 2d ago — no movement").</p></div>
+  </div>
+</div></section>
+
+<!-- DETECTOR TIERS -->
+<section id="tiers"><div class="wrap">
+  <div class="eyebrow">The detector framework — the differentiator</div>
+  <h2><span class="n">⑤</span>Three detectability tiers</h2>
+  <div class="g3 grid">
+    <div class="card" style="border-top:3px solid var(--pos)"><h3><span class="tier tA">A</span> Cleanly auto-detectable</h3><p class="tiny">A clear state change we can read. <b>The demo</b> — "I did it and GoCSM just knew." Auto-detect; manual override as safety net.</p></div>
+    <div class="card" style="border-top:3px solid var(--warn)"><h3><span class="tier tB">B</span> Detectable but ambiguous</h3><p class="tiny">A laggy/flaky proxy (DNS, carrier review). Auto-detect the proxy; manual override <b>both directions</b> + a confidence indicator.</p></div>
+    <div class="card" style="border-top:3px solid var(--ink3)"><h3><span class="tier tC">C</span> Manual-only</h3><p class="tiny">No reliable signal (book a call, watch a video). Manual check; optional soft signal (watch-%, booking webhook).</p></div>
+  </div>
+  <div class="callout c-amber" style="margin-top:14px"><div class="ic">🔀</div><div><p><b>Non-blocking model.</b> <code>verifying</code> (awaiting carrier/DNS) never blocks an independent step — the client is advanced through the ~11 of 15 independent steps in parallel. <code>locked</code> propagates only from genuine hard dependencies: <b>send-SMS ← A2P campaign ← A2P brand ← phone</b>. "Current step" = next <i>actionable</i> step, never a frozen wait screen.</p></div></div>
+</div></section>
+
+<!-- CATALOG -->
+<section id="catalog"><div class="wrap">
+  <div class="eyebrow">The v1 supported set</div>
+  <h2><span class="n">⑥</span>The 15-step action catalog</h2>
+  <p class="lead" style="margin-bottom:12px">Prioritised by frequency × criticality × detectability. Communication rails rank first — nothing downstream works without them. Tier <span class="tier tA">A</span> auto · <span class="tier tB">B</span> proxy · <span class="tier tC">C</span> manual.</p>
+  <table>
+    <thead><tr><th style="width:120px">Wave</th><th style="width:40px">#</th><th>Step</th><th style="width:50px">Tier</th><th>Detector signal</th></tr></thead>
+    <tbody>
+      <tr class="wave"><td rowspan="5">1 · Comm rails<br><span class="tiny" style="font-weight:600;color:var(--ink3)">universal blockers</span></td><td class="mono">1</td><td>Purchase phone number</td><td><span class="tier tA">A</span></td><td><code>phone_number_exists</code></td></tr>
+      <tr><td class="mono">2</td><td>A2P 10DLC brand registration</td><td><span class="tier tB">B</span></td><td><code>a2p_brand_status</code> — #1 stall in the ecosystem</td></tr>
+      <tr><td class="mono">3</td><td>A2P 10DLC campaign approval</td><td><span class="tier tB">B</span></td><td><code>a2p_campaign_status</code> — second gate</td></tr>
+      <tr><td class="mono">4</td><td>Dedicated email sending domain</td><td><span class="tier tB">B</span></td><td><code>email_domain_verified</code> — DNS lag</td></tr>
+      <tr><td class="mono">5</td><td>Complete business profile</td><td><span class="tier tA">A</span></td><td><code>business_profile_complete</code></td></tr>
+      <tr class="wave"><td rowspan="6">2 · Conversion<br><span class="tiny" style="font-weight:600;color:var(--ink3)">lead capture engine</span></td><td class="mono">6</td><td>Activate / customize workflows</td><td><span class="tier tB">B</span></td><td><code>workflow_active</code> (per named asset)</td></tr>
+      <tr><td class="mono">7</td><td>Publish funnel / website</td><td><span class="tier tA">A</span></td><td><code>funnel_published</code></td></tr>
+      <tr><td class="mono">8</td><td>Connect custom domain</td><td><span class="tier tB">B</span></td><td><code>domain_verified</code> — classic limbo step</td></tr>
+      <tr><td class="mono">9</td><td>Create calendar + sync Google/Outlook</td><td><span class="tier tA">A</span></td><td><code>calendar_exists + integration</code></td></tr>
+      <tr><td class="mono">10</td><td>Create / publish form</td><td><span class="tier tA">A</span></td><td><code>form_exists</code></td></tr>
+      <tr><td class="mono">11</td><td>Set up pipeline &amp; stages</td><td><span class="tier tA">A</span></td><td><code>pipeline_exists</code></td></tr>
+      <tr class="wave"><td rowspan="4">3 · Integrations<br><span class="tiny" style="font-weight:600;color:var(--ink3)">+ human anchor</span></td><td class="mono">12</td><td>Connect Google Business Profile</td><td><span class="tier tA">A</span></td><td><code>gbp_integration</code> + sync health</td></tr>
+      <tr><td class="mono">13</td><td>Connect Facebook / Instagram</td><td><span class="tier tA">A</span></td><td><code>facebook_integration</code></td></tr>
+      <tr><td class="mono">14</td><td>Connect payments (Stripe)</td><td><span class="tier tA">A</span></td><td><code>stripe_connected</code> + charges capability</td></tr>
+      <tr><td class="mono">15</td><td>Book kickoff call with agency</td><td><span class="tier tA">A</span></td><td>booking event — client books, auto-verifies</td></tr>
+    </tbody>
+  </table>
+  <div class="g2 grid" style="margin-top:14px">
+    <div class="callout c-amber"><div class="ic">⚠</div><div><p><b>Wave 1 is disproportionately Tier B.</b> The highest-priority steps are the laggy carrier/DNS ones — so the "We're checking… (1–3 days)" limbo design is a launch requirement, not polish. A2P is two steps (brand + campaign) on purpose: brand-approved-but-campaign-stuck is the most common stall.</p></div></div>
+    <div class="callout c-blue"><div class="ic">➕</div><div><p><b>Always extensible.</b> A free-form <b>custom step</b> (client-confirms or <code>inbound_webhook</code>) lets agencies track anything off-catalog — even off-GHL work — using HighLevel's own Webhook action. 11 backlog steps (test lead, contacts, campaigns, WhatsApp…) queue behind the v1 cut line.</p></div></div>
+  </div>
+</div></section>
+
+<!-- BUILDER -->
+<section id="builder"><div class="wrap">
+  <div class="eyebrow">Layer A — the agency builder · redesigned 30 Jun</div>
+  <h2><span class="n">⑦</span>A guided, template-first wizard — with a live preview</h2>
+  <p class="lead" style="margin-bottom:10px">One decision per screen, smart defaults pre-selected, the client experience building <b>live beside you</b>, and full power as <b>progressive depth</b> behind "Customize". Value in minutes; the blank canvas is never the first thing they see. (Replaced the old 9-step builder + gated editor — see <a href="onboarding-changes-2026-06-30.html">Changes made on 30 June</a>.)</p>
+  <div class="stepper">
+    <span class="step"><span class="i">1</span>Template</span><span class="sep">›</span>
+    <span class="step"><span class="i">2</span>Steps</span><span class="sep">›</span>
+    <span class="step"><span class="i">3</span>Order</span><span class="sep">›</span>
+    <span class="step"><span class="i">4</span>Experience</span><span class="sep">›</span>
+    <span class="step"><span class="i">5</span>Look &amp; feel</span><span class="sep">›</span>
+    <span class="step"><span class="i">6</span>Review</span>
+    <span class="step tail">+ live client preview, pinned right</span>
+  </div>
+  <div class="g3 grid" style="margin-top:16px">
+    <div class="card"><h3>🧩 Template-first, power on demand</h3><p class="tiny">Start from a real template (Standard 15 / Fast-track 7 / Local services 9) or blank. Each step's inline <b>Customize</b> restores title, client copy, completion method, video and <b>per-asset sub-steps</b> — capability hidden, not removed.</p></div>
+    <div class="card"><h3>✓ Auto-verify is locked (the wedge)</h3><p class="tiny">Catalog steps are <b>always GoCSM-auto-verified</b> — no picker (agencies can't downgrade our tracking). The 4-way method picker (auto / client-confirms / web-event / for-reference) shows <b>only for custom steps</b>. Every row carries an "Auto-verified" badge.</p></div>
+    <div class="card"><h3>🧮 Asset steps: any vs specific</h3><p class="tiny">Workflows · funnels · forms · pipelines default to <b>"any"</b>; "specific" picks a remembered snapshot sub-account + one named asset via a searchable dropdown. Re-addable, so 3 workflows = 3 steps.</p></div>
+  </div>
+  <div class="g3 grid" style="margin-top:14px">
+    <div class="card"><h3>⏱ One time number</h3><p class="tiny">The agency sets <b>one</b> thing: "onboarded within __ days" (default 14) — the promise they already make. Per-step thresholds are <b>silent system defaults</b>; "SLA" never appears.</p></div>
+    <div class="card"><h3>📍 Look &amp; feel</h3><p class="tiny">Visual placement mockups (Floating · <b>Top banner</b>, default · Menu · Embedded "Launchpad") + brand colour <b>auto-detected</b> ("✦ Pulled from your brand"). Banner is default to avoid colliding with the agency's existing support widget.</p></div>
+    <div class="card"><h3>🔁 Returning agency → summary</h3><p class="tiny">A calm "Live" overview (<code>JourneySummary</code>); each row "Edit ›" jumps into the wizard at the right step; a quiet escape opens the advanced <code>JourneyEditor</code> for deep-links, plan variants &amp; granular config.</p></div>
+  </div>
+  <div class="callout c-violet" style="margin-top:14px"><div class="ic">🎨</div><div><p><b>White-label is the moat.</b> Agency logo + accent (pre-filled from HighLevel), a maintained white-label tutorial video set (per-step override), and <b>Tracking-only mode</b> (detection/queue/automations run, no client widget). GoCSM brand never appears on the client surface.</p></div></div>
+</div></section>
+
+<!-- DOER -->
+<section id="doer"><div class="wrap">
+  <div class="eyebrow">Layer B — the client doer</div>
+  <h2><span class="n">⑧</span>A competent guide — a map, not a locked ladder</h2>
+  <div class="g2 grid" style="margin-bottom:14px">
+    <div class="card"><h3>One action, friendly progress</h3><p class="tiny">A compact card overlaying HL (not a full pane): logo + "Your setup checklist" + thin bar + "<b>3 of 8 done</b>". Progressive disclosure — Done group on top, the suggested step as hero, "More steps" + "Waiting on review" collapsed. <b>Encouragement, never a grade</b> (no %, no journey-day, no stall language).</p></div>
+    <div class="card"><h3>Act on any step, any order</h3><p class="tiny">The hero is a <b>suggestion, not a gate</b>. Completion is position-independent — a step done out of order (even directly in HL) flips to ✓. The only thing that locks is the carrier chain (A2P campaign ← brand ← phone); everything else is always available.</p></div>
+  </div>
+  <div class="callout c-blue"><div class="ic">✨</div><div><p><b>The signature mechanic — "it just knew".</b> On return from a deep link, the widget re-verifies in under a second. Tier A snaps to ✓ (no spinner); Tier B enters <code>verifying</code> with honest "carrier review usually 1–3 days" copy + a forward path ("Meanwhile, let's set up {next} →"). A rejection flips <i>only</i> that step to <code>needs_attention</code> with one fix — all other progress is preserved (recoverable partial failure).</p></div></div>
+</div></section>
+
+<!-- OVERVIEW -->
+<section id="overview"><div class="wrap">
+  <div class="eyebrow">Layer C — the agency overview ("tracker") · redesigned 30 Jun</div>
+  <h2><span class="n">⑨</span>Not a report — a work queue with evidence</h2>
+  <p class="lead" style="margin-bottom:14px">Answers one question every morning: <b>who do I save today, and did yesterday's saves work?</b> Top to bottom, "needs me" is loud and first; "in flight" is calm and below.</p>
+  <table style="margin-bottom:14px">
+    <thead><tr><th style="width:170px">Layer</th><th>What it shows</th></tr></thead>
+    <tbody>
+      <tr><td><b>① Verdict</b> <span class="badge b-violet">AI</span></td><td>One dollar-led sentence naming the bottleneck + $/mo behind it. The only AI-marked element. "Where clients get stuck" funnel hides behind one disclosure.</td></tr>
+      <tr><td><b>② Triage strip</b></td><td>🔴 Needs you · ⏳ Waiting on review · ✅ On pace — each filters the queue. (Replaced the lifecycle census as the lead in v1.12.)</td></tr>
+      <tr><td><b>③ Hero queue</b></td><td>"Needs help today", ranked by <code>mrr × days</code>. Diagnosis-first rows, owner-aware button, undoable <code>ActionReceipt</code>.</td></tr>
+      <tr><td><b>④ All-clear reward</b></td><td>When Needs-you = 0 — a calm payoff, not a blank table.</td></tr>
+      <tr><td><b>⑤ Relief strip</b></td><td>Carrier/DNS waits, collapsed &amp; counted. Pending ≠ stuck.</td></tr>
+      <tr><td><b>⑥ Drill-downs</b></td><td>Funnel + full account list (with the demoted lifecycle census), below the fold.</td></tr>
+    </tbody>
+  </table>
+  <h3 style="margin-bottom:8px">Where clients get stuck — the funnel (illustrative)</h3>
+  <table class="funnel">
+    <thead><tr><th>Step</th><th style="width:55%">Made it here</th><th style="width:90px">Stuck now</th></tr></thead>
+    <tbody>
+      <tr><td>Email sending domain</td><td><div class="bar"><i style="width:60%"></i></div></td><td><span class="badge b-neg">2 stuck</span></td></tr>
+      <tr><td>A2P brand</td><td><div class="bar"><i style="width:73%"></i></div></td><td><span class="badge b-neg">1 stuck</span></td></tr>
+      <tr><td>Custom domain</td><td><div class="bar"><i style="width:80%"></i></div></td><td><span class="badge b-neg">1 stuck</span></td></tr>
+      <tr><td>Kickoff call</td><td><div class="bar"><i style="width:93%"></i></div></td><td class="muted tiny">—</td></tr>
+    </tbody>
+  </table>
+  <div class="callout c-blue" style="margin-top:14px"><div class="ic">📐</div><div><p><b>Two clocks, operator-only.</b> Journey clock (Day N vs target) = "how far along?"; step clock ("Stuck 12 days") = "stuck right now?". Neither appears on the client doer. <b>Time is measured, not prescribed</b> — the target is a benchmark to collapse, never a promise the client is failing. Onboarding completes on <b>milestones, not the clock</b>. Full delta → <a href="onboarding-changes-2026-06-30.html">Changes made on 30 June</a>.</p></div></div>
+  <div class="callout c-amber" style="margin-top:12px"><div class="ic">🤖</div><div><p><b>Automation primitive.</b> The HL custom trigger <code>onboarding.step.stalled</code> fires when <code>now − started_at &gt; sla_hours AND state ≠ done</code> — consumed by the agency's own workflow (email/SMS/task). Manual queue actions and the trigger write to the same <code>last_intervention</code> record.</p></div></div>
+</div></section>
+
+<!-- METRICS -->
+<section id="metrics"><div class="wrap">
+  <div class="eyebrow">How we'll know it works</div>
+  <h2><span class="n">⑩</span>Success metrics</h2>
+  <table>
+    <thead><tr><th>Metric</th><th>Definition</th><th style="width:230px">Target</th></tr></thead>
+    <tbody>
+      <tr><td><b>Activation rate</b></td><td>% of new sub-accounts reaching journey completion</td><td><span class="badge b-pos">≥ 60%</span> industry-leading</td></tr>
+      <tr><td>Median time-to-activate</td><td>Days from journey start to completion</td><td>Baseline → −30% in 2 quarters</td></tr>
+      <tr><td><b>Auto-detection accuracy</b></td><td>Detector verdict vs ground truth</td><td><span class="badge b-pos">≥ 98%</span> on Tier-A</td></tr>
+      <tr><td>Stall-to-outreach latency</td><td>SLA breach → intervention</td><td><span class="badge b-blue">&lt; 24h</span></td></tr>
+      <tr><td>Builder time-to-first-journey</td><td>Empty state → published</td><td>&lt; 10 min · &lt; 5 via paste-import</td></tr>
+      <tr><td><b>Feature attach rate</b></td><td>% of GoCSM agencies activating onboarding</td><td>Primary adoption KPI</td></tr>
+    </tbody>
+  </table>
+</div></section>
+
+<!-- PHASING -->
+<section id="phasing"><div class="wrap">
+  <div class="eyebrow">Delivery</div>
+  <h2><span class="n">⑪</span>Phasing — each phase independently releasable</h2>
+  <div class="phases">
+    <div class="ph"><div class="pk">P1</div><div class="pt">Builder + detector framework</div><p class="tiny">Lifecycle (draft/publish/version/pin), templates, guided wizard, fine-tune editor, theming. Detector contract + 2–3 Tier-A detectors. <b>Schema &amp; versioning are the long poles.</b></p></div>
+    <div class="ph"><div class="pk">P2</div><div class="pt">Doer + contextual video</div><p class="tiny">Injected widget, white-label + client voice, deep-links, re-verify-on-focus, nine-state rendering, graduation. First end-client value.</p></div>
+    <div class="ph ship"><div class="pk">P3 · Overview shipped 30 Jun</div><div class="pt">Overview + queue + trigger</div><p class="tiny">Dollar-led verdict, triage-strip-first tracker, money-ranked queue w/ undo, relief strip, Hub lens, <code>onboarding.step.stalled</code>. <b>Redesign live in prototype.</b></p></div>
+    <div class="ph"><div class="pk">P4</div><div class="pt">Sherlock assist</div><p class="tiny">Conversational, GHL-specific stuck-diagnosis with concrete pointers. Built last, after observing real stall patterns.</p></div>
+  </div>
+  <div class="callout c-amber" style="margin-top:16px"><div class="ic">🪤</div><div><p><b>Sequencing trap.</b> Don't ship P1–P2 "manual-only, add detection later" — retrofitting detection onto a boolean schema is painful and a manual-only product loses to Trello. The schema must assume detectors and version-pinning from day one even if implementation lags.</p></div></div>
+</div></section>
+
+<footer><div class="wrap">GoCSM — Sub-Account Onboarding &amp; Activation · Visual Quick-Read · PRD v1.12 · Confidential. Full spec → <code>onboarding-and-activation-prd.md</code> · Today's delta → <a href="onboarding-changes-2026-06-30.html">onboarding-changes-2026-06-30.html</a>. Tables/mockups are illustrative.</div></footer>
+</body>
+</html>
