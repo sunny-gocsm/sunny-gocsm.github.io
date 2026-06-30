@@ -20,53 +20,59 @@ Agency-built guided onboarding, in-context activation, and proactive stall analy
 > **READ THIS FIRST (for the developer picking up the build).**
 > Everything below this section is the complete, current PRD. This section is the *delta* from v1.11 — what to pick up from today's two design-loop runs. The work is in **two layers: the agency Journey Builder (§6)** and **the agency Overview / Dashboard (§8)**. The client **Doer (§7) is unchanged** from v1.11 (it is reused, untouched, as the wizard's live client preview). The full self-contained `/onboarding` module is implemented in the prototype. The decision-log entry for this pass is **§11.1k**.
 
-Two redesigns, one north star — make onboarding effortless for a non-technical, easily-overwhelmed agency owner: **build a journey they actually like in minutes** (Builder), then **see who's stuck and unblock them in one move, at a glance** (Overview).
+**One principle behind both redesigns:** make the first run effortless for a non-technical, easily-overwhelmed agency owner **without taking any capability away** — power moved behind smart defaults and progressive disclosure, never removed. (Karthik's explicit correction: simplify by defaulting, not by deleting capability.)
 
-### Part A — Journey Builder (§6): the old 9-step builder → a guided, template-first wizard
+### The delta at a glance
 
-The first-run flow used to drop a non-technical owner into a dense 9-step `JourneyBuilder`, then a per-step editor (webhooks, deep-links, plan variants), gated by a publish check that could **block on operator jargon** — a completion-killer. It was rebuilt as the **`SetupWizard`**: simplicity via smart defaults, with full agency power restored as **progressive depth** (Karthik's explicit correction — simplify by defaulting, never by removing capability). Eight changes:
+| Surface | Was | Now — build this |
+| --- | --- | --- |
+| **A · Journey Builder (§6)** | A blank 9-step `JourneyBuilder`, then a per-step editor of operator jargon (webhooks, deep-links, plan variants), gated by a publish check that could block on that jargon. | A guided, template-first **6-step `SetupWizard`** — one decision per page, smart defaults, a persistent live client preview, every advanced control behind inline "Customize". Publish-then-refine, never blocked. |
+| **C · Overview / Dashboard (§8)** | A lifecycle "census" dashboard led by population counts (how many clients in each bucket). | A **triage-first tracker** led by "who needs me now", a dollar-led one-line verdict, and a money-ranked queue where one owner-aware button per row unblocks the client (with undo). |
+| **B · Doer (§7)** | The client's in-HighLevel setup checklist. | **Unchanged** — reused as the wizard's live preview; no work here. |
 
-A1. **Template-first start.** Land on 3 real templates (Standard 15 · Fast-track 7 · Local services 9 — genuine catalog subsets) plus a quiet dashed **"Start from blank."** Never a blank 9-step canvas; Publish is disabled at 0 steps. [§6.2/§6.3]
+### Capabilities we added
 
-A2. **Two-pane wizard with a persistent live client preview.** A 6-step spine — **Template · Steps · Order · Experience · Look & feel · Review** — one decision per page, smart default pre-selected, jumpable step nav, a sticky in-flow footer, and a **live client preview pinned right** (its "X of Y done" count suppressed via a `hideProgressCount` prop so it can't contradict the builder). **Reverses the v1.7 "full-width wizard, NO live-preview rail" decision** (preview was previously post-Finish only).
+**Journey Builder (§6)**
+- **Template-first start** — 3 real templates (Standard 15 · Fast-track 7 · Local services 9) or start blank; never an empty canvas. [§6.2/§6.3]
+- **Guided two-pane wizard** (Template · Steps · Order · Experience · Look & feel · Review) with a **persistent live client preview**. [§6.3]
+- **Per-step "Customize"** — title · client-facing copy · completion method · video · **per-asset sub-steps** ("activate these 3 workflows" → 3 independently-tracked tasks). [§6.3c]
+- **Locked auto-verify on standard steps** — GoCSM always verifies real HighLevel state; the agency can't downgrade it (the wedge), and it's visible on every row. [§6.4c]
+- **Snapshot-driven asset picking** — a step requires *any* asset or *one specific* named asset (workflow / funnel / form / pipeline) from the agency's snapshot, asked once and remembered. [§6.4b]
+- **A calm "Live" summary** (`JourneySummary`) for returning agencies, with per-row Edit-jumps into the wizard. [§6.1/§6.3]
 
-A3. **Auto-verify is locked for catalog steps — the wedge.** Out-of-the-box HighLevel steps are **always GoCSM-auto-verified and locked** — no completion picker; agencies can't downgrade our tracking, which is the whole differentiator. The 4-way completion picker (auto-verify / client-confirms / web-event / for-reference) appears **only for custom steps**. Every row carries a recessive "Auto-verified" badge; exceptions (client/web-event/for-reference) pop. [§6.4c]
+**Overview tracker (§8)**
+- **A triage strip** (Needs you / Waiting / On pace) as the primary orientation; each tile filters the surface below. [§8.1]
+- **A dollar-led verdict** — one sentence naming the top bottleneck and the $/mo behind it (the one AI-marked surface), derived from `blocked_by` data, never hardcoded. [§8.2]
+- **A money-ranked "needs help" queue** sorted by `mrr × days_on_current_step`, with one owner-aware action per row. [§8.3]
+- **An undoable action receipt** — visible scope + blast-radius + a grace-countdown undo before anything commits. [§8.3]
+- **Designed all-clear & "waiting on others" states** — a real payoff when nothing needs you; external (carrier/DNS) waits kept out of the action queue. [§8.6, §8.3]
 
-A4. **Progressive depth, not stripped capability.** Each Step-2 row's inline **Customize** (single-open accordion) restores: editable title · "what your client sees" copy · completion method · default/custom video · **per-asset sub-steps** ("which workflows should your client activate?" — named, independently-verified client tasks). [§6.3c]
+### What we simplified
 
-A5. **Asset steps: any-vs-specific, snapshot-driven.** Asset steps (workflows · funnels · forms · pipelines) default to **"any" (any activation counts)**; "specific" = pick a snapshot sub-account (remembered after first pick) + **one named asset** via a searchable single-select. Asset steps are re-addable, so three workflows = three steps. [§6.4b]
+**Journey Builder (§6)**
+- **No blank 9-step canvas** → a pre-filled template and one decision per page.
+- **No blocking publish gate** → publish-then-refine; operator jargon never stops publishing.
+- **No drag-to-reorder** → up/down arrows, dependency-guarded (drag is unsafe for novices & a11y). [§6.3]
+- **Plain language** → "carriers" → "phone companies", outcome-named steps, jargon out of the first run.
+- **Advanced controls hidden, not gone** → the deep editor (`JourneyEditor`: deep-links, plan variants, granular config) is one quiet link away; `SimpleSetup` and the standalone 9-step `JourneyBuilder` are retired.
 
-A6. **Order via up/down arrows, not drag.** Dependency-guarded. Reverses the v1.7 draggable order list — drag is unsafe for novices and accessibility (NN/g). [§6.3]
+**Overview tracker (§8)**
+- **Lead is triage, not a census** → lifecycle population counts demoted into the full account list. [§8.1]
+- **One AI surface only** → just the verdict; the queue ranking is arithmetic and is *not* labeled AI. No Ask box, no generated prose. [§8.2]
+- **One velocity number, never a chart** → and a slip reads calm-neutral, not alarm-amber. [§8.1]
+- **No naked numbers** → every figure carries a target / trend / $; drill-downs stay collapsed, one open at a time. [§8.4, §8.5]
+- **"Pending" ≠ "stuck"** → carrier/DNS waits sit in a quiet collapsed lane, off the action queue. [§8.3]
 
-A7. **Look & feel: placement + auto brand colour.** Visual placement mockups (Floating · Top banner default · Menu · Embedded "Launchpad") + brand colour **auto-detected** from the agency and pre-selected with a "✦ Pulled from your brand" pill. Plans / Timing / Branding / Videos fold into the wizard tail and per-step Customize as progressive depth rather than separate top-level steps. [§6.6]
+### What to build — where
 
-A8. **Returning agency → `JourneySummary`; old builder retired.** A calm "Live" overview with per-row "Edit ›" jumps into the wizard at the right step, plus a quiet "advanced editor" escape to `JourneyEditor` (deep-links, plan variants, granular per-step config). `SimpleSetup` deleted; the old 9-step `JourneyBuilder` is no longer routed. **Publish-then-refine** — no blocking jargon gate.
+Both redesigns re-compose existing primitives rather than rewriting; the **Doer (§7) is unchanged**.
+- **Builder UI** → `apps/prototype/src/onboarding/components/onboarding/{SetupWizard,JourneySummary}.tsx` (template-first, two-pane, progressive-depth Customize), replacing the retired 9-step `JourneyBuilder` + `SimpleSetup`.
+- **Overview UI** → `apps/prototype/src/onboarding/pages/OnboardingIndexPage.tsx` (route `/onboarding`, `.onb-root` scope); an IA/hierarchy rework over `Verdict`, `StatusCard`, `QueueRow`, `ActionReceipt`, `.blocked-badge`.
+- **Data / logic to wire.** *Builder:* step-model `instructions` copy, a completion `detector`, `assetScope` (any|specific) + `snapshotAccountId` + one named asset + sub-steps; snapshot fetch over workflows/funnels/forms/pipelines (remembered); auto-verify detection (`canAutoDetect`); brand-colour auto-detect. *Overview:* `blocked_by` (agency/client/external) drives the verdict, the whose-move pill, and the relief lane; queue rank = `mrr × days_on_current_step`; velocity = finished-this-week + avg days + delta vs prior; action-receipt grace/undo; **every verdict and number derives from live data — never hardcoded**, so headline, CTA and queue always agree.
+- **Correctness rules (each caught in Phase-4 review).** Agency-bottleneck verdict derived from `blocked_by` (not a hardcoded "5 clients / kickoff call" line); `StatusCard` uses per-side borders (no `border` + `borderLeft` React warning); trust stamp compressed to "Numbers exact · wording is AI"; all-clear copy is sparse-week-1 aware; velocity regression renders calm-neutral. `tsc` clean; `bun run build` (DS → prototype → web) green.
 
-### Part B — Overview / Dashboard (§8): rebuilt around triage
+Design brief of record: `docs/design/onboarding-overview-brief.md`; dated rationale in the repo-root `MEMORY.md` (2026-06-29 / 2026-06-30 entries).
 
-The agency Overview was rebuilt around one job: **"Show me who's stuck in client onboarding and let me unblock them in one move — at a glance."** Enemy = overwhelm. Ten concrete changes, each mapped to its §8 subsection:
-
-1. **Triage-axis strip is the new primary orientation — it replaces the lifecycle census as the lead (§8.1).** Three tiles on the *triage axis* — 🔴 **Needs you** (stuck count) · ⏳ **Waiting on review** (pending carrier/DNS, no action) · ✅ **On pace** (moving fine) — sit at the top, and each filters the surface below. This **reverses the v1.7/v1.8 "three lifecycle population cards (Onboarded / Onboarding now / Not started) as the lead."** The lifecycle census is **demoted** into the full account list's pills; there is **no 4th counter row**. Only "Needs you" is saturated/red (Linear color discipline); the other two are muted.
-
-2. **The AI Verdict is now dollar-led and names the dominant bottleneck (§8.2).** One plain sentence: *"{N} clients are stuck on '{step}' past Day {target} — that's where most of your onboarding pain is. ${X}/mo is behind it."* The `$/mo` at risk is part of the headline. Attribution reads **"GoCSM Analysis"** (not "GoCSM AI"); the trust stamp is compressed to **"Numbers exact · wording is AI."** When the agency's own team is the bottleneck, the verdict is **derived from `blocked_by === "agency"` data** (never a hardcoded line), so headline, CTA, and queue can never disagree.
-
-3. **The money-ranked "Needs help today" queue is the hero (§8.3).** Directly under the strip, sorted by `mrr × days_on_current_step` (`selectStalledByImpact`). Money is the **sort key**, shown as a quiet Mono `$/mo` eyebrow — never a wide ARR column. Cap ~5 visible; "show all N" expands.
-
-4. **Reversible-action receipt with undo on the row action (§8.3).** The primary row action fires an **`ActionReceipt`** — visible scope + blast-radius + grace countdown + **Undo** — the concrete "show draft → confirm → undo" safety net for the Reversible Action primitive. The receipt persists as intervention memory.
-
-5. **All-clear reward state (§8.6).** When Needs-you = 0, the page shows a designed, calm payoff — a single centered check + *"You're all caught up. Every client who needed you, you've handled."* — not a blank table. Copy adapts for brand-new / sparse accounts (*"Nothing needs you yet"*). No competing CTA.
-
-6. **"Waiting on others — nothing for you" relief strip (§8.3).** The external-review (carrier/DNS) set is a collapsed-by-default **relief lane**: count + "No action needed", expandable to a read-only list. Framed as relief, counted not enumerated — nobody else suppresses third-party waits.
-
-7. **One visible AI surface, by design (§8.2).** Only the Verdict is AI-marked. The queue ranking is arithmetic and is **NOT** labeled AI (calling it AI would erode the headline's trust). No Ask box, no recommended-action menu, no generated per-account prose, no trend-narration paragraph. The old `ConfTag` confidence indicator is replaced by a plain **data-sourcing transparency** label ("computed from timestamps").
-
-8. **One velocity number, never a chart (§8.1).** A quiet proof line under the strip: *"{onboarded} finished this week · avg {median} days to onboard ({delta} vs prior window)."* Green/red arrow, one number, real data (`prior_median_days_to_activate`). A regression renders **calm-neutral**, not alarm-amber — a slower week is information, not an emergency.
-
-9. **Calm drill-downs, all below the fold (§8.4, §8.5).** "Where clients get stuck" is a collapsed disclosure off the verdict (each step shows count-stuck and filters the queue on click); the full "Every client you're onboarding" account list is behind "show all." One open disclosure at a time; **no naked numbers** — every number carries a target / trend / `$`.
-
-10. **Phase-4 multi-persona review fixes (carry into the build):** (a) agency-bottleneck verdict derived from real data, not a hardcoded "5 clients / kickoff call" line; (b) `StatusCard` uses **per-side borders**, killing the `border`/`borderLeft` React warning fired on every triage-tile click; (c) trust stamp compressed to "Numbers exact · wording is AI"; (d) all-clear copy adapts for sparse week-1 accounts; (e) velocity regression rendered calm-neutral instead of alarm-amber. `tsc` clean; `bun run build` (DS → prototype → web) all green.
-
-> **Scope note for the developer.** Today changed **two** layers: the **Builder (§6)** and the **Overview (§8)**. The **Doer (§7) is unchanged** — its v1.11 spec stands, and the doer component is reused untouched as the wizard's live client preview. Both redesigns re-compose existing primitives rather than rewriting: the Overview is an IA/hierarchy rework (`Verdict`, `.metric-card`/`StatusCard`, `QueueRow`, `ActionReceipt`, `.blocked-badge`); the Builder is the `SetupWizard` (template-first, two-pane, progressive-depth Customize) replacing the retired 9-step `JourneyBuilder` + `SimpleSetup`. Build artifacts: Builder → `apps/prototype/src/onboarding/components/onboarding/{SetupWizard,JourneySummary}.tsx`; Overview → `apps/prototype/src/onboarding/pages/OnboardingIndexPage.tsx` (route `/onboarding`, `.onb-root` scope). Design brief of record: `docs/design/onboarding-overview-brief.md` + the 2026-06-30 builder design-loop entries in the repo-root `MEMORY.md`.
 
 ---
 

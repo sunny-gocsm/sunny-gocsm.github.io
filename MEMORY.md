@@ -31,7 +31,10 @@ of every prompt" — the wrong format). Now leads with **delta-at-a-glance** (wa
 we added**, and **what we simplified**, then keeps the Builder/Overview before→after + spec cards, reframes the 5
 Phase-4 fixes as **correctness rules to honour**, and adds a **"data / the packet"** section (step-model fields,
 snapshot fetch, auto-verify detection, `blocked_by`, `mrr × days`, action-receipt undo) so the UI and backend
-changes are both spelled out. Scope unchanged: Builder §6 + Overview §8 redesigned, Doer §7 untouched. Docs only.
+changes are both spelled out. Scope unchanged: Builder §6 + Overview §8 redesigned, Doer §7 untouched. **The same net-delta framing was then
+applied to the PRD `.md`** — the "Changes made on 30 June 2026" top section of `onboarding-and-activation-prd.md`
+now leads with delta-at-a-glance → capabilities-added → what-we-simplified → what-to-build (UI + data), replacing
+the old A1–A8 / 1–10 per-change lists (full spec stays in §6/§8). Docs only.
 
 ## 2026-06-30 (design-loop) — Outcomes page rebuilt as a three-question ladder (impact → effectiveness → audit)
 Ran the full `design-loop` on the **Outcomes** page (`apps/prototype/src/pages/OutcomesPage.tsx` +
