@@ -1,0 +1,69 @@
+/* =================================================================
+   GoCSM DS v3 — component additions
+   Onboarding states · doer widget · queue rows · container enforcement.
+   Loads AFTER components.css. Never duplicate what exists there.
+   ================================================================= */
+
+/* ─── Onboarding step state (§10) — one visual language, all surfaces ─── */
+.onb-root .onb-step{display:flex;align-items:flex-start;gap:10px;padding:10px 0;}
+.onb-root .onb-dot{width:8px;height:8px;border-radius:999px;margin-top:6px;flex:none;background:var(--onb-not-started);}
+.onb-root .onb-step.locked{opacity:.55;}
+.onb-root .onb-step.locked .onb-dot{background:transparent;border:1.5px solid var(--onb-locked);}
+.onb-root .onb-step.in_progress .onb-dot{background:var(--onb-in-progress);}
+.onb-root .onb-step.verifying .onb-dot{background:var(--onb-verifying);animation:live-pulse 2s var(--ease) infinite;}
+.onb-root .onb-step.waiting_on_agency .onb-dot{background:var(--onb-waiting-agency);}
+.onb-root .onb-step.needs_attention .onb-dot{background:var(--onb-needs-attention);}
+.onb-root .onb-step.done .onb-dot{background:var(--onb-done);}
+.onb-root .onb-step.skipped{opacity:.55;} .onb-root .onb-step.skipped .onb-title{text-decoration:line-through;}
+.onb-root .onb-step.stalled .onb-dot{background:var(--onb-stalled);}  /* operator surfaces only */
+.onb-root .onb-title{font-size:14px;color:var(--text);font-weight:500;}
+.onb-root .onb-step.not_started .onb-title{color:var(--text-2);font-weight:400;}
+.onb-root .onb-sub{font-size:12px;color:var(--text-2);margin-top:2px;}
+.onb-root .onb-affix{font-size:11px;color:var(--text-3);margin-left:6px;} /* "verified" / "marked done" */
+@media (prefers-reduced-motion:reduce){.onb-root .onb-step.verifying .onb-dot{animation:none;}}
+
+/* ─── Doer widget (§12) — client surface only ─── */
+.onb-root .doer-pill{position:fixed;bottom:20px;right:20px;height:var(--doer-pill-h);
+  display:flex;align-items:center;gap:10px;padding:0 16px 0 10px;
+  background:var(--surface);border:1px solid var(--border);border-radius:999px;
+  box-shadow:var(--sh-sheet);cursor:pointer;z-index:60;}
+.onb-root .doer-pill:hover{box-shadow:var(--sh-hover);}
+.onb-root .doer-panel{position:fixed;bottom:20px;right:20px;width:var(--doer-panel-w);max-width:calc(100vw - 32px);
+  background:var(--surface);border:1px solid var(--border);border-radius:var(--r-lg);
+  box-shadow:var(--sh-sheet);padding:var(--pad-doer);z-index:60;}
+.onb-root .doer-head{display:flex;align-items:center;gap:10px;padding-bottom:14px;border-bottom:1px solid var(--border-soft);margin-bottom:14px;}
+.onb-root .doer-logo{width:28px;height:28px;border-radius:8px;flex:none;background:var(--client-accent);color:var(--client-accent-ink);
+  display:flex;align-items:center;justify-content:center;font-weight:700;font-size:12px;}
+.onb-root .doer-progress{height:6px;border-radius:999px;background:var(--n-3);overflow:hidden;margin-top:8px;}
+.onb-root .doer-progress > i{display:block;height:100%;background:var(--client-accent);border-radius:999px;transition:width var(--d-slow) var(--ease);}
+.onb-root .doer-cta{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;height:var(--h-btn);
+  background:var(--client-accent);color:var(--client-accent-ink);border:none;border-radius:var(--r-md);
+  font-weight:600;font-size:14px;cursor:pointer;}
+.onb-root .doer-section{padding:14px 0;border-bottom:1px solid var(--border-soft);}
+.onb-root .doer-section:last-child{border-bottom:none;padding-bottom:0;}
+
+/* ─── Queue row (§11) — operator operating surfaces ─── */
+.onb-root .queue-row{display:flex;align-items:center;gap:16px;min-height:var(--h-row);
+  padding:10px 16px;border-bottom:1px solid var(--border-soft);}
+.onb-root .queue-row:hover{background:var(--bg-hover);}
+.onb-root .queue-impact{font-family:'JetBrains Mono',monospace;font-variant-numeric:tabular-nums;font-weight:600;}
+.onb-root .queue-sla{font-family:'JetBrains Mono',monospace;font-variant-numeric:tabular-nums;font-size:12px;color:var(--text-2);}
+.onb-root .queue-sla.breach{color:var(--neg-7);}
+.onb-root .queue-memory{font-size:12px;color:var(--text-2);font-style:italic;} /* "Nudged 2d ago — no movement" */
+.onb-root .blocked-badge{font-size:11px;font-weight:600;padding:3px 8px;border-radius:999px;}
+.onb-root .blocked-badge.client{background:var(--warn-soft);color:var(--warn-9);}
+.onb-root .blocked-badge.agency{background:var(--info-soft);color:var(--info-9);} /* internal framing, not alarm */
+
+/* ─── SLA calibration strip ─── */
+.onb-root .sla-cal{display:flex;align-items:center;gap:12px;padding:10px 16px;border:1px solid var(--border);
+  border-radius:var(--r-md);background:var(--surface);}
+.onb-root .sla-cal .vs{font-family:'JetBrains Mono',monospace;font-variant-numeric:tabular-nums;font-size:13px;}
+.onb-root .sla-cal.drift{border-left:3px solid var(--warn-7);}
+
+/* ─── Container enforcement (§8.1/§8.4) — safety net classes ─── */
+.onb-root .modal-body{padding:var(--pad-modal);}
+.onb-root .modal-head{padding:20px var(--pad-modal);border-bottom:1px solid var(--border-soft);}
+.onb-root .modal-foot{padding:16px var(--pad-modal);border-top:1px solid var(--border-soft);display:flex;justify-content:flex-end;gap:8px;}
+.onb-root .panel-body{padding:var(--pad-panel);}
+.onb-root .page-section{margin-bottom:var(--gap-section);}
+.onb-root .page-section + .page-section{margin-top:0;}

@@ -1,0 +1,337 @@
+{
+  "as_of": "2026-06-05",
+  "journey": "Standard GHL Agency Onboarding",
+  "prior_median_days_to_activate": 28,
+  "prior_window_label": "last quarter",
+  "accounts": [
+    {
+      "account": "Tailored Wellbeing",
+      "mrr": 397,
+      "steps_total": 15,
+      "steps_done": 3,
+      "pct_complete": 20,
+      "current_step": "Register your business for text messaging (A2P brand)",
+      "current_step_state": "verifying",
+      "external_wait_days": 2,
+      "external_budget_days": 3,
+      "days_on_current_step": 2,
+      "sla_days": 3,
+      "stalled": false,
+      "blocked_by": "client",
+      "journey_started_days_ago": 8,
+      "last_intervention": null,
+      "journey_version": "v2"
+
+    },
+    {
+      "account": "Summit Roofing Co",
+      "mrr": 997,
+      "steps_total": 15,
+      "steps_done": 14,
+      "pct_complete": 93,
+      "current_step": "Book your kickoff call",
+      "days_on_current_step": 1,
+      "sla_days": 7,
+      "stalled": false,
+      "blocked_by": "agency",
+      "journey_started_days_ago": 33,
+      "last_intervention": null,
+      "journey_version": "v2"
+    },
+    {
+      "account": "Bloom Dental Studio",
+      "mrr": 297,
+      "steps_total": 15,
+      "steps_done": 15,
+      "pct_complete": 100,
+      "current_step": null,
+      "days_on_current_step": 0,
+      "sla_days": 5,
+      "stalled": false,
+      "blocked_by": null,
+      "journey_started_days_ago": 30,
+      "last_intervention": null,
+      "journey_version": "v2"
+    },
+    {
+      "account": "Ironclad Fitness",
+      "mrr": 697,
+      "steps_total": 15,
+      "steps_done": 12,
+      "pct_complete": 80,
+      "current_step": "Connect Facebook / Instagram",
+      "days_on_current_step": 2,
+      "sla_days": 5,
+      "stalled": false,
+      "blocked_by": "client",
+      "journey_started_days_ago": 27,
+      "last_intervention": null,
+      "journey_version": "v2"
+    },
+    {
+      "account": "Cedar & Sage Spa",
+      "mrr": 397,
+      "steps_total": 15,
+      "steps_done": 3,
+      "pct_complete": 20,
+      "current_step": "Set up your email sending domain",
+      "days_on_current_step": 15,
+      "sla_days": 7,
+      "stalled": true,
+      "blocked_by": "client",
+      "journey_started_days_ago": 24,
+      "last_intervention": {
+        "type": "workflow_nudge",
+        "days_ago": 2,
+        "outcome": "no_movement"
+      },
+      "journey_version": "v2",
+      "current_failure_id": "step04.failure.conflicting_mx_spf"
+    },
+    {
+      "account": "Velocity Auto Detail",
+      "mrr": 397,
+      "steps_total": 15,
+      "steps_done": 4,
+      "pct_complete": 27,
+      "current_step": "Register your business for text messaging (A2P brand)",
+      "current_step_state": "verifying",
+      "external_wait_days": 6,
+      "external_budget_days": 3,
+      "days_on_current_step": 6,
+      "sla_days": 3,
+      "stalled": true,
+      "blocked_by": "client",
+      "journey_started_days_ago": 16,
+      "last_intervention": {
+        "type": "workflow_nudge",
+        "days_ago": 4,
+        "outcome": "completed_after_nudge"
+      },
+      "journey_version": "v2"
+    },
+    {
+      "account": "Harborview Realty",
+      "mrr": 1297,
+      "steps_total": 15,
+      "steps_done": 7,
+      "pct_complete": 47,
+      "current_step": "Connect your custom domain",
+      "days_on_current_step": 4,
+      "sla_days": 3,
+      "stalled": true,
+      "blocked_by": "client",
+      "journey_started_days_ago": 20,
+      "last_intervention": null,
+      "journey_version": "v2",
+      "current_failure_id": "step08.failure.dns_record_wrong"
+    },
+    {
+      "account": "BrightPath Tutoring",
+      "mrr": 497,
+      "steps_total": 15,
+      "steps_done": 15,
+      "pct_complete": 100,
+      "current_step": null,
+      "days_on_current_step": 0,
+      "sla_days": 2,
+      "stalled": false,
+      "blocked_by": null,
+      "journey_started_days_ago": 36,
+      "last_intervention": null,
+      "journey_version": "v2",
+      "plan": "pilot"
+    },
+
+    {
+      "account": "Apex Plumbing",
+      "mrr": 997,
+      "steps_total": 15,
+      "steps_done": 9,
+      "pct_complete": 60,
+      "current_step": "Create your lead form",
+      "days_on_current_step": 12,
+      "sla_days": 3,
+      "stalled": true,
+      "blocked_by": "client",
+      "journey_started_days_ago": 33,
+      "last_intervention": null,
+      "journey_version": "v2"
+    },
+    {
+      "account": "Luna Med Aesthetics",
+      "mrr": 497,
+      "steps_total": 15,
+      "steps_done": 5,
+      "pct_complete": 33,
+      "current_step": "Activate your workflows",
+      "days_on_current_step": 1,
+      "sla_days": 5,
+      "stalled": false,
+      "blocked_by": "agency",
+      "journey_started_days_ago": 17,
+      "last_intervention": null,
+      "journey_version": "v2"
+    },
+    {
+      "account": "Granite Landscaping",
+      "mrr": 997,
+      "steps_total": 15,
+      "steps_done": 3,
+      "pct_complete": 20,
+      "current_step": "Set up your email sending domain",
+      "days_on_current_step": 12,
+      "sla_days": 3,
+      "stalled": true,
+      "blocked_by": "client",
+      "journey_started_days_ago": 18,
+      "last_intervention": null,
+      "journey_version": "v2",
+      "current_failure_id": "step04.failure.duplicate_dkim"
+    },
+    {
+      "account": "Swift Movers LLC",
+      "mrr": 497,
+      "steps_total": 15,
+      "steps_done": 15,
+      "pct_complete": 100,
+      "current_step": null,
+      "days_on_current_step": 0,
+      "sla_days": 7,
+      "stalled": false,
+      "blocked_by": null,
+      "journey_started_days_ago": 30,
+      "last_intervention": null,
+      "journey_version": "v2"
+    },
+    {
+      "account": "Coastal HVAC",
+      "mrr": 597,
+      "steps_total": 15,
+      "steps_done": 10,
+      "pct_complete": 67,
+      "current_step": "Set up your sales pipeline",
+      "days_on_current_step": 2,
+      "sla_days": 2,
+      "stalled": false,
+      "blocked_by": "client",
+      "journey_started_days_ago": 27,
+      "last_intervention": null,
+      "journey_version": "v2"
+    },
+    {
+      "account": "Pinnacle Law Group",
+      "mrr": 397,
+      "steps_total": 15,
+      "steps_done": 10,
+      "pct_complete": 67,
+      "current_step": "Set up your sales pipeline",
+      "days_on_current_step": 4,
+      "sla_days": 3,
+      "stalled": true,
+      "blocked_by": "client",
+      "journey_started_days_ago": 29,
+      "last_intervention": null,
+      "journey_version": "v2"
+    },
+    {
+      "account": "Maple Street Bakery",
+      "mrr": 997,
+      "steps_total": 15,
+      "steps_done": 11,
+      "pct_complete": 73,
+      "current_step": "Connect Google Business Profile",
+      "days_on_current_step": 15,
+      "sla_days": 7,
+      "stalled": true,
+      "blocked_by": "agency",
+      "journey_started_days_ago": 38,
+      "last_intervention": null,
+      "journey_version": "v2"
+    }
+  ],
+  "funnel": [
+    {
+      "step": "Purchase phone number",
+      "clients_reached": 15
+    },
+    {
+      "step": "A2P brand registration",
+      "clients_reached": 14
+    },
+    {
+      "step": "A2P campaign approval",
+      "clients_reached": 12
+    },
+    {
+      "step": "Set up your email sending domain",
+      "clients_reached": 11
+    },
+    {
+      "step": "Complete your business profile",
+      "clients_reached": 11
+    },
+    {
+      "step": "Activate your workflows",
+      "clients_reached": 11
+    },
+    {
+      "step": "Publish funnel",
+      "clients_reached": 9
+    },
+    {
+      "step": "Connect your custom domain",
+      "clients_reached": 9
+    },
+    {
+      "step": "Create calendar + sync",
+      "clients_reached": 6
+    },
+    {
+      "step": "Create your lead form",
+      "clients_reached": 4
+    },
+    {
+      "step": "Set up your sales pipeline",
+      "clients_reached": 4
+    },
+    {
+      "step": "Connect Google Business Profile",
+      "clients_reached": 3
+    },
+    {
+      "step": "Connect Facebook / Instagram",
+      "clients_reached": 3
+    },
+    {
+      "step": "Connect Stripe",
+      "clients_reached": 3
+    },
+    {
+      "step": "Book your kickoff call",
+      "clients_reached": 3
+    }
+  ],
+  "sla_calibration": [
+    {
+      "step": "A2P brand registration",
+      "sla_days": 3,
+      "median_actual_days": 6.2
+    },
+    {
+      "step": "Connect your custom domain",
+      "sla_days": 2,
+      "median_actual_days": 3.8
+    },
+    {
+      "step": "Set up your email sending domain",
+      "sla_days": 2,
+      "median_actual_days": 1.4
+    },
+    {
+      "step": "Book your kickoff call",
+      "sla_days": 5,
+      "median_actual_days": 8.5
+    }
+  ]
+}

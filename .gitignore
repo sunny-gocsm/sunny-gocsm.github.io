@@ -23,7 +23,10 @@ npm-debug.log*
 
 # Playwright MCP scratch
 .playwright-mcp/
+# design-loop review scratch (screenshots + RESUME notes; local only)
+.dl-review/
 library.png
 # Stray screenshots dropped at repo root (e.g. by Playwright agents). Intentional
 # review captures live under docs/**, which this root-only glob does not touch.
 /*.png
+.gstack/

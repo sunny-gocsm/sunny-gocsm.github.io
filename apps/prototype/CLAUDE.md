@@ -15,7 +15,16 @@ and runs **only when Karthik explicitly asks for it** by name ("run the design l
 Durable facts also auto-load from memory: `gocsm-design-language`,
 `gocsm-ds-typography-gotchas`, `gocsm-today-activation`, `gocsm-ds-architecture`.
 
-**Attention `/today` is a state-driven lifecycle** (`src/pages/AttentionPage.tsx`): it pushes ONE goal per
+**Attention `/today` leads with an orientation layer, then the queue** (`src/pages/AttentionPage.tsx`).
+H1 is **"Today"**. Above the queue: a **Layer 0 AI headline** (`components/today/TodayHeadline.tsx` — reuses
+the DS `Verdict`, loads async with a skeleton + deterministic templated fallback) and **Layer 1 portfolio
+tiles** (`components/today/PortfolioTiles.tsx` — clickable `StatCard`s that drill into Insights; Phase 2 adds
+a health-distribution bar + revenue-at-risk + sentiment). All numbers come from `fixtures/orientation.ts`
+(`computeOrientation` does the math/classification; `composeHeadline` only phrases it — the LLM stand-in).
+**WoW deltas are intentionally suppressed** (no prior-period data in fixtures — never fabricate). A Phase-1
+dismissible "Set up Health" nudge (`components/today/HealthNudge.tsx`) sits between tiles and queue.
+
+**The queue itself is a state-driven lifecycle**: it pushes ONE goal per
 account stage in a fixed precedence — a *manual action the user must take* always wins, and the **daily-report
 setup nudge sits above the action list** (so they never miss one); the "turn on a playbook" activation only
 leads while still reaching 3 live, after which it recedes to a standing "turn on a few more" (next 2). Cards
@@ -45,6 +54,90 @@ when…" fact card (it duplicated a seeded chip). Note `account.priority` is an 
 work" video disclosure (collapsed `VideoCard`, never rivals the hero); the live count band IS a
 disclosure — expand to see the matching accounts (Phase 1 = plain name + monthly $, no Health
 vocab; Phase 2 = the richer `MatchWall`).
+
+## Onboarding feature — imported from a Lovable export (self-contained module)
+The `/onboarding` surface is **not** built like the rest of the prototype. It was imported wholesale
+from a separate Lovable app (TanStack Start + React 19 + Tailwind v4) and grafted in with **zero product
+changes** — only integration plumbing. It lives, fully self-contained, under **`src/onboarding/`** and is
+reached via the alias **`@onb` → `src/onboarding`** (in `vite.config.ts` + both tsconfigs).
+- **Its own design system.** It does **not** use `@gocsm/design-system`. It ships its own shadcn `ui/*` +
+  GoCSM `.jsx` primitives + token CSS. All styling is **scoped under `.onb-root`** (`App.tsx` wraps the
+  onboarding routes in `<div className="onb-root">`): `src/onboarding/onb.css` (imported once in `main.tsx`)
+  pulls in the `*.scoped.css` token/component files plus `_bridge.scoped.css`, which redefines the shadcn
+  HSL-triple vars from GoCSM tokens *inside* `.onb-root` so the host's Tailwind `hsl(var(--x))` utilities
+  render onboarding colors only there. **Don't add onboarding colors to the shared `tailwind.config.ts`** —
+  scope stays in `.onb-root`. To regenerate the scoped CSS, re-run the PostCSS scoper (see the 2026-06-29
+  `MEMORY.md` entry) against `src/onboarding/styles/*.css`.
+- **Routing.** The Lovable TanStack file-routes were replaced by react-router routes in `App.tsx`
+  (`/onboarding`, `/onboarding/journey`, `/onboarding/journeys/:id|new` → redirect, full-bleed `/doer-demo`).
+  Feature components import navigation from **`@onb/router-compat`** (a shim over react-router-dom) — keep it
+  that way; don't reintroduce `@tanstack/react-router`.
+- **Journey creation = a guided WIZARD (design-loop, 2026-06-30).** `/onboarding/journey` is driven by
+  `JourneyPage.tsx`, which has a **dev toggle** (`gocsm.onb.devmode.v1`) flipping `Brand-new user ⇄ Configured
+  user`:
+  - **New user → `SetupWizard.tsx`** (the primary): a **6-step, two-pane wizard** — Template → Steps → Order →
+    Experience → Look & feel → Review — with a **PERSISTENT client preview pinned right** (live-updating). ONE
+    calm decision per page, smart default pre-selected, plain language, sticky footer, labelled jumpable step nav.
+    Full agency power lives as **progressive depth, not removed capability**: Step 2 rows each have a
+    **Customize** that expands inline to edit the title, the "what your client sees" copy, the **completion
+    method**, the video (default/custom), and **per-asset sub-steps** ("activate THESE 3 workflows" → N named,
+    independently-verified tasks). **Asset steps** = the HighLevel features that live as a NAMED COLLECTION in the
+    agency's snapshot: **workflows, funnels, forms, pipelines** (`ASSET_TYPES` in `catalog.ts`; each has an
+    `assetNoun` with a per-type `verb`/`verbs` so copy reads "activate / publish / build / set up", never a generic
+    "activate"). Integrations (GBP/FB/Stripe), domains, A2P, phone, calendar-connect, profile, kickoff are one-shot
+    connections, NOT asset steps. Asset steps **are re-addable** — they stay in "Add a step"
+    after one is placed (shown as "Another — …"), so an agency wanting three workflows as three separate steps can
+    list them individually (the non-asset catalog features are one-shot and drop out of the picker once added). Each
+    asset step's Customize has an **any-vs-specific scope** toggle (`Step.assetScope`, **defaults to "any"** — fresh
+    templates seed asset steps as "any" with no preset assets, see `templates.ts`): _any_ ("any workflow counts" —
+    nothing more to pick) or _specific_ → pick a **snapshot sub-account** (`Step.snapshotAccountId`) and choose **one
+    named asset** (specific = exactly ONE asset per step; to activate three workflows, add three steps). Both the
+    sub-account and the asset pickers are a **searchable single-select** (`SearchSelect` combobox — type-to-filter,
+    since a snapshot can hold dozens). GoCSM "fetches" the chosen account's assets via `lib/snapshot.ts` (stub:
+    `SNAPSHOT_ACCOUNTS` + `fetchSnapshotAssets`). The agency only picks the **sub-account once** — it's remembered
+    (`rememberedSnapshotId`/`rememberSnapshotId`, localStorage `gocsm.onb.snapshot.v1`) and pre-selected on every
+    later asset step. **Completion-method rule (important):** out-of-the-box catalog features
+    (`canAutoDetect(type)` — i.e. every standard HighLevel step) are **ALWAYS auto-verified by GoCSM and locked**
+    — the customize panel shows a fixed "GoCSM verifies this automatically" statement, NO picker (the agency
+    can't downgrade our auto-tracking; that's the wedge). Only **custom** steps the agency adds (not in our
+    inventory) get the picker — client-confirms / web-event / for-reference (no "auto", since GoCSM can't watch a
+    custom action). `completionBadge()` forces auto for OOTB types regardless of any stored `detector`. Step 1 = a
+    **template** (`lib/templates.ts`, 3 real subsets) or **blank**; Order = **up/down arrows**; Look & feel = the
+    **visual placement mockups** (reuses `ClientPreview`'s `PlacementTab`) + brand colour **auto-detected**
+    (`getHighLevelBrandColor()`) and shown "Pulled from your brand". **The auto-tracking USP is the wedge and must
+    stay visible** — every row carries a recessive "Auto-verified" badge (exceptions render as pills that pop),
+    the headers position "they teach, we verify + show who's stuck", and the build-time preview suppresses its
+    "X of Y done" count (`ClientPreview hideProgressCount`).
+  - **Configured user → `JourneySummary.tsx`**: a calm "Live" overview; each outcome-group/config row **"Edit ›"
+    jumps into the wizard at the right step**; a quiet escape opens the advanced `JourneyEditor`.
+  - Plain-language layer is shared in **`lib/plain-content.ts`** (PLAIN_TITLE, OUTCOME_GROUPS, plainTitle/plainSub,
+    groupSteps, `completionBadge`, `previewJourney` — feed `ClientPreview` a pristine, custom-titled journey that
+    KEEPS sub-steps so the per-asset tasks show in the preview).
+  - **Deepest editing** (deep-links, plan variants, the blocking publish validation, per-step granular detail) =
+    the existing `JourneyEditor`/`StepEditorPanel`, reached via the summary's "advanced editor" link or a
+    `?step=<id>` deep-link. `SimpleSetup` was removed; the old 9-step `JourneyBuilder` is no longer routed.
+  - **Keep the wizard primary and every page one easy decision (smart defaults), but DON'T strip capability —
+    restore it as progressive depth behind Customize/More-options. Keep the auto-verify USP visible.** (See the
+    2026-06-30 design-loop `MEMORY.md` entries.)
+  - **Page gutter:** the DS `AppShell .main` has NO padding (prototype pages self-pad), so the in-shell
+    onboarding routes get their gutter from the **`.onb-page`** wrapper (`App.tsx` `OnboardingLayout` → styled in
+    `onb.css`: `max-width 1320 · centred · padding --s-6`). Don't add page padding inside `OnboardingIndexPage`/
+    `JourneyPage` — it comes from `.onb-page`. (The full-bleed `/doer-demo` uses bare `.onb-root`, not `.onb-page`.)
+- **Overview page = the design-loop "tracker" (`OnboardingIndexPage.tsx`).** The `/onboarding` landing surface
+  was redesigned via the design loop (brief: `docs/design/onboarding-overview-brief.md`) for the ADHD agency-owner
+  "who's stuck — let me unblock in one move" job. Hierarchy: **AI Verdict** (one dollar-led sentence, the only
+  AI-marked element; trust stamp = "Numbers exact · wording is AI"; provenance + the "Where clients get stuck"
+  funnel behind one collapsed disclosure) → **triage strip** (3 `StatusCard` tiles: Needs-you / Waiting-on-review /
+  On-pace, each filters the surface) → **money-ranked hero queue** (`selectStalledByImpact` = mrr × days; one
+  reason-appropriate primary verb per row; fires the undoable `ActionReceipt` w/ blast-radius + 5s grace) →
+  all-clear reward state → collapsed relief strip → demoted full list. **Every verdict must derive from the seed,
+  not hardcode** (the agency-bottleneck verdict reads `blocked_by === "agency"` so headline/CTA/queue stay
+  consistent). `StatusCard` uses **per-side borders** (never the `border` shorthand) so the accent `borderLeft`
+  doesn't conflict on rerender. All states are exercised via the `DevStrip` (demo + rollout modes).
+- **Editing the feature:** treat `src/onboarding/` as vendored EXCEPT the design-loop surfaces above. Page entry
+  points are `src/onboarding/pages/{OnboardingIndexPage,JourneyPage,DoerDemoPage}.tsx`; the journey-builder
+  surfaces are `components/onboarding/{SetupWizard,JourneySummary}.tsx`. Only added dep is `@dnd-kit/*`.
+  `/doer-demo`'s background is `assets/highlevel-bg.png` (a real bundled asset).
 
 ## Embeds (HighLevel custom-menu-links)
 Three bare, nav-less URLs render the **same** page components for embedding as separate

@@ -740,6 +740,63 @@ button {
 .at-sec-title { font-size: var(--t-subheading); font-weight: 700; margin: 0; letter-spacing: -0.01em; }
 .at-sec-sub { margin: 0; font-size: var(--t-body-sm); color: var(--text-3); }
 
+/* ── Today: orientation layer (AI headline · portfolio tiles · nudge) ───────────
+   Layered ABOVE the existing queue so the owner lands on "here's my book → here's
+   the slice that needs me". The queue keeps its focal design; these layers are quiet
+   context. */
+
+/* Layer 2 wrapper — the existing queue, now a labelled section below the orientation. */
+.at-queue { display: flex; flex-direction: column; gap: var(--s-4); margin-top: var(--s-10); }
+.at-queue .at-stack { margin-top: 0; }
+
+/* Layer 0 — AI headline. Reuses the DS Verdict, but sizes the line for a 2–3 sentence
+   paragraph (Verdict's 22px hero is tuned for a single sentence). */
+.today-headline .verdict-line { font-size: var(--t-body-lg); line-height: 1.5; font-weight: 600; }
+.today-headline .verdict-meta { margin-top: 10px; }
+.today-ai-note { font-size: var(--t-caption); color: var(--text-3); font-weight: 500; letter-spacing: 0; text-transform: none; }
+.today-headline-sk { display: flex; flex-direction: column; gap: 8px; padding: 2px 0; width: 100%; }
+
+/* Layer 1 — portfolio tiles ("Your book of business"). */
+.today-tiles { display: flex; flex-direction: column; gap: var(--s-3); margin-top: var(--s-8); }
+.today-tiles-label { font-size: var(--t-label); text-transform: uppercase; letter-spacing: 0.06em; font-weight: 700; color: var(--text-3); }
+.today-tiles-grid { display: grid; gap: var(--s-3); grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); }
+/* Quieter than the Insights dashboards — these tiles are context, the queue is the action. */
+.today-tiles-grid .stat-card .sc-value { font-size: var(--t-heading); }
+
+/* per-tile error / skeleton isolation */
+.td-tile-error { gap: 6px; }
+.td-muted { color: var(--text-3); }
+.td-tile-sk { gap: 8px; }
+
+/* Health distribution tile (Phase 2 only). Bands use the locked health-band tokens. */
+.td-distro { gap: var(--s-2); }
+.td-distro-bar { display: flex; gap: 2px; height: 10px; border-radius: var(--r-pill); overflow: hidden; margin: 2px 0 4px; }
+.td-seg { display: block; height: 100%; }
+.td-distro-legend { display: flex; flex-wrap: wrap; gap: var(--s-3); font-size: var(--t-body-sm); color: var(--text-2); }
+.td-leg { display: inline-flex; align-items: center; gap: 5px; }
+.td-dot { width: 9px; height: 9px; border-radius: 3px; display: inline-block; }
+.band-thriving { background: var(--health-thriving); }
+.band-healthy { background: var(--health-healthy); }
+.band-watch { background: var(--health-watch); }
+.band-atrisk { background: var(--health-atrisk); }
+
+/* Phase-1 Health-config nudge — quiet, dismissible, AI-tinted. */
+.today-nudge { display: flex; align-items: center; gap: var(--s-3); margin-top: var(--s-5); padding: 10px var(--s-4); border: 1px solid var(--ai-3); background: var(--ai-1); border-radius: var(--r-md); }
+.today-nudge-ico { display: inline-grid; place-items: center; width: 26px; height: 26px; border-radius: 7px; background: var(--ai-2); color: var(--ai-7); flex-shrink: 0; }
+.today-nudge-ico svg { width: 15px; height: 15px; }
+.today-nudge-text { margin: 0; flex: 1; font-size: var(--t-body-sm); color: var(--ai-10); line-height: 1.4; }
+.today-nudge-cta { flex-shrink: 0; font: inherit; font-size: var(--t-body-sm); font-weight: 600; color: var(--ai-7); background: none; border: none; cursor: pointer; padding: 4px 6px; border-radius: var(--r-sm); }
+.today-nudge-cta:hover { background: var(--ai-2); }
+.today-nudge-x { flex-shrink: 0; display: inline-grid; place-items: center; width: 24px; height: 24px; border: none; background: none; color: var(--text-3); cursor: pointer; border-radius: var(--r-sm); }
+.today-nudge-x:hover { background: var(--ai-2); color: var(--ai-9); }
+.today-nudge-x svg { width: 15px; height: 15px; }
+
+@media (max-width: 480px) {
+  .today-tiles-grid { grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); }
+  .today-nudge { flex-wrap: wrap; }
+  .today-nudge-text { flex-basis: 100%; }
+}
+
 /* Problem-first card — coloured urgency rail (by stake kind) + DS resting elevation so it lifts off the canvas. */
 .pb-card { position: relative; display: flex; flex-direction: column; gap: var(--s-3); background: var(--surface); border-radius: var(--r-lg); padding: var(--s-5) var(--s-5) var(--s-5) var(--s-6); box-shadow: var(--sh-rest); border-left: 3px solid var(--n-4); transition: box-shadow 140ms ease, transform 140ms ease; cursor: pointer; }
 .pb-card.risk { border-left-color: var(--neg-7); }
