@@ -55,6 +55,31 @@ work" video disclosure (collapsed `VideoCard`, never rivals the hero); the live 
 disclosure — expand to see the matching accounts (Phase 1 = plain name + monthly $, no Health
 vocab; Phase 2 = the richer `MatchWall`).
 
+## Outcomes page — three-question ladder (design-loop, 2026-06-30)
+`/outcomes` (`src/pages/OutcomesPage.tsx`, data in `src/fixtures/outcomeLog.ts`, styles in the `.oc-*` block of
+`src/app-overrides.css`) was rebuilt via the design loop (brief: `docs/design/outcomes-redesign-brief.md`) so a
+non-technical agency owner climbs three **outcome-first** rungs, each labeled with the plain question it answers:
+1. **"Is GoCSM worth it?"** — the impact hero: the big `$` once, an **un-invertible ROI** that shows BOTH protected
+   `$` and `$` paid (never a bare multiple), a "work GoCSM did for you" line, and a **"How is this counted?"**
+   disclosure carrying an **EXACT vs ESTIMATED** confidence gradient + the cost denominator.
+2. **"Are the playbooks working?"** — `playbookScorecard()`: one row per activated playbook (objective + DS
+   `StackedBar` outcome meter + honest numbers + verdict chip), sorted by $. **3-state verdict, color = meaning:**
+   Working (green) · Early days (grey, small sample) · Needs a look (amber) — from `verdictFor()`, never hardcoded;
+   % suppressed below n=3; a meter **legend** sits above the cards.
+3. **"What exactly happened?"** — the audit log: ONE "Slice by" switcher (**Timeline · By playbook · By customer ·
+   By channel** — channel is the differentiator vs HighLevel's email-only stats); grouped views collapse to
+   countable headers; no-change rows carry no pill; every claim above drills into the log filtered (`drillTo`).
+
+**Honesty model (non-negotiable here).** Each account maps to exactly ONE primary situation (`primaryCategoryFor`)
+so retention categories are mutually exclusive → **each saved customer's MRR is counted once** (no double-count).
+All figures are computed in the data layer (episode-level: `impactSummary` · `playbookScorecard` ·
+`channelBreakdown` · `impactVerdict` · `effectivenessLead`); **AI only phrases**, stamped
+**"Calculated from your data · wording is AI"** (deliberately NOT "Numbers exact" — totals include estimates).
+Never claim causality ("came back **after**", "kept", "recovered" — never "caused"). Attribution: automated sends
+(email/SMS/card-retry/alert) = **autopilot**; call/task = **you & your team**. The honesty invariants are guarded
+by `outcomeLog.test.ts`. **Phase-1 safe** — no coined Health vocab. No DS source change (meter retone is scoped to
+`.oc-score-meter`). Same component also serves `/embed/outcomes`.
+
 ## Onboarding feature — imported from a Lovable export (self-contained module)
 **PRD (v1.12, the dev contract):** `docs/prd/onboarding-and-activation-prd.md` is the standalone, canonical
 Onboarding & Activation spec. Its top **"Changes made on 30 June 2026"** section + the **§11.1k** decision-log
