@@ -195,36 +195,55 @@
 
   footer{padding:26px 0 56px;color:var(--ink3);font-size:12.5px}
   footer .wrap{border-top:1px solid var(--line);padding-top:18px}
+
+  /* delta table */
+  table.delta th.surf,table.delta td.surf{width:160px;font-weight:800;color:var(--ink);white-space:normal}
+  table.delta td .was{color:var(--ink3)}
+  table.delta td .now{color:var(--ink)}
+
+  /* added / simplified lists */
+  .twocol{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+  @media(max-width:860px){.twocol{grid-template-columns:1fr}}
+  ul.plus,ul.minus{list-style:none;padding:0;margin:8px 0 0}
+  ul.plus li,ul.minus li{position:relative;padding:9px 0 9px 26px;font-size:13.5px;color:var(--ink2);border-bottom:1px solid var(--line2)}
+  ul.plus li:last-child,ul.minus li:last-child{border-bottom:0}
+  ul.plus li::before{content:"+";position:absolute;left:4px;top:8px;font-weight:800;color:var(--pos)}
+  ul.minus li::before{content:"−";position:absolute;left:4px;top:8px;font-weight:800;color:var(--blue)}
+  ul.plus li b,ul.minus li b{color:var(--ink)}
 </style>
 </head>
 <body>
 <header class="top"><div class="wrap">
-  <div class="eyebrow">GoCSM · Sub-Account Onboarding &amp; Activation · Developer change brief</div>
-  <h1>Changes made on 30 June 2026</h1>
-  <p>Two design-loop redesigns shipped today: the agency <b style="color:#fff">Journey Builder</b> was simplified, and
-  the agency <b style="color:#fff">Overview ("tracker")</b> was rebuilt. This is the pickup list — PRD <b style="color:#fff">v1.11 → v1.12</b>.</p>
+  <div class="eyebrow">GoCSM · Sub-Account Onboarding &amp; Activation · Developer brief</div>
+  <h1>The onboarding redesign — what to build</h1>
+  <p>Where onboarding started yesterday vs. where it's landed today, written for the build: the
+  <b style="color:#fff">capabilities we added</b>, <b style="color:#fff">what we simplified</b>, and the UI and data changes to make.
+  Two surfaces changed — the <b style="color:#fff">Journey Builder</b> and the <b style="color:#fff">Overview "tracker"</b>; the client Doer is untouched.</p>
   <div class="pills">
-    <span class="pill hot"><b>A · Builder §6</b>&nbsp;redesigned</span>
+    <span class="pill hot"><b>A · Journey Builder §6</b>&nbsp;redesigned</span>
     <span class="pill hot"><b>C · Overview §8</b>&nbsp;redesigned</span>
-    <span class="pill good"><b>B · Doer §7</b>&nbsp;unchanged</span>
-    <span class="pill"><b>Status:</b>&nbsp;final → in dev</span>
+    <span class="pill good"><b>B · Doer §7</b>&nbsp;untouched</span>
+    <span class="pill"><b>PRD</b>&nbsp;v1.12</span>
   </div>
 </div></header>
 
 <nav class="toc"><div class="wrap">
   <a href="#tldr">TL;DR</a>
-  <a href="#scope">What to touch</a>
+  <a href="#delta" class="part">The delta</a>
+  <a href="#added">Capabilities added</a>
+  <a href="#simplified">What we simplified</a>
+  <a href="#scope">Where it landed</a>
   <a href="#builder" class="part">A · Builder</a>
   <a href="#b-ba">Before→After</a>
   <a href="#b-wizard">The wizard</a>
-  <a href="#b-list">Builder changes</a>
+  <a href="#b-list">Builder spec</a>
   <a href="#overview" class="part">C · Overview</a>
   <a href="#o-ba">Before→After</a>
   <a href="#o-anatomy">New layout</a>
-  <a href="#o-list">Overview changes</a>
+  <a href="#o-list">Overview spec</a>
   <a href="#o-row">Queue row</a>
-  <a href="#fixes">Phase-4 fixes</a>
-  <a href="#pickup">Build checklist</a>
+  <a href="#fixes">Build rules</a>
+  <a href="#pickup">What to change</a>
 </div></nav>
 
 <!-- TLDR -->
@@ -232,21 +251,109 @@
   <div class="callout c-blue">
     <div class="ic">🎯</div>
     <div>
-      <p style="font-size:16px;color:var(--ink)"><b>Two redesigns, one north star:</b> make onboarding effortless for a non-technical agency owner — <b>build a journey they actually like in minutes</b> (Builder), then <b>see who's stuck and unblock them in one move</b> (Overview).</p>
-      <p class="tiny" style="margin-top:8px">Work lives in the <b>Journey Builder (§6)</b> and the <b>Overview / Dashboard (§8)</b>. The client <b>Doer (§7) is unchanged</b> today. Full spec: <code>onboarding-and-activation-prd.md</code> · whole-product tour: <a href="onboarding-and-activation-quickread.html">onboarding-and-activation-quickread.html</a>.</p>
+      <p style="font-size:16px;color:var(--ink)"><b>What changed, in one line:</b> two onboarding surfaces were redesigned — the agency <b>Journey Builder</b> became a guided, template-first wizard, and the agency <b>Overview</b> became a triage-first "who's stuck" tracker. The rule behind both: <b>make the first run effortless without taking any capability away</b> — power moved behind progressive disclosure, it wasn't removed.</p>
+      <p class="tiny" style="margin-top:8px">This is the build list — the capabilities we added, what we simplified, and the UI + data changes to make. The product is three layers; only the <b>Builder (§6)</b> and the <b>Overview (§8)</b> changed, the client-facing <b>Doer (§7) is untouched</b>. Full spec: <code>onboarding-and-activation-prd.md</code> · whole-product tour: <a href="onboarding-and-activation-quickread.html">onboarding-and-activation-quickread.html</a>.</p>
     </div>
   </div>
 </div></section>
 
+<!-- DELTA AT A GLANCE -->
+<section id="delta"><div class="wrap">
+  <div class="eyebrow">The overall delta</div>
+  <h2><span class="n">⇄</span>Where onboarding started vs. where it's landed</h2>
+  <p class="lead" style="margin-bottom:16px">The net change, surface by surface. The deep-dives further down spec each one out.</p>
+  <table class="delta">
+    <thead><tr><th class="surf">Surface</th><th>Was</th><th>Now — build this</th></tr></thead>
+    <tbody>
+      <tr>
+        <td class="surf">A · Journey Builder <span class="ref">§6</span></td>
+        <td><span class="was">A blank 9-step builder, then a per-step editor full of operator jargon (webhooks, deep-links, plan variants), with a publish check that could block on that jargon.</span></td>
+        <td><span class="now">A guided, template-first <b>6-step wizard</b> — one decision per page, smart defaults, a live client preview, and every advanced control still there behind "Customize". Publish-then-refine, never blocked.</span></td>
+      </tr>
+      <tr>
+        <td class="surf">C · Overview <span class="ref">§8</span></td>
+        <td><span class="was">A lifecycle "census" dashboard that led with population counts — how many clients in each bucket.</span></td>
+        <td><span class="now">A <b>triage-first tracker</b> that leads with "who needs me right now", a dollar-led one-line verdict, and a money-ranked queue where one button per row unblocks the client (with an undo).</span></td>
+      </tr>
+      <tr>
+        <td class="surf">B · Doer <span class="ref">§7</span></td>
+        <td><span class="was">The client's in-HighLevel setup checklist.</span></td>
+        <td><span class="now"><b>Unchanged.</b> Reused as the wizard's live preview — no work here.</span></td>
+      </tr>
+    </tbody>
+  </table>
+  <div class="callout c-violet" style="margin-top:14px"><div class="ic">🧭</div><div><p><b>The one principle behind both surfaces.</b> Simplicity comes from <b>smart defaults and progressive disclosure</b>, not from removing power. A first-timer finishes on defaults alone; an expert can still open every control. Build for both on the same screen.</p></div></div>
+</div></section>
+
+<!-- ADDED -->
+<section id="added"><div class="wrap">
+  <div class="eyebrow">What to build — new capabilities</div>
+  <h2><span class="n">＋</span>Capabilities we added</h2>
+  <p class="lead" style="margin-bottom:16px">Behaviour that didn't exist before. Each is detailed in the matching deep-dive below.</p>
+  <div class="twocol">
+    <div class="card">
+      <h3>A · Journey Builder</h3>
+      <ul class="plus">
+        <li><b>Template-first start</b> — 3 ready, outcome-based templates (or start blank), so the owner never faces an empty canvas.</li>
+        <li><b>Guided two-pane wizard</b> with a <b>live client preview</b> that updates as they build.</li>
+        <li><b>Per-step "Customize"</b> — edit the title, the client-facing copy, the completion method, the how-to video, and split a step into <b>per-asset sub-steps</b> ("activate these 3 workflows" → 3 tracked tasks).</li>
+        <li><b>Locked auto-verify on standard steps</b> — GoCSM always verifies real HighLevel state; the agency can't downgrade it. This is the wedge, now visible on every row.</li>
+        <li><b>Snapshot-driven asset picking</b> — a step can require <i>any</i> asset or <i>one specific</i> named asset (workflow / funnel / form / pipeline) chosen from the agency's snapshot, asked once and remembered.</li>
+        <li><b>A calm "Live" summary</b> for returning agencies, with Edit-jumps straight back into the wizard.</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h3>C · Overview tracker</h3>
+      <ul class="plus">
+        <li><b>A triage strip</b> (Needs you / Waiting / On pace) that is the primary orientation and filters everything below.</li>
+        <li><b>A dollar-led verdict</b> — one sentence naming the top bottleneck and the $/mo behind it (the one AI-marked surface).</li>
+        <li><b>A money-ranked "needs help" queue</b> sorted by <code>mrr × days stuck</code>, with one owner-aware action per row.</li>
+        <li><b>An undoable action receipt</b> — fire a fix and see scope + blast-radius + a ~5s undo before it commits.</li>
+        <li><b>Designed all-clear &amp; "waiting on others" states</b> — a real payoff when nothing needs you, and external waits kept out of the action queue.</li>
+      </ul>
+    </div>
+  </div>
+</div></section>
+
+<!-- SIMPLIFIED -->
+<section id="simplified"><div class="wrap">
+  <div class="eyebrow">What to build — simplifications</div>
+  <h2><span class="n">－</span>What we simplified or removed</h2>
+  <p class="lead" style="margin-bottom:16px">Friction taken out of the default path. None of these removed capability — the power moved behind a disclosure or a smart default.</p>
+  <div class="twocol">
+    <div class="card">
+      <h3>A · Journey Builder</h3>
+      <ul class="minus">
+        <li><b>No blank 9-step canvas</b> — replaced by a pre-filled template and one decision per page.</li>
+        <li><b>No blocking publish gate</b> — operator jargon (A2P, webhooks) no longer stops publishing; it's publish-then-refine.</li>
+        <li><b>No drag-to-reorder</b> — up/down arrows instead (safer for non-technical owners and accessibility).</li>
+        <li><b>Plain language everywhere</b> — "carriers" → "phone companies", outcome-named steps, jargon out of the first run.</li>
+        <li><b>Advanced controls hidden, not gone</b> — the deep editor (deep-links, plan variants, granular config) is one quiet "advanced editor" link away.</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h3>C · Overview tracker</h3>
+      <ul class="minus">
+        <li><b>Lead is triage, not a census</b> — population counts are demoted into the full list, not the headline.</li>
+        <li><b>One AI surface only</b> — just the verdict is AI; the queue ranking is plain arithmetic, not dressed up as AI. No ask-box, no generated prose.</li>
+        <li><b>One velocity number, never a chart</b> — and a slip reads calm-neutral, not alarm-red.</li>
+        <li><b>No naked numbers</b> — every figure carries a target, trend, or $; drill-downs stay collapsed, one open at a time.</li>
+        <li><b>"Pending" ≠ "stuck"</b> — clients waiting on a carrier/DNS review sit in a quiet collapsed lane, off the action queue.</li>
+      </ul>
+    </div>
+  </div>
+</div></section>
+
+
 <!-- SCOPE -->
 <section id="scope"><div class="wrap">
-  <div class="eyebrow">Where the work is</div>
-  <h2><span class="n">▦</span>Two of the three layers changed today</h2>
-  <p class="lead" style="margin-bottom:16px">The product is three layers on one shared data spine. Today's work is in Layer A and Layer C.</p>
+  <div class="eyebrow">Where it all landed</div>
+  <h2><span class="n">▦</span>Two of the three layers changed; the Doer never did</h2>
+  <p class="lead" style="margin-bottom:16px">The product is three layers on one shared data spine. Every change landed in Layer A (Builder) and Layer C (Overview); Layer B (the client Doer) was reused as the wizard's live preview but <b>not altered</b>.</p>
   <div class="scope">
-    <div class="layer hot"><span class="tag">redesigned</span><div class="lt">A · Journey Builder</div><div class="ld">The agency composes the journey. <b>Rebuilt as a guided wizard.</b> §6 — today's work.</div></div>
-    <div class="layer dim"><span class="tag">unchanged</span><div class="lt">B · Doer</div><div class="ld">The client's in-HighLevel checklist. §7 — no changes today (used as the wizard's live preview).</div></div>
-    <div class="layer hot"><span class="tag">redesigned</span><div class="lt">C · Overview / Dashboard</div><div class="ld">The agency "who's stuck" tracker. <b>Rebuilt around triage.</b> §8 — today's work.</div></div>
+    <div class="layer hot"><span class="tag">redesigned</span><div class="lt">A · Journey Builder</div><div class="ld">The agency composes the journey. Now a guided, template-first <b>wizard</b> with capability behind progressive disclosure. §6.</div></div>
+    <div class="layer dim"><span class="tag">unchanged</span><div class="lt">B · Doer</div><div class="ld">The client's in-HighLevel checklist. §7 — used as the wizard's live preview; no work here.</div></div>
+    <div class="layer hot"><span class="tag">redesigned</span><div class="lt">C · Overview / Dashboard</div><div class="ld">The agency "who's stuck" tracker. <b>Rebuilt around triage.</b> §8.</div></div>
   </div>
 </div></section>
 
@@ -311,7 +418,7 @@
   <div class="flow">
     <div class="frow"><div class="fnum"><div class="b">1</div><div class="ln"></div></div><div class="fbody">
       <div class="ft">Template — start from a real subset, or blank</div>
-      <div class="fd">3 outcome-framed templates (Standard 15 · Fast-track 7 · Local services 9), Standard pre-selected; a quiet dashed "Start from blank". (The old one-click SimpleSetup dissolved into this.)</div>
+      <div class="fd">3 outcome-framed templates (Standard 15 · Fast-track 7 · Local services 9), Standard pre-selected; a quiet dashed "Start from blank".</div>
     </div></div>
     <div class="frow"><div class="fnum"><div class="b">2</div><div class="ln"></div></div><div class="fbody">
       <div class="ft">Steps — pre-checked, plain titles, power behind "Customize"</div>
@@ -367,7 +474,7 @@
       <p>Visual placement mockups; brand colour auto-detected and pre-selected ("✦ Pulled from your brand"). Plans/Timing/Branding/Videos fold into the wizard tail &amp; Customize as progressive depth, not separate top-level steps.</p></div>
 
     <div class="ch"><div class="hd"><span class="num">8</span><span class="ti">Returning user → calm summary; old builder retired</span><span class="ref">§6.1/§6.3</span></div>
-      <p><code>JourneySummary</code> overview with Edit-jumps + an advanced-editor escape. <code>SimpleSetup</code> deleted; the old 9-step <code>JourneyBuilder</code> is no longer routed (deep editing = <code>JourneyEditor</code>). Publish-then-refine — no blocking jargon gate.</p></div>
+      <p><code>JourneySummary</code> overview with Edit-jumps + an advanced-editor escape. The old 9-step <code>JourneyBuilder</code> is no longer the entry point; deep editing lives in <code>JourneyEditor</code>. Publish-then-refine — no blocking jargon gate.</p></div>
   </div>
   <div class="callout c-violet" style="margin-top:16px"><div class="ic">⭐</div><div><p><b>Keep the wedge visible.</b> "Other tools mark a step done when your client watches a video — GoCSM auto-verifies it by watching their HighLevel, and shows you who's stuck." The auto-verify USP must stay positioned, not buried — it's the reason this beats a checklist.</p></div></div>
 </div></section>
@@ -538,10 +645,11 @@
 
 <!-- PHASE 4 FIXES -->
 <section id="fixes"><div class="wrap">
-  <div class="eyebrow">Already fixed in the prototype — carry into the build</div>
-  <h2><span class="n">✓</span>The 5 Overview Phase-4 review fixes</h2>
+  <div class="eyebrow">Correctness rules the Overview depends on</div>
+  <h2><span class="n">✓</span>Five rules to honour (each proven in the prototype)</h2>
+  <p class="lead" style="margin-bottom:14px">Subtle but load-bearing — get any of these wrong and the tracker quietly lies or nags. Already solved in the prototype; replicate them in the build.</p>
   <table>
-    <thead><tr><th style="width:34%">Issue found</th><th>Fix</th><th style="width:80px">Status</th></tr></thead>
+    <thead><tr><th style="width:34%">The trap</th><th>The rule</th><th style="width:80px">State</th></tr></thead>
     <tbody>
       <tr><td>Agency-bottleneck verdict was <b>lying</b> — hardcoded "5 clients · kickoff call" vs the real 3 agency-blocked accounts</td><td>Derive from <code>blocked_by==="agency"</code> (count + longest-parked client) so headline / CTA / queue agree</td><td><span class="ok">Fixed ✓</span></td></tr>
       <tr><td>Console error on <b>every triage-tile click</b> — <code>StatusCard</code> mixed the <code>border</code> shorthand with the <code>borderLeft</code> accent</td><td>Switched to <b>per-side borders</b>; 0 console errors on previously-throwing paths</td><td><span class="ok">Fixed ✓</span></td></tr>
@@ -555,8 +663,9 @@
 
 <!-- DEV PICKUP -->
 <section id="pickup"><div class="wrap">
-  <div class="eyebrow">Bring it home</div>
-  <h2><span class="n">☑</span>Developer pickup checklist</h2>
+  <div class="eyebrow">What to change</div>
+  <h2><span class="n">☑</span>The build list — UI, then data</h2>
+  <div class="eyebrow" style="color:var(--ink3);margin-bottom:8px">① In the UI</div>
   <div class="g2 grid">
     <div class="card">
       <h3>A · Journey Builder (§6)</h3>
@@ -585,12 +694,39 @@
       </ul>
     </div>
   </div>
-  <div class="callout c-amber" style="margin-top:16px"><div class="ic">🚧</div><div><p><b>Guardrails.</b> Don't re-open the <b>Doer (§7)</b> — unchanged today. Keep <b>one visible AI surface</b> (don't label the ranking "AI"). Keep onboarding detection <b>isolated</b> from the Health-Score path (§4.1). <b>Pending ≠ stuck</b> — external-review clients stay out of the queue.</p></div></div>
+  <div class="eyebrow" style="color:var(--ink3);margin:22px 0 8px">② In the data / the packet</div>
+  <div class="card">
+    <p class="tiny muted" style="margin:0 0 10px">The UI above sits on these. In the prototype most are front-end stubs — the build swaps each stub for the real source.</p>
+    <div class="g2 grid">
+      <div>
+        <div class="badge b-blue" style="margin-bottom:8px">Builder</div>
+        <ul class="check">
+          <li><b>The step model gains</b> client-facing <code>instructions</code> copy, a completion <code>detector</code>, an <code>assetScope</code> (any | specific) + a chosen <code>snapshotAccountId</code> and one named asset, and sub-steps.</li>
+          <li><b>Snapshot fetch</b> — list a sub-account's <b>workflows / funnels / forms / pipelines</b> (today a <code>snapshot.ts</code> stub); the chosen sub-account is remembered across steps.</li>
+          <li><b>Auto-verify detection</b> — standard catalog steps are verified by reading real HighLevel state (<code>canAutoDetect</code>); custom steps fall back to client-confirms / web-event / for-reference.</li>
+          <li><b>Brand colour</b> auto-detected from the agency (a <code>getHighLevelBrandColor</code> stub today).</li>
+          <li><b>Templates</b> are real catalog subsets, not placeholders.</li>
+        </ul>
+      </div>
+      <div>
+        <div class="badge b-blue" style="margin-bottom:8px">Overview</div>
+        <ul class="check">
+          <li><b><code>blocked_by</code></b> per stalled client (agency / client / external) drives the verdict, the whose-move pill, and the relief lane.</li>
+          <li><b>Queue ranking</b> = <code>mrr × days_on_current_step</code> — arithmetic, computed, not AI.</li>
+          <li><b>Velocity</b> = finished-this-week + average days + the delta vs the prior period.</li>
+          <li><b>The action receipt</b> holds the fix for a ~5s grace window before it commits (undo), then reports back on completion; Trigger-Workflow lists the client's <b>real</b> GHL workflows.</li>
+          <li><b>Every verdict and number derives from live data</b> — never hardcoded, so the headline, CTA and queue always agree.</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <div class="callout c-amber" style="margin-top:16px"><div class="ic">🚧</div><div><p><b>Guardrails.</b> Don't re-open the <b>Doer (§7)</b> — unchanged throughout. Keep <b>one visible AI surface</b> (don't label the ranking "AI"). Keep onboarding detection <b>isolated</b> from the Health-Score path (§4.1). <b>Pending ≠ stuck</b> — external-review clients stay out of the queue.</p></div></div>
   <div class="callout c-green" style="margin-top:12px"><div class="ic">📎</div><div>
-    <p><b>References.</b> Full spec → <code>onboarding-and-activation-prd.md</code> (today's decisions in §11.1k). Whole-product visual tour → <a href="onboarding-and-activation-quickread.html">onboarding-and-activation-quickread.html</a>. Design briefs → <code>docs/design/onboarding-overview-brief.md</code> + the 2026-06-30 builder design-loop entries in <code>MEMORY.md</code>.</p>
+    <p><b>References.</b> Full spec → <code>onboarding-and-activation-prd.md</code> (decision log in §11.1k). Whole-product visual tour → <a href="onboarding-and-activation-quickread.html">onboarding-and-activation-quickread.html</a>. Design briefs live under <code>docs/design/</code>; the dated rationale is in the repo-root <code>MEMORY.md</code>.</p>
   </div></div>
 </div></section>
 
-<footer><div class="wrap">GoCSM — Sub-Account Onboarding &amp; Activation · Developer change brief · 30 June 2026 · PRD v1.12 · Confidential. Mockups are illustrative; live data comes from the seed.</div></footer>
+<footer><div class="wrap">GoCSM — Sub-Account Onboarding &amp; Activation · Developer brief: the onboarding redesign delta · 29–30 June 2026 · PRD v1.12 · Confidential. Mockups are illustrative; live data comes from the seed.</div></footer>
 </body>
 </html>
