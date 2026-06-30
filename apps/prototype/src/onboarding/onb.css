@@ -1,0 +1,44 @@
+/* Onboarding feature stylesheet — fully scoped under `.onb-root`.
+   This vendors the imported feature's own GoCSM design-system layer (tokens +
+   components) and a shadcn semantic-color bridge, all confined to the
+   onboarding subtree so it never collides with the host prototype's design
+   system. Generated/scoped from the Lovable export via tmp/scope.mjs.
+
+   Load order matters: tokens (raw GoCSM vars) -> bridge (shadcn HSL aliases) ->
+   component classes -> v3 additions. */
+@import "./styles/tokens.scoped.css";
+@import "./styles/_bridge.scoped.css";
+@import "./styles/components.scoped.css";
+@import "./styles/components-v3-additions.scoped.css";
+
+/* shadcn base reset, scoped: give bordered elements the semantic border colour
+   by default (host Tailwind preflight only zeroes border-width globally). */
+.onb-root *,
+.onb-root *::before,
+.onb-root *::after {
+  border-color: hsl(var(--border));
+}
+
+/* The feature was authored on a 14px root; the host restores 16px globally.
+   Pin the onboarding subtree's text base back to 14px so inherited/`em` text
+   keeps the intended proportions. */
+.onb-root {
+  font-size: 14px;
+}
+
+/* Page gutter for the in-shell onboarding routes (overview + journey). The DS
+   AppShell `.main` carries no padding (prototype pages self-pad), so without
+   this the imported pages sit flush against the nav divider and the top edge.
+   Gives every onboarding page a consistent gutter + cap, matching the rest of
+   the app (the full-bleed /doer-demo uses its own .onb-root, not .onb-page). */
+.onb-root .onb-page {
+  max-width: 1320px;
+  margin: 0 auto;
+  padding: var(--s-6) var(--s-6) var(--s-8);
+}
+
+@media (max-width: 640px) {
+  .onb-root .onb-page {
+    padding: var(--s-4) var(--s-4) var(--s-6);
+  }
+}

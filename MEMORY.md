@@ -5,6 +5,266 @@ Durable, human- and agent-readable log of significant decisions and changes.
 
 ---
 
+## 2026-06-30 (design-loop) — Onboarding Overview "tracker" Phase 4 review + 5 fixes shipped
+Closed the design loop for the Onboarding Overview page (`src/onboarding/pages/OnboardingIndexPage.tsx`, route
+`/onboarding`). Phase 4 = a live multi-persona review on `:8080` (agency-owner · CDO · CPO/CEO · PMM · AI-readiness)
+driven with Playwright across all 6 DevStrip states + every interaction (row action→ActionReceipt, workflow picker,
+triage-tile filters, funnel disclosure, agency CTA, relief strip). Verdict: ships — meets every done-criterion in
+`docs/design/onboarding-overview-brief.md`. Five findings found and fixed:
+1. **Agency-bottleneck verdict was lying** — hardcoded "5 clients … kickoff call … Day 5" while the seed has only
+   **3** agency-blocked accounts on three different steps. Rewrote it to derive from the same data the CTA reveals
+   (`blocked_by === "agency"`): count + the longest-parked client (now "3 … Maple Street, 15 days on GBP"), so the
+   headline, the "See who's waiting on your team" CTA, and the queue can never disagree.
+2. **Console errors on every triage-tile click** — `StatusCard` mixed the `border` shorthand with the `borderLeft`
+   accent longhand → React warned on each rerender (and could reset the accent rail). Switched to per-side borders;
+   console now 0 errors on every previously-throwing path.
+3. **Trust stamp** — swapped the generic `ConfTag` "Confirmed" pill for the brief-prescribed compressed line
+   "Numbers exact · wording is AI" (provenance kept as the tooltip).
+4. **All-clear copy** — "Every client who needed you, you've handled" was false for brand-new accounts; the Sparse
+   week-1 state now reads "Nothing needs you yet / Your newest clients just started — nothing's stuck." (gated on
+   `isSparse`; zero-stalls keeps the original "all caught up" copy).
+5. **Velocity proof line** — a 2-day median slip was rendered in alarm amber daily; a regression now stays honest
+   (real ↑ arrow + number) but calm-neutral, while genuine improvement still pops green.
+`tsc` clean; `bun run build` (DS → prototype → web) all green; console clean bar the 2 pre-existing React-Router v7
+future-flag notices. Branch `design-loop/onboarding-overview`, not pushed.
+
+## 2026-06-30 (pm-6) — Extended the snapshot any/specific asset model to forms + pipelines
+Karthik: apply the workflow/funnel any-vs-specific snapshot model to **forms** and any other feature it fits. The
+clean fit = HighLevel features that exist as a **named collection in the snapshot**: workflows, funnels, **forms**,
+**pipelines**. Integrations (GBP/FB/Stripe), domains, A2P, phone, calendar-connect, business profile and kickoff are
+one-shot *connections* (not "pick a named asset from a list"), so they stay plain steps.
+- `catalog.ts`: `ASSET_TYPES` now `{snapshot_workflows, funnel_publish, form_create, pipeline_setup}`. `AssetNoun`
+  gained `verb` (infinitive) + `verbs` (3rd-person) so copy reads naturally per type — workflows "activate", funnels
+  "publish", forms "build", pipelines "set up" — instead of a hardcoded "activate". `assetPresets` extended too
+  (used by the advanced `StepEditorPanel`'s multi-select).
+- `snapshot.ts`: added `FORMS` + `PIPELINES` per-account collections; `fetchSnapshotAssets` routes by type via an
+  `ASSET_TABLES` map (workflows/funnels/forms/pipelines).
+- `SubStepEditor` copy switched to `noun.verb`/`noun.verbs`. Everything else (default "any", single searchable
+  dropdown, remembered snapshot, OOTB locked auto-verify) applies uniformly. Verified in browser: form step →
+  "build" + Local Services FORMS; pipeline step → "set up" + Local Services PIPELINES; the remembered snapshot
+  **carries across features** (set on the form step, pre-selected on the pipeline step). `tsc` clean; build green.
+
+## 2026-06-30 (pm-5) — Asset selection refined: default "any", specific = ONE asset via searchable dropdown, remembered snapshot
+Karthik's follow-up on workflow/funnel activation: (1) templates should default to **"Activate any workflow"**;
+(2) **don't re-ask for the snapshot every time** — ask once, remember it, pre-select it on later asset steps;
+(3) **specific = ONE asset**, so a checkbox multi-select is wrong — it must be a **single-select dropdown**;
+(4) snapshots hold dozens of workflows/funnels — both the sub-account and asset pickers need a **type-to-search**.
+- **Default "any":** `templates.ts` `buildSteps` now sets asset steps (`ASSET_TYPES`) to `assetScope: "any"` with
+  `assets: undefined` (no preset names); `SubStepEditor`'s scope derive only treats an explicit `"specific"` as
+  specific. So a fresh template's workflow/funnel steps land on "Any … counts".
+- **Single asset:** "specific" stores exactly one asset (`assets: [{name}]`); `chooseAsset` replaces rather than
+  toggles. Copy reworded singular ("A specific workflow from my snapshot … Want more? Add another step").
+- **Searchable `SearchSelect` combobox** (new, in `SetupWizard.tsx`): a styled trigger + popover with a search
+  input (magnifier) and a filtered option list (click-out/Esc to close, hover/selected states). Replaces both the
+  native sub-account `<select>` and the asset checkbox list.
+- **Remembered snapshot:** `lib/snapshot.ts` `rememberedSnapshotId()`/`rememberSnapshotId()` (localStorage
+  `gocsm.onb.snapshot.v1`). Selecting a sub-account persists it; flipping a later asset step to "specific"
+  pre-fills it (the agency can still override per step). Changing the sub-account clears that step's chosen asset.
+  Verified end-to-end in browser (workflow step + funnel step share the remembered `localsvc`, funnel dropdown
+  correctly lists FUNNELS not workflows). `tsc` clean; `bun run build` green.
+
+## 2026-06-30 (pm-4) — Asset steps are re-addable + snapshot-driven any/specific asset selection
+Karthik: an agency that wants three workflows activated should be able to list them as **three separate steps**.
+The bug: once an asset step (e.g. "Turn on your automations") was added it **disappeared** from "Add a step", so
+you couldn't add a second. Also: when selecting GHL assets to activate, make the agency pick their **snapshot
+sub-account** and **fetch** that account's assets, and make it **configurable — any asset vs. specific named ones**.
+- **Re-addable asset steps:** `SetupWizard` `StepsStep` keeps a `present` set but the `addable` filter now retains
+  `ASSET_TYPES` even when already present (`!present.has(t) || ASSET_TYPES.has(t)`); add-buttons for present types
+  read "Another — …". Non-asset catalog features stay one-shot (drop out once added). `StepRow`'s sub-line now
+  shows the chosen asset names.
+- **Scope + snapshot:** `Step` gained `assetScope?: "any" | "specific"` and `snapshotAccountId?`. `SubStepEditor`
+  rewritten with a `ScopeOption` radio-card toggle: _any_ ("any workflow counts" — nothing more) vs _specific_ →
+  a snapshot sub-account `<select>` + a checkbox multi-select of assets **fetched** from that account. New stub
+  `lib/snapshot.ts`: `SNAPSHOT_ACCOUNTS`, `fetchSnapshotAssets(accountId, type)` (workflows vs funnels),
+  `snapshotAccountName(id)`. Completion stays the OOTB locked auto-verify card. `tsc` clean; `bun run build` green.
+
+## 2026-06-30 (pm-3) — Completion method is LOCKED for out-of-the-box steps; pickable only for custom steps
+Karthik: don't let the agency override how an **out-of-the-box** step is tracked. Our catalog HighLevel features
+are GoCSM's to auto-verify — the agency shouldn't (and can't) downgrade them to manual, and we shouldn't even
+show the option. The "how is this confirmed?" choice belongs only to **custom** steps the agency adds (which
+aren't in our inventory and GoCSM can't watch).
+- Discriminator = `canAutoDetect(type)` (true for all 15 catalog features; false for `custom_manual`/added
+  custom steps). `completionBadge()` (`lib/plain-content.ts`) now **forces the auto badge for OOTB types**
+  regardless of any stored `detector`.
+- `SetupWizard` `CompletionPicker`: OOTB → a fixed green **"GoCSM verifies this automatically"** statement (no
+  radio picker, locked). Custom → the picker, but with the **auto option removed** (client-confirms / web-event
+  / for-reference only) + an explainer "This isn't a standard HighLevel step, so GoCSM can't watch for it." Custom
+  steps land under an "Other steps" group and their non-auto badge pops among the recessive Auto-verified rows.
+  Full `bun run build` green; `tsc` clean.
+
+## 2026-06-30 (pm-2) — Restored full agency customization to the wizard + made the auto-verify USP visible
+Karthik's feedback: the simplified wizard had **traded away capability for simplicity** — per-asset sub-steps
+(activate multiple workflows), per-step custom completion (manual / web event), title/text/video customization,
+the visual placement picker, and brand colour were all gone, and the **auto-tracking USP wasn't visible**.
+Re-ran the design loop (one focused research dossier — verification-badge UX, inline-customize-with-pinned-preview,
+visual placement, brand attribution — + a 3-persona review loop). The fix philosophy: **simplicity via smart
+defaults, NOT by removing capability** — restore everything as progressive depth.
+- **`SetupWizard.tsx` is now a 6-step, two-pane wizard** (Template · Steps · Order · Experience · Look & feel ·
+  Review) with a **PERSISTENT client preview pinned right** (the build-time preview suppresses its "X of Y done"
+  count via a new `ClientPreview`/`DoerPanel` `hideProgressCount` prop, so it never contradicts the builder's
+  step count).
+- **Per-step depth restored** (Step 2 → Customize expands inline, single-open accordion): editable title,
+  "what your client sees" copy (new `Step.instructions`), the **4-level completion method** (added `read_only`
+  to `StepDetector`; selector covers auto-verify / client-confirms / web-event / for-reference), default/custom
+  **video**, and **per-asset sub-steps** ("which workflows should your client activate?" — named, rapid-add,
+  presets, each an independently-verified client task). **Custom steps** add via "Your own custom step".
+- **Look & feel step** = the **visual placement mockups** (reuses `ClientPreview.PlacementTab`) + brand colour
+  **auto-detected** from the agency (`getHighLevelBrandColor()` stub) and **pre-selected with a "✦ Pulled from
+  your brand" attribution** pill (Squarespace/Canva/Mailchimp pattern). Plus "Start from blank" on Step 1.
+- **USP made visible (the wedge):** every step row carries a **recessive "Auto-verified" badge** (exceptions —
+  client/web-event/info — render as filled pills that POP, per CDO: demote the default, surface the exceptions);
+  the Step 2 header POSITIONS it ("Other tools mark a step done when your client watches a video — GoCSM
+  auto-verifies it … and shows you who's stuck"); the sub-step + review copy reinforce per-asset verification.
+- Shared `lib/plain-content.ts` gained `completionBadge` + `isCustomTitle`; `previewJourney` now KEEPS sub-steps
+  (so per-asset tasks show in the preview) and honours custom titles.
+- **Review loop → unanimous approve.** First-time-owner approved (happy path still Continue×5→Publish on
+  defaults, "powerful AND simple"); CDO revise→approve (fixed: the 15-vs-18 count contradiction, badge
+  saturation, a redundant "Currently:" line, customize-panel alignment, sub-step chip "+N more", two-pane
+  whitespace, save-pill crowding the CTA); CPO revise→approve ("the USP is now positioned, not merely stated —
+  a category above 'mark done when they watched a video'"). Full `bun run build` green; `tsc` clean.
+
+## 2026-06-30 (pm) — Onboarding overview layout fix (.onb-page gutter) + research incorporation + "start from blank"
+Three asks: (1) fix the broken Onboarding **overview** layout, (2) add a "start from blank" option, (3) fold in a
+fresh competitive-research doc (`~/Downloads/GoCSM Onboarding Research.md` — a HighLevel-ecosystem teardown).
+- **Layout fix (the real bug):** the DS `AppShell .main` carries **no padding** (prototype pages each self-pad);
+  the imported onboarding pages (`OnboardingIndexPage`, `JourneyPage`) **didn't self-pad**, so they sat flush at
+  the nav divider (left 211) with the H1 clipped at top 4. NOT a DS bug — fixed at the onboarding shell:
+  `App.tsx`'s `OnboardingLayout` now wraps the `<Outlet/>` in a **`.onb-page`** div, styled in `onb.css`
+  (`max-width:1320; margin:0 auto; padding: var(--s-6)`), giving every in-shell onboarding route a consistent,
+  **symmetric 24px gutter** + cap (verified L/R = 24/24). The full-bleed `/doer-demo` uses its own `.onb-root`
+  (not `.onb-page`) so it's unaffected. This also fixed the wizard's step-nav/footer edge-touching.
+- **"Start from blank"** added to wizard Step 1 (`SetupWizard` `TemplateStep`): a quiet **dashed**, de-emphasized
+  option below the 3 templates (→ `createEmptyDraft()`); Publish is disabled while the checklist has 0 steps.
+- **Research incorporation:** the doc mostly **validated** the current design (outcome-grouped steps, "Take me
+  there" deep-links, per-asset sub-steps, auto-detection, non-blocking/any-order, graduation). The net-new it
+  surfaced — and the one differentiator it hammers (LaunchPad *teaches*; GoCSM *verifies real account state* +
+  shows the agency *who's stuck*) — is now reinforced at the publish moment: a blue **verification note** on the
+  Review step ("GoCSM checks each step off automatically by watching your client's HighLevel … flags anyone who
+  gets stuck"). Also added `aria-current` to the active step-nav item (LaunchPad's accessibility bar). Future,
+  research-flagged (not built this round): picture-in-picture / follow-along video and contextual click-pointers
+  for high-drop-off steps (medium/higher effort).
+- Quick design-loop validation round: **approve** (gutter correct, additions clean, no regressions). Full
+  `bun run build` green; `tsc` clean.
+
+## 2026-06-30 — Design loop: journey creation reframed as a guided WIZARD (template-first) + configured summary + dev toggle
+Karthik corrected the 2026-06-29 direction: the flat one-click `SimpleSetup` was the wrong objective. The **guided
+wizard IS the product** — the goal is to take a brand-new agency owner through building a journey *they actually
+like*, customized to their business, at a ~100% completion rate. Re-ran the design-loop (2 research dossiers — wizard
+structure + micro-craft/spacing — plus a design audit of the old 9-step builder, then build → multi-persona review
+loop → ship). All three answers Karthik gave drove it: returning user → **summary that jumps into the wizard**;
+per page → **smart default + tweak**; the old SimpleSetup → **dissolved into the wizard as Step 1 (templates)**.
+- **New primary = `SetupWizard.tsx`** — a 5-step wizard, ONE calm decision per page, smart default pre-selected,
+  "you can change this later": **1 Template** (3 outcome-labelled cards, Standard pre-selected) → **2 Steps**
+  (pre-checked from the template, outcome-grouped plain titles, add/remove) → **3 Order** (up/down arrows, NOT
+  drag — NN/g says drag is unsafe for novices/a11y; dependency-guarded) → **4 Experience** (guided vs tracking,
+  + a "More options" reveal holding placement, brand colour, and the videos note) → **5 Review** (section summary
+  with Edit-jumps + pristine client preview + one focal Publish). A labelled, jumpable step nav (template makes
+  every step valid). Built to a 30-item micro-craft checklist using the onboarding-scoped `--s-*`/semantic tokens.
+- **Templates are real** (`lib/templates.ts`): 3 outcome-framed starting points (Standard 15 / Fast-track 7 /
+  Local services 9), each a genuine subset of the standard catalog (no more placeholder "Additional step N"),
+  built pristine (no carried client progress / asset.done).
+- **Videos** (Karthik's 3rd high-effort item): every step already carries a default GoCSM how-to video; replacing
+  is optional and lives in step-4 "More options" — never a mandatory screen.
+- **Configured user → `JourneySummary.tsx`** — a calm "Live" overview: outcome-group cards (each "Edit ›" → the
+  wizard at the right step) + Order/Experience config rows + a quiet "advanced editor" escape to `JourneyEditor`.
+- **Dev toggle** (`JourneyPage.tsx`, persisted to `gocsm.onb.devmode.v1`): a footer `DEV [Brand-new user |
+  Configured user]` switch so the new-vs-returning distinction can be demoed to the dev team. `?step=` deep-links
+  still open the advanced per-step editor.
+- **Shared plain layer** extracted to `lib/plain-content.ts` (PLAIN_TITLE, OUTCOME_GROUPS, plainTitle/plainSub,
+  groupSteps, previewJourney). `SimpleSetup.tsx` deleted; the old 9-step `JourneyBuilder` is no longer routed
+  (advanced editing now = `JourneyEditor`).
+- **Design audit** found + fixed the old wizard's real bugs: a fixed footer that **overlapped content** on long
+  pages (now a sticky, in-flow footer), duplicated Timing helper text, "A2P"/"carrier-required" operator jargon,
+  and a weak step indicator. **Review loop** (first-time-agency-owner + CDO) ran revise→approve: denser Order
+  list (one bordered list vs 15 floating cards), bigger up/down hit targets, centered remove ×, matched
+  Experience card heights, fixed mid-paragraph check, Preview demoted to ghost (one focal Continue), + 2 copy
+  reassurances. Full `bun run build` green; `tsc` clean.
+
+## 2026-06-29 — Design loop: super-simplified onboarding journey creation (happy path → 100% completion)
+Ran the full **design-loop** (research → CPDO synthesis → DS-first build → multi-persona review loop → ship) to
+make the journey-CREATION flow finishable by a first-time, non-technical agency owner. The old default dropped
+new users into a **9-step builder** then a per-step editor (webhooks/deep-links/plan-variants) gated by a
+**publish validation that could BLOCK on operator jargon** — the completion-killer.
+- **New happy path = `SimpleSetup`** (`apps/prototype/src/onboarding/components/onboarding/SimpleSetup.tsx`), the
+  default view of `/onboarding/journey`. Research-faithful (Stripe Atlas curated-defaults · HighLevel LaunchPad
+  outcome-grouping · Shopify/Calendly/Chameleon): **never a blank canvas** — lands in a prefilled, already-valid
+  recommended checklist; **one focal action "Publish checklist"** with **no blocking gate** (publish-then-refine);
+  steps shown by **client OUTCOME in plain language** (5 groups: Phone & texting / Website, forms & email /
+  Calendar & sales pipeline / Automations & connected accounts / Kickoff) via a `PLAIN_TITLE` map; **light edits
+  only** (add / remove); live `ClientPreview` fed a **pristine, plain-titled, asset-flattened** copy of the
+  journey so its count matches the checklist and shows a fresh 0-done state; quiet on-ramps (paste / pick template).
+- **Hard wall:** `JourneyPage` now has `simple | advanced` modes. **"Advanced setup"** gates ALL power — the
+  existing `JourneyBuilder` (9-step) + `JourneyEditor`/`StepEditorPanel` (deep-links, webhooks, triggers,
+  owner/tier, placement, branding, plan variants, videos, the blocking validation) — **unchanged**, just removed
+  from the first run. A `?step=` deep-link still opens advanced editing directly.
+- **AI dosage (per research):** kept only the decision-reducing "Paste your checklist" door; no
+  prompt-to-generate-everything, no confidence %, no variant galleries.
+- **Copy de-jargoned:** "carriers" → "phone companies" (`step-content.ts`, `catalog.ts`); journey/template name
+  "Standard GHL Agency Onboarding" → "Standard agency onboarding"; std-ghl template duration reconciled to ~2 weeks.
+- **Review panel (looped to unanimous approve):** first-time-agency-owner + CDO both went revise→approve after
+  fixing a false-"done" checkmark (→ neutral empty ring), lossy single-line step explainers (→ 2-line clamp),
+  and a preview count/jargon mismatch (→ the pristine preview journey). CPO/copy/AI approved.
+- Also wired the real **HighLevel background image** into `/doer-demo` (`assets/highlevel-bg.png`, real asset
+  import replacing the dead `.asset.json` CDN placeholder). Full `bun run build` green; `tsc` clean.
+
+## 2026-06-29 — Onboarding feature imported from Lovable export, grafted into the prototype
+Replaced the old `/onboarding` page with the full onboarding feature from a separate Lovable export
+("Onboarding Checklist (1).zip"). The export was a **different stack** (TanStack Start + Router, React 19,
+Vite 7, Tailwind v4, its own shadcn `ui/*` + GoCSM v3.1 token CSS). It was combined into the prototype
+(React 18 / Vite 5 / React Router 6 / Tailwind v3 / `@gocsm/design-system`) with **zero product changes** to
+the feature — only integration plumbing.
+- **Self-contained module:** the whole feature lives under `apps/prototype/src/onboarding/` (`components/`,
+  `lib/`, `hooks/`, `data/`, `assets/`, `styles/`, `pages/`). New Vite + tsconfig alias **`@onb` →
+  `src/onboarding`**; all the export's `@/` imports were rewritten to `@onb/`. It never imports
+  `@gocsm/design-system` — it ships its own shadcn `ui/*` (11-component closure: button, dialog, dropdown-menu,
+  input, label, popover, separator, sheet, skeleton, toggle, tooltip) + GoCSM `.jsx` primitives (Verdict,
+  QueueRow, ConfTag, ActionReceipt, OnboardingStep).
+- **Routing ported TanStack → React Router** via a tiny shim `src/onboarding/router-compat.tsx` (translates
+  `useNavigate({to,params,search,replace})` / `<Link>` / `useRouterState` onto react-router-dom). Feature
+  components were untouched except their router import source. The Lovable file-routes were dropped; the
+  surviving screens are wired in `App.tsx`: `/onboarding` (dashboard, `pages/OnboardingIndexPage`),
+  `/onboarding/journey` (`pages/JourneyPage`, `?step=`), `/onboarding/journeys/:id|new` → redirect to
+  `/onboarding/journey`, and full-bleed `/doer-demo` (`pages/DoerDemoPage`, outside `AppLayout`). Dropped the
+  export's own `__root`/`_operator`/AppShell/Rail/server/error infra (prototype keeps its own shell).
+- **CSS isolation (the crux):** the export's `tokens.css`/`components.css`/`components-v3-additions.css` were
+  **scoped under `.onb-root`** (`:root`→`.onb-root`, every class prefixed) via `tmp/scope.mjs` (PostCSS) →
+  `*.scoped.css`, imported by `src/onboarding/onb.css` (loaded once in `main.tsx`). The host's Tailwind v3
+  config was **left untouched**: instead, a generated `_bridge.scoped.css` redefines the shadcn HSL-triple
+  vars (`--primary`, `--background`, …) from the GoCSM tokens *inside `.onb-root`*, so `hsl(var(--x))`
+  utilities render onboarding colors only within the subtree. `App.tsx` wraps onboarding routes in
+  `<div className="onb-root">`. Result: no collision with the prototype DS; `/today` etc. unaffected.
+- **Deps:** only new dependency is `@dnd-kit/{core,sortable,utilities}` (journey drag-reorder). recharts /
+  date-fns / react-hook-form / embla / vaul etc. are NOT used by the feature.
+- **Verified:** full workspace `bun run build` green (DS → prototype → web), `tsc -p tsconfig.app.json` clean,
+  all routes render with no real console errors. **Known cosmetic gap:** `/doer-demo`'s HighLevel background
+  (`assets/highlevel-bg.png.asset.json`) is a Lovable-CDN placeholder (binary not in the export) so that one
+  `<img>` 404s — secondary dev/preview surface only; the onboarding dashboard + journey builder are faithful.
+
+## 2026-06-26 — Today page: orientation layer (AI headline + portfolio tiles) above the queue
+Added a three-layer orientation to `/today` (`apps/prototype/src/pages/AttentionPage.tsx`) so the owner lands
+on *here's my book → here's the slice that needs me* instead of dropping straight into the queue. H1 is now
+**"Today"**; the existing state-driven lifecycle queue is unchanged and moved below a "Needs attention" section
+(the lifecycle `goal` line became that section's sub).
+- **Layer 0 — AI headline.** `src/components/today/TodayHeadline.tsx` reuses the DS `Verdict` (GoCSM AI
+  attribution, tone edge). Loads **async with a skeleton** (~450ms simulated phrasing), then the line streams
+  in; the deterministic templated text is the fallback. "Figures are exact · wording is AI-generated" note.
+- **Layer 1 — portfolio tiles.** `src/components/today/PortfolioTiles.tsx` — `StatCard` grid (clickable →
+  drill into Insights). Phase 1: MRR, Accounts, Active users, Login health, Payment issues (red when >0),
+  Renewals·90d. Phase 2 ADDS a health-distribution bar (locked `--health-*` band tokens) + Revenue-at-risk +
+  Sentiment. Per-tile error isolation; brand-new/0-accounts → setup CTA. **WoW deltas suppressed** — fixtures
+  hold no prior-period snapshot, never fabricate (unlike AccountsPage's hardcoded "+4%").
+- **Compute/phrasing split.** `src/fixtures/orientation.ts`: `computeOrientation(healthConfigured)` does all
+  math/classification (the "backend"); `composeHeadline()` only phrases it (the LLM stand-in / fallback).
+  Problem accounts are bucketed into ONE category by severity (payments > dormant > adoption [> at-risk in P2])
+  so the headline breakdown reconciles with its total. Low-adoption = assets present but none active, or
+  avg engagement <18 (the drafted-not-active / TaxNitro case) — surfaces in the headline on its own.
+- **Phase model honored.** Phase 1 (`healthConfigured` false) = HL-native only, zero Health vocab + a quiet
+  dismissible "Set up Health" nudge (`HealthNudge.tsx`, `gocsm.today.healthNudge.v1`); Phase 2 unlocks the
+  health tiles/headline additively, nudge hidden.
+- CSS: `today-*` / `at-queue` block in `app-overrides.css`. Headline reuses `.verdict` but sizes the line
+  down to body-lg (Verdict's 22px hero is tuned for one sentence; this is a 2–3 sentence paragraph).
+- Verified: `tsc` clean, full `bun run build` green, visual review of Phase 1 + Phase 2 + narrow reflow at :8080.
+
 ## 2026-06-25 — PRD v2.0: made functional, catalog externalized to JSON, founder-transcript rationale folded in
 Reworked `apps/prototype/docs/prd/attention-and-playbooks-prd.md` (1478→1257 lines) per Karthik.
 - **Catalog → JSON.** New `apps/prototype/docs/prd/playbooks-catalog.json` is the single source for all

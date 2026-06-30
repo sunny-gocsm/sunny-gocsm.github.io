@@ -8,6 +8,10 @@ import { useNotifyConfig, notifyStore, type NotifyChannel, type NotifyCadence } 
 import { recommendedPlays, playbookImpact, matchesToday, playbooks, mrrKind, type RecommendedPlay, type Playbook, type MrrKind } from "@/fixtures/playbooks";
 import { triedButFailed, triedUnconfirmed, type Attempt } from "@/fixtures/attempts";
 import type { Account } from "@/fixtures";
+import { computeOrientation } from "@/fixtures/orientation";
+import TodayHeadline from "@/components/today/TodayHeadline";
+import PortfolioTiles from "@/components/today/PortfolioTiles";
+import HealthNudge from "@/components/today/HealthNudge";
 
 // AttentionPage (/today, /embed/attention) — the ACTION layer, redesigned for a state-driven
 // LIFECYCLE (design-loop pass 3, 2026-06-25 — ui-ux-pro-max + frontend-design).
@@ -255,6 +259,17 @@ export default function AttentionPage() {
   useAutopilotVersion();
   const cfg = useNotifyConfig();
 
+  // Orientation layer data (the "book of business" + the day's problems). Computed here once and
+  // shared by the headline + tiles. Wrapped so a compute failure degrades to fallbacks, not a
+  // blank page. Phase-aware: Phase 2 fields (health/sentiment) only populate when configured.
+  const orientation = useMemo(() => {
+    try {
+      return computeOrientation(healthConfigured);
+    } catch {
+      return null;
+    }
+  }, [healthConfigured]);
+
   const [sim, setSimRaw] = useState<SimId>(loadSim);
   const setSim = (s: SimId) => { setSimRaw(s); try { localStorage.setItem(SIM_KEY, s); } catch { /* ignore */ } };
   const scenario = SCENARIOS.find((s) => s.id === sim) ?? SCENARIOS[1];
@@ -342,12 +357,23 @@ export default function AttentionPage() {
 
   return (
     <main className="at-page">
+      {/* Layer 0 — the daily landing + AI orientation headline (book of business + the problems
+          that matter). The headline streams in async; tiles + queue render immediately. */}
       <header className="at-header">
-        <h1 className="at-h1">Needs attention</h1>
-        <p className="at-goal">{goal}</p>
+        <h1 className="at-h1">Today</h1>
+        {orientation ? <TodayHeadline data={orientation} /> : null}
       </header>
 
-      <div className="at-stack">
+      {/* Layer 1 — "Your book of business": the KPI tiles that give the queue a denominator. */}
+      <PortfolioTiles data={orientation} />
+
+      {/* Phase-1 only: one quiet, dismissible nudge to set up Health (unlocks Phase 2). */}
+      {!healthConfigured ? <HealthNudge /> : null}
+
+      {/* Layer 2 — the existing state-driven Needs-attention queue, now below the orientation. */}
+      <section className="at-queue">
+        <SecHead title="Needs attention" sub={allCaughtUp ? undefined : goal} />
+        <div className="at-stack">
         {/* 1 — set up the daily report so the user never misses an action. Tops the page whenever
             there's an action to take (and it's not set up), and once 3+ playbooks are live. */}
         {showReportSetup ? <section className="at-mod"><ReportHero failures={failures.length} onTurnOn={onTurnOnReport} /></section> : null}
@@ -376,7 +402,8 @@ export default function AttentionPage() {
 
         {/* 5 — daily report on: slim confirm at the bottom. */}
         {digestOn && !showReportSetup ? <ReportConfirm /> : null}
-      </div>
+        </div>
+      </section>
 
       {/* Prototype-only controls — lifecycle switcher + Health phase toggle. Not customer-facing. */}
       <div className="at-dev">

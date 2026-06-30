@@ -20,6 +20,9 @@
       "@/*": [
         "./src/*"
       ],
+      "@onb/*": [
+        "./src/onboarding/*"
+      ],
       "@gocsm/design-system": [
         "../../packages/design-system/src/index.d.ts"
       ]
