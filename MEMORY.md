@@ -5,6 +5,16 @@ Durable, human- and agent-readable log of significant decisions and changes.
 
 ---
 
+## 2026-06-30 (docs) — Onboarding change brief reshaped into a net-delta dev doc (for a technical co-founder)
+Reworked `apps/prototype/docs/prd/onboarding-changes-2026-06-30.html` from a per-change log into an **overall
+delta** brief aimed at a technical co-founder who just needs to know what to build. Removed the import/zip/
+integration-plumbing narrative, the 9-milestone timeline, and the 22-row per-change table (it read as "a changelog
+of every prompt" — the wrong format). Now leads with **delta-at-a-glance** (was → now per surface), **capabilities
+we added**, and **what we simplified**, then keeps the Builder/Overview before→after + spec cards, reframes the 5
+Phase-4 fixes as **correctness rules to honour**, and adds a **"data / the packet"** section (step-model fields,
+snapshot fetch, auto-verify detection, `blocked_by`, `mrr × days`, action-receipt undo) so the UI and backend
+changes are both spelled out. Scope unchanged: Builder §6 + Overview §8 redesigned, Doer §7 untouched. Docs only.
+
 ## 2026-06-30 (design-loop) — Outcomes page rebuilt as a three-question ladder (impact → effectiveness → audit)
 Ran the full `design-loop` on the **Outcomes** page (`apps/prototype/src/pages/OutcomesPage.tsx` +
 `fixtures/outcomeLog.ts`) so a non-technical agency owner can answer three escalating questions, outcome-first:
