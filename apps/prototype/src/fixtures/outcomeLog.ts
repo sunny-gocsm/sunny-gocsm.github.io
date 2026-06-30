@@ -14,7 +14,7 @@
 // counted ONCE. Adoption (retained-usage value) and expansion (genuinely NEW mrr) are
 // different money on different accounts, so they stay additive. There is no double-count.
 
-import { allAccounts, daysUntil, type Account, type HealthBand } from "./index";
+import { allAccounts, daysUntil, TODAY, type Account, type HealthBand } from "./index";
 
 export type ActionKind = "email" | "sms" | "call" | "alert" | "dunning" | "task";
 export type EventCategory = "winback" | "payment" | "renewal" | "adoption" | "expansion";
@@ -200,6 +200,13 @@ const TEMPLATES: Record<EventCategory, Tmpl> = {
 
 export const PLAYBOOK_ORDER: EventCategory[] = ["winback", "payment", "renewal", "adoption", "expansion"];
 
+/** The activated playbooks, by category → title (for the audit-log "All playbooks" filter). */
+export const PLAYBOOK_LIST: { category: EventCategory; title: string }[] = PLAYBOOK_ORDER.map((c) => ({
+  category: c,
+  title: TEMPLATES[c].playbookTitle,
+}));
+export const playbookTitleFor = (c: EventCategory): string => TEMPLATES[c].playbookTitle;
+
 // Pick the ONE primary situation an account is in, so each account's saved MRR is counted
 // once. Order = root cause first: a customer who's gone quiet is a win-back BEFORE their
 // renewal can be saved (you can't save a ghost's renewal). Returns null for genuinely-fine
@@ -322,6 +329,22 @@ export const WINDOW_DAYS: Record<Window, number> = { "7d": 7, "30d": 30, lifetim
 
 export const eventsInWindow = (w: Window): OutcomeEvent[] =>
   outcomeEvents.filter((e) => e.daysAgo <= WINDOW_DAYS[w]);
+
+// Plain-language period phrase (echoed in every section so the active timeframe is always
+// obvious) + the resolved calendar range shown under the selector ("May 18 – Jun 17").
+export const periodPhrase = (w: Window): string =>
+  w === "7d" ? "in the last 7 days" : w === "30d" ? "in the last 30 days" : "since you installed GoCSM";
+
+const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+const DAY_MS = 86_400_000;
+const installDaysAgo = Math.max(...outcomeEvents.map((e) => e.daysAgo), 30);
+const fmtDate = (d: Date, withYear = false) =>
+  `${MONTHS[d.getUTCMonth()]} ${d.getUTCDate()}${withYear ? `, ${d.getUTCFullYear()}` : ""}`;
+
+export function windowDateLabel(w: Window): string {
+  if (w === "lifetime") return `since ${fmtDate(new Date(TODAY.getTime() - installDaysAgo * DAY_MS), true)}`;
+  return `${fmtDate(new Date(TODAY.getTime() - WINDOW_DAYS[w] * DAY_MS))} – ${fmtDate(TODAY)}`;
+}
 
 // ---------------------------------------------------------------------------
 // Episodes — one playbook firing on one account. The resolving step carries the outcome and

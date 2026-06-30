@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState, type ReactNode } from "react";
+import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   SegmentedControl,
@@ -23,6 +23,10 @@ import {
   channelBreakdown,
   loggedAccounts,
   loggedChannels,
+  periodPhrase,
+  windowDateLabel,
+  PLAYBOOK_LIST,
+  playbookTitleFor,
   CATEGORY_META,
   CHANNEL_META,
   ACTION_META,
@@ -42,9 +46,9 @@ type LogFilter = Omit<EventFilter, "window">;
 type SliceMode = "flat" | "playbook" | "customer" | "channel";
 
 const WINDOW_OPTIONS = [
-  { value: "7d", label: "7 days" },
-  { value: "30d", label: "30 days" },
-  { value: "lifetime", label: "Lifetime" },
+  { value: "7d", label: "Last 7 days" },
+  { value: "30d", label: "Last 30 days" },
+  { value: "lifetime", label: "Since install" },
 ];
 const SLICE_OPTIONS = [
   { value: "flat", label: "Timeline" },
@@ -105,7 +109,7 @@ export default function OutcomesPage() {
 
   // Active-filter chips — every applied slice, individually removable.
   const chips: { key: string; label: string; clear: () => void }[] = [];
-  if (filter.category) chips.push({ key: "cat", label: CATEGORY_META[filter.category].label, clear: () => patch({ category: undefined }) });
+  if (filter.category) chips.push({ key: "cat", label: playbookTitleFor(filter.category), clear: () => patch({ category: undefined }) });
   if (filter.channel) chips.push({ key: "ch", label: CHANNEL_META[filter.channel]?.label ?? filter.channel, clear: () => patch({ channel: undefined }) });
   if (filter.result) chips.push({ key: "res", label: RESULT_META[filter.result].label, clear: () => patch({ result: undefined }) });
   if (filter.accountId) {
@@ -120,21 +124,22 @@ export default function OutcomesPage() {
         title="Outcomes"
         description="What your playbooks did, whether they worked, and what GoCSM is worth."
       >
-        <div style={{ marginTop: "var(--s-1)" }}>
+        <div className="oc-window">
           <SegmentedControl options={WINDOW_OPTIONS} value={windowSel} onChange={(v) => setWindow(v as TimeWindow)} />
+          <span className="oc-window-range">{windowDateLabel(windowSel)}</span>
         </div>
       </PageRibbon>
 
       {/* RUNG 1 — IMPACT · "Is GoCSM worth it?" */}
       <section className="oc-rung">
-        <RungHeader question="Is GoCSM worth it?" sub="The bottom line first — what GoCSM put back on the table." />
+        <RungHeader question="The value GoCSM delivered" sub="Real dollars your playbooks kept in your business." />
         <ImpactHero impact={impact} verdict={verdict} window={windowSel} onMechanism={(c) => drillTo({ category: c, result: "worked" }, "playbook")} />
       </section>
 
       {/* RUNG 2 — EFFECTIVENESS · "Are the playbooks working?" */}
       {scorecard.length ? (
         <section className="oc-rung">
-          <RungHeader question="Are the playbooks working?" sub="Every playbook you turned on — and whether it's hitting its goal." />
+          <RungHeader question="Are the playbooks working?" sub={`How each playbook you turned on did ${periodPhrase(windowSel)}.`} />
           {lead ? (
             <p className="oc-ai-line">
               <span className="oc-ai-ico" aria-hidden><Icon name="sparkles" /></span>
@@ -159,7 +164,7 @@ export default function OutcomesPage() {
 
       {/* RUNG 3 — AUDIT LOG · "What exactly happened?" */}
       <section ref={logRef} className="oc-rung" style={{ scrollMarginTop: "var(--s-5)" }}>
-        <RungHeader question="What exactly happened?" sub="Every action a playbook took, on the record — slice it any way you like." />
+        <RungHeader question="What exactly happened?" sub={`Every action a playbook took ${periodPhrase(windowSel)} — slice it any way you like.`} />
 
         <div className="oc-log-controls">
           <Badge variant="neutral" dot={false}>
@@ -170,27 +175,33 @@ export default function OutcomesPage() {
           </span>
         </div>
 
-        {/* Filter bar — search + customer / channel / outcome. Time scope is the page window above. */}
+        {/* Filter bar — search + playbook / customer / channel / outcome. Time scope is the window above. */}
         <div className="oc-filterbar">
           <Input placeholder="Search customers or actions…" value={filter.query ?? ""} onChange={(e) => patch({ query: e.target.value || undefined })} />
-          <Input as="select" value={filter.accountId ?? ""} onChange={(e) => patch({ accountId: e.target.value || undefined })} aria-label="Customer">
-            <option value="">All customers</option>
-            {accounts.map((a) => (
-              <option key={a.id} value={a.id}>{a.name}</option>
-            ))}
-          </Input>
-          <Input as="select" value={filter.channel ?? ""} onChange={(e) => patch({ channel: e.target.value || undefined })} aria-label="Channel">
-            <option value="">All channels</option>
-            {channels.map((c) => (
-              <option key={c} value={c}>{CHANNEL_META[c]?.label ?? c}</option>
-            ))}
-          </Input>
-          <Input as="select" value={filter.result ?? ""} onChange={(e) => patch({ result: (e.target.value || undefined) as EventResult | undefined })} aria-label="Outcome">
-            <option value="">Any outcome</option>
-            {RESULTS.map((r) => (
-              <option key={r} value={r}>{RESULT_META[r].label}</option>
-            ))}
-          </Input>
+          <FilterSelect
+            ariaLabel="Playbook"
+            value={filter.category ?? ""}
+            onChange={(v) => patch({ category: (v || undefined) as EventCategory | undefined })}
+            options={[{ value: "", label: "All playbooks" }, ...PLAYBOOK_LIST.map((p) => ({ value: p.category, label: p.title }))]}
+          />
+          <FilterSelect
+            ariaLabel="Customer"
+            value={filter.accountId ?? ""}
+            onChange={(v) => patch({ accountId: v || undefined })}
+            options={[{ value: "", label: "All customers" }, ...accounts.map((a) => ({ value: a.id, label: a.name }))]}
+          />
+          <FilterSelect
+            ariaLabel="Channel"
+            value={filter.channel ?? ""}
+            onChange={(v) => patch({ channel: v || undefined })}
+            options={[{ value: "", label: "All channels" }, ...channels.map((c) => ({ value: c, label: CHANNEL_META[c]?.label ?? c }))]}
+          />
+          <FilterSelect
+            ariaLabel="Outcome"
+            value={filter.result ?? ""}
+            onChange={(v) => patch({ result: (v || undefined) as EventResult | undefined })}
+            options={[{ value: "", label: "Any outcome" }, ...RESULTS.map((r) => ({ value: r, label: RESULT_META[r].label }))]}
+          />
         </div>
 
         {chips.length ? (
@@ -231,6 +242,56 @@ function RungHeader({ question, sub }: { question: string; sub: string }) {
   );
 }
 
+// A custom single-select that renders OUR font and anchors the list directly under the
+// trigger — native <select> popups render huge (system font) and mis-positioned on macOS.
+function FilterSelect({
+  value,
+  onChange,
+  options,
+  ariaLabel,
+}: {
+  value: string;
+  onChange: (v: string) => void;
+  options: { value: string; label: string }[];
+  ariaLabel: string;
+}) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (!open) return;
+    const onDoc = (e: MouseEvent) => { if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false); };
+    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") setOpen(false); };
+    document.addEventListener("mousedown", onDoc);
+    document.addEventListener("keydown", onKey);
+    return () => { document.removeEventListener("mousedown", onDoc); document.removeEventListener("keydown", onKey); };
+  }, [open]);
+  const current = options.find((o) => o.value === value) ?? options[0];
+  return (
+    <div className="oc-fsel" ref={ref}>
+      <button type="button" className="oc-fsel-btn" aria-haspopup="listbox" aria-expanded={open} aria-label={ariaLabel} onClick={() => setOpen((o) => !o)}>
+        <span>{current?.label}</span>
+        <Icon name="chevron-down" className="oc-fsel-chev" />
+      </button>
+      {open ? (
+        <ul className="oc-fsel-list" role="listbox" aria-label={ariaLabel}>
+          {options.map((o) => (
+            <li
+              key={o.value}
+              role="option"
+              aria-selected={o.value === value}
+              className={["oc-fsel-opt", o.value === value ? "is-sel" : ""].filter(Boolean).join(" ")}
+              onClick={() => { onChange(o.value); setOpen(false); }}
+            >
+              <span>{o.label}</span>
+              {o.value === value ? <Icon name="check" className="oc-fsel-check" /> : null}
+            </li>
+          ))}
+        </ul>
+      ) : null}
+    </div>
+  );
+}
+
 // ---------------------------------------------------------------------------
 // Rung 1 — Impact hero. One big number (the $ appears exactly once), an honest ROI
 // multiple (lifetime only), the "work GoCSM did for you" context sentence, and an
@@ -247,7 +308,7 @@ function ImpactHero({
   window: TimeWindow;
   onMechanism: (c: EventCategory) => void;
 }) {
-  const phrase = window === "lifetime" ? "since you installed GoCSM" : window === "30d" ? "in the last 30 days" : "in the last 7 days";
+  const phrase = periodPhrase(window);
 
   if (verdict.light) {
     return (

@@ -68,7 +68,14 @@ non-technical agency owner climbs three **outcome-first** rungs, each labeled wi
    % suppressed below n=3; a meter **legend** sits above the cards.
 3. **"What exactly happened?"** — the audit log: ONE "Slice by" switcher (**Timeline · By playbook · By customer ·
    By channel** — channel is the differentiator vs HighLevel's email-only stats); grouped views collapse to
-   countable headers; no-change rows carry no pill; every claim above drills into the log filtered (`drillTo`).
+   countable headers; no-change rows carry no pill; every claim above drills into the log filtered (`drillTo`). The
+   filter bar (search · **playbook** · customer · channel · outcome) uses a custom `FilterSelect` (button + anchored
+   popover) — NOT native `<select>`, whose popups render huge + mis-positioned on macOS.
+
+**Time window** stays a segmented control (pills keep the active range visible — best for the persona) labeled
+**"Last 7 days · Last 30 days · Since install"** with the resolved calendar range shown under it (`windowDateLabel`);
+the active **period echoes into every section** (`periodPhrase`) so the timeframe is always obvious. Default =
+Since-install (this page leads with cumulative ROI).
 
 **Honesty model (non-negotiable here).** Each account maps to exactly ONE primary situation (`primaryCategoryFor`)
 so retention categories are mutually exclusive → **each saved customer's MRR is counted once** (no double-count).

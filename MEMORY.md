@@ -5,6 +5,24 @@ Durable, human- and agent-readable log of significant decisions and changes.
 
 ---
 
+## 2026-06-30 (design-loop iter) — Outcomes follow-up: proactive value header, plain-language period selector, custom filter dropdowns + playbook filter
+Post-review iteration on the Outcomes page from Karthik's feedback:
+- **Rung-1 header reworded** from the defensive "Is GoCSM worth it?" to the proactive **"The value GoCSM
+  delivered"** (sub: "Real dollars your playbooks kept in your business.").
+- **Time selector** (kept as segmented pills per research — pills keep the active range visible, best for
+  the persona; a dropdown/calendar would hide state): relabeled **"Last 7 days · Last 30 days · Since install"**
+  (abstract "Lifetime" → meaningful "Since install"), with the **resolved calendar range shown under it**
+  (`windowDateLabel`, e.g. "May 18 – Jun 17" / "since Sep 22, 2025"). The active **period is now echoed into every
+  section** (`periodPhrase` in Rung 2 + Rung 3 subs; the hero caption already had it) so the timeframe is always
+  obvious. (Research also suggested default-to-30d + a "vs previous period" delta — deferred; this page leads with
+  the cumulative since-install ROI so Since-install stays the default.)
+- **Filter dropdowns rebuilt** — native `<select>` popups render huge (system font) and mis-positioned on macOS;
+  replaced with a custom `FilterSelect` (button + anchored popover, our font, click-outside/Escape close) for
+  customer/channel/outcome.
+- **Added a "Playbook" filter** to the audit log (`All playbooks` + the 5 titles via `PLAYBOOK_LIST`), alongside
+  the scorecard-click drill. Filter-chip + category now use the playbook title consistently.
+- tsc clean, 8 tests green, build green. Verified desktop + mobile.
+
 ## 2026-06-30 (docs) — Onboarding change brief reshaped into a net-delta dev doc (for a technical co-founder)
 Reworked `apps/prototype/docs/prd/onboarding-changes-2026-06-30.html` from a per-change log into an **overall
 delta** brief aimed at a technical co-founder who just needs to know what to build. Removed the import/zip/
